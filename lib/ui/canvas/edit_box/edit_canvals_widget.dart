@@ -18,6 +18,10 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   late CanvalsController _selectionController;
   final List<EditBoxData> boxes = [];
 
+  // 重置和旋转
+  bool _isRotating = false;
+  bool _isResizing = false;
+
   // 拖动相关变量
   Offset? _dragStartPosition;
   Offset? _dragStartBoxPosition;
@@ -31,6 +35,10 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   double _initialWidth = 300.0; // 初始宽度
   double _initialHeight = 200.0; // 初始高度
   bool _hasMoved = false; // 添加移动检测
+
+  // Listener 相关变量
+  final Map<int, Offset> _pointers = {}; // 跟踪所有活动的指针
+  double _lastScale = 1.0; // 上一次的缩放比例
 
   /// 获取图层列表（按显示顺序，最上面的在最后）
   List<EditBoxData> get layers => List.from(boxes);
@@ -281,61 +289,88 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
   }
 
-  // 处理缩放开始（同时处理拖动和缩放）
-  void _handleScaleStart(ScaleStartDetails details) {
-    final selectedId = _selectionController.selectedId;
-    if (selectedId.isNotEmpty) {
-      _hasMoved = false;
-      _isClick = true;
-      final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-      _cumulativeScale = 1.0; // 重置累积缩放
+  // 计算两个指针之间的距离（用于缩放）
+  double _computeScale() {
+    if (_pointers.length < 2) return 1.0;
 
-      // 只在第一次缩放时确定固定的中心点，之后不再改变
-      if (_fixedScaleCenter == null) {
-        _fixedScaleCenter = Offset(
-          selectedBox.position.dx + selectedBox.width / 2,
-          selectedBox.position.dy + selectedBox.height / 2,
-        );
-        _initialWidth = selectedBox.width;
-        _initialHeight = selectedBox.height;
-        debugPrint(
-          '确定固定缩放中心点: $_fixedScaleCenter, 初始尺寸: ${_initialWidth}x${_initialHeight}',
-        );
+    final positions = _pointers.values.toList();
+    final dx = positions[0].dx - positions[1].dx;
+    final dy = positions[0].dy - positions[1].dy;
+    return (dx * dx + dy * dy).abs();
+  }
+
+  // 处理指针按下事件
+  void _handlePointerDown(PointerDownEvent event) {
+    // 如果正在调整大小或旋转，不处理
+    if (_isResizing || _isRotating) {
+      return;
+    }
+
+    _pointers[event.pointer] = event.localPosition;
+
+    if (_pointers.length == 1) {
+      // 单指按下
+      final selectedId = _selectionController.selectedId;
+      if (selectedId.isNotEmpty) {
+        _hasMoved = false;
+        _isClick = true;
+        final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+        _cumulativeScale = 1.0;
+
+        // 只在第一次缩放时确定固定的中心点，之后不再改变
+        if (_fixedScaleCenter == null) {
+          _fixedScaleCenter = Offset(
+            selectedBox.position.dx + selectedBox.width / 2,
+            selectedBox.position.dy + selectedBox.height / 2,
+          );
+          _initialWidth = selectedBox.width;
+          _initialHeight = selectedBox.height;
+          debugPrint(
+            '确定固定缩放中心点: $_fixedScaleCenter, 初始尺寸: ${_initialWidth}x${_initialHeight}',
+          );
+        }
+
+        _dragStartPosition = event.localPosition;
+        _dragStartBoxPosition = selectedBox.position;
+        debugPrint('开始拖动检测: $selectedId, 使用固定中心点: $_fixedScaleCenter');
+      } else {
+        // 没有选中元素时，重置所有状态
+        _hasMoved = false;
+        _isClick = true;
+        _cumulativeScale = 1.0;
+        _fixedScaleCenter = null;
+        _dragStartPosition = event.localPosition;
+        _dragStartBoxPosition = null;
+        debugPrint('没有选中元素，重置拖拽状态');
       }
-
-      _dragStartPosition = details.focalPoint;
-      _dragStartBoxPosition = selectedBox.position;
-      debugPrint('开始缩放/拖动检测: $selectedId, 使用固定中心点: $_fixedScaleCenter');
-    } else {
-      // 没有选中元素时，重置所有状态
-      _hasMoved = false;
-      _isClick = true;
-      _cumulativeScale = 1.0;
-      _fixedScaleCenter = null;
-      _dragStartPosition = null;
-      _dragStartBoxPosition = null;
-      debugPrint('没有选中元素，重置拖拽状态');
+    } else if (_pointers.length == 2) {
+      // 双指按下，准备缩放
+      _lastScale = _computeScale();
+      _isClick = false;
+      debugPrint('双指缩放开始');
     }
   }
 
-  // 处理缩放更新（同时处理拖动和缩放）
-  void _handleScaleUpdate(ScaleUpdateDetails details) {
-    final selectedId = _selectionController.selectedId;
-    if (selectedId.isNotEmpty &&
-        _dragStartPosition != null &&
-        _dragStartBoxPosition != null) {
-      // 检测是否有移动
-      final delta = details.focalPoint - _dragStartPosition!;
-      if (delta.distance > 3.0) {
-        // 降低移动阈值，使拖拽更敏感
-        _hasMoved = true;
-        _isClick = false; // 有移动就不是点击
-      }
+  // 处理指针移动事件
+  void _handlePointerMove(PointerMoveEvent event) {
+    _pointers[event.pointer] = event.localPosition;
 
-      // 处理拖动（当缩放比例接近1.0时，认为是拖动）
-      if (_hasMoved) {
-        // 如果缩放比例接近1.0，认为是拖动操作
-        if (details.scale >= 0.98 && details.scale <= 1.02) {
+    final selectedId = _selectionController.selectedId;
+
+    if (_pointers.length == 1) {
+      // 单指拖动
+      if (selectedId.isNotEmpty &&
+          _dragStartPosition != null &&
+          _dragStartBoxPosition != null) {
+        // 检测是否有移动
+        final delta = event.localPosition - _dragStartPosition!;
+        if (delta.distance > 3.0) {
+          _hasMoved = true;
+          _isClick = false;
+        }
+
+        // 处理拖动
+        if (_hasMoved) {
           final newPosition = _dragStartBoxPosition! + delta;
 
           setState(() {
@@ -346,12 +381,19 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
           debugPrint('拖拽更新: 新位置=$newPosition, 移动距离=${delta.distance}');
         }
       }
+    } else if (_pointers.length == 2) {
+      // 双指缩放
+      if (selectedId.isNotEmpty) {
+        final currentScale = _computeScale();
+        final scale = (currentScale / _lastScale).clamp(0.5, 2.0);
 
-      // 处理缩放（当缩放比例明显偏离1.0时，认为是缩放操作）
-      if (_hasMoved && (details.scale < 0.98 || details.scale > 1.02)) {
-        // 累积缩放比例，使缩放更平滑流畅
-        _cumulativeScale *= details.scale;
-        _cumulativeScale = _cumulativeScale.clamp(0.1, 10.0); // 扩大缩放范围，使缩放更流畅
+        // 累积缩放比例
+        _cumulativeScale *= scale;
+        _cumulativeScale = _cumulativeScale.clamp(0.1, 10.0);
+
+        _lastScale = currentScale;
+        _hasMoved = true;
+        _isClick = false;
 
         setState(() {
           final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
@@ -369,10 +411,9 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
             );
 
             // 始终以固定的文本框中心为锚点进行缩放
-            // 计算新的位置，使固定中心点保持不变
             final newPosition = Offset(
-              _fixedScaleCenter!.dx - newWidth / 2, // 固定中心点X - 新宽度的一半
-              _fixedScaleCenter!.dy - newHeight / 2, // 固定中心点Y - 新高度的一半
+              _fixedScaleCenter!.dx - newWidth / 2,
+              _fixedScaleCenter!.dy - newHeight / 2,
             );
 
             // 更新文本框的位置和尺寸
@@ -389,36 +430,63 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
   }
 
-  // 处理缩放结束（同时处理拖动和缩放）
-  void _handleScaleEnd(ScaleEndDetails details) {
+  // 处理指针抬起事件
+  void _handlePointerUp(PointerUpEvent event) {
+    _pointers.remove(event.pointer);
+
     final selectedId = _selectionController.selectedId;
-    if (selectedId.isNotEmpty) {
-      // 如果是点击（没有移动且缩放比例接近1.0）
-      if (_isClick && !_hasMoved) {
-        debugPrint('检测到点击事件，但元素已选中，不处理');
+
+    // 当所有指针都抬起时
+    if (_pointers.isEmpty) {
+      if (selectedId.isNotEmpty) {
+        // 如果是点击（没有移动）
+        if (_isClick && !_hasMoved) {
+          debugPrint('检测到点击事件，但元素已选中，不处理');
+        }
+
+        _hasMoved = false;
+        _isClick = false;
+        _cumulativeScale = 1.0;
+        // 注意：不重置 _fixedScaleCenter，保持固定中心点
+        _dragStartPosition = null;
+        _dragStartBoxPosition = null;
+        debugPrint('拖动/缩放结束，固定中心点保持: $_fixedScaleCenter');
+      } else {
+        // 没有选中元素时的点击处理
+        if (_isClick && !_hasMoved) {
+          debugPrint('检测到背景点击事件，取消选中');
+          _selectionController.deselect();
+        }
+
+        _hasMoved = false;
+        _isClick = false;
+        _cumulativeScale = 1.0;
+        _fixedScaleCenter = null;
+        _dragStartPosition = null;
+        _dragStartBoxPosition = null;
+        debugPrint('没有选中元素，重置所有状态');
       }
 
-      _hasMoved = false;
-      _isClick = false;
-      _cumulativeScale = 1.0; // 重置累积缩放
-      // 注意：不重置 _fixedScaleCenter，保持固定中心点
-      _dragStartPosition = null;
-      _dragStartBoxPosition = null;
-      debugPrint('缩放/拖动结束，固定中心点保持: $_fixedScaleCenter');
-    } else {
-      // 没有选中元素时的点击处理
-      if (_isClick && !_hasMoved) {
-        debugPrint('检测到背景点击事件');
-        // 这里不需要额外处理，因为背景的onTap会处理
-      }
+      _lastScale = 1.0;
+    } else if (_pointers.length == 1) {
+      // 从双指缩放切换到单指拖动
+      _lastScale = 1.0;
+      debugPrint('从双指切换到单指');
+    }
+  }
 
+  // 处理指针取消事件
+  void _handlePointerCancel(PointerCancelEvent event) {
+    _pointers.remove(event.pointer);
+
+    if (_pointers.isEmpty) {
       _hasMoved = false;
       _isClick = false;
       _cumulativeScale = 1.0;
-      _fixedScaleCenter = null;
       _dragStartPosition = null;
       _dragStartBoxPosition = null;
-      debugPrint('没有选中元素，重置所有状态');
+      _lastScale = 1.0;
+      debugPrint('指针事件取消，重置所有状态');
     }
   }
 
@@ -453,15 +521,11 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         });
       }
 
-      return GestureDetector(
-        onTap: () {
-          // 点击空白区域取消选中状态
-          debugPrint('点击背景，取消选中');
-          _selectionController.deselect();
-        },
-        onScaleStart: _handleScaleStart,
-        onScaleUpdate: _handleScaleUpdate,
-        onScaleEnd: _handleScaleEnd,
+      return Listener(
+        onPointerDown: _handlePointerDown,
+        onPointerMove: _handlePointerMove,
+        onPointerUp: _handlePointerUp,
+        onPointerCancel: _handlePointerCancel,
         behavior: HitTestBehavior.translucent,
         child: Stack(
           clipBehavior: Clip.none,
@@ -476,6 +540,10 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
                     isActive: false,
                     onTap: () => setActive(box.id),
                     onDelete: () => deleteBox(box.id),
+                    changeValue: (resizing, rotating) {
+                      _isResizing = resizing;
+                      _isRotating = rotating;
+                    },
                   ),
                 ),
 
@@ -489,6 +557,10 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
                     isActive: true,
                     onTap: () => setActive(box.id),
                     onDelete: () => deleteBox(box.id),
+                    changeValue: (resizing, rotating) {
+                      _isResizing = resizing;
+                      _isRotating = rotating;
+                    },
                   ),
                 ),
           ],

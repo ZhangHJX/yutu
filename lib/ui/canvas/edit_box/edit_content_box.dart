@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../controllers/create_design_model.dart';
 
+typedef MultiCallback = void Function(bool resizing, bool rotating);
+
 class EditContentBox extends StatefulWidget {
   final EditBoxData data;
   final bool isActive;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final MultiCallback changeValue;
 
   const EditContentBox({
     super.key,
@@ -15,6 +18,7 @@ class EditContentBox extends StatefulWidget {
     required this.isActive,
     required this.onTap,
     required this.onDelete,
+    required this.changeValue,
   });
 
   @override
@@ -24,7 +28,6 @@ class EditContentBox extends StatefulWidget {
 class _EditContentBoxState extends State<EditContentBox>
     with TickerProviderStateMixin {
   late AnimationController _scaleController;
-
   late AnimationController _rotateController;
 
   double _rotation = 0.0;
@@ -134,6 +137,7 @@ class _EditContentBoxState extends State<EditContentBox>
   }
 
   void _handleRotationStart(DragStartDetails details) {
+    widget.changeValue(false, true);
     setState(() {
       _isRotating = true;
       _lastPanPosition = details.globalPosition;
@@ -185,6 +189,7 @@ class _EditContentBoxState extends State<EditContentBox>
   }
 
   void _handleRotationEnd(DragEndDetails details) {
+    widget.changeValue(false, false);
     setState(() {
       _isRotating = false;
     });
@@ -192,6 +197,7 @@ class _EditContentBoxState extends State<EditContentBox>
 
   // 处理调整大小的手势
   void _handleResizeStart(DragStartDetails details, String position) {
+    widget.changeValue(true, false);
     setState(() {
       _isResizing = true;
       _startWidth = widget.data.width;
@@ -368,6 +374,7 @@ class _EditContentBoxState extends State<EditContentBox>
   }
 
   void _handleResizeEnd(DragEndDetails details) {
+    widget.changeValue(false, false);
     setState(() {
       _isResizing = false;
       // 保存当前尺寸作为下次调整的起始值
