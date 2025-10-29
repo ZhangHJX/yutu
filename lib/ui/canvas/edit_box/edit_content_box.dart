@@ -138,6 +138,7 @@ class _EditContentBoxState extends State<EditContentBox>
 
   void _handleRotationStart(DragStartDetails details) {
     widget.changeValue(false, true);
+    debugPrint("----_isRotating----");
     setState(() {
       _isRotating = true;
       _lastPanPosition = details.globalPosition;

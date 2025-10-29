@@ -301,7 +301,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
   // 处理指针按下事件
   void _handlePointerDown(PointerDownEvent event) {
-    // 如果正在调整大小或旋转，不处理
     if (_isResizing || _isRotating) {
       return;
     }
@@ -353,6 +352,10 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
   // 处理指针移动事件
   void _handlePointerMove(PointerMoveEvent event) {
+    if (_isResizing || _isRotating) {
+      return;
+    }
+
     _pointers[event.pointer] = event.localPosition;
 
     final selectedId = _selectionController.selectedId;
@@ -432,6 +435,9 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
   // 处理指针抬起事件
   void _handlePointerUp(PointerUpEvent event) {
+    _isResizing = false;
+    _isRotating = false;
+
     _pointers.remove(event.pointer);
 
     final selectedId = _selectionController.selectedId;
