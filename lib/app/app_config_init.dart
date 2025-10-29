@@ -1,0 +1,46 @@
+import 'package:common/common.dart';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+
+import 'routes/index.dart';
+
+class AppConfigInit extends StatelessWidget {
+  const AppConfigInit({super.key});
+
+  @override
+  Widget build(BuildContext context) => ScreenUtilInit(
+    designSize: const Size(375, 812),
+    child: RefreshConfiguration(
+      headerBuilder: () => const ClassicHeader(),
+      footerBuilder: () => const ClassicFooter(),
+      maxOverScrollExtent: 100,
+      maxUnderScrollExtent: 0,
+      enableScrollWhenRefreshCompleted: true,
+      child: GetMaterialApp(
+        unknownRoute: unknownRoute,
+        title: Global.appName,
+        theme: AppTheme.lightTheme(),
+        darkTheme: AppTheme.darkTheme(),
+        supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
+        localizationsDelegates: const [
+          GlobalWidgetsLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          RefreshLocalizations.delegate,
+        ],
+        popGesture: true,
+        getPages: getPages,
+        initialRoute: AppRoutes.splash,
+        debugShowCheckedModeBanner: false,
+        defaultTransition: Transition.rightToLeft,
+        navigatorObservers: [
+          FlutterSmartDialog.observer,
+          GetXRouteObserver(),
+          SwipeActionNavigatorObserver(),
+        ],
+        builder: FlutterSmartDialog.init(),
+      ),
+    ),
+  );
+}

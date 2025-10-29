@@ -1,0 +1,53 @@
+PODS:
+  - Flutter (1.0.0)
+  - flutter_keyboard_visibility (0.0.1):
+    - Flutter
+  - image_gallery_saver (2.0.2):
+    - Flutter
+  - image_gallery_saver_plus (0.0.1):
+    - Flutter
+  - image_picker_ios (0.0.1):
+    - Flutter
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - permission_handler_apple (9.3.0):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - flutter_keyboard_visibility (from `.symlinks/plugins/flutter_keyboard_visibility/ios`)
+  - image_gallery_saver (from `.symlinks/plugins/image_gallery_saver/ios`)
+  - image_gallery_saver_plus (from `.symlinks/plugins/image_gallery_saver_plus/ios`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
+  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  flutter_keyboard_visibility:
+    :path: ".symlinks/plugins/flutter_keyboard_visibility/ios"
+  image_gallery_saver:
+    :path: ".symlinks/plugins/image_gallery_saver/ios"
+  image_gallery_saver_plus:
+    :path: ".symlinks/plugins/image_gallery_saver_plus/ios"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
+  permission_handler_apple:
+    :path: ".symlinks/plugins/permission_handler_apple/ios"
+
+SPEC CHECKSUMS:
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_keyboard_visibility: 0339d06371254c3eb25eeb90ba8d17dca8f9c069
+  image_gallery_saver: cb43cc43141711190510e92c460eb1655cd343cb
+  image_gallery_saver_plus: 782ade975fe6a4600b53e7c1983e3a2979d1e9e5
+  image_picker_ios: 4f2f91b01abdb52842a8e277617df877e40f905b
+  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+
+PODFILE CHECKSUM: 440db469d06e41229fe8965393fe1b8a5f6baa96
+
+COCOAPODS: 1.16.2
