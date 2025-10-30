@@ -263,7 +263,6 @@ class EditContentBox extends StatelessWidget {
       case ElementType.image:
       case ElementType.rectangle:
       case ElementType.ellipse:
-      case ElementType.text:
         return [
           _buildResizeHandle('top-left'),
           _buildResizeHandle('top'),
@@ -271,6 +270,15 @@ class EditContentBox extends StatelessWidget {
           _buildResizeHandle('right'),
           _buildResizeHandle('bottom-right'),
           _buildResizeHandle('bottom'),
+          _buildResizeHandle('bottom-left'),
+          _buildResizeHandle('left'),
+        ];
+      case ElementType.text:
+        return [
+          _buildResizeHandle('top-left'),
+          _buildResizeHandle('top-right'),
+          _buildResizeHandle('right'),
+          _buildResizeHandle('bottom-right'),
           _buildResizeHandle('bottom-left'),
           _buildResizeHandle('left'),
         ];

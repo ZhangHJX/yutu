@@ -93,6 +93,20 @@ class CanvasGestureManager {
           debugPrint('✅ 待定状态: 可能拖动或点击取消激活 $selectedId');
           return;
         }
+      } else {
+        // 待定状态：可能是拖动，也可能是点击取消激活
+        currentInteraction = 'pending_drag_or_tap';
+        pendingClickBoxId = selectedId; // 保存可能要取消激活的元素ID
+        dragStartBoxPosition = selectedBox.position;
+        // 初始化缩放中心点
+        if (selectedBox.fixedScaleCenter == null) {
+          selectedBox.fixedScaleCenter = Offset(
+            selectedBox.position.dx + selectedBox.width / 2,
+            selectedBox.position.dy + selectedBox.height / 2,
+          );
+          selectedBox.initialWidth = selectedBox.width;
+          selectedBox.initialHeight = selectedBox.height;
+        }
       }
       // 点击在选中元素外部，检查是否点击了其他元素
     } else {
@@ -393,7 +407,7 @@ class CanvasGestureManager {
       return 'content';
     }
 
-    return 'content';
+    return null;
   }
 
   /// 检测点是否在圆内
