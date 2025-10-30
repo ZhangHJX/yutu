@@ -87,6 +87,10 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
       data.blurValue = _shadowBlur;
       data.isShawOpen = _shadowEnabled; // 更新阴影启用状态
 
+      if (data.type == ElementType.line) {
+        data.height += _borderWidth * 2;
+      }
+
       widget.onPropertiesChanged?.call(data);
     }
   }

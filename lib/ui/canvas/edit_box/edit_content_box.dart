@@ -114,10 +114,10 @@ class EditContentBox extends StatelessWidget {
       'bottom-left': Offset(0, height - 4.5), // 左下角
       'bottom-right': Offset(width - 4.5, height - 4.5), // 右下角
       // 四个边中点
-      'left': Offset(-1.5, height / 2), // 左边中点
-      'right': Offset(width - 4.5, height / 2), // 右边中点
-      'top': Offset(width / 2, -1.5), // 上边中点
-      'bottom': Offset(width / 2, height - 4.5), // 下边中点
+      'left': Offset(-1.5, height / 2 - 3), // 左边中点
+      'right': Offset(width - 4.5, height / 2 - 3), // 右边中点
+      'top': Offset(width / 2 - 3, -1.5), // 上边中点
+      'bottom': Offset(width / 2 - 3, height - 4.5), // 下边中点
     };
   }
 
@@ -202,32 +202,26 @@ class EditContentBox extends StatelessWidget {
           ),
         );
       case ElementType.line:
-        return Container(
-          decoration: BoxDecoration(
-            color: data.fillColor.color,
-            border: Border.all(
-              color: data.borderColor.color,
-              width: data.borderWidth,
-            ),
-            boxShadow: data.isShawOpen
-                ? [
-                    BoxShadow(
-                      color: data.shawColor.color,
-                      offset: Offset(data.shawX, data.shawY),
-                      blurRadius: data.blurValue,
-                      spreadRadius: 0,
-                    ),
-                  ]
-                : null,
-          ),
-          child: Center(
-            child: Container(
-              width: data.width * 0.8,
-              height: 4,
-              decoration: BoxDecoration(
+        return Center(
+          child: Container(
+            width: data.width,
+            height: data.height - 18.5.w,
+            decoration: BoxDecoration(
+              color: data.fillColor.color,
+              border: Border.all(
                 color: data.borderColor.color,
-                borderRadius: BorderRadius.circular(2),
+                width: data.borderWidth,
               ),
+              boxShadow: data.isShawOpen
+                  ? [
+                      BoxShadow(
+                        color: data.shawColor.color,
+                        offset: Offset(data.shawX, data.shawY),
+                        blurRadius: data.blurValue,
+                        spreadRadius: 0,
+                      ),
+                    ]
+                  : null,
             ),
           ),
         );
@@ -281,7 +275,12 @@ class EditContentBox extends StatelessWidget {
           _buildResizeHandle('left'),
         ];
       case ElementType.line:
-        return [];
+        return [
+          _buildResizeHandle('left'),
+          _buildResizeHandle('top'),
+          _buildResizeHandle('right'),
+          _buildResizeHandle('bottom'),
+        ];
     }
   }
 
@@ -309,14 +308,16 @@ class EditContentBox extends StatelessWidget {
   static Map<String, Offset> getResizeHandleCenters(EditBoxData data) {
     // 控制点相对于容器左上角的位置
     final localPositions = {
-      'top-left': const Offset(0, 0),
-      'top-right': Offset(data.width - 4.5, 0),
-      'bottom-left': Offset(0, data.height - 4.5),
-      'bottom-right': Offset(data.width - 4.5, data.height - 4.5),
-      'left': Offset(-1.5, data.height / 2),
-      'right': Offset(data.width - 4.5, data.height / 2),
-      'top': Offset(data.width / 2, -1.5),
-      'bottom': Offset(data.width / 2, data.height - 4.5),
+      // 四个角点
+      'top-left': Offset(0, 0), // 左上角
+      'top-right': Offset(data.width - 4.5, 0), // 右上角
+      'bottom-left': Offset(0, data.height - 4.5), // 左下角
+      'bottom-right': Offset(data.width - 4.5, data.height - 4.5), // 右下角
+      // 四个边中点
+      'left': Offset(-1.5, data.height / 2 - 3), // 左边中点
+      'right': Offset(data.width - 4.5, data.height / 2 - 3), // 右边中点
+      'top': Offset(data.width / 2 - 3, -1.5), // 上边中点
+      'bottom': Offset(data.width / 2 - 3, data.height - 4.5), // 下边中点
     };
 
     final cos = math.cos(data.rotation);

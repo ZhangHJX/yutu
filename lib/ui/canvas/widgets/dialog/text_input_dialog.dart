@@ -3,15 +3,18 @@ import 'package:flutter/material.dart';
 
 class TextInputDialog extends StatefulWidget {
   final Function(String)? onConfirm;
-  const TextInputDialog({super.key, this.onConfirm});
+  final String? initialText; // 初始文本
+  const TextInputDialog({super.key, this.onConfirm, this.initialText});
   @override
   State<TextInputDialog> createState() => _TextInputDialogState();
 }
 
-class _TextInputDialogState extends State<TextInputDialog> {
+class _TextInputDialogState extends State<TextInputDialog>
+    with WidgetsBindingObserver {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _isExpanded = false; // 是否全屏展开
+  bool _keyboardVisible = false; // 键盘是否可见
 
   // ⭐ 关键：创建一个全局 key 来保持 TextField 的状态
   final GlobalKey _textFieldKey = GlobalKey();
@@ -19,21 +22,48 @@ class _TextInputDialogState extends State<TextInputDialog> {
   @override
   void initState() {
     super.initState();
-    // 使用 addPostFrameCallback 在构建完成后获取焦点
+
+    // ⭐ 设置初始文本
+    if (widget.initialText != null) {
+      _textController.text = widget.initialText!;
+      // 将光标移动到文本末尾
+      _textController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _textController.text.length),
+      );
+    }
+
+    // ⭐ 优化1：添加观察者监听键盘状态
+    WidgetsBinding.instance.addObserver(this);
+
+    // ⭐ 优化2：立即请求焦点，不使用延迟
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(Duration(milliseconds: 100), () {
-        if (mounted) {
-          _focusNode.requestFocus();
-        }
-      });
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _focusNode.dispose();
     _textController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    // ⭐ 优化3：监听键盘状态变化
+    final view = WidgetsBinding.instance.platformDispatcher.views.firstOrNull;
+    final bottomInset = view?.viewInsets.bottom ?? 0.0;
+
+    final newKeyboardVisible = bottomInset > 0;
+
+    if (_keyboardVisible != newKeyboardVisible) {
+      setState(() {
+        _keyboardVisible = newKeyboardVisible;
+      });
+    }
   }
 
   // 切换展开/折叠状态
@@ -43,31 +73,33 @@ class _TextInputDialogState extends State<TextInputDialog> {
     });
   }
 
-  // ⭐ 提取为独立方法，使用同一个 key
+  // ⭐ 提取为独立方法，使用同一个 key，添加重绘边界
   Widget _buildTextField() {
-    return TextField(
-      key: _textFieldKey, // ← 使用全局 key 保持状态
-      controller: _textController,
-      focusNode: _focusNode,
-      maxLines: null,
-      expands: _isExpanded,
-      textAlignVertical: _isExpanded
-          ? TextAlignVertical.top
-          : TextAlignVertical.center,
-      decoration: InputDecoration(
-        border: InputBorder.none,
-        enabledBorder: InputBorder.none,
-        focusedBorder: InputBorder.none,
-        hintText: "请输入",
-        hintStyle: TextStyle(
-          fontSize: 14.w,
-          color: "#9E9E9E".color,
-          fontWeight: FontWeight.w500,
+    return RepaintBoundary(
+      child: TextField(
+        key: _textFieldKey, // ← 使用全局 key 保持状态
+        controller: _textController,
+        focusNode: _focusNode,
+        maxLines: null,
+        expands: _isExpanded,
+        textAlignVertical: _isExpanded
+            ? TextAlignVertical.top
+            : TextAlignVertical.center,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          hintText: "请输入",
+          hintStyle: TextStyle(
+            fontSize: 14.w,
+            color: "#9E9E9E".color,
+            fontWeight: FontWeight.w500,
+          ),
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
         ),
-        isDense: true,
-        contentPadding: EdgeInsets.zero,
+        style: TextStyle(fontSize: 14.w, color: '#292929'.color),
       ),
-      style: TextStyle(fontSize: 14.w, color: '#292929'.color),
     );
   }
 

@@ -8,6 +8,8 @@ import '../widgets/dialog/canvals_shape_dialog.dart';
 import '../controllers/create_design_model.dart';
 import 'edit_content_box.dart';
 import 'canvas_gesture_manager.dart';
+import '../widgets/dialog/text_input_dialog.dart';
+import '../../../utils/text_measure_util.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   const CanvasEditorWidget({super.key});
@@ -37,6 +39,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   void addShape(ShapeType shapeType) {
     ElementType elementType;
     String shapeName;
+    double boxWidth = 150.w;
+    double boxHeight = 150.w;
 
     switch (shapeType) {
       case ShapeType.rectangle:
@@ -46,10 +50,14 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       case ShapeType.ellipse:
         elementType = ElementType.ellipse;
         shapeName = '椭圆';
+        boxWidth = 150.w;
+        boxHeight = 87.w;
         break;
       case ShapeType.line:
         elementType = ElementType.line;
         shapeName = '线条';
+        boxWidth = 216.w;
+        boxHeight = 20.w;
         break;
     }
 
@@ -57,22 +65,17 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
     // 获取画布容器的实际尺寸
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-    double canvasWidth = 300.0; // 默认宽度
-    double canvasHeight = 200.0; // 默认高度
+    double canvasWidth = ScreenTools.screenWidth; // 默认宽度
+    double canvasHeight = ScreenTools.screenHeight; // 默认高度
 
     if (renderBox != null) {
       canvasWidth = renderBox.size.width;
       canvasHeight = renderBox.size.height;
-    } else {
-      // 如果无法获取画布尺寸，使用屏幕尺寸作为备用方案
-      final screenSize = MediaQuery.of(context).size;
-      canvasWidth = screenSize.width;
-      canvasHeight = screenSize.height;
     }
 
     // 计算子组件在画布中心的位置
-    final centerX = canvasWidth / 2 - 150; // 文本框宽度的一半 (300/2)
-    final centerY = canvasHeight / 2 - 100; // 文本框高度的一半 (200/2)
+    final centerX = (canvasWidth - boxWidth) / 2; // 文本框宽度的一半
+    final centerY = (canvasHeight - boxHeight) / 2; // 文本框高度的一半
 
     setState(() {
       boxes.add(
@@ -81,8 +84,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
           text: shapeName,
           position: Offset(centerX, centerY),
           type: elementType,
-          width: 300.0,
-          height: 200.0,
+          width: boxWidth,
+          height: boxHeight,
         ),
       );
     });
@@ -163,8 +166,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
   Future<void> addBox({
     required ElementType type,
-    double? width, // 改为可选参数
-    double? height, // 改为可选参数
     String imagePath = '',
     String text = '',
   }) async {
@@ -186,11 +187,15 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
 
     // 根据类型确定宽高
-    double finalWidth = width ?? 200.w; // 默认宽度
-    double finalHeight = height ?? 200.w; // 默认高度
+    double finalWidth = 200.w; // 默认宽度
+    double finalHeight = 200.w; // 默认高度
 
     // 如果是图片类型，根据图片实际尺寸计算
-    if (type == ElementType.image && imagePath.isNotEmpty) {
+    if (type == ElementType.image) {
+      if (imagePath.isEmpty) {
+        return;
+      }
+
       final imageSize = await _getImageSize(imagePath);
       if (imageSize != null) {
         final fitSize = _calculateFitSize(imageSize, canvasWidth, canvasHeight);
@@ -204,6 +209,18 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         finalWidth = 200.w;
         finalHeight = 200.w;
       }
+    } else {
+      // 文本类型，使用默认字体属性计算尺寸
+      Size textSize = TextMeasureUtil.measureText(
+        text: text,
+        fontSize: 14, // 默认字体大小
+        fontFamily: 'Courier', // 默认字体
+        fontWeight: FontWeight.w500, // 默认字重
+        letterSpacing: 0, // 默认字间距
+        lineHeight: 1.0, // 默认行高
+      );
+      finalWidth = textSize.width;
+      finalHeight = textSize.height;
     }
 
     // 计算子组件在画布中心的位置
@@ -257,6 +274,44 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         _selectionController.deselect();
       }
     });
+  }
+
+  /// 显示文本输入对话框并更新文本框内容
+  void showTextInputDialog(String boxId) {
+    // 查找对应的文本框
+    final box = boxes.firstWhere((b) => b.id == boxId);
+
+    SmartDialog.show(
+      alignment: Alignment.bottomCenter,
+      builder: (_) {
+        return TextInputDialog(
+          initialText: box.text,
+          onConfirm: (newText) {
+            // 更新文本框内容
+            setState(() {
+              box.text = newText;
+
+              // 重新计算文本尺寸
+              final textSize = TextMeasureUtil.measureText(
+                text: newText,
+                fontSize: box.fontSize,
+                fontFamily: box.fontFamily,
+                fontWeight: box.fontWeight,
+                letterSpacing: box.fontSpace,
+                lineHeight: box.lineHeight,
+              );
+
+              // 更新文本框尺寸
+              box.width = textSize.width;
+              box.height = textSize.height;
+            });
+
+            // 关闭对话框
+            SmartDialog.dismiss();
+          },
+        );
+      },
+    );
   }
 
   void deleteSelectedBox() {
@@ -326,7 +381,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       // 监听添加标记
       if (_selectionController.shouldAdd) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          addBox(type: ElementType.text, width: 200.w, height: 100.w);
+          addBox(type: ElementType.text);
           _selectionController.clearAddFlag();
         });
       }

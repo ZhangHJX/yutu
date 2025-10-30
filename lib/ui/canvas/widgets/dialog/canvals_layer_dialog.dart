@@ -151,24 +151,23 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
               return SizedBox(
                 child: Row(
                   children: [
+                    SizedBox(width: 7.w),
+
                     // 拖拽手柄
-                    isSelected
-                        ? Padding(
-                            padding: EdgeInsets.only(left: 7.w),
-                            child: Image.asset(
-                              'assets/images/canvals/canvals_current_circle.png',
-                              width: 3.w,
-                              height: 12.w,
-                              fit: BoxFit.fill,
-                            ),
-                          )
-                        : SizedBox(width: 10.w, height: 12.w),
+                    Opacity(
+                      opacity: isSelected ? 1.0 : 0,
+                      child: Image.asset(
+                        'assets/images/canvals/canvals_current_circle.png',
+                        width: 3.w,
+                        height: 12.w,
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+
+                    SizedBox(width: 7.w),
 
                     // 缩略图 - 传入isSelected参数
-                    Padding(
-                      padding: EdgeInsets.only(left: 7.w),
-                      child: _getLayerThumbnail(layer, isSelected: isSelected),
-                    ),
+                    _getLayerThumbnail(layer, isSelected: isSelected),
 
                     // 图层信息
                     Expanded(
@@ -193,59 +192,59 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                           SizedBox(height: 4.w),
 
                           // 底部：操作按钮栏
-                          Padding(
-                            padding: EdgeInsets.only(left: 4.w, right: 17.w),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: "#FFDCEDFE".color.withValues(alpha: 0.6),
-                                borderRadius: BorderRadius.circular(8.w),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      // 可见性切换功能（预留）
-                                      debugPrint('切换可见性: ${layer.id}');
-                                    },
-                                    child: Container(
-                                      padding: EdgeInsets.only(
-                                        left: 8.w,
-                                        right: 5.w,
-                                      ),
-                                      height: 23.w,
-                                      child: Icon(
-                                        Icons.visibility_outlined,
-                                        size: 16.w,
-                                        color: Colors.grey[700],
+                          Container(
+                            margin: EdgeInsets.only(left: 4.w, right: 17.w),
+                            width: double.infinity,
+                            height: 23.w,
+                            decoration: BoxDecoration(
+                              color: "#DCEDFE".color.withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(8.w),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    // 可见性切换功能（预留）
+                                    debugPrint('切换可见性: ${layer.id}');
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.only(
+                                      left: 8.w,
+                                      right: 5.w,
+                                    ),
+                                    child: Center(
+                                      child: Image.asset(
+                                        'assets/images/canvals/canvals_layer_eye.png',
+                                        width: 16.w,
+                                        height: 16.w,
+                                        fit: BoxFit.fill,
                                       ),
                                     ),
                                   ),
+                                ),
 
-                                  SizedBox(width: 5.w),
-
-                                  GestureDetector(
-                                    onTap: () {
-                                      // 删除图层
-                                      widget.onLayerDelete(layer.id);
-                                    },
-                                    child: Container(
-                                      padding: EdgeInsets.only(
-                                        left: 6.w,
-                                        right: 8.w,
-                                        top: 4.w,
-                                        bottom: 5.w,
-                                      ),
-                                      height: 23.w,
-                                      child: Icon(
-                                        Icons.delete_outline,
-                                        size: 14.w,
-                                        color: Colors.grey[700],
+                                GestureDetector(
+                                  onTap: () {
+                                    widget.onLayerDelete(layer.id); // 删除图层
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.only(
+                                      left: 5.w,
+                                      right: 5.w,
+                                    ),
+                                    height: 23.w,
+                                    child: Center(
+                                      child: Image.asset(
+                                        'assets/images/canvals/canvals_layer_delete.png',
+                                        width: 14.w,
+                                        height: 14.w,
+                                        fit: BoxFit.fill,
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ],

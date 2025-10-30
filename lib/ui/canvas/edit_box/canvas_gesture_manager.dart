@@ -475,6 +475,14 @@ class CanvasGestureManager {
 
     final delta = currentPosition - box.resizeStartPosition!;
 
+    if (box.type == ElementType.line &&
+        (box.resizingHandle! == 'top-left' ||
+            box.resizingHandle! == 'top-right' ||
+            box.resizingHandle! == 'bottom-right' ||
+            box.resizingHandle! == 'bottom-left')) {
+      return;
+    }
+
     final cos = math.cos(-box.rotation);
     final sin = math.sin(-box.rotation);
     final adjustedDx = delta.dx * cos - delta.dy * sin;
@@ -498,7 +506,11 @@ class CanvasGestureManager {
         break;
       case 'top':
         // 边中点：只改变高度
-        newHeight = (box.resizeStartHeight - adjustedDy).clamp(50.0, maxSize);
+        if (box.type == ElementType.line) {
+          newHeight = (box.resizeStartHeight - adjustedDy).clamp(20.0, maxSize);
+        } else {
+          newHeight = (box.resizeStartHeight - adjustedDy).clamp(50.0, maxSize);
+        }
         break;
       case 'top-right':
         // 角点：按比例缩放
@@ -528,7 +540,11 @@ class CanvasGestureManager {
         break;
       case 'bottom':
         // 边中点：只改变高度
-        newHeight = (box.resizeStartHeight + adjustedDy).clamp(50.0, maxSize);
+        if (box.type == ElementType.line) {
+          newHeight = (box.resizeStartHeight + adjustedDy).clamp(20.0, maxSize);
+        } else {
+          newHeight = (box.resizeStartHeight + adjustedDy).clamp(50.0, maxSize);
+        }
         break;
       case 'bottom-left':
         // 角点：按比例缩放

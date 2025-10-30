@@ -25,116 +25,112 @@ class CanvasBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      left: 0,
-      bottom: 0,
-      child: Column(
-        children: [
-          Container(
-            height: 66.w,
-            width: ScreenTools.screenWidth,
-            color: Colors.white,
-            child: Row(
-              children: [
-                SizedBox(width: 21.w),
-                Row(
-                  children: [
-                    ImageTextBtn(
-                      key: layerButtonKey,
-                      imageUrl: 'assets/images/canvals/edit_tuceng_icon.png',
-                      text: "图层",
-                      spacing: 0,
-                      imageSize: 32.w,
-                      textStyle: TextStyle(
-                        color: Color(0xFF9E9E9E),
-                        fontSize: 12.w,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      onTap: onLayerTap,
-                      direction: Axis.vertical,
+    return Column(
+      children: [
+        Container(
+          height: 66.w,
+          width: ScreenTools.screenWidth,
+          color: Colors.white,
+          child: Row(
+            children: [
+              SizedBox(width: 21.w),
+              Row(
+                children: [
+                  ImageTextBtn(
+                    key: layerButtonKey,
+                    imageUrl: 'assets/images/canvals/edit_tuceng_icon.png',
+                    text: "图层",
+                    spacing: 0,
+                    imageSize: 32.w,
+                    textStyle: TextStyle(
+                      color: Color(0xFF9E9E9E),
+                      fontSize: 12.w,
+                      fontWeight: FontWeight.bold,
                     ),
-                    SizedBox(width: 22.w),
-                    ImageTextBtn(
-                      imageUrl: 'assets/images/canvals/edit_image_icon.png',
-                      text: "加图",
-                      spacing: 0,
-                      imageSize: 32.w,
-                      textStyle: TextStyle(
-                        color: Color(0xFF9E9E9E),
-                        fontSize: 12.w,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      onTap: onAddImage,
-                      direction: Axis.vertical,
+                    onTap: onLayerTap,
+                    direction: Axis.vertical,
+                  ),
+                  SizedBox(width: 22.w),
+                  ImageTextBtn(
+                    imageUrl: 'assets/images/canvals/edit_image_icon.png',
+                    text: "加图",
+                    spacing: 0,
+                    imageSize: 32.w,
+                    textStyle: TextStyle(
+                      color: Color(0xFF9E9E9E),
+                      fontSize: 12.w,
+                      fontWeight: FontWeight.bold,
                     ),
-                    SizedBox(width: 22.w),
-                    ImageTextBtn(
-                      imageUrl: 'assets/images/canvals/edit_shape_icon.png',
-                      text: "形状",
-                      spacing: 0,
-                      imageSize: 32.w,
-                      textStyle: TextStyle(
-                        color: Color(0xFF9E9E9E),
-                        fontSize: 12.w,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      onTap: onAddShape,
-                      direction: Axis.vertical,
+                    onTap: onAddImage,
+                    direction: Axis.vertical,
+                  ),
+                  SizedBox(width: 22.w),
+                  ImageTextBtn(
+                    imageUrl: 'assets/images/canvals/edit_shape_icon.png',
+                    text: "形状",
+                    spacing: 0,
+                    imageSize: 32.w,
+                    textStyle: TextStyle(
+                      color: Color(0xFF9E9E9E),
+                      fontSize: 12.w,
+                      fontWeight: FontWeight.bold,
                     ),
-                    SizedBox(width: 22.w),
-                    ImageTextBtn(
-                      imageUrl: 'assets/images/canvals/edit_text_icon.png',
-                      text: "文字",
-                      spacing: 0,
-                      imageSize: 32.w,
-                      textStyle: TextStyle(
-                        color: Color(0xFF9E9E9E),
-                        fontSize: 12.w,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      onTap: onAddText,
-                      direction: Axis.vertical,
+                    onTap: onAddShape,
+                    direction: Axis.vertical,
+                  ),
+                  SizedBox(width: 22.w),
+                  ImageTextBtn(
+                    imageUrl: 'assets/images/canvals/edit_text_icon.png',
+                    text: "文字",
+                    spacing: 0,
+                    imageSize: 32.w,
+                    textStyle: TextStyle(
+                      color: Color(0xFF9E9E9E),
+                      fontSize: 12.w,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
-                SizedBox(width: 14.w),
-                Row(
-                  children: [
-                    CButton(
-                      icon: Image.asset(
-                        'assets/images/canvals/edit_save_icon.png',
-                        width: 62.w,
-                        height: 28.w,
-                      ),
-                      onPressed: onSave,
+                    onTap: onAddText,
+                    direction: Axis.vertical,
+                  ),
+                ],
+              ),
+              SizedBox(width: 14.w),
+              Row(
+                children: [
+                  CButton(
+                    icon: Image.asset(
+                      'assets/images/canvals/edit_save_icon.png',
+                      width: 62.w,
+                      height: 28.w,
                     ),
-                    SizedBox(width: 8.w),
-                    CButton(
-                      icon: Image.asset(
-                        'assets/images/canvals/edit_export_icon.png',
-                        width: 62.w,
-                        height: 28.w,
-                      ),
-                      onPressed:
-                          onExport ??
-                          () {
-                            debugPrint("edit_export_icon-------");
-                          },
+                    onPressed: onSave,
+                  ),
+                  SizedBox(width: 8.w),
+                  CButton(
+                    icon: Image.asset(
+                      'assets/images/canvals/edit_export_icon.png',
+                      width: 62.w,
+                      height: 28.w,
                     ),
-                    SizedBox(width: 14),
-                  ],
-                ),
-              ],
-            ),
+                    onPressed:
+                        onExport ??
+                        () {
+                          debugPrint("edit_export_icon-------");
+                        },
+                  ),
+                  SizedBox(width: 14),
+                ],
+              ),
+            ],
           ),
-
-          Container(
-            color: Colors.white,
-            height: ScreenTools.bottomBarHeight,
-            width: ScreenTools.screenWidth,
-          ),
-        ],
-      ),
+        ),
+    
+        Container(
+          color: Colors.white,
+          height: ScreenTools.bottomBarHeight,
+          width: ScreenTools.screenWidth,
+        ),
+      ],
     );
   }
 }

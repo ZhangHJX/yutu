@@ -132,6 +132,9 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (context) => TextInputDialog(
         onConfirm: (text) {
+          if (text.isEmpty) {
+            return;
+          }
           _canvasKey.currentState?.addBox(type: ElementType.text, text: text);
           Navigator.pop(context); // 关闭对话框
         },
@@ -212,7 +215,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       backgroundColor: cfff6f2fb,
       body: Stack(
         children: [
-          CanvasAppBar(),
+          Positioned(left: 0, top: 0, child: CanvasAppBar()),
 
           Positioned(
             left: 0,
@@ -263,24 +266,29 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
             ),
           ),
 
-          CanvasBottomBar(
-            layerButtonKey: _layerButtonKey,
-            onLayerTap: _toggleLayerDialog,
-            onAddImage: () {
-              _canvalsController.selectImageHelper.onlyChooseImages(
-                onSuccess: () {
-                  final imagePath = _canvalsController.selectImageHelper.image;
-                  if (imagePath != null) {
-                    debugPrint('选择的图片路径: $imagePath');
-                    _canvalsController.addNewImage(imagePath);
-                  }
-                },
-              );
-            },
-            onAddShape: _showShapeDialog,
-            onAddText: _showTextInputDialog,
-            onSave: _showSaveTemplateDialog,
-            onExport: _captureAndSave,
+          Positioned(
+            left: 0,
+            bottom: 0,
+            child: CanvasBottomBar(
+              layerButtonKey: _layerButtonKey,
+              onLayerTap: _toggleLayerDialog,
+              onAddImage: () {
+                _canvalsController.selectImageHelper.onlyChooseImages(
+                  onSuccess: () {
+                    final imagePath =
+                        _canvalsController.selectImageHelper.image;
+                    if (imagePath != null) {
+                      debugPrint('选择的图片路径: $imagePath');
+                      _canvalsController.addNewImage(imagePath);
+                    }
+                  },
+                );
+              },
+              onAddShape: _showShapeDialog,
+              onAddText: _showTextInputDialog,
+              onSave: _showSaveTemplateDialog,
+              onExport: _captureAndSave,
+            ),
           ),
 
           // 元素属性工具栏
