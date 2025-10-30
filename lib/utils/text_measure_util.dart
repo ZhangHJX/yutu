@@ -27,6 +27,52 @@ class TextMeasureUtil {
     return _measureWithStyle(text: text, textStyle: textStyle);
   }
 
+  /// 根据固定宽度计算文本尺寸（包含padding）
+  /// [text] 要测量的文本
+  /// [fontSize] 字体大小
+  /// [fontFamily] 字体
+  /// [fontWeight] 字重
+  /// [letterSpacing] 字间距
+  /// [lineHeight] 行高（相对于字体大小的倍数）
+  /// [maxWidth] 最大宽度限制
+  /// [horizontalPadding] 水平内边距（左右各一半）
+  /// [verticalPadding] 垂直内边距（上下各一半）
+  static Size measureTextWithWidth({
+    required String text,
+    required double fontSize,
+    required String? fontFamily,
+    required FontWeight? fontWeight,
+    required double? letterSpacing,
+    required double? lineHeight,
+    required double maxWidth,
+    double horizontalPadding = 16.0, // 默认左右各8
+    double verticalPadding = 8.0, // 默认上下各4
+  }) {
+    final textStyle = TextStyle(
+      fontSize: fontSize,
+      fontFamily: fontFamily,
+      fontWeight: fontWeight,
+      letterSpacing: letterSpacing,
+      height: lineHeight,
+    );
+
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: textStyle),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+
+    // 减去padding后的可用宽度
+    final availableWidth = maxWidth - horizontalPadding;
+    textPainter.layout(maxWidth: availableWidth);
+
+    // 返回尺寸时加上padding
+    return Size(
+      textPainter.width + horizontalPadding,
+      textPainter.height + verticalPadding,
+    );
+  }
+
   /// 内部测量方法
   static Size _measureWithStyle({
     required String text,
@@ -48,6 +94,10 @@ class TextMeasureUtil {
       textPainter.layout();
     }
 
-    return Size(textPainter.width, textPainter.height);
+    // 添加padding（与edit_content_box中的padding保持一致）
+    return Size(
+      textPainter.width + 16.0, // 左右各8
+      textPainter.height + 8.0, // 上下各4
+    );
   }
 }

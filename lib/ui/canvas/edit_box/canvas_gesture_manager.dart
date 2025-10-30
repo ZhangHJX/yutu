@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../controllers/create_design_model.dart';
 import 'edit_content_box.dart';
+import '../../../utils/text_measure_util.dart';
 
 /// 画布手势管理器
 /// 负责处理所有的手势交互逻辑
@@ -489,76 +490,134 @@ class CanvasGestureManager {
     double newWidth = box.resizeStartWidth;
     double newHeight = box.resizeStartHeight;
 
-    switch (box.resizingHandle!) {
-      case 'top-left':
-        // 角点：按比例缩放，使用对角线距离来计算缩放比例
-        final scaleX =
-            (box.resizeStartWidth - adjustedDx) / box.resizeStartWidth;
-        final scaleY =
-            (box.resizeStartHeight - adjustedDy) / box.resizeStartHeight;
-        final scale = (scaleX + scaleY) / 2; // 取平均值
-        newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
-        newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
-        // 重新调整宽度以确保高度在范围内
-        newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
-        break;
-      case 'top':
-        // 边中点：只改变高度
-        if (box.type == ElementType.line) {
-          newHeight = (box.resizeStartHeight - adjustedDy).clamp(20.0, maxSize);
-        } else {
-          newHeight = (box.resizeStartHeight - adjustedDy).clamp(50.0, maxSize);
-        }
-        break;
-      case 'top-right':
-        // 角点：按比例缩放
-        final scaleX =
-            (box.resizeStartWidth + adjustedDx) / box.resizeStartWidth;
-        final scaleY =
-            (box.resizeStartHeight - adjustedDy) / box.resizeStartHeight;
-        final scale = (scaleX + scaleY) / 2;
-        newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
-        newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
-        newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
-        break;
-      case 'right':
-        // 边中点：只改变宽度
-        newWidth = (box.resizeStartWidth + adjustedDx).clamp(50.0, maxSize);
-        break;
-      case 'bottom-right':
-        // 角点：按比例缩放
-        final scaleX =
-            (box.resizeStartWidth + adjustedDx) / box.resizeStartWidth;
-        final scaleY =
-            (box.resizeStartHeight + adjustedDy) / box.resizeStartHeight;
-        final scale = (scaleX + scaleY) / 2;
-        newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
-        newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
-        newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
-        break;
-      case 'bottom':
-        // 边中点：只改变高度
-        if (box.type == ElementType.line) {
-          newHeight = (box.resizeStartHeight + adjustedDy).clamp(20.0, maxSize);
-        } else {
-          newHeight = (box.resizeStartHeight + adjustedDy).clamp(50.0, maxSize);
-        }
-        break;
-      case 'bottom-left':
-        // 角点：按比例缩放
-        final scaleX =
-            (box.resizeStartWidth - adjustedDx) / box.resizeStartWidth;
-        final scaleY =
-            (box.resizeStartHeight + adjustedDy) / box.resizeStartHeight;
-        final scale = (scaleX + scaleY) / 2;
-        newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
-        newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
-        newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
-        break;
-      case 'left':
-        // 边中点：只改变宽度
-        newWidth = (box.resizeStartWidth - adjustedDx).clamp(50.0, maxSize);
-        break;
+    // 文本类型特殊处理
+    if (box.type == ElementType.text) {
+      switch (box.resizingHandle!) {
+        case 'left':
+        case 'right':
+          // 左右控制点：只改变宽度，高度根据文本自动计算
+          if (box.resizingHandle! == 'right') {
+            newWidth = (box.resizeStartWidth + adjustedDx).clamp(50.0, maxSize);
+          } else {
+            newWidth = (box.resizeStartWidth - adjustedDx).clamp(50.0, maxSize);
+          }
+          // 根据新宽度计算文本高度
+          final textSize = TextMeasureUtil.measureTextWithWidth(
+            text: box.text,
+            fontSize: box.fontSize,
+            fontFamily: box.fontFamily,
+            fontWeight: box.fontWeight,
+            letterSpacing: box.fontSpace,
+            lineHeight: box.lineHeight,
+            maxWidth: newWidth,
+          );
+          newHeight = textSize.height.clamp(50.0, maxSize);
+          break;
+        case 'top-left':
+        case 'top-right':
+        case 'bottom-left':
+        case 'bottom-right':
+          // 角点：按比例缩放
+          final scaleX = box.resizingHandle!.contains('right')
+              ? (box.resizeStartWidth + adjustedDx) / box.resizeStartWidth
+              : (box.resizeStartWidth - adjustedDx) / box.resizeStartWidth;
+          final scaleY = box.resizingHandle!.contains('bottom')
+              ? (box.resizeStartHeight + adjustedDy) / box.resizeStartHeight
+              : (box.resizeStartHeight - adjustedDy) / box.resizeStartHeight;
+          final scale = (scaleX + scaleY) / 2;
+          newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
+          newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
+          break;
+        default:
+          // top 和 bottom 控制点不处理（文本类型没有这些控制点）
+          break;
+      }
+    } else {
+      // 非文本类型的原有逻辑
+      switch (box.resizingHandle!) {
+        case 'top-left':
+          // 角点：按比例缩放，使用对角线距离来计算缩放比例
+          final scaleX =
+              (box.resizeStartWidth - adjustedDx) / box.resizeStartWidth;
+          final scaleY =
+              (box.resizeStartHeight - adjustedDy) / box.resizeStartHeight;
+          final scale = (scaleX + scaleY) / 2; // 取平均值
+          newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
+          newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
+          // 重新调整宽度以确保高度在范围内
+          newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
+          break;
+        case 'top':
+          // 边中点：只改变高度
+          if (box.type == ElementType.line) {
+            newHeight = (box.resizeStartHeight - adjustedDy).clamp(
+              20.0,
+              maxSize,
+            );
+          } else {
+            newHeight = (box.resizeStartHeight - adjustedDy).clamp(
+              50.0,
+              maxSize,
+            );
+          }
+          break;
+        case 'top-right':
+          // 角点：按比例缩放
+          final scaleX =
+              (box.resizeStartWidth + adjustedDx) / box.resizeStartWidth;
+          final scaleY =
+              (box.resizeStartHeight - adjustedDy) / box.resizeStartHeight;
+          final scale = (scaleX + scaleY) / 2;
+          newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
+          newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
+          break;
+        case 'right':
+          // 边中点：只改变宽度
+          newWidth = (box.resizeStartWidth + adjustedDx).clamp(50.0, maxSize);
+          break;
+        case 'bottom-right':
+          // 角点：按比例缩放
+          final scaleX =
+              (box.resizeStartWidth + adjustedDx) / box.resizeStartWidth;
+          final scaleY =
+              (box.resizeStartHeight + adjustedDy) / box.resizeStartHeight;
+          final scale = (scaleX + scaleY) / 2;
+          newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
+          newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
+          break;
+        case 'bottom':
+          // 边中点：只改变高度
+          if (box.type == ElementType.line) {
+            newHeight = (box.resizeStartHeight + adjustedDy).clamp(
+              20.0,
+              maxSize,
+            );
+          } else {
+            newHeight = (box.resizeStartHeight + adjustedDy).clamp(
+              50.0,
+              maxSize,
+            );
+          }
+          break;
+        case 'bottom-left':
+          // 角点：按比例缩放
+          final scaleX =
+              (box.resizeStartWidth - adjustedDx) / box.resizeStartWidth;
+          final scaleY =
+              (box.resizeStartHeight + adjustedDy) / box.resizeStartHeight;
+          final scale = (scaleX + scaleY) / 2;
+          newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
+          newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
+          break;
+        case 'left':
+          // 边中点：只改变宽度
+          newWidth = (box.resizeStartWidth - adjustedDx).clamp(50.0, maxSize);
+          break;
+      }
     }
 
     box.width = newWidth;

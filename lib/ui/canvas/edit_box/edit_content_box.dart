@@ -230,29 +230,30 @@ class EditContentBox extends StatelessWidget {
           width: data.width,
           height: data.height,
           color: Colors.transparent,
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: Text(
-              data.text,
-              style: TextStyle(
-                fontFamily: data.fontFamily,
-                fontSize: data.fontSize,
-                fontWeight: data.fontWeight,
-                color: data.textColor.color,
-                height: data.lineHeight,
-                letterSpacing: data.fontSpace,
-                shadows: data.isShawOpen
-                    ? [
-                        Shadow(
-                          color: data.shawColor.color,
-                          offset: Offset(data.shawX, data.shawY),
-                          blurRadius: data.blurValue,
-                        ),
-                      ]
-                    : [],
-              ),
-              textAlign: data.align,
+          alignment: Alignment.center,
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Text(
+            data.text,
+            style: TextStyle(
+              fontFamily: data.fontFamily,
+              fontSize: data.fontSize,
+              fontWeight: data.fontWeight,
+              color: data.textColor.color,
+              height: data.lineHeight,
+              letterSpacing: data.fontSpace,
+              shadows: data.isShawOpen
+                  ? [
+                      Shadow(
+                        color: data.shawColor.color,
+                        offset: Offset(data.shawX, data.shawY),
+                        blurRadius: data.blurValue,
+                      ),
+                    ]
+                  : [],
             ),
+            textAlign: data.align,
+            softWrap: true, // 启用自动换行
+            overflow: TextOverflow.visible, // 允许文本可见
           ),
         );
     }
