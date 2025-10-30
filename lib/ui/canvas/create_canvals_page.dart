@@ -217,13 +217,14 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
           Positioned(
             left: 0,
             top: ScreenTools.statusBarHeight + 51.w,
-            child: SizedBox(
+            child: Container(
               width: ScreenTools.screenWidth,
               height:
                   ScreenTools.screenHeight -
                   ScreenTools.statusBarHeight -
                   ScreenTools.bottomBarHeight -
                   117.w,
+              color: cfff6f2fb,
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   // 计算画布宽高比
@@ -318,13 +319,19 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                 width: 163.w,
                 layers: _canvasKey.currentState?.layers ?? [],
                 onLayerTap: (layerId) {
-                  _canvalsController.select(layerId);
+                  _canvalsController.isSelected(layerId)
+                      ? _canvalsController.deselect()
+                      : _canvalsController.select(layerId);
                 },
                 onLayerDelete: (layerId) {
-                  _canvasKey.currentState?.deleteBox(layerId);
+                  setState(() {
+                    _canvasKey.currentState?.deleteBox(layerId);
+                  });
                 },
                 onLayerReorder: (oldIndex, newIndex) {
-                  _canvasKey.currentState?.reorderLayers(oldIndex, newIndex);
+                  setState(() {
+                    _canvasKey.currentState?.reorderLayers(oldIndex, newIndex);
+                  });
                 },
               ),
             ),

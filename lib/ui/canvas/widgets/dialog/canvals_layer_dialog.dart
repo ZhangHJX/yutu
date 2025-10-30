@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../controllers/canvals_controller.dart';
 import '../../controllers/create_design_model.dart';
 import '../../../widgets/gradient_border.dart';
+import 'dart:io';
 
 class CanvalsLayerDialog extends StatefulWidget {
   final List<EditBoxData> layers;
@@ -81,7 +82,6 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
             ),
           ),
 
-          // 图层列表
           Expanded(
             child: ReorderableListView.builder(
               itemCount: widget.layers.length,
@@ -95,13 +95,11 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                 // 反转索引，让最上面的图层显示在列表顶部
                 final reversedIndex = widget.layers.length - 1 - index;
                 final layer = widget.layers[reversedIndex];
-                final isSelected = _controller.isSelected(layer.id);
 
                 return _buildLayerItem(
                   key: ValueKey(layer.id),
                   layer: layer,
                   index: reversedIndex,
-                  isSelected: isSelected,
                 );
               },
             ),
@@ -115,123 +113,213 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
     required Key key,
     required EditBoxData layer,
     required int index,
-    required bool isSelected,
   }) {
-    return Container(
+    // 根据元素类型获取名称
+    String getLayerName() {
+      switch (layer.type) {
+        case ElementType.image:
+          return '图片 ${index + 1}';
+        case ElementType.rectangle:
+        case ElementType.ellipse:
+        case ElementType.line:
+          return '形状 ${index + 1}';
+        case ElementType.text:
+          return layer.text;
+      }
+    }
+
+    return GestureDetector(
       key: key,
-      child: Column(
-        children: [
-          Container(width: double.infinity, height: 13.w, color: Colors.white),
-          Container(
-            width: double.infinity,
-            color: Colors.white,
-            child: Row(
-              children: [
-                // 拖拽手柄
-                Padding(
-                  padding: EdgeInsets.only(left: 7.w),
-                  child: Image.asset(
-                    'assets/images/canvals/canvals_current_circle.png',
-                    width: 3.w,
-                    height: 12.w,
-                    fit: BoxFit.fill,
-                  ),
-                ),
+      onTap: () {
+        // 点击图层项激活对应的画布元素
+        widget.onLayerTap(layer.id);
+      },
+      child: Container(
+        color: Colors.white,
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              height: 13.w,
+              color: Colors.white,
+            ),
 
-                // 缩略图
-                _buildLayerThumbnail(layer),
+            // 使用 Obx 包裹需要响应选中状态变化的部分
+            Obx(() {
+              final isSelected = _controller.isSelected(layer.id);
 
-                // 图层信息
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 名称和类型
-                      Padding(
-                        padding: EdgeInsets.only(left: 9.w),
-                        child: Column(
-                          children: [
-                            Text(
-                              "图片1",
+              return SizedBox(
+                child: Row(
+                  children: [
+                    // 拖拽手柄
+                    isSelected
+                        ? Padding(
+                            padding: EdgeInsets.only(left: 7.w),
+                            child: Image.asset(
+                              'assets/images/canvals/canvals_current_circle.png',
+                              width: 3.w,
+                              height: 12.w,
+                              fit: BoxFit.fill,
+                            ),
+                          )
+                        : SizedBox(width: 10.w, height: 12.w),
+
+                    // 缩略图 - 传入isSelected参数
+                    Padding(
+                      padding: EdgeInsets.only(left: 7.w),
+                      child: _getLayerThumbnail(layer, isSelected: isSelected),
+                    ),
+
+                    // 图层信息
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 名称和类型
+                          Padding(
+                            padding: EdgeInsets.only(left: 9.w),
+                            child: Text(
+                              getLayerName(),
                               style: TextStyle(
                                 fontSize: 12.w,
                                 fontWeight: FontWeight.w500,
                                 color: "#FF3E3E3E".color,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ),
 
-                            Text(
-                              "image",
-                              style: TextStyle(
-                                fontSize: 12.w,
-                                color: "#FF9E9E9E".color,
-                                fontWeight: FontWeight.w400,
+                          SizedBox(height: 4.w),
+
+                          // 底部：操作按钮栏
+                          Padding(
+                            padding: EdgeInsets.only(left: 4.w, right: 17.w),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: "#FFDCEDFE".color.withValues(alpha: 0.6),
+                                borderRadius: BorderRadius.circular(8.w),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      // 可见性切换功能（预留）
+                                      debugPrint('切换可见性: ${layer.id}');
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.only(
+                                        left: 8.w,
+                                        right: 5.w,
+                                      ),
+                                      height: 23.w,
+                                      child: Icon(
+                                        Icons.visibility_outlined,
+                                        size: 16.w,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                  ),
+
+                                  SizedBox(width: 5.w),
+
+                                  GestureDetector(
+                                    onTap: () {
+                                      // 删除图层
+                                      widget.onLayerDelete(layer.id);
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.only(
+                                        left: 6.w,
+                                        right: 8.w,
+                                        top: 4.w,
+                                        bottom: 5.w,
+                                      ),
+                                      height: 23.w,
+                                      child: Icon(
+                                        Icons.delete_outline,
+                                        size: 14.w,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-
-                      // 底部：操作按钮栏
-                      Padding(
-                        padding: EdgeInsets.only(left: 4.w, right: 17.w),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: "#FFDCEDFE".color.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(8.w),
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.only(left: 8.w, right: 5.w),
-                                height: 23.w,
-                                child: Icon(
-                                  Icons.visibility_outlined,
-                                  size: 16.w,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-
-                              SizedBox(width: 5.w),
-
-                              Container(
-                                padding: EdgeInsets.only(
-                                  left: 6.w,
-                                  right: 8.w,
-                                  top: 4.w,
-                                  bottom: 5.w,
-                                ),
-                                height: 23.w,
-                                child: Icon(
-                                  Icons.delete_outline,
-                                  size: 14.w,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildLayerThumbnail(EditBoxData layer) {
-    return Padding(
-      padding: EdgeInsets.only(left: 5.5.w),
-      child: GradientBorder(
-        gradientColors: true ? [Color(0xFFC86CFF), Color(0xFF5B98FF)] : [],
-        borderRadius: BorderRadius.circular(12.w),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(10.w),
-          child: Container(width: 54.w, height: 54.w, color: Colors.red),
+  Widget _getLayerThumbnail(EditBoxData layer, {required bool isSelected}) {
+    Widget content;
+
+    switch (layer.type) {
+      case ElementType.image:
+        content = Image.file(File(layer.imagePath), fit: BoxFit.cover);
+        break;
+      case ElementType.rectangle:
+        content = Center(
+          child: Container(width: 36.w, height: 28.w, color: '#D8D8D8'.color),
+        );
+        break;
+      case ElementType.ellipse:
+        content = Center(
+          child: Container(
+            width: 36.w,
+            height: 28.w,
+            decoration: BoxDecoration(
+              color: '#D8D8D8'.color, // 填充色
+              borderRadius: BorderRadius.all(Radius.elliptical(18.w, 14.w)),
+            ),
+          ),
+        );
+        break;
+      case ElementType.line:
+        content = Center(
+          child: Container(width: 36.w, height: 2.w, color: '#D8D8D8'.color),
+        );
+        break;
+      case ElementType.text:
+        content = Center(
+          child: Text(
+            layer.text.isNotEmpty
+                ? (layer.text.length >= 2
+                      ? layer.text.substring(0, 2)
+                      : layer.text)
+                : '文本',
+            style: TextStyle(
+              fontSize: 12.w,
+              fontWeight: FontWeight.w500,
+              color: "#3E3E3E".color,
+            ),
+          ),
+        );
+        break;
+    }
+
+    // 返回带圆角裁剪的内容
+    return GradientBorder(
+      borderWidth: isSelected ? 1.5 : 0,
+      gradientColors: [Color(0xFFC86CFF), Color(0xFF5B98FF)],
+      borderRadius: BorderRadius.circular(12.w),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10.w),
+        child: Container(
+          width: 54.w,
+          height: 54.w,
+          color: "#EAF4FE".color,
+          child: content,
         ),
       ),
     );

@@ -53,6 +53,24 @@ class EditBoxData {
   double shawY;
   double blurValue;
 
+  // Pointer 相关属性
+  double rotation; // 旋转角度
+  double cumulativeScale; // 累积缩放比例
+  Offset? fixedScaleCenter; // 固定的缩放中心点
+  double initialWidth; // 初始宽度（用于缩放计算）
+  double initialHeight; // 初始高度（用于缩放计算）
+
+  // 调整大小相关属性
+  String? resizingHandle; // 当前正在调整的控制点位置
+  double resizeStartWidth; // 调整大小开始时的宽度
+  double resizeStartHeight; // 调整大小开始时的高度
+  double resizeAspectRatio; // 调整大小开始时的宽高比
+  Offset? resizeStartPosition; // 调整大小开始时的触摸位置
+  Offset? resizeAnchorPoint; // 调整大小时的锚点（对角点）
+
+  // 旋转相关属性
+  Offset? rotateLastPosition; // 旋转时的上一次触摸位置
+
   EditBoxData({
     required this.id,
     required this.type,
@@ -79,7 +97,27 @@ class EditBoxData {
     this.shawY = 0,
     this.blurValue = 0,
     this.isShawOpen = false,
-  });
+
+    // Pointer 相关属性的默认值
+    this.rotation = 0.0,
+    this.cumulativeScale = 1.0,
+    this.fixedScaleCenter,
+    double? initialWidth,
+    double? initialHeight,
+
+    // 调整大小相关属性的默认值
+    this.resizingHandle,
+    this.resizeStartWidth = 300.0,
+    this.resizeStartHeight = 200.0,
+    double? resizeAspectRatio,
+    this.resizeStartPosition,
+    this.resizeAnchorPoint,
+
+    // 旋转相关属性的默认值
+    this.rotateLastPosition,
+  }) : initialWidth = initialWidth ?? width,
+       initialHeight = initialHeight ?? height,
+       resizeAspectRatio = resizeAspectRatio ?? (width / height);
 }
 
 

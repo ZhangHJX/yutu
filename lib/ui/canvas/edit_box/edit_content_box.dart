@@ -3,89 +3,35 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../controllers/create_design_model.dart';
 
-typedef MultiCallback = void Function(bool resizing, bool rotating);
-
-class EditContentBox extends StatefulWidget {
+class EditContentBox extends StatelessWidget {
   final EditBoxData data;
   final bool isActive;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
-  final MultiCallback changeValue;
 
-  const EditContentBox({
-    super.key,
-    required this.data,
-    required this.isActive,
-    required this.onTap,
-    required this.onDelete,
-    required this.changeValue,
-  });
+  const EditContentBox({super.key, required this.data, required this.isActive});
 
-  @override
-  State<EditContentBox> createState() => _EditContentBoxState();
-}
-
-class _EditContentBoxState extends State<EditContentBox>
-    with TickerProviderStateMixin {
-  late AnimationController _scaleController;
-  late AnimationController _rotateController;
-
-  double _rotation = 0.0;
-  bool _isRotating = false;
-  bool _isResizing = false;
-  Offset _lastPanPosition = Offset.zero;
-
-  final GlobalKey _containerKey = GlobalKey();
-
-  // 用于调整大小时的初始值
-  double _startWidth = 300;
-  double _startHeight = 200;
-
-  // 最大尺寸限制（可以设置为非常大的值）
-  static const double _maxSize = 1000000.0;
-  Offset _resizeStartPosition = Offset.zero;
-
-  // 记录对角点的全局位置（用于固定对角点）
-  Offset _anchorPointGlobal = Offset.zero;
-
-  @override
-  void initState() {
-    super.initState();
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-    _rotateController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-  }
-
-  @override
-  void dispose() {
-    _scaleController.dispose();
-    _rotateController.dispose();
-    super.dispose();
-  }
+  // 常量定义
+  static const double hitTestSize = 20.0;
+  static const double rotationButtonSize = 26.0;
+  static const double rotationButtonPadding = 15.0;
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      left: widget.data.position.dx,
-      top: widget.data.position.dy,
-      child: Transform.rotate(
-        angle: _rotation,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 文本框带旋转
-            Container(
-              key: _containerKey,
-              width: widget.data.width,
-              height: widget.data.height,
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // 主要内容（包含文本框和控制点，参与旋转）
+        Positioned(
+          left: data.position.dx,
+          top: data.position.dy,
+          child: Transform.rotate(
+            angle: data.rotation,
+            alignment: Alignment.center, // 围绕中心旋转
+            child: Container(
+              width: data.width,
+              height: data.height,
               decoration: BoxDecoration(
                 color: Colors.transparent,
-                border: widget.isActive
+                border: isActive
                     ? Border.all(color: "#ff147EFF".color, width: 3)
                     : null,
               ),
@@ -93,341 +39,63 @@ class _EditContentBoxState extends State<EditContentBox>
                 clipBehavior: Clip.none,
                 children: [
                   // 内容
-                  GestureDetector(
-                    onTap: () {
-                      debugPrint('点击元素: ${widget.data.id} ${widget.data.text}');
-                      widget.onTap();
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: _buildContent(),
-                  ),
+                  _buildContent(),
 
                   // 调整大小的控制点
-                  if (widget.isActive) ..._getControlPoint(context),
+                  if (isActive) ..._getControlPoints(),
                 ],
               ),
             ),
-
-            // 旋转按钮（与文本框底部保持距离，不参与旋转）
-            if (widget.isActive)
-              Padding(
-                padding: const EdgeInsets.only(top: 15.0),
-                child: GestureDetector(
-                  onPanStart: (details) {
-                    _handleRotationStart(details);
-                  },
-                  onPanUpdate: (details) {
-                    _handleRotationUpdate(details);
-                  },
-                  onPanEnd: (details) {
-                    _handleRotationEnd(details);
-                  },
-                  child: Image.asset(
-                    'assets/images/canvals/edit_rotation_icon.png',
-                    width: 26.w,
-                    height: 26.w,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
+
+        // 旋转按钮（不参与旋转，单独定位）
+        if (isActive) _buildRotationButton(),
+      ],
+    );
+  }
+
+  // 构建旋转按钮
+  Widget _buildRotationButton() {
+    final buttonCenter = getRotationButtonCenter(data);
+    return Positioned(
+      left: buttonCenter.dx - rotationButtonSize / 2,
+      top: buttonCenter.dy - rotationButtonSize / 2,
+      child: Image.asset(
+        'assets/images/canvals/edit_rotation_icon.png',
+        width: rotationButtonSize,
+        height: rotationButtonSize,
+        fit: BoxFit.contain,
       ),
     );
   }
 
-  void _handleRotationStart(DragStartDetails details) {
-    widget.changeValue(false, true);
-    debugPrint("----_isRotating----");
-    setState(() {
-      _isRotating = true;
-      _lastPanPosition = details.globalPosition;
-    });
-  }
-
-  void _handleRotationUpdate(DragUpdateDetails details) {
-    if (_isRotating) {
-      // 计算旋转角度
-      Offset currentPosition = details.globalPosition;
-
-      // 获取屏幕尺寸
-      final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-      if (renderBox != null) {
-        // 计算文本框的中心点（全局坐标）
-        // Transform.rotate 围绕文本框的中心点旋转
-        Offset globalContainerCenter = Offset(
-          widget.data.position.dx + widget.data.width / 2,
-          widget.data.position.dy + widget.data.height / 2,
-        );
-
-        // 计算从Container中心到触摸点的角度
-        double currentAngle = math.atan2(
-          currentPosition.dy - globalContainerCenter.dy,
-          currentPosition.dx - globalContainerCenter.dx,
-        );
-        double lastAngle = math.atan2(
-          _lastPanPosition.dy - globalContainerCenter.dy,
-          _lastPanPosition.dx - globalContainerCenter.dx,
-        );
-
-        // 计算角度差
-        double angleDelta = currentAngle - lastAngle;
-
-        // 处理角度跨越问题（-π到π的边界）
-        if (angleDelta > math.pi) {
-          angleDelta -= 2 * math.pi;
-        } else if (angleDelta < -math.pi) {
-          angleDelta += 2 * math.pi;
-        }
-
-        setState(() {
-          // 修复旋转方向：加上角度差，确保与手指方向一致
-          _rotation += angleDelta;
-          _lastPanPosition = currentPosition;
-        });
-      }
-    }
-  }
-
-  void _handleRotationEnd(DragEndDetails details) {
-    widget.changeValue(false, false);
-    setState(() {
-      _isRotating = false;
-    });
-  }
-
-  // 处理调整大小的手势
-  void _handleResizeStart(DragStartDetails details, String position) {
-    widget.changeValue(true, false);
-    setState(() {
-      _isResizing = true;
-      _startWidth = widget.data.width;
-      _startHeight = widget.data.width;
-      _resizeStartPosition = details.globalPosition;
-
-      // 计算锚点在局部坐标系中的位置（未旋转、未缩放）
-      // 角点：锚点是对角点
-      // 边中点：锚点是对面边的中点
-      Offset anchorPointLocal = Offset.zero;
-      switch (position) {
-        case 'top-left':
-          anchorPointLocal = Offset(
-            widget.data.width,
-            widget.data.height,
-          ); // 对角点是右下角
-          break;
-        case 'top':
-          anchorPointLocal = Offset(
-            widget.data.width / 2,
-            widget.data.height,
-          ); // 对面是下边中点
-          break;
-        case 'top-right':
-          anchorPointLocal = Offset(0, widget.data.height); // 对角点是左下角
-          break;
-        case 'right':
-          anchorPointLocal = Offset(0, widget.data.height / 2); // 对面是左边中点
-          break;
-        case 'bottom-right':
-          anchorPointLocal = Offset(0, 0); // 对角点是左上角
-          break;
-        case 'bottom':
-          anchorPointLocal = Offset(widget.data.width / 2, 0); // 对面是上边中点
-          break;
-        case 'bottom-left':
-          anchorPointLocal = Offset(widget.data.width, 0); // 对角点是右上角
-          break;
-        case 'left':
-          anchorPointLocal = Offset(
-            widget.data.width,
-            widget.data.height / 2,
-          ); // 对面是右边中点
-          break;
-      }
-
-      // 将锚点转换为全局坐标
-      // 先应用旋转
-      double cos = math.cos(_rotation);
-      double sin = math.sin(_rotation);
-      Offset rotatedPoint = Offset(
-        anchorPointLocal.dx * cos - anchorPointLocal.dy * sin,
-        anchorPointLocal.dx * sin + anchorPointLocal.dy * cos,
-      );
-
-      // 再应用缩放
-      Offset scaledPoint = rotatedPoint;
-
-      // 最后加上容器位置
-      _anchorPointGlobal = widget.data.position + scaledPoint;
-    });
-  }
-
-  void _handleResizeUpdate(DragUpdateDetails details, String position) {
-    if (!_isResizing) return;
-    setState(() {
-      Offset delta = details.globalPosition - _resizeStartPosition;
-
-      // 根据当前缩放和旋转，调整delta
-      // 因为有旋转，需要反向旋转delta来得到正确的调整方向
-      double cos = math.cos(-_rotation);
-      double sin = math.sin(-_rotation);
-      double adjustedDx = delta.dx * cos - delta.dy * sin;
-      double adjustedDy = delta.dx * sin + delta.dy * cos;
-
-      // 不再需要除以缩放比例，因为现在直接操作基础尺寸
-
-      // 计算新的尺寸
-      double newWidth = _startWidth;
-      double newHeight = _startHeight;
-
-      switch (position) {
-        case 'top-left':
-          newWidth = (_startWidth - adjustedDx).clamp(50.0, _maxSize);
-          newHeight = (_startHeight - adjustedDy).clamp(50.0, _maxSize);
-          break;
-        case 'top':
-          newHeight = (_startHeight - adjustedDy).clamp(50.0, _maxSize);
-          break;
-        case 'top-right':
-          newWidth = (_startWidth + adjustedDx).clamp(50.0, _maxSize);
-          newHeight = (_startHeight - adjustedDy).clamp(50.0, _maxSize);
-          break;
-        case 'right':
-          newWidth = (_startWidth + adjustedDx).clamp(50.0, _maxSize);
-          break;
-        case 'bottom-right':
-          newWidth = (_startWidth + adjustedDx).clamp(50.0, _maxSize);
-          newHeight = (_startHeight + adjustedDy).clamp(50.0, _maxSize);
-          break;
-        case 'bottom':
-          newHeight = (_startHeight + adjustedDy).clamp(50.0, _maxSize);
-          break;
-        case 'bottom-left':
-          newWidth = (_startWidth - adjustedDx).clamp(50.0, _maxSize);
-          newHeight = (_startHeight + adjustedDy).clamp(50.0, _maxSize);
-          break;
-        case 'left':
-          newWidth = (_startWidth - adjustedDx).clamp(50.0, _maxSize);
-          break;
-      }
-
-      // 更新尺寸到data中
-      widget.data.width = newWidth;
-      widget.data.height = newHeight;
-
-      // 计算新的锚点在局部坐标系中的位置
-      Offset newAnchorPointLocal = Offset.zero;
-      switch (position) {
-        case 'top-left':
-          newAnchorPointLocal = Offset(
-            widget.data.width - 1.5,
-            widget.data.height - 1.5,
-          ); // 右下角
-          break;
-        case 'top':
-          newAnchorPointLocal = Offset(
-            widget.data.width / 2,
-            widget.data.height - 1.5,
-          ); // 下边中点
-          break;
-        case 'top-right':
-          newAnchorPointLocal = Offset(1.5, widget.data.height - 1.5); // 左下角
-          break;
-        case 'right':
-          newAnchorPointLocal = Offset(1.5, widget.data.height / 2); // 左边中点
-          break;
-        case 'bottom-right':
-          newAnchorPointLocal = Offset(1.5, 1.5); // 左上角
-          break;
-        case 'bottom':
-          newAnchorPointLocal = Offset(widget.data.width / 2, 1.5); // 上边中点
-          break;
-        case 'bottom-left':
-          newAnchorPointLocal = Offset(widget.data.width - 1.5, 1.5); // 右上角
-          break;
-        case 'left':
-          newAnchorPointLocal = Offset(
-            widget.data.width - 1.5,
-            widget.data.height / 2,
-          ); // 右边中点
-          break;
-      }
-
-      // 将新的锚点转换为全局坐标
-      // 先应用旋转
-      double cosRot = math.cos(_rotation);
-      double sinRot = math.sin(_rotation);
-      Offset rotatedNewPoint = Offset(
-        newAnchorPointLocal.dx * cosRot - newAnchorPointLocal.dy * sinRot,
-        newAnchorPointLocal.dx * sinRot + newAnchorPointLocal.dy * cosRot,
-      );
-
-      // 不再需要应用缩放，因为现在直接操作基础尺寸
-      Offset scaledNewPoint = rotatedNewPoint;
-
-      debugPrint(
-        "-------$_anchorPointGlobal.dx, -----$_anchorPointGlobal.dy----$scaledNewPoint.dx, -------------$scaledNewPoint.dy",
-      );
-
-      // 计算新的位置，使得锚点保持在原来的全局位置
-      widget.data.position = _anchorPointGlobal - scaledNewPoint;
-    });
-  }
-
-  void _handleResizeEnd(DragEndDetails details) {
-    widget.changeValue(false, false);
-    setState(() {
-      _isResizing = false;
-      // 保存当前尺寸作为下次调整的起始值
-      _startWidth = widget.data.width;
-      _startHeight = widget.data.height;
-    });
-  }
-
   // 构建调整大小的圆点
-  Widget _buildResizeHandle(String position, BuildContext context) {
-    // 直接使用组件的宽度和高度，避免获取实际渲染尺寸的问题
-    const double hitTestSize = 20.0;
-    Offset postionOffset =
-        _calculateResizeHandlePositions(
-          widget.data.width,
-          widget.data.height,
-        )[position] ??
+  Widget _buildResizeHandle(String position) {
+    Offset positionOffset =
+        _calculateResizeHandlePositions(data.width, data.height)[position] ??
         Offset.zero;
 
     // 控制点位置使用相对定位（相对于 Stack）
     final adjustedPosition = Offset(
-      postionOffset.dx - hitTestSize / 2,
-      postionOffset.dy - hitTestSize / 2,
+      positionOffset.dx - hitTestSize / 2,
+      positionOffset.dy - hitTestSize / 2,
     );
 
     return Positioned(
       left: adjustedPosition.dx,
       top: adjustedPosition.dy,
-      child: GestureDetector(
-        onPanStart: (details) {
-          // 阻止事件冒泡到父级拖动
-          _handleResizeStart(details, position);
-        },
-        onPanUpdate: (details) {
-          _handleResizeUpdate(details, position);
-        },
-        onPanEnd: (details) {
-          _handleResizeEnd(details);
-        },
-        behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: hitTestSize,
+        height: hitTestSize,
+        alignment: Alignment.center,
         child: Container(
-          width: hitTestSize,
-          height: hitTestSize,
-          alignment: Alignment.center,
-          child: Container(
-            width: 11,
-            height: 11,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.blue, width: 1),
-            ),
+          width: 11,
+          height: 11,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.blue, width: 1),
           ),
         ),
       ),
@@ -455,19 +123,19 @@ class _EditContentBoxState extends State<EditContentBox>
 
   // 构建内容
   Widget _buildContent() {
-    switch (widget.data.type) {
+    switch (data.type) {
       case ElementType.image:
-        if (widget.data.imagePath.isNotEmpty) {
+        if (data.imagePath.isNotEmpty) {
           return ClipRect(
             child: Image.asset(
-              widget.data.imagePath,
-              width: widget.data.width,
-              height: widget.data.height,
+              data.imagePath,
+              width: data.width,
+              height: data.height,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   color: Colors.grey.shade200,
-                  child: Center(
+                  child: const Center(
                     child: Icon(
                       Icons.image_not_supported,
                       color: Colors.grey,
@@ -481,28 +149,27 @@ class _EditContentBoxState extends State<EditContentBox>
         } else {
           return Container(
             color: Colors.grey.shade200,
-            child: Center(
+            child: const Center(
               child: Icon(Icons.image, color: Colors.grey, size: 48),
             ),
           );
         }
       case ElementType.rectangle:
         return Container(
-          width: widget.data.width,
-          height: widget.data.height,
+          width: data.width,
+          height: data.height,
           decoration: BoxDecoration(
-            color: widget.data.fillColor.color,
+            color: data.fillColor.color,
             border: Border.all(
-              color: widget.data.borderColor.color,
-              width: widget.data.borderWidth,
+              color: data.borderColor.color,
+              width: data.borderWidth,
             ),
-            // 只有启用阴影时才添加 boxShadow
-            boxShadow: widget.data.isShawOpen
+            boxShadow: data.isShawOpen
                 ? [
                     BoxShadow(
-                      color: widget.data.shawColor.color,
-                      offset: Offset(widget.data.shawX, widget.data.shawY),
-                      blurRadius: widget.data.blurValue,
+                      color: data.shawColor.color,
+                      offset: Offset(data.shawX, data.shawY),
+                      blurRadius: data.blurValue,
                       spreadRadius: 0,
                     ),
                   ]
@@ -511,46 +178,43 @@ class _EditContentBoxState extends State<EditContentBox>
         );
       case ElementType.ellipse:
         return Container(
-          width: widget.data.width,
-          height: widget.data.height,
+          width: data.width,
+          height: data.height,
           decoration: BoxDecoration(
-            color: widget.data.fillColor.color,
+            color: data.fillColor.color,
             border: Border.all(
-              color: widget.data.borderColor.color,
-              width: widget.data.borderWidth,
+              color: data.borderColor.color,
+              width: data.borderWidth,
             ),
-            // 只有启用阴影时才添加 boxShadow
-            boxShadow: widget.data.isShawOpen
+            boxShadow: data.isShawOpen
                 ? [
                     BoxShadow(
-                      color: widget.data.shawColor.color,
-                      offset: Offset(widget.data.shawX, widget.data.shawY),
-                      blurRadius: widget.data.blurValue,
+                      color: data.shawColor.color,
+                      offset: Offset(data.shawX, data.shawY),
+                      blurRadius: data.blurValue,
                       spreadRadius: 0,
                     ),
                   ]
                 : null,
             borderRadius: BorderRadius.all(
-              Radius.elliptical(widget.data.width / 2, widget.data.height / 2),
+              Radius.elliptical(data.width / 2, data.height / 2),
             ),
           ),
         );
-
       case ElementType.line:
         return Container(
           decoration: BoxDecoration(
-            color: widget.data.fillColor.color,
+            color: data.fillColor.color,
             border: Border.all(
-              color: widget.data.borderColor.color,
-              width: widget.data.borderWidth,
+              color: data.borderColor.color,
+              width: data.borderWidth,
             ),
-            // 只有启用阴影时才添加 boxShadow
-            boxShadow: widget.data.isShawOpen
+            boxShadow: data.isShawOpen
                 ? [
                     BoxShadow(
-                      color: widget.data.shawColor.color,
-                      offset: Offset(widget.data.shawX, widget.data.shawY),
-                      blurRadius: widget.data.blurValue,
+                      color: data.shawColor.color,
+                      offset: Offset(data.shawX, data.shawY),
+                      blurRadius: data.blurValue,
                       spreadRadius: 0,
                     ),
                   ]
@@ -558,75 +222,121 @@ class _EditContentBoxState extends State<EditContentBox>
           ),
           child: Center(
             child: Container(
-              width: widget.data.width * 0.8,
+              width: data.width * 0.8,
               height: 4,
               decoration: BoxDecoration(
-                color: widget.data.borderColor.color,
+                color: data.borderColor.color,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
         );
-
       case ElementType.text:
         return Container(
-          width: widget.data.width,
-          height: widget.data.height,
+          width: data.width,
+          height: data.height,
           color: Colors.transparent,
           child: FittedBox(
             fit: BoxFit.contain,
             child: Text(
-              widget.data.text,
+              data.text,
               style: TextStyle(
-                fontFamily: widget.data.fontFamily,
-                fontSize: widget.data.fontSize,
-                fontWeight: widget.data.fontWeight,
-                color: widget.data.textColor.color,
-                height: widget.data.lineHeight,
-                letterSpacing: widget.data.fontSpace,
-                shadows: widget.data.isShawOpen
+                fontFamily: data.fontFamily,
+                fontSize: data.fontSize,
+                fontWeight: data.fontWeight,
+                color: data.textColor.color,
+                height: data.lineHeight,
+                letterSpacing: data.fontSpace,
+                shadows: data.isShawOpen
                     ? [
                         Shadow(
-                          color: widget.data.shawColor.color,
-                          offset: Offset(widget.data.shawX, widget.data.shawY),
-                          blurRadius: widget.data.blurValue,
+                          color: data.shawColor.color,
+                          offset: Offset(data.shawX, data.shawY),
+                          blurRadius: data.blurValue,
                         ),
                       ]
                     : [],
-
-                // foreground: Paint()
-                //   ..style = PaintingStyle
-                //       .stroke // 描边模式
-                //   ..strokeWidth = widget
-                //       .data
-                //       .borderWidth // 边框宽度
-                //   ..color = widget.data.borderColor.color, // 边框颜色
               ),
-              textAlign: widget.data.align,
+              textAlign: data.align,
             ),
           ),
         );
     }
   }
 
-  List<Widget> _getControlPoint(BuildContext context) {
-    switch (widget.data.type) {
+  List<Widget> _getControlPoints() {
+    switch (data.type) {
       case ElementType.image:
       case ElementType.rectangle:
       case ElementType.ellipse:
       case ElementType.text:
         return [
-          _buildResizeHandle('top-left', context),
-          _buildResizeHandle('top', context),
-          _buildResizeHandle('top-right', context),
-          _buildResizeHandle('right', context),
-          _buildResizeHandle('bottom-right', context),
-          _buildResizeHandle('bottom', context),
-          _buildResizeHandle('bottom-left', context),
-          _buildResizeHandle('left', context),
+          _buildResizeHandle('top-left'),
+          _buildResizeHandle('top'),
+          _buildResizeHandle('top-right'),
+          _buildResizeHandle('right'),
+          _buildResizeHandle('bottom-right'),
+          _buildResizeHandle('bottom'),
+          _buildResizeHandle('bottom-left'),
+          _buildResizeHandle('left'),
         ];
       case ElementType.line:
         return [];
     }
+  }
+
+  // 辅助方法：获取旋转按钮的全局位置（用于外部判断点击）
+  static Offset getRotationButtonCenter(EditBoxData data) {
+    // 旋转按钮在容器底部中心，有padding
+    // 相对于容器中心的位置
+    final buttonLocalX = 0.0; // 在中心的x坐标
+    final buttonLocalY =
+        data.height / 2 + rotationButtonPadding + rotationButtonSize / 2;
+
+    // 应用旋转（围绕中心旋转）
+    final cos = math.cos(data.rotation);
+    final sin = math.sin(data.rotation);
+    final rotatedX = buttonLocalX * cos - buttonLocalY * sin;
+    final rotatedY = buttonLocalX * sin + buttonLocalY * cos;
+
+    // 转换为全局坐标（容器中心 + 旋转后的偏移）
+    final centerX = data.position.dx + data.width / 2;
+    final centerY = data.position.dy + data.height / 2;
+    return Offset(centerX + rotatedX, centerY + rotatedY);
+  }
+
+  // 辅助方法：获取调整大小控制点的全局位置
+  static Map<String, Offset> getResizeHandleCenters(EditBoxData data) {
+    // 控制点相对于容器左上角的位置
+    final localPositions = {
+      'top-left': const Offset(0, 0),
+      'top-right': Offset(data.width - 4.5, 0),
+      'bottom-left': Offset(0, data.height - 4.5),
+      'bottom-right': Offset(data.width - 4.5, data.height - 4.5),
+      'left': Offset(-1.5, data.height / 2),
+      'right': Offset(data.width - 4.5, data.height / 2),
+      'top': Offset(data.width / 2, -1.5),
+      'bottom': Offset(data.width / 2, data.height - 4.5),
+    };
+
+    final cos = math.cos(data.rotation);
+    final sin = math.sin(data.rotation);
+
+    // 容器中心的全局坐标
+    final centerX = data.position.dx + data.width / 2;
+    final centerY = data.position.dy + data.height / 2;
+
+    return localPositions.map((key, localPos) {
+      // 相对于中心的坐标
+      final relX = localPos.dx - data.width / 2;
+      final relY = localPos.dy - data.height / 2;
+
+      // 应用旋转
+      final rotatedX = relX * cos - relY * sin;
+      final rotatedY = relX * sin + relY * cos;
+
+      // 转换为全局坐标
+      return MapEntry(key, Offset(centerX + rotatedX, centerY + rotatedY));
+    });
   }
 }

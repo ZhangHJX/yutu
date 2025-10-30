@@ -15,9 +15,6 @@ class CanvalsController extends GetxController {
 
   bool get showToolbar => _showToolbar.value;
 
-  // late final double pxWidth;
-  // late final double pxHeight;
-
   // 当前选中的文本框ID
   final RxString _selectedId = ''.obs;
 
