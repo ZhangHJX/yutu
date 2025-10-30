@@ -213,7 +213,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       // 文本类型，使用默认字体属性计算尺寸
       Size textSize = TextMeasureUtil.measureText(
         text: text,
-        fontSize: 14, // 默认字体大小
+        fontSize: 14.w,
         fontFamily: 'Courier', // 默认字体
         fontWeight: FontWeight.w500, // 默认字重
         letterSpacing: 0, // 默认字间距
