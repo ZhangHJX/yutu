@@ -13,6 +13,7 @@ import 'widgets/dialog/canvals_shape_dialog.dart';
 import './edit_box/edit_canvals_widget.dart';
 import 'controllers/canvals_controller.dart';
 import './controllers/create_design_model.dart';
+import '../../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 
@@ -95,8 +96,16 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   /// 显示文本属性弹框
   void _showTextPropertyDialog() {
+    // 确保有激活的文本元素
+    if (_activeElement == null || _activeElement!.type != ElementType.text) {
+      return;
+    }
+
+    final activeElement = _activeElement!;
+
     SmartDialog.show(
       builder: (context) => TextPropertyDialog(
+        editBoxData: activeElement,
         onDeleteText: () {
           _deleteText();
         },
@@ -111,7 +120,34 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       ),
       useAnimation: true,
       usePenetrate: false,
-    );
+    ).then((_) {
+      // 对话框关闭后的回调，刷新 UI 并重新计算文本尺寸
+      _refreshTextBoxAfterPropertyChange();
+    });
+  }
+
+  /// 刷新文本框，重新计算尺寸（当属性变化时）
+  void _refreshTextBoxAfterPropertyChange() {
+    if (_activeElement == null || _activeElement!.type != ElementType.text) {
+      return;
+    }
+
+    final box = _activeElement!;
+    setState(() {
+      // 重新计算文本尺寸（因为字体大小、字体、行高等可能变化了）
+      final textSize = TextMeasureUtil.measureText(
+        text: box.text,
+        fontSize: box.fontSize,
+        fontFamily: box.fontFamily,
+        fontWeight: box.fontWeight,
+        letterSpacing: box.fontSpace,
+        lineHeight: box.lineHeight,
+      );
+
+      // 更新文本框尺寸
+      box.width = textSize.width;
+      box.height = textSize.height;
+    });
   }
 
   /// 删除文本

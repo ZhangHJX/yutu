@@ -8,6 +8,8 @@ import '../../../utils/text_measure_util.dart';
 class CanvasGestureManager {
   // 文本类型的文本框，处于激活状态时，点击弹出输入框
   void Function(String boxId)? onDoubleTap;
+  // 判断点击是否是文本框内
+  bool isTapBox = false;
 
   // 交互状态
   String?
@@ -62,6 +64,8 @@ class CanvasGestureManager {
 
     EditBoxData? selectedBox;
 
+    isTapBox = false;
+
     // 先检查当前选中的元素
     if (selectedId.isNotEmpty) {
       selectedBox = boxes.firstWhere((box) => box.id == selectedId);
@@ -86,6 +90,7 @@ class CanvasGestureManager {
         } else if (hitTarget == 'content') {
           // 待定状态：可能是拖动，也可能是点击取消激活
           currentInteraction = 'pending_drag_or_tap';
+          isTapBox = true;
           pendingClickBoxId = selectedId; // 保存可能要取消激活的元素ID
           dragStartBoxPosition = selectedBox.position;
           // 初始化缩放中心点（外层容器包含边框）
@@ -366,7 +371,7 @@ class CanvasGestureManager {
     if (currentInteraction == 'pending_drag_or_tap' && !hasMoved) {
       if (pendingClickBoxId != null && pendingClickBoxId == selectedId) {
         final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-        if (selectedBox.type == ElementType.text) {
+        if (selectedBox.type == ElementType.text && isTapBox) {
           onDoubleTap?.call(selectedId);
         } else {
           onSelect(null);

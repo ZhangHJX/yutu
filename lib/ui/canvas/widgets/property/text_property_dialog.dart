@@ -274,10 +274,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
                     // 可滚动的内容区域
                     Expanded(
                       child: SingleChildScrollView(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20.w,
-                          vertical: 20.w,
-                        ),
+                        padding: EdgeInsets.symmetric(vertical: 20.w),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -401,10 +398,11 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
   }
 
   Widget _buildFontAndSizeSection() {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
+    return Padding(
+      padding: EdgeInsets.only(left: 16.w, right: 57.w),
+      child: Row(
+        children: [
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -415,6 +413,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
                   fontWeight: FontWeight.w400,
                 ),
               ),
+
               SizedBox(height: 6.w),
 
               GestureDetector(
@@ -427,18 +426,17 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
                 child: Container(
                   width: 140.w,
                   height: 42.w,
-                  // padding: EdgeInsets.symmetric(horizontal: 12.w),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12.w),
                     border: BoxBorder.all(color: "#FFE6E6E6".color, width: 1.w),
                   ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 16.w),
                           child: Text(
                             _fontFamily,
                             style: TextStyle(
@@ -450,83 +448,97 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
                             maxLines: 1,
                           ),
                         ),
-                        SizedBox(width: 8.w),
-                        Icon(
-                          Icons.keyboard_arrow_down,
-                          size: 16.w,
-                          color: "#ff242424".color,
+                      ),
+
+                      Container(
+                        width: 36.w,
+                        height: 42.w,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10.w),
                         ),
-                      ],
-                    ),
+                        child: Center(
+                          child: SizedBox(
+                            width: 16.w,
+                            height: 16.w,
+                            child: Image.asset(
+                              'assets/images/canvals/canvals_text_font_down.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ],
           ),
-        ),
 
-        SizedBox(width: 14.w),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '字号',
-                style: TextStyle(
-                  fontSize: 16.w,
-                  color: "#FF3E3E3E".color.withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              SizedBox(height: 6.w),
-
-              Container(
-                height: 42.w,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12.w),
-                  border: Border.all(
-                    color: "#ffE6E6E6".color, // 边框颜色
-                    width: 1.w, // 边框宽度
-                  ),
-                ),
-                child: TextField(
-                  controller: _fontSizeController,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.left,
+          SizedBox(width: 14.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '字号',
                   style: TextStyle(
-                    fontSize: 14.w,
-                    color: "#ff242424".color,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 16.w,
+                    color: "#FF3E3E3E".color.withValues(alpha: 0.6),
+                    fontWeight: FontWeight.w400,
                   ),
-                  onChanged: (value) {
-                    _updateModel();
-                  },
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.only(
-                      left: 12.w,
-                      right: 12.w,
-                      bottom: 2.w,
+                ),
+                SizedBox(height: 6.w),
+
+                Container(
+                  height: 42.w,
+                  width: 148.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.w),
+                    border: Border.all(
+                      color: "#ffE6E6E6".color, // 边框颜色
+                      width: 1.w, // 边框宽度
+                    ),
+                  ),
+                  child: TextField(
+                    controller: _fontSizeController,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontSize: 14.w,
+                      color: "#ff242424".color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    onChanged: (value) {
+                      _updateModel();
+                    },
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.only(
+                        left: 12.w,
+                        right: 12.w,
+                        bottom: 2.w,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildFontWeightAndColorSection() {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
+    return Padding(
+      padding: EdgeInsets.only(left: 16.w, right: 57.w),
+      child: Row(
+        children: [
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -545,7 +557,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
                 },
                 child: Container(
                   height: 42.w,
-                  padding: EdgeInsets.only(left: 16.w, right: 8.w),
+                  width: 140.w,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12.w),
@@ -554,18 +566,39 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _fontWeight,
-                        style: TextStyle(
-                          fontSize: 14.w,
-                          color: "#ff242424".color,
-                          fontWeight: FontWeight.w600,
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 16.w),
+                          child: Text(
+                            _fontWeight,
+                            style: TextStyle(
+                              fontSize: 14.w,
+                              color: "#ff242424".color,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
                       ),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        size: 16.w,
-                        color: "#ff242424".color,
+
+                      Container(
+                        width: 36.w,
+                        height: 42.w,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10.w),
+                        ),
+                        child: Center(
+                          child: SizedBox(
+                            width: 16.w,
+                            height: 16.w,
+                            child: Image.asset(
+                              'assets/images/canvals/canvals_text_font_down.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -573,95 +606,108 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
               ),
             ],
           ),
-        ),
-        SizedBox(width: 16.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '颜色',
-                style: TextStyle(fontSize: 14.w, color: "#ff999999".color),
-              ),
-              SizedBox(height: 8.w),
-              Row(
-                children: [
-                  // 颜色预览widget
-                  GestureDetector(
-                    onTap: () {
-                      _openColorPicker(
-                        initialColor: _textColor.color,
-                        onColorSelected: (color) {
-                          setState(() {
-                            _textColor = color.string;
-                            _textColorController.text = color.string;
-                            _updateModel();
-                          });
-                        },
-                      );
-                    },
-                    child: Container(
-                      width: 40.w,
-                      height: 40.w,
-                      decoration: BoxDecoration(
-                        color: _textColor.color,
-                        borderRadius: BorderRadius.circular(8.w),
-                      ),
+
+          SizedBox(width: 14.w),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '颜色',
+                  style: TextStyle(fontSize: 14.w, color: "#ff999999".color),
+                ),
+
+                SizedBox(height: 6.w),
+
+                Container(
+                  height: 42.w,
+                  width: 148.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.w),
+                    border: Border.all(
+                      color: "#ffE6E6E6".color, // 边框颜色
+                      width: 1.w, // 边框宽度
                     ),
                   ),
-                  SizedBox(width: 8.w),
-                  // 颜色值输入框
-                  Expanded(
-                    child: Container(
-                      height: 40.w,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8.w),
-                        border: Border.all(
-                          color: "#ffEEEEEE".color,
-                          width: 1.w,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: TextField(
-                        controller: _textColorController,
-                        textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 8.w),
-                          hintText: '#FFFFFF',
-                          hintStyle: TextStyle(
-                            fontSize: 14.w,
-                            color: "#ff999999".color,
-                          ),
-                        ),
-                        style: TextStyle(
-                          fontSize: 14.w,
-                          fontWeight: FontWeight.w500,
-                          color: "#ff262626".color,
-                        ),
-                        onChanged: (value) {
-                          // 当输入颜色值时更新左边的颜色预览
-                          if (value.startsWith('#') && value.length >= 7) {
-                            try {
+                  padding: EdgeInsets.symmetric(horizontal: 9.w),
+                  child: Row(
+                    children: [
+                      // 颜色预览widget
+                      GestureDetector(
+                        onTap: () {
+                          _openColorPicker(
+                            initialColor: _textColor.color,
+                            onColorSelected: (color) {
                               setState(() {
-                                _textColor = value;
+                                _textColor = color.string;
+                                _textColorController.text = color.string;
                                 _updateModel();
                               });
-                            } catch (e) {
-                              // 颜色值无效
-                            }
-                          }
+                            },
+                          );
                         },
+                        child: Container(
+                          width: 27.w,
+                          height: 27.w,
+                          padding: EdgeInsets.only(top: 7.w),
+                          decoration: BoxDecoration(
+                            color: _textColor.color,
+                            borderRadius: BorderRadius.circular(6.w),
+                            border: Border.all(
+                              color: "#ffE6E6E6".color, // 边框颜色
+                              width: 1.w, // 边框宽度
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+
+                      SizedBox(width: 8.w),
+
+                      // 颜色值输入框
+                      Expanded(
+                        child: SizedBox(
+                          height: 42.w,
+                          child: TextField(
+                            controller: _textColorController,
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 14.w,
+                              ),
+                            ),
+                            style: TextStyle(
+                              fontSize: 14.w,
+                              fontWeight: FontWeight.w500,
+                              color: "#ff242424".color,
+                            ),
+                            onChanged: (value) {
+                              // 当输入颜色值时更新左边的颜色预览
+                              if (value.startsWith('#') && value.length >= 7) {
+                                try {
+                                  setState(() {
+                                    _textColor = value;
+                                    _updateModel();
+                                  });
+                                } catch (e) {
+                                  // 颜色值无效
+                                }
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -712,263 +758,185 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
   }
 
   Widget _buildSpacingSection() {
-    return Column(
-      children: [
-        // 行距
-        Row(
-          children: [
-            Text(
-              '行距',
-              style: TextStyle(
-                fontSize: 16.w,
-                color: "#ff3E3E3E".color,
-                fontWeight: FontWeight.w400,
+    return Padding(
+      padding: EdgeInsets.only(left: 16.w, right: 27.w),
+      child: Column(
+        children: [
+          // 行距
+          Row(
+            children: [
+              Text(
+                '行距',
+                style: TextStyle(
+                  fontSize: 16.w,
+                  color: "#ff3E3E3E".color,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-            ),
 
-            Expanded(child: Container()),
+              Expanded(child: Container()),
 
-            Text(
-              _lineHeight.toStringAsFixed(1),
-              style: TextStyle(
-                fontSize: 16.w,
-                color: "#ff007BFE".color,
-                fontWeight: FontWeight.w400,
+              Text(
+                _lineHeight.toStringAsFixed(1),
+                style: TextStyle(
+                  fontSize: 16.w,
+                  color: "#ff007BFE".color,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-            ),
-          ],
-        ),
-        SizedBox(height: 7.w),
-        _buildGradientSlider(
-          _lineHeight,
-          (value) {
-            setState(() {
-              _lineHeight = value;
-              _updateModel();
-            });
-          },
-          min: 0.5,
-          max: 3.0,
-        ),
+            ],
+          ),
+          SizedBox(height: 7.w),
+          _buildGradientSlider(
+            _lineHeight,
+            (value) {
+              setState(() {
+                _lineHeight = value;
+                _updateModel();
+              });
+            },
+            min: 0.5,
+            max: 3.0,
+          ),
 
-        SizedBox(height: 13.w),
+          SizedBox(height: 13.w),
 
-        // 字距
-        Row(
-          children: [
-            Text(
-              '字距',
-              style: TextStyle(
-                fontSize: 16.w,
-                color: "#ff3E3E3E".color,
-                fontWeight: FontWeight.w400,
+          // 字距
+          Row(
+            children: [
+              Text(
+                '字距',
+                style: TextStyle(
+                  fontSize: 16.w,
+                  color: "#ff3E3E3E".color,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-            ),
-            Expanded(child: Container()),
-            Text(
-              _letterSpacing.toStringAsFixed(1),
-              style: TextStyle(
-                fontSize: 16.w,
-                color: "#ff007BFE".color,
-                fontWeight: FontWeight.w400,
+              Expanded(child: Container()),
+              Text(
+                _letterSpacing.toStringAsFixed(1),
+                style: TextStyle(
+                  fontSize: 16.w,
+                  color: "#ff007BFE".color,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
 
-        SizedBox(height: 7.w),
+          SizedBox(height: 7.w),
 
-        _buildGradientSlider(
-          _letterSpacing,
-          (value) {
-            setState(() {
-              _letterSpacing = value;
-              _updateModel();
-            });
-          },
-          min: 0.0,
-          max: 5.0,
-        ),
-      ],
+          _buildGradientSlider(
+            _letterSpacing,
+            (value) {
+              setState(() {
+                _letterSpacing = value;
+                _updateModel();
+              });
+            },
+            min: 0.0,
+            max: 5.0,
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildAlignmentSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '对齐',
-          style: TextStyle(
-            fontSize: 16.w,
-            color: "#ff3E3E3E".color,
-            fontWeight: FontWeight.w400,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '对齐',
+            style: TextStyle(
+              fontSize: 16.w,
+              color: "#ff3E3E3E".color,
+              fontWeight: FontWeight.w400,
+            ),
           ),
-        ),
 
-        SizedBox(height: 11.w),
+          SizedBox(height: 11.w),
 
-        Container(
-          width: 171.w,
-          height: 59.w,
-          padding: EdgeInsets.only(left: 9.w),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildAlignmentButton(
-                TextAlign.left,
-                'assets/images/canvals/canvals_align_left.png',
-                '左对齐',
-              ),
-              _buildAlignmentButton(
-                TextAlign.center,
-                'assets/images/canvals/canvals_align_middle.png',
-                '居中对齐',
-              ),
-              _buildAlignmentButton(
-                TextAlign.right,
-                'assets/images/canvals/canvals_align_right.png',
-                '右对齐',
-              ),
-            ],
+          Container(
+            width: 171.w,
+            height: 59.w,
+            padding: EdgeInsets.only(left: 9.w),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildAlignmentButton(
+                  TextAlign.left,
+                  'assets/images/canvals/canvals_align_left.png',
+                  '左对齐',
+                ),
+                _buildAlignmentButton(
+                  TextAlign.center,
+                  'assets/images/canvals/canvals_align_middle.png',
+                  '居中对齐',
+                ),
+                _buildAlignmentButton(
+                  TextAlign.right,
+                  'assets/images/canvals/canvals_align_right.png',
+                  '右对齐',
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildFillSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '填充',
-          style: TextStyle(
-            fontSize: 16.w,
-            color: "#ff3E3E3E".color,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-
-        SizedBox(height: 6.w),
-
-        // 上面的颜色输入框 - 固定宽度
-        Row(
-          children: [
-            // 颜色预览widget
-            GestureDetector(
-              onTap: () {
-                _openColorPicker(
-                  initialColor: _fillColor1.color,
-                  onColorSelected: (color) {
-                    setState(() {
-                      _fillColor1 = color.string;
-                      _fillColor1Controller.text = color.string;
-                      _updateModel();
-                    });
-                  },
-                );
-              },
-              child: Container(
-                width: 84.w,
-                height: 50.w,
-                decoration: BoxDecoration(
-                  color: _fillColor1.color,
-                  borderRadius: BorderRadius.circular(18.w),
-                ),
-              ),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '填充',
+            style: TextStyle(
+              fontSize: 16.w,
+              color: "#ff3E3E3E".color,
+              fontWeight: FontWeight.w400,
             ),
+          ),
 
-            SizedBox(width: 10.w),
+          SizedBox(height: 6.w),
 
-            // 颜色值输入框
-            Container(
-              width: 84.w,
-              height: 50.w,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18.w),
-                border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-              ),
-              alignment: Alignment.center,
-              child: TextField(
-                controller: _fillColor1Controller,
-                textAlign: TextAlign.center,
-                onChanged: (value) {
-                  if (value.startsWith('#') && value.length >= 7) {
-                    setState(() {
-                      _fillColor1 = value;
-                      _updateModel();
-                    });
-                  }
+          // 上面的颜色输入框 - 固定宽度
+          Row(
+            children: [
+              // 颜色预览widget
+              GestureDetector(
+                onTap: () {
+                  _openColorPicker(
+                    initialColor: _fillColor1.color,
+                    onColorSelected: (color) {
+                      setState(() {
+                        _fillColor1 = color.string;
+                        _fillColor1Controller.text = color.string;
+                        _updateModel();
+                      });
+                    },
+                  );
                 },
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 5.w),
-                  hintText: '#FFFFFF',
-                ),
-                style: TextStyle(
-                  fontSize: 14.w,
-                  fontWeight: FontWeight.w600,
-                  color: "#ff242424".color,
+                child: Container(
+                  width: 84.w,
+                  height: 50.w,
+                  decoration: BoxDecoration(
+                    color: _fillColor1.color,
+                    borderRadius: BorderRadius.circular(18.w),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 
-  Widget _buildBorderSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '描边',
-          style: TextStyle(
-            fontSize: 16.w,
-            color: "#ff3E3E3E".color,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
+              SizedBox(width: 10.w),
 
-        SizedBox(height: 6.w),
-
-        // 下面的内容：颜色widget、颜色值输入框、边框图标、边框大小输入框
-        Row(
-          children: [
-            // 颜色预览widget
-            GestureDetector(
-              onTap: () {
-                _openColorPicker(
-                  initialColor: _fillColor2.color,
-                  onColorSelected: (color) {
-                    setState(() {
-                      _fillColor2 = color.string;
-                      _fillColor2Controller.text = color.string;
-                      _updateModel();
-                    });
-                  },
-                );
-              },
-              child: Container(
-                width: 84.w,
-                height: 50.w,
-                decoration: BoxDecoration(
-                  color: _fillColor2.color,
-                  borderRadius: BorderRadius.circular(18.w),
-                ),
-              ),
-            ),
-
-            SizedBox(width: 10.w),
-
-            // 颜色值输入框
-            Expanded(
-              child: Container(
+              // 颜色值输入框
+              Container(
                 width: 84.w,
                 height: 50.w,
                 decoration: BoxDecoration(
@@ -978,12 +946,12 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
                 ),
                 alignment: Alignment.center,
                 child: TextField(
-                  controller: _fillColor2Controller,
+                  controller: _fillColor1Controller,
                   textAlign: TextAlign.center,
                   onChanged: (value) {
                     if (value.startsWith('#') && value.length >= 7) {
                       setState(() {
-                        _fillColor2 = value;
+                        _fillColor1 = value;
                         _updateModel();
                       });
                     }
@@ -1002,146 +970,111 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
                   ),
                 ),
               ),
-            ),
-
-            SizedBox(width: 17.w),
-
-            // 边框图标
-            Image.asset(
-              'assets/images/canvals/canvals_border_icon.png',
-              width: 26.w,
-              height: 26.w,
-              fit: BoxFit.cover,
-            ),
-
-            SizedBox(width: 12.w),
-
-            // 边框大小输入框
-            Container(
-              width: 84.w,
-              height: 50.w,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18.w),
-                border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-              ),
-              alignment: Alignment.center,
-              child: TextField(
-                controller: TextEditingController(text: _fillStyle.toString()),
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                onChanged: (value) {
-                  final newValue = int.tryParse(value);
-                  if (newValue != null) {
-                    setState(() {
-                      _fillStyle = newValue;
-                      _updateModel();
-                    });
-                  }
-                },
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w),
-                ),
-                style: TextStyle(
-                  fontSize: 14.w,
-                  fontWeight: FontWeight.w600,
-                  color: "#ff242424".color,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildShadowSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 标题和启用开关
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '阴影',
-              style: TextStyle(
-                fontSize: 16.w,
-                color: "#ff3E3E3E".color.withValues(alpha: 0.6),
-                fontWeight: FontWeight.w400,
-              ),
+  Widget _buildBorderSection() {
+    return Padding(
+      padding: EdgeInsets.only(left: 16.w, right: 42.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '描边',
+            style: TextStyle(
+              fontSize: 16.w,
+              color: "#ff3E3E3E".color,
+              fontWeight: FontWeight.w400,
             ),
+          ),
 
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _shadowEnabled = !_shadowEnabled;
-                  // _updateModel();
-                });
-              },
-              child: Row(
-                children: [
-                  // canvals_shaw_unon
-                  Image.asset(
-                    _shadowEnabled
-                        ? 'assets/images/canvals/canvals_shaw_on.png'
-                        : 'assets/images/canvals/canvals_shaw_unon.png',
-                    width: 14.w,
-                    height: 14.w,
-                    fit: BoxFit.cover,
+          SizedBox(height: 6.w),
+
+          // 下面的内容：颜色widget、颜色值输入框、边框图标、边框大小输入框
+          Row(
+            children: [
+              // 颜色预览widget
+              GestureDetector(
+                onTap: () {
+                  _openColorPicker(
+                    initialColor: _fillColor2.color,
+                    onColorSelected: (color) {
+                      setState(() {
+                        _fillColor2 = color.string;
+                        _fillColor2Controller.text = color.string;
+                        _updateModel();
+                      });
+                    },
+                  );
+                },
+                child: Container(
+                  width: 84.w,
+                  height: 50.w,
+                  decoration: BoxDecoration(
+                    color: _fillColor2.color,
+                    borderRadius: BorderRadius.circular(18.w),
                   ),
-                  SizedBox(width: 4.w),
-                  Text(
-                    _shadowEnabled ? '启用' : "未启用",
-                    style: TextStyle(
-                      fontSize: 14.w,
-                      color: _shadowEnabled ? "#A77AFF".color : "#A4A4A4".color,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-
-        SizedBox(height: 6.w),
-
-        // 颜色预览、输入框、X、Y
-        Row(
-          children: [
-            // 颜色预览框
-            GestureDetector(
-              onTap: () {
-                _openColorPicker(
-                  initialColor: _shadowColor.color,
-                  onColorSelected: (color) {
-                    setState(() {
-                      _shadowColor = color.string;
-                      _shadowColorController.text = color.string;
-                      _updateModel();
-                    });
-                  },
-                );
-              },
-              child: Container(
-                width: 84.w,
-                height: 50.w,
-                decoration: BoxDecoration(
-                  color: _shadowColor.color,
-                  borderRadius: BorderRadius.circular(18.w),
                 ),
               ),
-            ),
 
-            SizedBox(width: 10.w),
+              SizedBox(width: 10.w),
 
-            // 颜色输入框
-            Expanded(
-              child: Container(
+              // 颜色值输入框
+              Expanded(
+                child: Container(
+                  width: 84.w,
+                  height: 50.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18.w),
+                    border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
+                  ),
+                  alignment: Alignment.center,
+                  child: TextField(
+                    controller: _fillColor2Controller,
+                    textAlign: TextAlign.center,
+                    onChanged: (value) {
+                      if (value.startsWith('#') && value.length >= 7) {
+                        setState(() {
+                          _fillColor2 = value;
+                          _updateModel();
+                        });
+                      }
+                    },
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 5.w),
+                      hintText: '#FFFFFF',
+                    ),
+                    style: TextStyle(
+                      fontSize: 14.w,
+                      fontWeight: FontWeight.w600,
+                      color: "#ff242424".color,
+                    ),
+                  ),
+                ),
+              ),
+
+              SizedBox(width: 17.w),
+
+              // 边框图标
+              Image.asset(
+                'assets/images/canvals/canvals_border_icon.png',
+                width: 26.w,
+                height: 26.w,
+                fit: BoxFit.cover,
+              ),
+
+              SizedBox(width: 12.w),
+
+              // 边框大小输入框
+              Container(
                 width: 84.w,
                 height: 50.w,
                 decoration: BoxDecoration(
@@ -1151,12 +1084,16 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
                 ),
                 alignment: Alignment.center,
                 child: TextField(
-                  controller: _shadowColorController,
+                  controller: TextEditingController(
+                    text: _fillStyle.toString(),
+                  ),
+                  keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
                   onChanged: (value) {
-                    if (value.startsWith('#') && value.length >= 7) {
+                    final newValue = int.tryParse(value);
+                    if (newValue != null) {
                       setState(() {
-                        _shadowColor = value;
+                        _fillStyle = newValue;
                         _updateModel();
                       });
                     }
@@ -1165,7 +1102,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 5.w),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12.w),
                   ),
                   style: TextStyle(
                     fontSize: 14.w,
@@ -1174,184 +1111,312 @@ class _TextPropertyDialogState extends State<TextPropertyDialog> {
                   ),
                 ),
               ),
-            ),
-
-            SizedBox(width: 11.w),
-
-            // X 偏移输入框
-            Container(
-              width: 67.w,
-              height: 50.w,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18.w),
-                border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-              ),
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(left: 10.w),
-                    child: Text(
-                      'X',
-                      style: TextStyle(
-                        fontSize: 14.w,
-                        fontWeight: FontWeight.w600,
-                        color: "#ff242424".color,
-                      ),
-                    ),
-                  ),
-
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(right: 5.w),
-                      child: TextField(
-                        controller: _shadowXController,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        onChanged: (value) {
-                          final x = double.tryParse(value);
-                          if (x != null) {
-                            _updateModel();
-                          }
-                        },
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        style: TextStyle(
-                          fontSize: 14.w,
-                          fontWeight: FontWeight.w600,
-                          color: "#ff242424".color,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(width: 9.w),
-
-            // Y 偏移输入框
-            Container(
-              width: 67.w,
-              height: 50.w,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18.w),
-                border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-              ),
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(left: 10.w),
-                    child: Text(
-                      'Y',
-                      style: TextStyle(
-                        fontSize: 14.w,
-                        fontWeight: FontWeight.w600,
-                        color: "#ff242424".color,
-                      ),
-                    ),
-                  ),
-
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(right: 5.w),
-                      child: TextField(
-                        controller: _shadowYController,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        onChanged: (value) {
-                          final y = double.tryParse(value);
-                          if (y != null) {
-                            _updateModel();
-                          }
-                        },
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        style: TextStyle(
-                          fontSize: 14.w,
-                          fontWeight: FontWeight.w600,
-                          color: "#ff242424".color,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-
-        SizedBox(height: 13.w),
-
-        // 模糊输入框
-        Container(
-          width: 84.w,
-          height: 50.w,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18.w),
-            border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
+            ],
           ),
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShadowSection() {
+    return Padding(
+      padding: EdgeInsets.only(left: 16.w, right: 27.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 标题和启用开关
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Padding(
-                padding: EdgeInsets.only(left: 12.w),
-                child: Text(
-                  '模糊',
-                  style: TextStyle(
-                    fontSize: 14.w,
-                    fontWeight: FontWeight.w600,
-                    color: "#ff242424".color,
+              Text(
+                '阴影',
+                style: TextStyle(
+                  fontSize: 16.w,
+                  color: "#ff3E3E3E".color.withValues(alpha: 0.6),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _shadowEnabled = !_shadowEnabled;
+                    // _updateModel();
+                  });
+                },
+                child: Row(
+                  children: [
+                    // canvals_shaw_unon
+                    Image.asset(
+                      _shadowEnabled
+                          ? 'assets/images/canvals/canvals_shaw_on.png'
+                          : 'assets/images/canvals/canvals_shaw_unon.png',
+                      width: 14.w,
+                      height: 14.w,
+                      fit: BoxFit.cover,
+                    ),
+                    SizedBox(width: 4.w),
+                    Text(
+                      _shadowEnabled ? '启用' : "未启用",
+                      style: TextStyle(
+                        fontSize: 14.w,
+                        color: _shadowEnabled
+                            ? "#A77AFF".color
+                            : "#A4A4A4".color,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 6.w),
+
+          // 颜色预览、输入框、X、Y
+          Row(
+            children: [
+              // 颜色预览框
+              GestureDetector(
+                onTap: () {
+                  _openColorPicker(
+                    initialColor: _shadowColor.color,
+                    onColorSelected: (color) {
+                      setState(() {
+                        _shadowColor = color.string;
+                        _shadowColorController.text = color.string;
+                        _updateModel();
+                      });
+                    },
+                  );
+                },
+                child: Container(
+                  width: 84.w,
+                  height: 50.w,
+                  decoration: BoxDecoration(
+                    color: _shadowColor.color,
+                    borderRadius: BorderRadius.circular(18.w),
                   ),
                 ),
               ),
 
+              SizedBox(width: 10.w),
+
+              // 颜色输入框
               Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(right: 5.w),
+                child: Container(
+                  width: 84.w,
+                  height: 50.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18.w),
+                    border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
+                  ),
+                  alignment: Alignment.center,
                   child: TextField(
-                    controller: _shadowBlurController,
-                    keyboardType: TextInputType.number,
+                    controller: _shadowColorController,
                     textAlign: TextAlign.center,
                     onChanged: (value) {
-                      final blur = double.tryParse(value);
-                      if (blur != null) {
-                        _updateModel();
+                      if (value.startsWith('#') && value.length >= 7) {
+                        setState(() {
+                          _shadowColor = value;
+                          _updateModel();
+                        });
                       }
                     },
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 5.w),
                     ),
                     style: TextStyle(
                       fontSize: 14.w,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                       color: "#ff242424".color,
                     ),
                   ),
                 ),
               ),
+
+              SizedBox(width: 11.w),
+
+              // X 偏移输入框
+              Container(
+                width: 67.w,
+                height: 50.w,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18.w),
+                  border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: 10.w),
+                      child: Text(
+                        'X',
+                        style: TextStyle(
+                          fontSize: 14.w,
+                          fontWeight: FontWeight.w600,
+                          color: "#ff242424".color,
+                        ),
+                      ),
+                    ),
+
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 5.w),
+                        child: TextField(
+                          controller: _shadowXController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          onChanged: (value) {
+                            final x = double.tryParse(value);
+                            if (x != null) {
+                              _updateModel();
+                            }
+                          },
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          style: TextStyle(
+                            fontSize: 14.w,
+                            fontWeight: FontWeight.w600,
+                            color: "#ff242424".color,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(width: 9.w),
+
+              // Y 偏移输入框
+              Container(
+                width: 67.w,
+                height: 50.w,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18.w),
+                  border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: 10.w),
+                      child: Text(
+                        'Y',
+                        style: TextStyle(
+                          fontSize: 14.w,
+                          fontWeight: FontWeight.w600,
+                          color: "#ff242424".color,
+                        ),
+                      ),
+                    ),
+
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 5.w),
+                        child: TextField(
+                          controller: _shadowYController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          onChanged: (value) {
+                            final y = double.tryParse(value);
+                            if (y != null) {
+                              _updateModel();
+                            }
+                          },
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          style: TextStyle(
+                            fontSize: 14.w,
+                            fontWeight: FontWeight.w600,
+                            color: "#ff242424".color,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
-      ],
+
+          SizedBox(height: 13.w),
+
+          // 模糊输入框
+          Container(
+            width: 84.w,
+            height: 50.w,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18.w),
+              border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
+            ),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(left: 12.w),
+                  child: Text(
+                    '模糊',
+                    style: TextStyle(
+                      fontSize: 14.w,
+                      fontWeight: FontWeight.w600,
+                      color: "#ff242424".color,
+                    ),
+                  ),
+                ),
+
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 5.w),
+                    child: TextField(
+                      controller: _shadowBlurController,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      onChanged: (value) {
+                        final blur = double.tryParse(value);
+                        if (blur != null) {
+                          _updateModel();
+                        }
+                      },
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      style: TextStyle(
+                        fontSize: 14.w,
+                        fontWeight: FontWeight.w500,
+                        color: "#ff242424".color,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
