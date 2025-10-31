@@ -148,16 +148,15 @@ class CanvasGestureManager {
     final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
     selectedBox.cumulativeScale = 1.0;
 
-    if (selectedBox.fixedScaleCenter == null) {
-      final totalWidth = selectedBox.width + borderWidth * 2;
-      final totalHeight = selectedBox.height + borderWidth * 2;
-      selectedBox.fixedScaleCenter = Offset(
-        selectedBox.position.dx + totalWidth / 2,
-        selectedBox.position.dy + totalHeight / 2,
-      );
-      selectedBox.initialWidth = selectedBox.width;
-      selectedBox.initialHeight = selectedBox.height;
-    }
+    // 始终重新计算缩放中心点（基于当前文本框的中心）
+    final totalWidth = selectedBox.width + borderWidth * 2;
+    final totalHeight = selectedBox.height + borderWidth * 2;
+    selectedBox.fixedScaleCenter = Offset(
+      selectedBox.position.dx + totalWidth / 2,
+      selectedBox.position.dy + totalHeight / 2,
+    );
+    selectedBox.initialWidth = selectedBox.width;
+    selectedBox.initialHeight = selectedBox.height;
 
     debugPrint('双指缩放开始');
   }
@@ -274,9 +273,14 @@ class CanvasGestureManager {
             1000.0,
           );
 
+      // 计算新的外层容器总尺寸（包含边框）
+      final totalNewWidth = newWidth + borderWidth * 2;
+      final totalNewHeight = newHeight + borderWidth * 2;
+
+      // 使用包含边框的总尺寸来计算位置，确保缩放中心点正确
       final newPosition = Offset(
-        selectedBox.fixedScaleCenter!.dx - newWidth / 2,
-        selectedBox.fixedScaleCenter!.dy - newHeight / 2,
+        selectedBox.fixedScaleCenter!.dx - totalNewWidth / 2,
+        selectedBox.fixedScaleCenter!.dy - totalNewHeight / 2,
       );
 
       selectedBox.position = newPosition;
@@ -440,31 +444,43 @@ class CanvasGestureManager {
     box.resizeAspectRatio = box.width / box.height; // 保存宽高比
     box.resizeStartPosition = position;
 
+    // 计算外层容器总尺寸（包含边框）
+    final totalStartWidth = box.width + borderWidth * 2;
+    final totalStartHeight = box.height + borderWidth * 2;
+
     Offset anchorPointLocal = Offset.zero;
     switch (handle) {
       case 'top-left':
-        anchorPointLocal = Offset(box.width, box.height);
+        // 锚点是右下角（相对于外层容器）
+        anchorPointLocal = Offset(totalStartWidth, totalStartHeight);
         break;
       case 'top':
-        anchorPointLocal = Offset(box.width / 2, box.height);
+        // 锚点是下边中点
+        anchorPointLocal = Offset(totalStartWidth / 2, totalStartHeight);
         break;
       case 'top-right':
-        anchorPointLocal = Offset(0, box.height);
+        // 锚点是左下角
+        anchorPointLocal = Offset(0, totalStartHeight);
         break;
       case 'right':
-        anchorPointLocal = Offset(0, box.height / 2);
+        // 锚点是左边中点
+        anchorPointLocal = Offset(0, totalStartHeight / 2);
         break;
       case 'bottom-right':
+        // 锚点是左上角
         anchorPointLocal = Offset(0, 0);
         break;
       case 'bottom':
-        anchorPointLocal = Offset(box.width / 2, 0);
+        // 锚点是上边中点
+        anchorPointLocal = Offset(totalStartWidth / 2, 0);
         break;
       case 'bottom-left':
-        anchorPointLocal = Offset(box.width, 0);
+        // 锚点是右上角
+        anchorPointLocal = Offset(totalStartWidth, 0);
         break;
       case 'left':
-        anchorPointLocal = Offset(box.width, box.height / 2);
+        // 锚点是右边中点
+        anchorPointLocal = Offset(totalStartWidth, totalStartHeight / 2);
         break;
     }
 
@@ -475,6 +491,7 @@ class CanvasGestureManager {
       anchorPointLocal.dx * sin + anchorPointLocal.dy * cos,
     );
 
+    // 锚点是全局坐标（相对于画布）
     box.resizeAnchorPoint = box.position + rotatedPoint;
   }
 
@@ -637,31 +654,43 @@ class CanvasGestureManager {
     box.width = newWidth;
     box.height = newHeight;
 
+    // 计算新的外层容器总尺寸（包含边框）
+    final totalNewWidth = box.width + borderWidth * 2;
+    final totalNewHeight = box.height + borderWidth * 2;
+
     Offset newAnchorPointLocal = Offset.zero;
     switch (box.resizingHandle!) {
       case 'top-left':
-        newAnchorPointLocal = Offset(box.width - 1.5, box.height - 1.5);
+        // 新的右下角（相对于新的外层容器）
+        newAnchorPointLocal = Offset(totalNewWidth, totalNewHeight);
         break;
       case 'top':
-        newAnchorPointLocal = Offset(box.width / 2, box.height - 1.5);
+        // 新的下边中点
+        newAnchorPointLocal = Offset(totalNewWidth / 2, totalNewHeight);
         break;
       case 'top-right':
-        newAnchorPointLocal = Offset(1.5, box.height - 1.5);
+        // 新的左下角
+        newAnchorPointLocal = Offset(0, totalNewHeight);
         break;
       case 'right':
-        newAnchorPointLocal = Offset(1.5, box.height / 2);
+        // 新的左边中点
+        newAnchorPointLocal = Offset(0, totalNewHeight / 2);
         break;
       case 'bottom-right':
-        newAnchorPointLocal = Offset(1.5, 1.5);
+        // 新的左上角
+        newAnchorPointLocal = Offset(0, 0);
         break;
       case 'bottom':
-        newAnchorPointLocal = Offset(box.width / 2, 1.5);
+        // 新的上边中点
+        newAnchorPointLocal = Offset(totalNewWidth / 2, 0);
         break;
       case 'bottom-left':
-        newAnchorPointLocal = Offset(box.width - 1.5, 1.5);
+        // 新的右上角
+        newAnchorPointLocal = Offset(totalNewWidth, 0);
         break;
       case 'left':
-        newAnchorPointLocal = Offset(box.width - 1.5, box.height / 2);
+        // 新的右边中点
+        newAnchorPointLocal = Offset(totalNewWidth, totalNewHeight / 2);
         break;
     }
 
@@ -672,6 +701,7 @@ class CanvasGestureManager {
       newAnchorPointLocal.dx * sinRot + newAnchorPointLocal.dy * cosRot,
     );
 
+    // 根据固定锚点和新的对角点位置，计算新的外层容器位置
     box.position = box.resizeAnchorPoint! - rotatedNewPoint;
   }
 
