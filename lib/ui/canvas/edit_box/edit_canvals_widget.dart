@@ -195,7 +195,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       if (imagePath.isEmpty) {
         return;
       }
-
       final imageSize = await _getImageSize(imagePath);
       if (imageSize != null) {
         final fitSize = _calculateFitSize(imageSize, canvasWidth, canvasHeight);
@@ -203,11 +202,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         finalHeight = fitSize.height;
         debugPrint('图片原始尺寸: ${imageSize.width}x${imageSize.height}');
         debugPrint('适配后尺寸: $finalWidth x $finalHeight');
-      } else {
-        // 如果获取失败，使用默认正方形尺寸
-        debugPrint('无法获取图片尺寸，使用默认尺寸');
-        finalWidth = 200.w;
-        finalHeight = 200.w;
       }
     } else {
       // 文本类型，使用默认字体属性计算尺寸

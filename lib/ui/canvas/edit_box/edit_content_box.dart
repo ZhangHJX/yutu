@@ -13,6 +13,7 @@ class EditContentBox extends StatelessWidget {
   static const double hitTestSize = 20.0;
   static const double rotationButtonSize = 26.0;
   static const double rotationButtonPadding = 15.0;
+  static const double borderWidth = 3.0; // 边框宽度
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +28,14 @@ class EditContentBox extends StatelessWidget {
             angle: data.rotation,
             alignment: Alignment.center, // 围绕中心旋转
             child: Container(
-              width: data.width,
-              height: data.height,
+              // 外层容器始终包含边框空间
+              width: data.width + borderWidth * 2,
+              height: data.height + borderWidth * 2,
               decoration: BoxDecoration(
                 color: Colors.transparent,
+                // 只有边框显隐变化，尺寸不变
                 border: isActive
-                    ? Border.all(color: "#ff147EFF".color, width: 3)
+                    ? Border.all(color: "#ff147EFF".color, width: borderWidth)
                     : null,
               ),
               child: Stack(
@@ -107,17 +110,21 @@ class EditContentBox extends StatelessWidget {
     double width,
     double height,
   ) {
+    // 控制点应该在外层容器边缘（始终包含边框）
+    final totalWidth = width + borderWidth * 2;
+    final totalHeight = height + borderWidth * 2;
+
     return {
       // 四个角点
       'top-left': Offset(0, 0), // 左上角
-      'top-right': Offset(width - 4.5, 0), // 右上角
-      'bottom-left': Offset(0, height - 4.5), // 左下角
-      'bottom-right': Offset(width - 4.5, height - 4.5), // 右下角
+      'top-right': Offset(totalWidth - 4.5, 0), // 右上角
+      'bottom-left': Offset(0, totalHeight - 4.5), // 左下角
+      'bottom-right': Offset(totalWidth - 4.5, totalHeight - 4.5), // 右下角
       // 四个边中点
-      'left': Offset(-1.5, height / 2 - 3), // 左边中点
-      'right': Offset(width - 4.5, height / 2 - 3), // 右边中点
-      'top': Offset(width / 2 - 3, -1.5), // 上边中点
-      'bottom': Offset(width / 2 - 3, height - 4.5), // 下边中点
+      'left': Offset(-1.5, totalHeight / 2 - 3), // 左边中点
+      'right': Offset(totalWidth - 4.5, totalHeight / 2 - 3), // 右边中点
+      'top': Offset(totalWidth / 2 - 3, -1.5), // 上边中点
+      'bottom': Offset(totalWidth / 2 - 3, totalHeight - 4.5), // 下边中点
     };
   }
 
@@ -230,8 +237,7 @@ class EditContentBox extends StatelessWidget {
           width: data.width,
           height: data.height,
           color: Colors.transparent,
-          alignment: Alignment.center,
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          alignment: Alignment.topLeft,
           child: Text(
             data.text,
             style: TextStyle(
@@ -296,10 +302,14 @@ class EditContentBox extends StatelessWidget {
   // 辅助方法：获取旋转按钮的全局位置（用于外部判断点击）
   static Offset getRotationButtonCenter(EditBoxData data) {
     // 旋转按钮在容器底部中心，有padding
+    // 外层容器始终包含边框
+    final totalWidth = data.width + borderWidth * 2;
+    final totalHeight = data.height + borderWidth * 2;
+
     // 相对于容器中心的位置
     final buttonLocalX = 0.0; // 在中心的x坐标
     final buttonLocalY =
-        data.height / 2 + rotationButtonPadding + rotationButtonSize / 2;
+        totalHeight / 2 + rotationButtonPadding + rotationButtonSize / 2;
 
     // 应用旋转（围绕中心旋转）
     final cos = math.cos(data.rotation);
@@ -308,38 +318,42 @@ class EditContentBox extends StatelessWidget {
     final rotatedY = buttonLocalX * sin + buttonLocalY * cos;
 
     // 转换为全局坐标（容器中心 + 旋转后的偏移）
-    final centerX = data.position.dx + data.width / 2;
-    final centerY = data.position.dy + data.height / 2;
+    final centerX = data.position.dx + totalWidth / 2;
+    final centerY = data.position.dy + totalHeight / 2;
     return Offset(centerX + rotatedX, centerY + rotatedY);
   }
 
   // 辅助方法：获取调整大小控制点的全局位置
   static Map<String, Offset> getResizeHandleCenters(EditBoxData data) {
+    // 外层容器始终包含边框
+    final totalWidth = data.width + borderWidth * 2;
+    final totalHeight = data.height + borderWidth * 2;
+
     // 控制点相对于容器左上角的位置
     final localPositions = {
       // 四个角点
       'top-left': Offset(0, 0), // 左上角
-      'top-right': Offset(data.width - 4.5, 0), // 右上角
-      'bottom-left': Offset(0, data.height - 4.5), // 左下角
-      'bottom-right': Offset(data.width - 4.5, data.height - 4.5), // 右下角
+      'top-right': Offset(totalWidth - 4.5, 0), // 右上角
+      'bottom-left': Offset(0, totalHeight - 4.5), // 左下角
+      'bottom-right': Offset(totalWidth - 4.5, totalHeight - 4.5), // 右下角
       // 四个边中点
-      'left': Offset(-1.5, data.height / 2 - 3), // 左边中点
-      'right': Offset(data.width - 4.5, data.height / 2 - 3), // 右边中点
-      'top': Offset(data.width / 2 - 3, -1.5), // 上边中点
-      'bottom': Offset(data.width / 2 - 3, data.height - 4.5), // 下边中点
+      'left': Offset(-1.5, totalHeight / 2 - 3), // 左边中点
+      'right': Offset(totalWidth - 4.5, totalHeight / 2 - 3), // 右边中点
+      'top': Offset(totalWidth / 2 - 3, -1.5), // 上边中点
+      'bottom': Offset(totalWidth / 2 - 3, totalHeight - 4.5), // 下边中点
     };
 
     final cos = math.cos(data.rotation);
     final sin = math.sin(data.rotation);
 
-    // 容器中心的全局坐标
-    final centerX = data.position.dx + data.width / 2;
-    final centerY = data.position.dy + data.height / 2;
+    // 容器中心的全局坐标（包含边框）
+    final centerX = data.position.dx + totalWidth / 2;
+    final centerY = data.position.dy + totalHeight / 2;
 
     return localPositions.map((key, localPos) {
       // 相对于中心的坐标
-      final relX = localPos.dx - data.width / 2;
-      final relY = localPos.dy - data.height / 2;
+      final relX = localPos.dx - totalWidth / 2;
+      final relY = localPos.dy - totalHeight / 2;
 
       // 应用旋转
       final rotatedX = relX * cos - relY * sin;

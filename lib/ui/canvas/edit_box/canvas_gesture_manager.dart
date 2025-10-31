@@ -26,6 +26,9 @@ class CanvasGestureManager {
   // 尺寸限制
   static const double maxSize = 1000000.0;
 
+  // 边框宽度（与 EditContentBox 保持一致）
+  static const double borderWidth = 3.0;
+
   /// 处理指针按下事件
   void handlePointerDown(
     PointerDownEvent event,
@@ -81,11 +84,13 @@ class CanvasGestureManager {
           currentInteraction = 'pending_drag_or_tap';
           pendingClickBoxId = selectedId; // 保存可能要取消激活的元素ID
           dragStartBoxPosition = selectedBox.position;
-          // 初始化缩放中心点
+          // 初始化缩放中心点（外层容器包含边框）
           if (selectedBox.fixedScaleCenter == null) {
+            final totalWidth = selectedBox.width + borderWidth * 2;
+            final totalHeight = selectedBox.height + borderWidth * 2;
             selectedBox.fixedScaleCenter = Offset(
-              selectedBox.position.dx + selectedBox.width / 2,
-              selectedBox.position.dy + selectedBox.height / 2,
+              selectedBox.position.dx + totalWidth / 2,
+              selectedBox.position.dy + totalHeight / 2,
             );
             selectedBox.initialWidth = selectedBox.width;
             selectedBox.initialHeight = selectedBox.height;
@@ -99,11 +104,13 @@ class CanvasGestureManager {
         currentInteraction = 'pending_drag_or_tap';
         pendingClickBoxId = selectedId; // 保存可能要取消激活的元素ID
         dragStartBoxPosition = selectedBox.position;
-        // 初始化缩放中心点
+        // 初始化缩放中心点（外层容器包含边框）
         if (selectedBox.fixedScaleCenter == null) {
+          final totalWidth = selectedBox.width + borderWidth * 2;
+          final totalHeight = selectedBox.height + borderWidth * 2;
           selectedBox.fixedScaleCenter = Offset(
-            selectedBox.position.dx + selectedBox.width / 2,
-            selectedBox.position.dy + selectedBox.height / 2,
+            selectedBox.position.dx + totalWidth / 2,
+            selectedBox.position.dy + totalHeight / 2,
           );
           selectedBox.initialWidth = selectedBox.width;
           selectedBox.initialHeight = selectedBox.height;
@@ -142,9 +149,11 @@ class CanvasGestureManager {
     selectedBox.cumulativeScale = 1.0;
 
     if (selectedBox.fixedScaleCenter == null) {
+      final totalWidth = selectedBox.width + borderWidth * 2;
+      final totalHeight = selectedBox.height + borderWidth * 2;
       selectedBox.fixedScaleCenter = Offset(
-        selectedBox.position.dx + selectedBox.width / 2,
-        selectedBox.position.dy + selectedBox.height / 2,
+        selectedBox.position.dx + totalWidth / 2,
+        selectedBox.position.dy + totalHeight / 2,
       );
       selectedBox.initialWidth = selectedBox.width;
       selectedBox.initialHeight = selectedBox.height;
@@ -393,6 +402,10 @@ class CanvasGestureManager {
     }
 
     // 3. 检测是否在元素内部
+    // 外层容器始终包含边框
+    final totalWidth = box.width + borderWidth * 2;
+    final totalHeight = box.height + borderWidth * 2;
+
     final localX = position.dx - box.position.dx;
     final localY = position.dy - box.position.dy;
 
@@ -401,10 +414,11 @@ class CanvasGestureManager {
     final unrotatedX = localX * cos - localY * sin;
     final unrotatedY = localX * sin + localY * cos;
 
+    // 判断是否在外层容器内（包含边框区域）
     if (unrotatedX >= 0 &&
-        unrotatedX <= box.width &&
+        unrotatedX <= totalWidth &&
         unrotatedY >= 0 &&
-        unrotatedY <= box.height) {
+        unrotatedY <= totalHeight) {
       return 'content';
     }
 
@@ -665,9 +679,12 @@ class CanvasGestureManager {
   void _updateRotation(EditBoxData box, Offset currentPosition) {
     if (box.rotateLastPosition == null) return;
 
+    // 计算容器中心（外层容器包含边框）
+    final totalWidth = box.width + borderWidth * 2;
+    final totalHeight = box.height + borderWidth * 2;
     final globalContainerCenter = Offset(
-      box.position.dx + box.width / 2,
-      box.position.dy + box.height / 2,
+      box.position.dx + totalWidth / 2,
+      box.position.dy + totalHeight / 2,
     );
 
     final currentAngle = math.atan2(
