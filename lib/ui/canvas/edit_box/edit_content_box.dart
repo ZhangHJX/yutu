@@ -281,6 +281,14 @@ class EditContentBox extends StatelessWidget {
           _buildResizeHandle('left'),
         ];
       case ElementType.text:
+        // 计算外层文本框的高度（包含边框）
+        final totalHeight = data.height + borderWidth * 2;
+        // 当高度小于30时，只显示右下角的控制点
+        if (totalHeight < 25.0) {
+          return [_buildResizeHandle('bottom-right')];
+        }
+
+        // 当高度大于等于25时，显示全部控制点
         return [
           _buildResizeHandle('top-left'),
           _buildResizeHandle('top-right'),

@@ -1,12 +1,14 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../controllers/create_design_model.dart';
-import 'edit_content_box.dart';
+import '../edit_box/edit_content_box.dart';
 import '../../../utils/text_measure_util.dart';
 
-/// 画布手势管理器
-/// 负责处理所有的手势交互逻辑
+/// 画布手势管理器： 负责处理所有的手势交互逻辑
 class CanvasGestureManager {
+  // 文本类型的文本框，处于激活状态时，点击弹出输入框
+  void Function(String boxId)? onDoubleTap;
+
   // 交互状态
   String?
   currentInteraction; // 'drag', 'rotate', 'resize', 'scale', 'pending_drag_or_tap', 'activate'
@@ -25,6 +27,8 @@ class CanvasGestureManager {
 
   // 尺寸限制
   static const double maxSize = 1000000.0;
+  static const double minFontSize = 5.0; // 最小字体大小
+  static const double minBoxSize = 5.0; // 最小文本框尺寸（用于非文本类型或后备）
 
   // 边框宽度（与 EditContentBox 保持一致）
   static const double borderWidth = 3.0;
@@ -94,6 +98,10 @@ class CanvasGestureManager {
             );
             selectedBox.initialWidth = selectedBox.width;
             selectedBox.initialHeight = selectedBox.height;
+            // 保存初始字体大小（仅文本类型）
+            if (selectedBox.type == ElementType.text) {
+              selectedBox.initialFontSize = selectedBox.fontSize;
+            }
           }
 
           debugPrint('✅ 待定状态: 可能拖动或点击取消激活 $selectedId');
@@ -114,6 +122,10 @@ class CanvasGestureManager {
           );
           selectedBox.initialWidth = selectedBox.width;
           selectedBox.initialHeight = selectedBox.height;
+          // 保存初始字体大小（仅文本类型）
+          if (selectedBox.type == ElementType.text) {
+            selectedBox.initialFontSize = selectedBox.fontSize;
+          }
         }
       }
       // 点击在选中元素外部，检查是否点击了其他元素
@@ -157,6 +169,10 @@ class CanvasGestureManager {
     );
     selectedBox.initialWidth = selectedBox.width;
     selectedBox.initialHeight = selectedBox.height;
+    // 保存初始字体大小（仅文本类型）
+    if (selectedBox.type == ElementType.text) {
+      selectedBox.initialFontSize = selectedBox.fontSize;
+    }
 
     debugPrint('双指缩放开始');
   }
@@ -265,12 +281,21 @@ class CanvasGestureManager {
     hasMoved = true;
 
     if (selectedBox.fixedScaleCenter != null) {
+      // 对于文本类型，根据最小字体大小计算最小尺寸
+      double minWidth = 50.0;
+      double minHeight = 50.0;
+      if (selectedBox.type == ElementType.text) {
+        final minTextSize = _calculateMinTextSize(selectedBox);
+        minWidth = minTextSize.width;
+        minHeight = minTextSize.height;
+      }
+
       final newWidth = (selectedBox.initialWidth * selectedBox.cumulativeScale)
-          .clamp(50.0, 1000.0);
+          .clamp(minWidth, double.infinity);
       final newHeight =
           (selectedBox.initialHeight * selectedBox.cumulativeScale).clamp(
-            50.0,
-            1000.0,
+            minHeight,
+            double.infinity,
           );
 
       // 计算新的外层容器总尺寸（包含边框）
@@ -286,7 +311,18 @@ class CanvasGestureManager {
       selectedBox.position = newPosition;
       selectedBox.width = newWidth;
       selectedBox.height = newHeight;
+
+      // 如果是文本类型，同时缩放字体大小
+      if (selectedBox.type == ElementType.text) {
+        selectedBox.fontSize =
+            (selectedBox.initialFontSize * selectedBox.cumulativeScale).clamp(
+              minFontSize,
+              double.infinity,
+            );
+      }
       // 移除频繁的调试打印，提升性能
+
+      debugPrint("=======$minWidth====$minHeight==");
     }
 
     return true;
@@ -329,8 +365,12 @@ class CanvasGestureManager {
     // 如果是待定状态（没有移动），判定为点击取消激活
     if (currentInteraction == 'pending_drag_or_tap' && !hasMoved) {
       if (pendingClickBoxId != null && pendingClickBoxId == selectedId) {
-        // 点击已选中的元素，取消激活
-        onSelect(null);
+        final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+        if (selectedBox.type == ElementType.text) {
+          onDoubleTap?.call(selectedId);
+        } else {
+          onSelect(null);
+        }
         debugPrint('✅ 点击已选中元素，取消激活: $pendingClickBoxId');
       }
     }
@@ -443,6 +483,10 @@ class CanvasGestureManager {
     box.resizeStartHeight = box.height;
     box.resizeAspectRatio = box.width / box.height; // 保存宽高比
     box.resizeStartPosition = position;
+    // 保存初始字体大小（仅文本类型）
+    if (box.type == ElementType.text) {
+      box.resizeStartFontSize = box.fontSize;
+    }
 
     // 计算外层容器总尺寸（包含边框）
     final totalStartWidth = box.width + borderWidth * 2;
@@ -523,14 +567,25 @@ class CanvasGestureManager {
 
     // 文本类型特殊处理
     if (box.type == ElementType.text) {
+      // 计算最小文本尺寸
+      final minTextSize = _calculateMinTextSize(box);
+      final minWidth = minTextSize.width;
+      final minHeight = minTextSize.height;
+
       switch (box.resizingHandle!) {
         case 'left':
         case 'right':
           // 左右控制点：只改变宽度，高度根据文本自动计算
           if (box.resizingHandle! == 'right') {
-            newWidth = (box.resizeStartWidth + adjustedDx).clamp(50.0, maxSize);
+            newWidth = (box.resizeStartWidth + adjustedDx).clamp(
+              minWidth,
+              maxSize,
+            );
           } else {
-            newWidth = (box.resizeStartWidth - adjustedDx).clamp(50.0, maxSize);
+            newWidth = (box.resizeStartWidth - adjustedDx).clamp(
+              minWidth,
+              maxSize,
+            );
           }
           // 根据新宽度计算文本高度
           final textSize = TextMeasureUtil.measureTextWithWidth(
@@ -542,7 +597,7 @@ class CanvasGestureManager {
             lineHeight: box.lineHeight,
             maxWidth: newWidth,
           );
-          newHeight = textSize.height.clamp(50.0, maxSize);
+          newHeight = textSize.height.clamp(minHeight, maxSize);
           break;
         case 'top-left':
         case 'top-right':
@@ -556,9 +611,20 @@ class CanvasGestureManager {
               ? (box.resizeStartHeight + adjustedDy) / box.resizeStartHeight
               : (box.resizeStartHeight - adjustedDy) / box.resizeStartHeight;
           final scale = (scaleX + scaleY) / 2;
-          newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
-          newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
-          newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (box.resizeStartWidth * scale).clamp(minWidth, maxSize);
+          newHeight = (newWidth / box.resizeAspectRatio).clamp(
+            minHeight,
+            maxSize,
+          );
+          newWidth = (newHeight * box.resizeAspectRatio).clamp(
+            minWidth,
+            maxSize,
+          );
+          // 同时缩放字体大小
+          box.fontSize = (box.resizeStartFontSize * scale).clamp(
+            minFontSize,
+            200.0,
+          );
           break;
         default:
           // top 和 bottom 控制点不处理（文本类型没有这些控制点）
@@ -746,5 +812,52 @@ class CanvasGestureManager {
     final dx = positions[0].dx - positions[1].dx;
     final dy = positions[0].dy - positions[1].dy;
     return (dx * dx + dy * dy).abs();
+  }
+
+  /// 根据最小字体大小计算文本框的最小尺寸
+  /// [box] 文本框数据
+  /// 返回最小宽度和最小高度
+  Size _calculateMinTextSize(EditBoxData box) {
+    // 如果没有文本，返回默认最小值
+    if (box.text.isEmpty) {
+      return Size(minBoxSize, minBoxSize);
+    }
+
+    // 使用最小字体大小计算文本的最小尺寸
+    // 先计算单行时的最小宽度
+    final singleLineSize = TextMeasureUtil.measureText(
+      text: box.text,
+      fontSize: minFontSize,
+      fontFamily: box.fontFamily,
+      fontWeight: box.fontWeight,
+      letterSpacing: box.fontSpace,
+      lineHeight: box.lineHeight,
+    );
+
+    // 如果单行宽度太小，使用默认最小值
+    if (singleLineSize.width < minBoxSize) {
+      return Size(
+        minBoxSize,
+        minBoxSize > singleLineSize.height ? minBoxSize : singleLineSize.height,
+      );
+    }
+
+    // 使用当前文本框宽度（或单行宽度，取较小值）来计算多行文本的高度
+    final maxWidth = math.min(box.width, singleLineSize.width);
+    final minTextSize = TextMeasureUtil.measureTextWithWidth(
+      text: box.text,
+      fontSize: minFontSize,
+      fontFamily: box.fontFamily,
+      fontWeight: box.fontWeight,
+      letterSpacing: box.fontSpace,
+      lineHeight: box.lineHeight,
+      maxWidth: maxWidth,
+    );
+
+    // 确保最小尺寸不小于默认值
+    return Size(
+      math.max(minBoxSize, minTextSize.width),
+      math.max(minBoxSize, minTextSize.height),
+    );
   }
 }

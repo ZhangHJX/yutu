@@ -7,7 +7,7 @@ import '../controllers/canvals_controller.dart';
 import '../widgets/dialog/canvals_shape_dialog.dart';
 import '../controllers/create_design_model.dart';
 import 'edit_content_box.dart';
-import 'canvas_gesture_manager.dart';
+import '../managers/canvas_gesture_manager.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../../../utils/text_measure_util.dart';
 
@@ -97,6 +97,11 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   void initState() {
     super.initState();
     _selectionController = Get.put(CanvalsController());
+
+    _gestureManager.onDoubleTap = (String boxId) {
+      debugPrint("----------$boxId--------");
+      showTextInputDialog(boxId);
+    };
   }
 
   @override
@@ -270,7 +275,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     });
   }
 
-  /// 显示文本输入对话框并更新文本框内容
+  /// 显示文本输
+  /// 入对话框并更新文本框内容
   void showTextInputDialog(String boxId) {
     // 查找对应的文本框
     final box = boxes.firstWhere((b) => b.id == boxId);

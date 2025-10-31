@@ -59,11 +59,13 @@ class EditBoxData {
   Offset? fixedScaleCenter; // 固定的缩放中心点
   double initialWidth; // 初始宽度（用于缩放计算）
   double initialHeight; // 初始高度（用于缩放计算）
+  double initialFontSize; // 初始字体大小（用于缩放计算）
 
   // 调整大小相关属性
   String? resizingHandle; // 当前正在调整的控制点位置
   double resizeStartWidth; // 调整大小开始时的宽度
   double resizeStartHeight; // 调整大小开始时的高度
+  double resizeStartFontSize; // 调整大小开始时的字体大小
   double resizeAspectRatio; // 调整大小开始时的宽高比
   Offset? resizeStartPosition; // 调整大小开始时的触摸位置
   Offset? resizeAnchorPoint; // 调整大小时的锚点（对角点）
@@ -109,6 +111,7 @@ class EditBoxData {
     this.resizingHandle,
     this.resizeStartWidth = 300.0,
     this.resizeStartHeight = 200.0,
+    this.resizeStartFontSize = 14.0,
     double? resizeAspectRatio,
     this.resizeStartPosition,
     this.resizeAnchorPoint,
@@ -117,6 +120,7 @@ class EditBoxData {
     this.rotateLastPosition,
   }) : initialWidth = initialWidth ?? width,
        initialHeight = initialHeight ?? height,
+       initialFontSize = fontSize,
        resizeAspectRatio = resizeAspectRatio ?? (width / height);
 }
 
