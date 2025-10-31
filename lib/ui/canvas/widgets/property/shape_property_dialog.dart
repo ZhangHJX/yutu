@@ -159,30 +159,34 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                 children: [
                   // 标题栏
                   Container(
-                    margin: EdgeInsets.only(top: 19.w),
+                    padding: EdgeInsets.only(bottom: 15.w),
                     width: double.infinity,
                     child: Stack(
                       children: [
                         Center(
-                          child: Text(
-                            '形状属性',
-                            style: TextStyle(
-                              fontSize: 18.w,
-                              fontWeight: FontWeight.w500,
-                              color: "#ff262626".color,
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 17.w),
+                            child: Text(
+                              '形状属性',
+                              style: TextStyle(
+                                fontSize: 18.w,
+                                fontWeight: FontWeight.w500,
+                                color: "#ff262626".color,
+                              ),
                             ),
                           ),
                         ),
 
                         Positioned(
-                          right: 10,
+                          right: 10.w,
+                          top: 12.w,
                           child: GestureDetector(
                             onTap: () {
                               SmartDialog.dismiss();
                             },
                             child: SizedBox(
-                              width: 30.w,
-                              height: 30.w,
+                              width: 35.w,
+                              height: 35.w,
                               child: Center(
                                 child: Image.asset(
                                   'assets/images/canvals/canvals_close_icon.png',

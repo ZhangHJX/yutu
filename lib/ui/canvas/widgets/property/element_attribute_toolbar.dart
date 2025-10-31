@@ -50,8 +50,8 @@ class _ElementAttributeToolbarState extends State<ElementAttributeToolbar> {
               widget.onClose?.call();
             },
             child: Container(
-              width: 30.w,
-              height: 30.w,
+              width: 35.w,
+              height: 35.w,
               padding: EdgeInsets.all(8.w), // 添加内边距
               child: Image.asset(
                 'assets/images/canvals/canvals_up_icon.png',
@@ -60,17 +60,17 @@ class _ElementAttributeToolbarState extends State<ElementAttributeToolbar> {
             ),
           ),
 
-          SizedBox(width: 10.w),
+          SizedBox(width: 5.w),
 
-          Listener(
-            onPointerDown: (PointerDownEvent event) {
+          GestureDetector(
+            onTap: () {
               widget.onCollapse?.call();
             },
             child: Padding(
               padding: EdgeInsets.only(right: 10.w),
               child: Container(
-                width: 30.w,
-                height: 30.w,
+                width: 35.w,
+                height: 35.w,
                 padding: EdgeInsets.all(8.w), // 添加内边距
                 child: Image.asset(
                   'assets/images/canvals/canvals_close_icon.png',
