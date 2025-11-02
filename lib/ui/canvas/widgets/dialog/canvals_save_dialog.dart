@@ -1,5 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../../../widgets/gradient_text.dart';
 
 class CanvalsSaveTemplateDialog extends StatefulWidget {
@@ -50,154 +51,170 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // 主弹框内容
-        Container(
-          height: ScreenTools.screenHeight - 195.w,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(18.w),
-              topRight: Radius.circular(18.w),
-            ),
-          ),
-          child: Column(
+    // ⭐ 使用 KeyboardDismissOnTap 包裹，点击外部可关闭键盘
+    return KeyboardDismissOnTap(
+      // ⭐ 使用 KeyboardVisibilityBuilder 监听键盘状态
+      child: KeyboardVisibilityBuilder(
+        builder: (context, isKeyboardVisible) {
+          // 根据键盘是否可见动态计算底部边距
+          final keyboardHeight = isKeyboardVisible
+              ? MediaQuery.of(context).viewInsets.bottom
+              : 0.0;
+
+          return Stack(
             children: [
-              // 标题
+              // 主弹框内容
               Container(
-                padding: EdgeInsets.only(top: 19.w, bottom: 20.w),
-                child: Text(
-                  '保存模版',
-                  style: TextStyle(
-                    fontSize: 18.w,
-                    fontWeight: FontWeight.w500,
-                    color: "#FF262626".color,
-                  ),
-                ),
-              ),
-
-              // 可滚动的内容区域
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.only(left: 16.w, right: 8.w),
-                  child: Column(
-                    children: [
-                      // 模版标题
-                      _buildInputField(
-                        label: '*模版标题',
-                        controller: _titleController,
-                        hintText: '输入模版标题',
-                      ),
-
-                      SizedBox(height: 12.w),
-
-                      // 模版描述
-                      _buildInputField(
-                        label: '*模版描述',
-                        controller: _descriptionController,
-                        hintText: '输入模版描述(可选填)',
-                      ),
-
-                      SizedBox(height: 12.w),
-
-                      // 应用场景
-                      _buildScenarioDropdown(),
-
-                      SizedBox(height: 12.w),
-
-                      // 风格标签
-                      _buildTagsSection(),
-
-                      SizedBox(height: 9.w),
-                    ],
-                  ),
-                ),
-              ),
-
-              // 底部按钮
-              _buildBottomButtons(),
-            ],
-          ),
-        ),
-
-        // 下拉列表 - 浮动在弹框上方
-        if (_showScenarioDropdown)
-          Positioned(
-            left: 16.w,
-            right: 16.w,
-            top: 310.w, // 应用场景输入框下方位置
-            child: Material(
-              elevation: 8.w,
-              borderRadius: BorderRadius.circular(8.w),
-              child: Container(
-                constraints: BoxConstraints(
-                  maxHeight: 200.w, // 限制最大高度
-                ),
+                // ⭐ 动态调整底部边距，避免被键盘遮挡
+                margin: EdgeInsets.only(bottom: keyboardHeight),
+                height: ScreenTools.screenHeight - 195.w,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(8.w),
-                  border: Border.all(color: Colors.grey.shade300),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8.w,
-                      offset: Offset(0, 2.w),
-                    ),
-                  ],
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: _scenarios.map((scenario) {
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedScenario = scenario;
-                            _showScenarioDropdown = false;
-                          });
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 12.w,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _selectedScenario == scenario
-                                ? Colors.purple.shade50
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8.w),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                scenario,
-                                style: TextStyle(
-                                  fontSize: 14.w,
-                                  color: _selectedScenario == scenario
-                                      ? Colors.purple.shade700
-                                      : Colors.black87,
-                                ),
-                              ),
-                              if (_selectedScenario == scenario)
-                                Icon(
-                                  Icons.check,
-                                  size: 16.w,
-                                  color: Colors.purple.shade700,
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(18.w),
+                    topRight: Radius.circular(18.w),
                   ),
                 ),
+                child: Column(
+                  children: [
+                    // 标题
+                    Container(
+                      padding: EdgeInsets.only(top: 19.w, bottom: 20.w),
+                      child: Text(
+                        '保存模版',
+                        style: TextStyle(
+                          fontSize: 18.w,
+                          fontWeight: FontWeight.w500,
+                          color: "#FF262626".color,
+                        ),
+                      ),
+                    ),
+
+                    // 可滚动的内容区域
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.only(left: 16.w, right: 8.w),
+                        child: Column(
+                          children: [
+                            // 模版标题
+                            _buildInputField(
+                              label: '*模版标题',
+                              controller: _titleController,
+                              hintText: '输入模版标题',
+                            ),
+
+                            SizedBox(height: 12.w),
+
+                            // 模版描述
+                            _buildInputField(
+                              label: '*模版描述',
+                              controller: _descriptionController,
+                              hintText: '输入模版描述(可选填)',
+                            ),
+
+                            SizedBox(height: 12.w),
+
+                            // 应用场景
+                            _buildScenarioDropdown(),
+
+                            SizedBox(height: 12.w),
+
+                            // 风格标签
+                            _buildTagsSection(),
+
+                            SizedBox(height: 9.w),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // 底部按钮
+                    _buildBottomButtons(),
+                  ],
+                ),
               ),
-            ),
-          ),
-      ],
+
+              // 下拉列表 - 浮动在弹框上方
+              if (_showScenarioDropdown)
+                Positioned(
+                  left: 16.w,
+                  right: 16.w,
+                  top: 310.w, // 应用场景输入框下方位置
+                  child: Material(
+                    elevation: 8.w,
+                    borderRadius: BorderRadius.circular(8.w),
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxHeight: 200.w, // 限制最大高度
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8.w),
+                        border: Border.all(color: Colors.grey.shade300),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8.w,
+                            offset: Offset(0, 2.w),
+                          ),
+                        ],
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: _scenarios.map((scenario) {
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedScenario = scenario;
+                                  _showScenarioDropdown = false;
+                                });
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 12.w,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _selectedScenario == scenario
+                                      ? Colors.purple.shade50
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8.w),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      scenario,
+                                      style: TextStyle(
+                                        fontSize: 14.w,
+                                        color: _selectedScenario == scenario
+                                            ? Colors.purple.shade700
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                    if (_selectedScenario == scenario)
+                                      Icon(
+                                        Icons.check,
+                                        size: 16.w,
+                                        color: Colors.purple.shade700,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -369,6 +386,7 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
         // 已选标签输入框
         Container(
           margin: EdgeInsets.only(right: 8.w),
+          height: 104.w,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(18.w),
@@ -413,15 +431,12 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                             Positioned(
                               right: 0,
                               top: 0,
-                              child: Container(
-                                color: Colors.red,
-                                child: GestureDetector(
-                                  onTap: () => _removeTag(tag),
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 10.w,
-                                    color: "#ff909090".color,
-                                  ),
+                              child: GestureDetector(
+                                onTap: () => _removeTag(tag),
+                                child: Icon(
+                                  Icons.close,
+                                  size: 10.w,
+                                  color: "#ff909090".color,
                                 ),
                               ),
                             ),
@@ -435,6 +450,7 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
               // 输入框
               TextField(
                 controller: _tagsController,
+                maxLines: null,
                 decoration: InputDecoration(
                   hintText: '输入自定义标签',
                   hintStyle: TextStyle(
@@ -442,6 +458,8 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                     fontSize: 14.w,
                   ),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 12.w,
                     vertical: 12.w,
