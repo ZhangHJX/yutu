@@ -434,14 +434,33 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   /// 替换图片
   void _replaceImage() {
-    if (_activeElement != null) {
+    if (_activeElement != null && _activeElement!.type == ElementType.image) {
       debugPrint('替换图片');
       _canvalsController.selectImageHelper.onlyChooseImages(
         onSuccess: () {
           final imagePath = _canvalsController.selectImageHelper.image;
           if (imagePath != null) {
             debugPrint('选择的图片路径: $imagePath');
-            _canvalsController.addNewImage(imagePath);
+            // 直接更新当前激活元素的图片路径
+            setState(() {
+              _activeElement!.imagePath = imagePath;
+            });
+          }
+        },
+      );
+    } else if (_activeElement != null &&
+        _activeElement!.type == ElementType.text) {
+      // 如果激活的是文本框，也支持替换文本框内的图片
+      debugPrint('替换文本框内的图片');
+      _canvalsController.selectImageHelper.onlyChooseImages(
+        onSuccess: () {
+          final imagePath = _canvalsController.selectImageHelper.image;
+          if (imagePath != null) {
+            debugPrint('选择的图片路径: $imagePath');
+            // 更新文本框的图片路径
+            setState(() {
+              _activeElement!.imagePath = imagePath;
+            });
           }
         },
       );
