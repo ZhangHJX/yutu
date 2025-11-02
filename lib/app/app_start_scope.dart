@@ -16,17 +16,21 @@ class AppStartScope extends HookWidget {
     final initialize = useMemoized(() {
       const envFileName = String.fromEnvironment(
         'ENV_FILE',
-        defaultValue: '.env.prod',
+        defaultValue: '.env.dev',
       );
       return () async {
         await GetStorage.init();
 
         await dotenv.load(fileName: 'env/$envFileName');
 
-        debugPrint('App启动环境:$envFileName');
+        debugPrint('App启动环境1:$envFileName');
 
         final dstMap = Map.fromEntries(dotenv.env.entries);
+
+        debugPrint('App启动环境2:$dstMap');
+
         await dotenv.load(fileName: 'env/.env', mergeWith: dstMap);
+
 
         final cost = DateTime.now().millisecondsSinceEpoch - timeRecord.value;
         debugPrint('App启动耗时:$cost ms');

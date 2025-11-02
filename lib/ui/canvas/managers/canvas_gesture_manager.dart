@@ -488,9 +488,11 @@ class CanvasGestureManager {
     box.resizeStartHeight = box.height;
     box.resizeAspectRatio = box.width / box.height; // 保存宽高比
     box.resizeStartPosition = position;
-    // 保存初始字体大小（仅文本类型）
+    // 保存初始字体大小、行高、字间距（仅文本类型）
     if (box.type == ElementType.text) {
       box.resizeStartFontSize = box.fontSize;
+      box.resizeStartLineHeight = box.lineHeight;
+      box.resizeStartFontSpace = box.fontSpace;
     }
 
     // 计算外层容器总尺寸（包含边框）
@@ -616,20 +618,73 @@ class CanvasGestureManager {
               ? (box.resizeStartHeight + adjustedDy) / box.resizeStartHeight
               : (box.resizeStartHeight - adjustedDy) / box.resizeStartHeight;
           final scale = (scaleX + scaleY) / 2;
-          newWidth = (box.resizeStartWidth * scale).clamp(minWidth, maxSize);
-          newHeight = (newWidth / box.resizeAspectRatio).clamp(
-            minHeight,
-            maxSize,
+
+          // 判断是否是多行文本（宽度小于单行所需宽度）
+          final singleLineSize = TextMeasureUtil.measureText(
+            text: box.text,
+            fontSize: box.resizeStartFontSize,
+            fontFamily: box.fontFamily,
+            fontWeight: box.fontWeight,
+            letterSpacing: box.resizeStartFontSpace,
+            lineHeight: box.resizeStartLineHeight,
           );
-          newWidth = (newHeight * box.resizeAspectRatio).clamp(
-            minWidth,
-            maxSize,
-          );
-          // 同时缩放字体大小
-          box.fontSize = (box.resizeStartFontSize * scale).clamp(
-            minFontSize,
-            200.0,
-          );
+          final isMultiLine = box.resizeStartWidth < singleLineSize.width;
+
+          if (isMultiLine) {
+            // 多行文本：使用统一的scale同时缩放宽度、字体、行高、字间距，保持行数不变
+            // 宽度和字体应该继续缩小，直到字体达到最小值，不受minWidth限制
+            final scaledWidth = box.resizeStartWidth * scale;
+            final scaledFontSize = box.resizeStartFontSize * scale;
+            // 字间距（绝对值）也需要按比例缩放
+            final scaledFontSpace = box.resizeStartFontSpace * scale;
+            // 行高（相对于字体的倍数）保持不变，因为实际行高 = fontSize * lineHeight，已经随字体缩放了
+
+            // 字体不能小于最小值
+            final finalFontSize = math.max(scaledFontSize, minFontSize);
+            // 字间距不能小于0
+            final finalFontSpace = math.max(scaledFontSpace, 0.0);
+
+            // 如果字体还能缩小，使用计算的宽度；如果字体已到最小值，按比例计算对应的宽度
+            final finalWidth = (scaledFontSize >= minFontSize)
+                ? scaledWidth
+                : (box.resizeStartWidth *
+                      (minFontSize / box.resizeStartFontSize));
+
+            // 使用最终的宽度、字体、字间距、行高重新计算文本高度
+            final textSize = TextMeasureUtil.measureTextWithWidth(
+              text: box.text,
+              fontSize: finalFontSize,
+              fontFamily: box.fontFamily,
+              fontWeight: box.fontWeight,
+              letterSpacing: finalFontSpace,
+              lineHeight: box.resizeStartLineHeight, // 行高倍数保持不变
+              maxWidth: finalWidth,
+            );
+
+            // 宽度和高度允许缩小到比minWidth/minHeight更小，直到字体达到最小值
+            newWidth = math.max(finalWidth, 0.0).clamp(0.0, maxSize);
+            newHeight = math.max(textSize.height, 0.0).clamp(0.0, maxSize);
+            box.fontSize = finalFontSize.clamp(minFontSize, 200.0);
+            box.fontSpace = finalFontSpace;
+            // lineHeight 保持不变，因为它是相对于字体的倍数
+          } else {
+            // 单行文本：按比例缩放，保持宽高比
+            newWidth = (box.resizeStartWidth * scale).clamp(minWidth, maxSize);
+            newHeight = (newWidth / box.resizeAspectRatio).clamp(
+              minHeight,
+              maxSize,
+            );
+            newWidth = (newHeight * box.resizeAspectRatio).clamp(
+              minWidth,
+              maxSize,
+            );
+            // 使用最终的实际宽度变化比例来缩放字体大小
+            final actualScale = newWidth / box.resizeStartWidth;
+            box.fontSize = (box.resizeStartFontSize * actualScale).clamp(
+              minFontSize,
+              200.0,
+            );
+          }
           break;
         default:
           // top 和 bottom 控制点不处理（文本类型没有这些控制点）

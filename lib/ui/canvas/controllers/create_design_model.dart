@@ -66,6 +66,8 @@ class EditBoxData {
   double resizeStartWidth; // 调整大小开始时的宽度
   double resizeStartHeight; // 调整大小开始时的高度
   double resizeStartFontSize; // 调整大小开始时的字体大小
+  double resizeStartLineHeight; // 调整大小开始时的行高
+  double resizeStartFontSpace; // 调整大小开始时的字间距
   double resizeAspectRatio; // 调整大小开始时的宽高比
   Offset? resizeStartPosition; // 调整大小开始时的触摸位置
   Offset? resizeAnchorPoint; // 调整大小时的锚点（对角点）
@@ -112,6 +114,8 @@ class EditBoxData {
     this.resizeStartWidth = 300.0,
     this.resizeStartHeight = 200.0,
     this.resizeStartFontSize = 14.0,
+    double? resizeStartLineHeight,
+    double? resizeStartFontSpace,
     double? resizeAspectRatio,
     this.resizeStartPosition,
     this.resizeAnchorPoint,
@@ -121,6 +125,8 @@ class EditBoxData {
   }) : initialWidth = initialWidth ?? width,
        initialHeight = initialHeight ?? height,
        initialFontSize = fontSize,
+       resizeStartLineHeight = resizeStartLineHeight ?? lineHeight,
+       resizeStartFontSpace = resizeStartFontSpace ?? fontSpace,
        resizeAspectRatio = resizeAspectRatio ?? (width / height);
 }
 

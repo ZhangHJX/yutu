@@ -34,6 +34,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   final GlobalKey _layerButtonKey = GlobalKey();
   bool _showLayerDialog = false; // 添加图层弹框显示状态
+  double? _savedTextWidth; // 保存打开文本属性对话框时的宽度
 
   @override
   void initState() {
@@ -102,6 +103,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     }
 
     final activeElement = _activeElement!;
+    // 保存打开对话框时的宽度，用于判断是否是多行状态
+    _savedTextWidth = activeElement.width;
 
     SmartDialog.show(
       builder: (context) => TextPropertyDialog(
@@ -123,6 +126,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     ).then((_) {
       // 对话框关闭后的回调，刷新 UI 并重新计算文本尺寸
       _refreshTextBoxAfterPropertyChange();
+      _savedTextWidth = null; // 清除保存的宽度
     });
   }
 
@@ -134,8 +138,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
     final box = _activeElement!;
     setState(() {
-      // 重新计算文本尺寸（因为字体大小、字体、行高等可能变化了）
-      final textSize = TextMeasureUtil.measureText(
+      // 先计算单行文本需要的宽度（不考虑宽度限制）
+      final singleLineSize = TextMeasureUtil.measureText(
         text: box.text,
         fontSize: box.fontSize,
         fontFamily: box.fontFamily,
@@ -144,9 +148,29 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
         lineHeight: box.lineHeight,
       );
 
-      // 更新文本框尺寸
-      box.width = textSize.width;
-      box.height = textSize.height;
+      // 判断当前是否是多行状态
+      // 如果保存的宽度存在且小于单行宽度，说明是多行状态，应该保持这个宽度
+      final savedWidth = _savedTextWidth ?? box.width;
+      final isMultiLine = savedWidth < singleLineSize.width;
+
+      if (isMultiLine) {
+        // 多行状态：保持宽度不变，只根据新属性重新计算高度
+        final textSize = TextMeasureUtil.measureTextWithWidth(
+          text: box.text,
+          fontSize: box.fontSize,
+          fontFamily: box.fontFamily,
+          fontWeight: box.fontWeight,
+          letterSpacing: box.fontSpace,
+          lineHeight: box.lineHeight,
+          maxWidth: savedWidth,
+        );
+        box.width = savedWidth; // 保持保存的宽度
+        box.height = textSize.height; // 根据新属性重新计算高度
+      } else {
+        // 单行状态：根据新属性重新计算宽度和高度
+        box.width = singleLineSize.width;
+        box.height = singleLineSize.height;
+      }
     });
   }
 

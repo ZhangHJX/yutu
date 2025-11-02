@@ -292,17 +292,19 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
               box.text = newText;
 
               // 重新计算文本尺寸
-              final textSize = TextMeasureUtil.measureText(
+              // 使用当前宽度来保持多行状态（如果已经是多行）
+              final textSize = TextMeasureUtil.measureTextWithWidth(
                 text: newText,
                 fontSize: box.fontSize,
                 fontFamily: box.fontFamily,
                 fontWeight: box.fontWeight,
                 letterSpacing: box.fontSpace,
                 lineHeight: box.lineHeight,
+                maxWidth: box.width,
               );
 
-              // 更新文本框尺寸
-              box.width = textSize.width;
+              // 保持宽度不变，只更新高度
+              // box.width 保持不变，这样多行文本仍然是多行
               box.height = textSize.height;
             });
 
