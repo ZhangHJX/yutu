@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../../controllers/create_design_model.dart';
 import '../color_picker_dialog.dart';
+import '../../utils/color_value_formatter.dart';
 
 class ShapePropertyDialog extends StatefulWidget {
   final EditBoxData? editBoxData;
@@ -332,12 +333,22 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
               child: TextField(
                 controller: _fillColorController,
                 textAlign: TextAlign.center,
+                inputFormatters: [HexColorFormatter()],
+                onChanged: (value) {
+                  if (value.isNotEmpty && value.length == 7) {
+                    setState(() {
+                      _fillColor = value;
+                      _updateModel();
+                    });
+                  }
+                },
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 5.w),
                 ),
+
                 style: TextStyle(
                   fontSize: 14.w,
                   fontWeight: FontWeight.w600,
@@ -409,6 +420,15 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
               child: TextField(
                 controller: _borderColorController,
                 textAlign: TextAlign.center,
+                inputFormatters: [HexColorFormatter()],
+                onChanged: (value) {
+                  if (value.isNotEmpty && value.length == 7) {
+                    setState(() {
+                      _borderColor = value;
+                      _updateModel();
+                    });
+                  }
+                },
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
@@ -453,7 +473,6 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                   final width = double.tryParse(value);
                   if (width != null) {
                     setState(() {
-                      debugPrint("--哈哈哈哈哈哈----");
                       _borderWidth = width;
                       _updateModel();
                     });
@@ -573,6 +592,15 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                 child: TextField(
                   controller: _shadowColorController,
                   textAlign: TextAlign.center,
+                  inputFormatters: [HexColorFormatter()],
+                  onChanged: (value) {
+                    if (value.isNotEmpty && value.length == 7) {
+                      setState(() {
+                        _shadowColor = value;
+                        _updateModel();
+                      });
+                    }
+                  },
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,

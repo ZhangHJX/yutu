@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 extension ToColor on String {
   Color get color => Color(int.parse(replaceAll('#', '0xFF')));
+  String get string => replaceAll('0xFF', '#');
 }
 
 extension ToString on Color {

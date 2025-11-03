@@ -1,8 +1,9 @@
-import 'dart:math' as math;
+import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../controllers/create_design_model.dart';
-import '../edit_box/edit_content_box.dart';
 import '../../../utils/text_measure_util.dart';
+import '../utils/canvals_edit_box_util.dart';
+import 'dart:math' as math;
 
 /// 画布手势管理器： 负责处理所有的手势交互逻辑
 class CanvasGestureManager {
@@ -31,9 +32,6 @@ class CanvasGestureManager {
   static const double maxSize = 1000000.0;
   static const double minFontSize = 5.0; // 最小字体大小
   static const double minBoxSize = 5.0; // 最小文本框尺寸（用于非文本类型或后备）
-
-  // 边框宽度（与 EditContentBox 保持一致）
-  static const double borderWidth = 3.0;
 
   /// 处理指针按下事件
   void handlePointerDown(
@@ -95,8 +93,8 @@ class CanvasGestureManager {
           dragStartBoxPosition = selectedBox.position;
           // 初始化缩放中心点（外层容器包含边框）
           if (selectedBox.fixedScaleCenter == null) {
-            final totalWidth = selectedBox.width + borderWidth * 2;
-            final totalHeight = selectedBox.height + borderWidth * 2;
+            final totalWidth = selectedBox.width + editBorderWidth * 2;
+            final totalHeight = selectedBox.height + editBorderWidth * 2;
             selectedBox.fixedScaleCenter = Offset(
               selectedBox.position.dx + totalWidth / 2,
               selectedBox.position.dy + totalHeight / 2,
@@ -119,8 +117,8 @@ class CanvasGestureManager {
         dragStartBoxPosition = selectedBox.position;
         // 初始化缩放中心点（外层容器包含边框）
         if (selectedBox.fixedScaleCenter == null) {
-          final totalWidth = selectedBox.width + borderWidth * 2;
-          final totalHeight = selectedBox.height + borderWidth * 2;
+          final totalWidth = selectedBox.width + editBorderWidth * 2;
+          final totalHeight = selectedBox.height + editBorderWidth * 2;
           selectedBox.fixedScaleCenter = Offset(
             selectedBox.position.dx + totalWidth / 2,
             selectedBox.position.dy + totalHeight / 2,
@@ -166,8 +164,8 @@ class CanvasGestureManager {
     selectedBox.cumulativeScale = 1.0;
 
     // 始终重新计算缩放中心点（基于当前文本框的中心）
-    final totalWidth = selectedBox.width + borderWidth * 2;
-    final totalHeight = selectedBox.height + borderWidth * 2;
+    final totalWidth = selectedBox.width + editBorderWidth * 2;
+    final totalHeight = selectedBox.height + editBorderWidth * 2;
     selectedBox.fixedScaleCenter = Offset(
       selectedBox.position.dx + totalWidth / 2,
       selectedBox.position.dy + totalHeight / 2,
@@ -304,8 +302,8 @@ class CanvasGestureManager {
           );
 
       // 计算新的外层容器总尺寸（包含边框）
-      final totalNewWidth = newWidth + borderWidth * 2;
-      final totalNewHeight = newHeight + borderWidth * 2;
+      final totalNewWidth = newWidth + editBorderWidth * 2;
+      final totalNewHeight = newHeight + editBorderWidth * 2;
 
       // 使用包含边框的总尺寸来计算位置，确保缩放中心点正确
       final newPosition = Offset(
@@ -429,31 +427,23 @@ class CanvasGestureManager {
   /// 检测点击了哪个元素或控制点
   String? _detectHitTarget(Offset position, EditBoxData box) {
     // 1. 检测旋转按钮
-    final rotationCenter = EditContentBox.getRotationButtonCenter(box);
-    if (_isPointInCircle(
-      position,
-      rotationCenter,
-      EditContentBox.rotationButtonSize / 2,
-    )) {
+    final rotationCenter = CanvalsEditBoxUtil.getRotationButtonCenter(box);
+    if (_isPointInCircle(position, rotationCenter, rotationButtonSize / 2)) {
       return 'rotate';
     }
 
     // 2. 检测调整大小控制点
-    final resizeHandles = EditContentBox.getResizeHandleCenters(box);
+    final resizeHandles = CanvalsEditBoxUtil.getResizeHandleCenters(box);
     for (var entry in resizeHandles.entries) {
-      if (_isPointInCircle(
-        position,
-        entry.value,
-        EditContentBox.hitTestSize / 2,
-      )) {
+      if (_isPointInCircle(position, entry.value, editHitCircleSize / 2)) {
         return 'resize:${entry.key}';
       }
     }
 
     // 3. 检测是否在元素内部
     // 外层容器始终包含边框
-    final totalWidth = box.width + borderWidth * 2;
-    final totalHeight = box.height + borderWidth * 2;
+    final totalWidth = box.width + editBorderWidth * 2;
+    final totalHeight = box.height + editBorderWidth * 2;
 
     final localX = position.dx - box.position.dx;
     final localY = position.dy - box.position.dy;
@@ -496,8 +486,8 @@ class CanvasGestureManager {
     }
 
     // 计算外层容器总尺寸（包含边框）
-    final totalStartWidth = box.width + borderWidth * 2;
-    final totalStartHeight = box.height + borderWidth * 2;
+    final totalStartWidth = box.width + editBorderWidth * 2;
+    final totalStartHeight = box.height + editBorderWidth * 2;
 
     Offset anchorPointLocal = Offset.zero;
     switch (handle) {
@@ -781,8 +771,8 @@ class CanvasGestureManager {
     box.height = newHeight;
 
     // 计算新的外层容器总尺寸（包含边框）
-    final totalNewWidth = box.width + borderWidth * 2;
-    final totalNewHeight = box.height + borderWidth * 2;
+    final totalNewWidth = box.width + editBorderWidth * 2;
+    final totalNewHeight = box.height + editBorderWidth * 2;
 
     Offset newAnchorPointLocal = Offset.zero;
     switch (box.resizingHandle!) {
@@ -836,8 +826,8 @@ class CanvasGestureManager {
     if (box.rotateLastPosition == null) return;
 
     // 计算容器中心（外层容器包含边框）
-    final totalWidth = box.width + borderWidth * 2;
-    final totalHeight = box.height + borderWidth * 2;
+    final totalWidth = box.width + editBorderWidth * 2;
+    final totalHeight = box.height + editBorderWidth * 2;
     final globalContainerCenter = Offset(
       box.position.dx + totalWidth / 2,
       box.position.dy + totalHeight / 2,

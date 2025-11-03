@@ -84,6 +84,9 @@ class EditBoxData {
     required this.width,
     required this.height,
     required this.position,
+    // 可见性属性的默认值
+    this.visible = true,
+
     this.imagePath = '',
     this.text = '',
     this.fillColor = '#D8D8D8',
@@ -125,9 +128,6 @@ class EditBoxData {
 
     // 旋转相关属性的默认值
     this.rotateLastPosition,
-
-    // 可见性属性的默认值
-    this.visible = true,
   }) : initialWidth = initialWidth ?? width,
        initialHeight = initialHeight ?? height,
        initialFontSize = fontSize,

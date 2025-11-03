@@ -10,7 +10,7 @@ import 'edit_content_box.dart';
 import '../managers/canvas_gesture_manager.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../../../utils/text_measure_util.dart';
-import '../widgets/transform_canvas.dart';
+import 'transform_border_canvas.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   const CanvasEditorWidget({super.key});
@@ -405,7 +405,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         onPointerUp: _handlePointerUp,
         onPointerCancel: _handlePointerCancel,
         behavior: HitTestBehavior.translucent,
-        child: TransformCanvas(
+        child: TransformBorderCanvas(
           elements: boxes,
           selectedId: _selectionController.selectedId,
           child: Stack(
