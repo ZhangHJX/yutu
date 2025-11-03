@@ -242,7 +242,7 @@ class EditContentBox extends StatelessWidget {
         return Container(
           width: data.width,
           height: data.height,
-          color: Colors.yellow,
+          color: Colors.transparent,
           alignment: Alignment.topLeft,
           child: OutlinedText(
             text: data.text,
@@ -262,12 +262,11 @@ class EditContentBox extends StatelessWidget {
                       ),
                     ]
                   : [],
-              backgroundColor: Colors.red,
             ),
             textAlign: data.align,
             strokeWidth: data.borderWidth, // 描边宽度，需要自己计算：fontSize * 0.18
             strokeColor: data.borderColor.color,
-            fillColor: data.textColor.color,
+            fillColor: data.fillColor.color,
             maxLines: null,
           ),
         );

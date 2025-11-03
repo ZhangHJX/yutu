@@ -337,11 +337,6 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 5.w),
-                  hintText: '#FFFFFF',
-                  hintStyle: TextStyle(
-                    fontSize: 14.w,
-                    color: "#ff242424".color,
-                  ),
                 ),
                 style: TextStyle(
                   fontSize: 14.w,
@@ -419,12 +414,6 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 5.w),
-                  hintText: '#FFFFFF',
-                  hintStyle: TextStyle(
-                    fontSize: 14.w,
-                    color: "#ff242424".color,
-                    fontWeight: FontWeight.w600,
-                  ),
                 ),
                 style: TextStyle(
                   fontSize: 14.w,
