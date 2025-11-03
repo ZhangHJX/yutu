@@ -10,7 +10,7 @@ class CanvalsEditBoxUtil {
     final totalWidth = data.width + editBorderWidth * 2;
     final totalHeight = data.height + editBorderWidth * 2;
 
-    // 控制点相对于容器左上角的位置
+    // 控制点相对于容器左上角的位置（包含边框）
     final localPositions = {
       // 四个角点
       'top-left': Offset(-1.5, -1.5), // 左上角
@@ -27,16 +27,31 @@ class CanvalsEditBoxUtil {
     final cos = math.cos(data.rotation);
     final sin = math.sin(data.rotation);
 
-    // 容器中心的全局坐标（包含边框）
-    final centerX = data.position.dx + totalWidth / 2;
-    final centerY = data.position.dy + totalHeight / 2;
+    // 【关键修复】使用与内容相同的旋转中心点
+    // 内容的旋转中心：data.position + (width/2, height/2)
+    // 而不是包含边框的容器中心
+    final centerX = data.position.dx + data.width / 2;
+    final centerY = data.position.dy + data.height / 2;
+
+    // 边框容器的左上角位置（相对于内容左上角的偏移）
+    final borderOffsetX = -editBorderWidth;
+    final borderOffsetY = -editBorderWidth;
 
     return localPositions.map((key, localPos) {
-      // 相对于中心的坐标
-      final relX = localPos.dx - totalWidth / 2;
-      final relY = localPos.dy - totalHeight / 2;
+      // 控制点的本地位置是相对于边框容器左上角的
+      // 需要转换为相对于内容中心的坐标
+      // 首先转换为相对于边框容器中心的坐标
+      final relToBorderCenterX = localPos.dx - totalWidth / 2;
+      final relToBorderCenterY = localPos.dy - totalHeight / 2;
 
-      // 应用旋转
+      // 边框容器中心相对于内容中心的偏移
+      // 内容中心在边框容器中心的位置：内容中心 = 边框中心 - (borderOffset + editBorderWidth)
+      // 实际上：边框中心 = 内容中心 + editBorderWidth
+      // 所以相对于内容中心的坐标：
+      final relX = relToBorderCenterX + editBorderWidth;
+      final relY = relToBorderCenterY + editBorderWidth;
+
+      // 应用旋转（围绕内容中心旋转）
       final rotatedX = relX * cos - relY * sin;
       final rotatedY = relX * sin + relY * cos;
 
@@ -52,20 +67,28 @@ class CanvalsEditBoxUtil {
     final totalWidth = data.width + editBorderWidth * 2;
     final totalHeight = data.height + editBorderWidth * 2;
 
-    // 相对于容器中心的位置
-    final buttonLocalX = 0.0; // 在中心的x坐标
+    // 【关键】按钮应该位于元素底部中心的正下方（在未旋转的坐标系中）
+    // 相对于边框容器中心的位置（本地坐标系，未旋转）
+    final buttonLocalX = 0.0; // 在边框容器中心的x坐标（水平居中）
     final buttonLocalY =
         totalHeight / 2 + rotationButtonPadding + rotationButtonSize / 2;
 
-    // 应用旋转（围绕中心旋转）
+    // 【关键修复】使用与内容相同的旋转中心点
+    final centerX = data.position.dx + data.width / 2;
+    final centerY = data.position.dy + data.height / 2;
+
+    // 按钮相对于边框容器中心的坐标需要转换为相对于内容中心的坐标
+    // 边框容器中心相对于内容中心的偏移是 +editBorderWidth
+    final relX = buttonLocalX + editBorderWidth;
+    final relY = buttonLocalY + editBorderWidth;
+
+    // 应用旋转（围绕内容中心旋转）- 这只是计算位置，不是旋转按钮本身
     final cos = math.cos(data.rotation);
     final sin = math.sin(data.rotation);
-    final rotatedX = buttonLocalX * cos - buttonLocalY * sin;
-    final rotatedY = buttonLocalX * sin + buttonLocalY * cos;
+    final rotatedX = relX * cos - relY * sin;
+    final rotatedY = relX * sin + relY * cos;
 
-    // 转换为全局坐标（容器中心 + 旋转后的偏移）
-    final centerX = data.position.dx + totalWidth / 2;
-    final centerY = data.position.dy + totalHeight / 2;
+    // 转换为全局坐标
     return Offset(centerX + rotatedX, centerY + rotatedY);
   }
 }

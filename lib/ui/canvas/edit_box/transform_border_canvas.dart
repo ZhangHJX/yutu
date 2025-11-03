@@ -49,6 +49,10 @@ class TransformBorderCanvas extends StatelessWidget {
 
   /// 构建边框矩形
   Widget _buildBorder(EditBoxData element) {
+    // 计算包含边框的总尺寸
+    final totalWidth = element.width + editBorderWidth * 2;
+    final totalHeight = element.height + editBorderWidth * 2;
+
     return Positioned(
       left: element.position.dx - editBorderWidth,
       top: element.position.dy - editBorderWidth,
@@ -56,8 +60,8 @@ class TransformBorderCanvas extends StatelessWidget {
         angle: element.rotation,
         alignment: Alignment.center,
         child: Container(
-          width: element.width + editBorderWidth * 2,
-          height: element.height + editBorderWidth * 2,
+          width: totalWidth,
+          height: totalHeight,
           decoration: BoxDecoration(
             color: Colors.transparent,
             // 只有边框显隐变化，尺寸不变
@@ -140,17 +144,18 @@ class TransformBorderCanvas extends StatelessWidget {
 
   /// 构建旋转按钮
   Widget _buildRotationButton(EditBoxData element) {
-    const rotationButtonSize = 26.0;
     final buttonCenter = CanvalsEditBoxUtil.getRotationButtonCenter(element);
-
     return Positioned(
       left: buttonCenter.dx - rotationButtonSize / 2,
       top: buttonCenter.dy - rotationButtonSize / 2,
+      // child: const Icon(Icons.rotate_right, color: Colors.white, size: 16),
       child: Image.asset(
         'assets/images/canvals/edit_rotation_icon.png',
         width: rotationButtonSize,
         height: rotationButtonSize,
         fit: BoxFit.contain,
+        // 确保图片不旋转
+        alignment: Alignment.center,
       ),
     );
   }
