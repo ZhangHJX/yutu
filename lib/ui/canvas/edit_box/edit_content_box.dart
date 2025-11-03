@@ -2,6 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../controllers/create_design_model.dart';
+import 'out_lined_text.dart';
 
 class EditContentBox extends StatelessWidget {
   final EditBoxData data;
@@ -236,11 +237,11 @@ class EditContentBox extends StatelessWidget {
         return Container(
           width: data.width,
           height: data.height,
-          color: Colors.transparent,
+          color: Colors.yellow,
           alignment: Alignment.topLeft,
-          child: Text(
-            data.text,
-            style: TextStyle(
+          child: OutlinedText(
+            text: data.text,
+            textStyle: TextStyle(
               fontFamily: data.fontFamily,
               fontSize: data.fontSize,
               fontWeight: data.fontWeight,
@@ -258,10 +259,42 @@ class EditContentBox extends StatelessWidget {
                   : [],
             ),
             textAlign: data.align,
-            softWrap: true, // 启用自动换行
-            overflow: TextOverflow.visible, // 允许文本可见
+            strokeWidth: data.borderWidth, // 描边宽度，需要自己计算：fontSize * 0.18
+            strokeColor: data.borderColor.color,
+            fillColor: data.textColor.color,
+            maxLines: null,
           ),
         );
+
+      // return Container(
+      //   width: data.width,
+      //   height: data.height,
+      //   color: Colors.transparent,
+      //   alignment: Alignment.topLeft,
+      //   child: Text(
+      //     data.text,
+      //     style: TextStyle(
+      //       fontFamily: data.fontFamily,
+      //       fontSize: data.fontSize,
+      //       fontWeight: data.fontWeight,
+      //       color: data.textColor.color,
+      //       height: data.lineHeight,
+      //       letterSpacing: data.fontSpace,
+      //       shadows: data.isShawOpen
+      //           ? [
+      //               Shadow(
+      //                 color: data.shawColor.color,
+      //                 offset: Offset(data.shawX, data.shawY),
+      //                 blurRadius: data.blurValue,
+      //               ),
+      //             ]
+      //           : [],
+      //     ),
+      //     textAlign: data.align,
+      //     softWrap: true, // 启用自动换行
+      //     overflow: TextOverflow.visible, // 允许文本可见
+      //   ),
+      // );
     }
   }
 
