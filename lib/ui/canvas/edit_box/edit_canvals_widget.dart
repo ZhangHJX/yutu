@@ -10,6 +10,7 @@ import 'edit_content_box.dart';
 import '../managers/canvas_gesture_manager.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../../../utils/text_measure_util.dart';
+import '../widgets/transform_canvas.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   const CanvasEditorWidget({super.key});
@@ -404,31 +405,35 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         onPointerUp: _handlePointerUp,
         onPointerCancel: _handlePointerCancel,
         behavior: HitTestBehavior.translucent,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // 未选中的文本框（先渲染，在底层）
-            ...boxes
-                .where((box) => !_selectionController.isSelected(box.id))
-                .map(
-                  (box) => EditContentBox(
-                    key: ValueKey(box.id),
-                    data: box,
-                    isActive: false,
+        child: TransformCanvas(
+          elements: boxes,
+          selectedId: _selectionController.selectedId,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // 未选中的元素（先渲染，在底层）
+              ...boxes
+                  .where((box) => !_selectionController.isSelected(box.id))
+                  .map(
+                    (box) => EditContentBox(
+                      key: ValueKey(box.id),
+                      data: box,
+                      isActive: false,
+                    ),
                   ),
-                ),
 
-            // 选中的文本框（后渲染，在最上层）
-            ...boxes
-                .where((box) => _selectionController.isSelected(box.id))
-                .map(
-                  (box) => EditContentBox(
-                    key: ValueKey(box.id),
-                    data: box,
-                    isActive: true,
+              // 选中的元素（后渲染，在最上层）
+              ...boxes
+                  .where((box) => _selectionController.isSelected(box.id))
+                  .map(
+                    (box) => EditContentBox(
+                      key: ValueKey(box.id),
+                      data: box,
+                      isActive: true,
+                    ),
                   ),
-                ),
-          ],
+            ],
+          ),
         ),
       );
     });
