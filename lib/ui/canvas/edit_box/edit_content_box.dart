@@ -18,6 +18,11 @@ class EditContentBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 如果元素不可见，返回空的 Container
+    if (!data.visible) {
+      return SizedBox.shrink();
+    }
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -257,6 +262,7 @@ class EditContentBox extends StatelessWidget {
                       ),
                     ]
                   : [],
+              backgroundColor: Colors.red,
             ),
             textAlign: data.align,
             strokeWidth: data.borderWidth, // 描边宽度，需要自己计算：fontSize * 0.18
@@ -265,36 +271,6 @@ class EditContentBox extends StatelessWidget {
             maxLines: null,
           ),
         );
-
-      // return Container(
-      //   width: data.width,
-      //   height: data.height,
-      //   color: Colors.transparent,
-      //   alignment: Alignment.topLeft,
-      //   child: Text(
-      //     data.text,
-      //     style: TextStyle(
-      //       fontFamily: data.fontFamily,
-      //       fontSize: data.fontSize,
-      //       fontWeight: data.fontWeight,
-      //       color: data.textColor.color,
-      //       height: data.lineHeight,
-      //       letterSpacing: data.fontSpace,
-      //       shadows: data.isShawOpen
-      //           ? [
-      //               Shadow(
-      //                 color: data.shawColor.color,
-      //                 offset: Offset(data.shawX, data.shawY),
-      //                 blurRadius: data.blurValue,
-      //               ),
-      //             ]
-      //           : [],
-      //     ),
-      //     textAlign: data.align,
-      //     softWrap: true, // 启用自动换行
-      //     overflow: TextOverflow.visible, // 允许文本可见
-      //   ),
-      // );
     }
   }
 

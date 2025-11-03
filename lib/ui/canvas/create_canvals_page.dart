@@ -401,6 +401,14 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                     _canvasKey.currentState?.reorderLayers(oldIndex, newIndex);
                   });
                 },
+                onLayerToggleVisibility: (layerId) {
+                  setState(() {
+                    final layers = _canvasKey.currentState?.layers ?? [];
+                    final layer = layers.firstWhere((l) => l.id == layerId);
+                    _canvalsController.deselect();
+                    layer.visible = !layer.visible;
+                  });
+                },
               ),
             ),
         ],

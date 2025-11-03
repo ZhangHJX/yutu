@@ -27,7 +27,7 @@ class TextMeasureUtil {
     return _measureWithStyle(text: text, textStyle: textStyle);
   }
 
-  /// 根据固定宽度计算文本尺寸（包含padding）
+  /// 根据固定宽度计算文本尺寸
   /// [text] 要测量的文本
   /// [fontSize] 字体大小
   /// [fontFamily] 字体
@@ -62,7 +62,20 @@ class TextMeasureUtil {
     final availableWidth = maxWidth;
     textPainter.layout(maxWidth: availableWidth);
 
-    // 返回尺寸时加上padding
+    // 返回尺寸
+    // 对于单行文本，去除尾随空白后重新测量以获得精确宽度
+    final trimmedText = text.trimRight();
+    if (trimmedText != text && !text.contains('\n')) {
+      // 如果是单行且有尾随空白，使用去除空白后的文本重新测量
+      final trimmedPainter = TextPainter(
+        text: TextSpan(text: trimmedText, style: textStyle),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+      );
+      trimmedPainter.layout(maxWidth: availableWidth);
+      return Size(trimmedPainter.width, textPainter.height);
+    }
+
     return Size(textPainter.width, textPainter.height);
   }
 
@@ -71,11 +84,14 @@ class TextMeasureUtil {
     required String text,
     required TextStyle textStyle,
   }) {
+    // 去除文本末尾的空白字符，避免测量时包含尾随空白
+    final trimmedText = text.trimRight();
+
     // 检查文本是否包含换行符
-    final hasLineBreaks = text.contains('\n');
+    final hasLineBreaks = trimmedText.contains('\n');
 
     final textPainter = TextPainter(
-      text: TextSpan(text: text, style: textStyle),
+      text: TextSpan(text: trimmedText, style: textStyle),
       textDirection: TextDirection.ltr,
     );
 
@@ -87,6 +103,10 @@ class TextMeasureUtil {
       textPainter.layout();
     }
 
-    return Size(textPainter.width, textPainter.height);
+    // 对于单行文本，textPainter.width 应该已经是精确的（因为我们已经去除了尾随空白）
+    // 如果文本为空，返回最小尺寸
+    final width = trimmedText.isEmpty ? 0.0 : textPainter.width;
+
+    return Size(width, textPainter.height);
   }
 }

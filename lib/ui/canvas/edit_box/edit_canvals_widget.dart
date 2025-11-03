@@ -97,9 +97,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   void initState() {
     super.initState();
     _selectionController = Get.put(CanvalsController());
-
     _gestureManager.onDoubleTap = (String boxId) {
-      debugPrint("----------$boxId--------");
       showTextInputDialog(boxId);
     };
   }

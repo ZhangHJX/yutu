@@ -75,6 +75,9 @@ class EditBoxData {
   // 旋转相关属性
   Offset? rotateLastPosition; // 旋转时的上一次触摸位置
 
+  // 可见性属性
+  bool visible; // 元素是否可见
+
   EditBoxData({
     required this.id,
     required this.type,
@@ -122,6 +125,9 @@ class EditBoxData {
 
     // 旋转相关属性的默认值
     this.rotateLastPosition,
+
+    // 可见性属性的默认值
+    this.visible = true,
   }) : initialWidth = initialWidth ?? width,
        initialHeight = initialHeight ?? height,
        initialFontSize = fontSize,
