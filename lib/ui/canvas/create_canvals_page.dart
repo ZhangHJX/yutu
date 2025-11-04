@@ -15,7 +15,6 @@ import 'controllers/canvals_controller.dart';
 import './controllers/create_design_model.dart';
 import '../../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 
 class CreateCanvalsPage extends StatefulWidget {
   const CreateCanvalsPage({super.key});
@@ -248,7 +247,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
         if (imageBytes != null) {
           // 保存到相册
-          final result = await ImageGallerySaver.saveImage(
+          final result = await ImageGallerySaverPlus.saveImage(
             imageBytes,
             quality: 100,
             name: "canvas_${DateTime.now().millisecondsSinceEpoch}",

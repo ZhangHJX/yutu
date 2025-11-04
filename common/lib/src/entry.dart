@@ -12,3 +12,4 @@ export 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 export 'package:flutter_swipe_action_cell/flutter_swipe_action_cell.dart';
 export 'package:image_picker/image_picker.dart';
 export 'package:json_serializable/json_serializable.dart';
+export 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
