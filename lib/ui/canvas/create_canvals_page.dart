@@ -112,6 +112,10 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
         onDeleteText: () {
           _deleteText();
         },
+        onPropertyChanged: () {
+          // 属性实时更新时的回调，立即刷新UI和重新计算尺寸
+          _refreshTextBoxAfterPropertyChange();
+        },
       ),
       alignment: Alignment.bottomCenter,
       animationType: SmartAnimationType.centerFade_otherSlide,
@@ -123,14 +127,11 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       ),
       useAnimation: true,
       usePenetrate: false,
-    ).then((_) {
-      // 对话框关闭后的回调，刷新 UI 并重新计算文本尺寸
-      _refreshTextBoxAfterPropertyChange();
-      _savedTextWidth = null; // 清除保存的宽度
-    });
+    );
   }
 
   /// 刷新文本框，重新计算尺寸（当属性变化时）
+  /// 注意：属性值已经在 TextPropertyDialog 中实时更新，这里只需要重新计算尺寸并刷新UI
   void _refreshTextBoxAfterPropertyChange() {
     if (_activeElement == null || _activeElement!.type != ElementType.text) {
       return;
@@ -171,6 +172,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
         box.width = singleLineSize.width;
         box.height = singleLineSize.height;
       }
+      // setState 会触发整个 widget 树重新构建，从而更新所有依赖 box 的组件（如 EditContentBox）
     });
   }
 

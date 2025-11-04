@@ -71,4 +71,11 @@ class ScreenTools {
   static double getSafeAreaRight(BuildContext context) {
     return MediaQuery.of(context).padding.right;
   }
+
+  static double getKeyboardHeight(
+    BuildContext context,
+    bool isKeyboardVisible,
+  ) {
+    return isKeyboardVisible ? MediaQuery.of(context).viewInsets.bottom : 0.0;
+  }
 }
