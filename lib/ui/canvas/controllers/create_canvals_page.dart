@@ -628,6 +628,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
   }
 
   void _addImageDialog() {
+    _toggleLayerDialog(false);
     _canvalsController.selectImageHelper.onlyChooseImages(
       onSuccess: () {
         final imagePath = _canvalsController.selectImageHelper.image;
@@ -651,6 +652,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   /// 显示形状弹框
   void _showShapeDialog() {
+    _toggleLayerDialog(false);
     SmartDialog.show(
       builder: (context) => CanvalsShapeDialog(
         onShapeSelected: (shapeType) {
@@ -670,6 +672,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   /// 显示文本输入对话框
   void _showTextInputDialog() {
+    _toggleLayerDialog(false);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true, // 允许控制高度
@@ -689,6 +692,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   /// 显示保存模版弹框
   void _showSaveTemplateDialog() {
+    _toggleLayerDialog(false);
+
     SmartDialog.show(
       builder: (context) => CanvalsSaveTemplateDialog(),
       alignment: Alignment.bottomCenter,
@@ -703,6 +708,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   /// 保存到系统相册
   Future<void> _captureAndSave() async {
+    _toggleLayerDialog(false);
+
     // 请求存储权限
     final res = await PermissionUtil.requestGalleryReadPermission();
     if (res) {
