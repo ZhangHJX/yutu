@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../controllers/create_design_model.dart';
+import '../model/create_design_model.dart';
 import 'out_lined_text.dart';
 
 class EditContentBox extends StatelessWidget {
@@ -159,7 +159,7 @@ class EditContentBox extends StatelessWidget {
             textAlign: data.align,
             strokeWidth: data.borderWidth, // 描边宽度，需要自己计算：fontSize * 0.18
             strokeColor: data.borderColor.color,
-            fillColor: data.fillColor.color,
+            fillColor: data.textColor.color,
             maxLines: null,
           ),
         );

@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-import '../../controllers/create_design_model.dart';
+import '../../model/create_design_model.dart';
 import '../../utils/index.dart';
 
 class ShapePropertyDialog extends StatefulWidget {

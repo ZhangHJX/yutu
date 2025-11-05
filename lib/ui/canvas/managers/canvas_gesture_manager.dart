@@ -1,9 +1,10 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../controllers/create_design_model.dart';
+import '../model/create_design_model.dart';
 import '../../../utils/text_measure_util.dart';
 import '../utils/canvals_edit_box_util.dart';
 import 'dart:math' as math;
+import 'canvas_history_manager.dart';
 
 /// 画布手势管理器： 负责处理所有的手势交互逻辑
 class CanvasGestureManager {
@@ -11,6 +12,9 @@ class CanvasGestureManager {
   void Function(String boxId)? onDoubleTap;
   // 判断点击是否是文本框内
   bool isTapBox = false;
+
+  // 历史管理器
+  CanvasHistoryManager? historyManager;
 
   // 交互状态
   String?
@@ -27,6 +31,15 @@ class CanvasGestureManager {
   // 缩放相关
   final Map<int, Offset> pointers = {};
   double lastScale = 1.0;
+
+  // 操作开始时的状态快照（用于历史记录）
+  Offset? _operationStartPosition;
+  double? _operationStartRotation;
+  double? _operationStartWidth;
+  double? _operationStartHeight;
+  double? _operationStartCumulativeScale;
+  double? _operationStartFontSize;
+  double? _operationStartFontSpace;
 
   // 尺寸限制
   static const double maxSize = 1000000.0;
@@ -75,6 +88,8 @@ class CanvasGestureManager {
           currentInteraction = 'rotate';
           hasMoved = true; // 判定为旋转操作
           selectedBox.rotateLastPosition = event.localPosition;
+          // 保存操作开始时的状态
+          _operationStartRotation = selectedBox.rotation;
           debugPrint('✅ 判定为旋转: $selectedId');
           return;
         } else if (hitTarget.startsWith('resize:')) {
@@ -82,6 +97,17 @@ class CanvasGestureManager {
           final handle = hitTarget.substring(7);
           currentInteraction = 'resize';
           hasMoved = true; // 判定为缩放操作
+          // 保存操作开始时的状态
+          _operationStartWidth = selectedBox.width;
+          _operationStartHeight = selectedBox.height;
+          _operationStartPosition = Offset(
+            selectedBox.position.dx,
+            selectedBox.position.dy,
+          );
+          if (selectedBox.type == ElementType.text) {
+            _operationStartFontSize = selectedBox.fontSize;
+            _operationStartFontSpace = selectedBox.fontSpace;
+          }
           _startResize(selectedBox, handle, event.localPosition);
           debugPrint('✅ 判定为缩放: $selectedId, 控制点: $handle');
           return;
@@ -91,6 +117,11 @@ class CanvasGestureManager {
           isTapBox = true;
           pendingClickBoxId = selectedId; // 保存可能要取消激活的元素ID
           dragStartBoxPosition = selectedBox.position;
+          // 保存操作开始时的位置（用于历史记录）
+          _operationStartPosition = Offset(
+            selectedBox.position.dx,
+            selectedBox.position.dy,
+          );
           // 初始化缩放中心点（外层容器包含边框）
           if (selectedBox.fixedScaleCenter == null) {
             final totalWidth = selectedBox.width;
@@ -177,6 +208,18 @@ class CanvasGestureManager {
       selectedBox.initialFontSize = selectedBox.fontSize;
     }
 
+    // 保存操作开始时的状态
+    _operationStartCumulativeScale = selectedBox.cumulativeScale;
+    _operationStartWidth = selectedBox.width;
+    _operationStartHeight = selectedBox.height;
+    _operationStartPosition = Offset(
+      selectedBox.position.dx,
+      selectedBox.position.dy,
+    );
+    if (selectedBox.type == ElementType.text) {
+      _operationStartFontSize = selectedBox.fontSize;
+    }
+
     debugPrint('双指缩放开始');
   }
 
@@ -243,6 +286,10 @@ class CanvasGestureManager {
         if (dragStartPosition != null && dragStartBoxPosition != null) {
           final delta = event.localPosition - dragStartPosition!;
           targetBox.position = dragStartBoxPosition! + delta;
+          // 如果还没有保存初始位置，现在保存（首次移动时）
+          if (_operationStartPosition == null) {
+            _operationStartPosition = dragStartBoxPosition;
+          }
           // 移除频繁的调试打印，提升性能
         } else {
           debugPrint(
@@ -396,6 +443,113 @@ class CanvasGestureManager {
 
   /// 清理交互状态
   void _cleanupInteraction(List<EditBoxData> boxes, String selectedId) {
+    // 在清理状态前，记录命令（如果操作有实际变化）
+    if (selectedId.isNotEmpty && hasMoved && historyManager != null) {
+      try {
+        final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+        final currentPosition = Offset(
+          selectedBox.position.dx,
+          selectedBox.position.dy,
+        );
+
+        switch (currentInteraction) {
+          case 'drag':
+            if (_operationStartPosition != null &&
+                (_operationStartPosition!.dx != currentPosition.dx ||
+                    _operationStartPosition!.dy != currentPosition.dy)) {
+              historyManager!.executeCommand(
+                MoveElementCommand(
+                  boxes,
+                  selectedId,
+                  _operationStartPosition!,
+                  currentPosition,
+                ),
+              );
+            }
+            break;
+
+          case 'rotate':
+            if (_operationStartRotation != null &&
+                _operationStartRotation != selectedBox.rotation) {
+              historyManager!.executeCommand(
+                RotateElementCommand(
+                  boxes,
+                  selectedId,
+                  _operationStartRotation!,
+                  selectedBox.rotation,
+                ),
+              );
+            }
+            break;
+
+          case 'resize':
+            if (_operationStartWidth != null &&
+                _operationStartHeight != null &&
+                _operationStartPosition != null &&
+                (_operationStartWidth != selectedBox.width ||
+                    _operationStartHeight != selectedBox.height ||
+                    _operationStartPosition!.dx != currentPosition.dx ||
+                    _operationStartPosition!.dy != currentPosition.dy)) {
+              historyManager!.executeCommand(
+                ResizeElementCommand(
+                  boxes: boxes,
+                  elementId: selectedId,
+                  oldWidth: _operationStartWidth!,
+                  oldHeight: _operationStartHeight!,
+                  oldPosition: _operationStartPosition!,
+                  newWidth: selectedBox.width,
+                  newHeight: selectedBox.height,
+                  newPosition: currentPosition,
+                  oldFontSize: _operationStartFontSize,
+                  newFontSize: selectedBox.type == ElementType.text
+                      ? selectedBox.fontSize
+                      : null,
+                  oldFontSpace: _operationStartFontSpace,
+                  newFontSpace: selectedBox.type == ElementType.text
+                      ? selectedBox.fontSpace
+                      : null,
+                ),
+              );
+            }
+            break;
+
+          case 'scale':
+            if (_operationStartCumulativeScale != null &&
+                _operationStartWidth != null &&
+                _operationStartHeight != null &&
+                _operationStartPosition != null &&
+                (_operationStartCumulativeScale !=
+                        selectedBox.cumulativeScale ||
+                    _operationStartWidth != selectedBox.width ||
+                    _operationStartHeight != selectedBox.height ||
+                    _operationStartPosition!.dx != currentPosition.dx ||
+                    _operationStartPosition!.dy != currentPosition.dy)) {
+              historyManager!.executeCommand(
+                ScaleElementCommand(
+                  boxes: boxes,
+                  elementId: selectedId,
+                  oldCumulativeScale: _operationStartCumulativeScale!,
+                  newCumulativeScale: selectedBox.cumulativeScale,
+                  oldWidth: _operationStartWidth!,
+                  oldHeight: _operationStartHeight!,
+                  oldPosition: _operationStartPosition!,
+                  newWidth: selectedBox.width,
+                  newHeight: selectedBox.height,
+                  newPosition: currentPosition,
+                  oldFontSize: _operationStartFontSize,
+                  newFontSize: selectedBox.type == ElementType.text
+                      ? selectedBox.fontSize
+                      : null,
+                ),
+              );
+            }
+            break;
+        }
+      } catch (e) {
+        debugPrint('记录命令时出错: $e');
+      }
+    }
+
     if (currentInteraction == 'resize' && selectedId.isNotEmpty) {
       final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
       selectedBox.resizingHandle = null;
@@ -422,6 +576,14 @@ class CanvasGestureManager {
     dragStartBoxPosition = null;
     pendingClickBoxId = null;
     lastScale = 1.0;
+    // 清除操作开始时的状态快照
+    _operationStartPosition = null;
+    _operationStartRotation = null;
+    _operationStartWidth = null;
+    _operationStartHeight = null;
+    _operationStartCumulativeScale = null;
+    _operationStartFontSize = null;
+    _operationStartFontSpace = null;
   }
 
   /// 检测点击了哪个元素或控制点

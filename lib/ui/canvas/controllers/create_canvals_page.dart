@@ -1,20 +1,22 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'widgets/canvas_app_bar_widget.dart';
-import 'widgets/canvas_bottom_bar_widget.dart';
-import 'widgets/dialog/canvals_layer_dialog.dart';
-import 'widgets/dialog/canvals_save_dialog.dart';
-import 'widgets/property/element_attribute_toolbar.dart';
-import 'widgets/property/image_property_dialog.dart';
-import 'widgets/property/shape_property_dialog.dart';
-import 'widgets/property/text_property_dialog.dart';
-import 'widgets/dialog/text_input_dialog.dart';
-import 'widgets/dialog/canvals_shape_dialog.dart';
-import './edit_box/edit_canvals_widget.dart';
-import 'controllers/canvals_controller.dart';
-import './controllers/create_design_model.dart';
-import '../../utils/text_measure_util.dart';
+import '../widgets/canvas_app_bar_widget.dart';
+import '../widgets/canvas_bottom_bar_widget.dart';
+import '../widgets/dialog/canvals_layer_dialog.dart';
+import '../widgets/dialog/canvals_save_dialog.dart';
+import '../widgets/property/element_attribute_toolbar.dart';
+import '../widgets/property/image_property_dialog.dart';
+import '../widgets/property/shape_property_dialog.dart';
+import '../widgets/property/text_property_dialog.dart';
+import '../widgets/dialog/text_input_dialog.dart';
+import '../widgets/dialog/canvals_shape_dialog.dart';
+import '../edit_box/edit_canvals_widget.dart';
+import 'canvals_controller.dart';
+import '../model/create_design_model.dart';
+import '../../../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
+import '../managers/canvas_history_manager.dart';
+import '../utils/edit_box_data_clone.dart';
 
 class CreateCanvalsPage extends StatefulWidget {
   const CreateCanvalsPage({super.key});
@@ -27,6 +29,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
   final CanvalsController _canvalsController = Get.put(CanvalsController());
   late DesignCanvalsModel _canvalsModel;
   final ScreenshotController _screenshotController = ScreenshotController();
+  final CanvasHistoryManager _historyManager = CanvasHistoryManager();
 
   final GlobalKey<CanvasEditorWidgetState> _canvasKey =
       GlobalKey<CanvasEditorWidgetState>();
@@ -34,6 +37,9 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
   final GlobalKey _layerButtonKey = GlobalKey();
   bool _showLayerDialog = false; // 添加图层弹框显示状态
   double? _savedTextWidth; // 保存打开文本属性对话框时的宽度
+
+  // 用于保存对话框打开时的属性快照（用于历史记录）
+  EditBoxData? _propertyDialogSnapshot;
 
   @override
   void initState() {
@@ -61,6 +67,11 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   /// 显示形状属性弹框
   void _showShapePropertyDialog() {
+    if (_activeElement == null) return;
+
+    // 保存属性快照
+    _propertyDialogSnapshot = EditBoxDataClone.clone(_activeElement!);
+
     SmartDialog.show(
       builder: (context) => ShapePropertyDialog(
         editBoxData: _activeElement,
@@ -77,12 +88,73 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       animationTime: Duration(milliseconds: 250),
       maskColor: Colors.black.withValues(alpha: 0.4),
       maskWidget: GestureDetector(
-        onTap: () => SmartDialog.dismiss(),
+        onTap: () {
+          _recordShapePropertyChange();
+          SmartDialog.dismiss();
+        },
         child: Container(color: Colors.transparent),
       ),
       useAnimation: true,
       usePenetrate: false,
     );
+  }
+
+  /// 记录形状属性变化
+  void _recordShapePropertyChange() {
+    if (_activeElement == null || _propertyDialogSnapshot == null) return;
+
+    final current = _activeElement!;
+    final old = _propertyDialogSnapshot!;
+
+    // 检查是否有实际变化
+    final hasChanged =
+        old.fillColor != current.fillColor ||
+        old.borderColor != current.borderColor ||
+        old.borderWidth != current.borderWidth ||
+        old.isShawOpen != current.isShawOpen ||
+        old.shawColor != current.shawColor ||
+        old.shawX != current.shawX ||
+        old.shawY != current.shawY ||
+        old.blurValue != current.blurValue ||
+        old.height != current.height;
+
+    if (hasChanged) {
+      final oldProperties = {
+        'fillColor': old.fillColor,
+        'borderColor': old.borderColor,
+        'borderWidth': old.borderWidth,
+        'isShawOpen': old.isShawOpen,
+        'shawColor': old.shawColor,
+        'shawX': old.shawX,
+        'shawY': old.shawY,
+        'blurValue': old.blurValue,
+        'height': old.height,
+      };
+
+      final newProperties = {
+        'fillColor': current.fillColor,
+        'borderColor': current.borderColor,
+        'borderWidth': current.borderWidth,
+        'isShawOpen': current.isShawOpen,
+        'shawColor': current.shawColor,
+        'shawX': current.shawX,
+        'shawY': current.shawY,
+        'blurValue': current.blurValue,
+        'height': current.height,
+      };
+
+      final boxes = _canvasKey.currentState?.boxesList ?? [];
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: oldProperties,
+          newProperties: newProperties,
+        ),
+      );
+    }
+
+    _propertyDialogSnapshot = null;
   }
 
   /// 删除形状
@@ -105,6 +177,9 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     // 保存打开对话框时的宽度，用于判断是否是多行状态
     _savedTextWidth = activeElement.width;
 
+    // 保存属性快照
+    _propertyDialogSnapshot = EditBoxDataClone.clone(activeElement);
+
     SmartDialog.show(
       builder: (context) => TextPropertyDialog(
         editBoxData: activeElement,
@@ -121,12 +196,85 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       animationTime: Duration(milliseconds: 250),
       maskColor: Colors.black.withValues(alpha: 0.4),
       maskWidget: GestureDetector(
-        onTap: () => SmartDialog.dismiss(),
+        onTap: () {
+          _recordTextPropertyChange();
+          SmartDialog.dismiss();
+        },
         child: Container(color: Colors.transparent),
       ),
       useAnimation: true,
       usePenetrate: false,
     );
+  }
+
+  /// 记录文本属性变化
+  void _recordTextPropertyChange() {
+    if (_activeElement == null ||
+        _activeElement!.type != ElementType.text ||
+        _propertyDialogSnapshot == null)
+      return;
+
+    final current = _activeElement!;
+    final old = _propertyDialogSnapshot!;
+
+    // 检查是否有实际变化
+    final hasChanged =
+        old.fontSize != current.fontSize ||
+        old.fontFamily != current.fontFamily ||
+        old.fontWeight != current.fontWeight ||
+        old.textColor != current.textColor ||
+        old.lineHeight != current.lineHeight ||
+        old.fontSpace != current.fontSpace ||
+        old.align != current.align ||
+        old.width != current.width ||
+        old.height != current.height ||
+        old.position.dx != current.position.dx ||
+        old.position.dy != current.position.dy;
+
+    if (hasChanged) {
+      final boxes = _canvasKey.currentState?.boxesList ?? [];
+
+      // 重新计算位置（因为尺寸变化可能导致位置变化）
+      final oldPosition = old.position;
+      final newPosition = current.position;
+
+      final oldProperties = {
+        'fontSize': old.fontSize,
+        'fontFamily': old.fontFamily,
+        'fontWeight': old.fontWeight,
+        'textColor': old.textColor,
+        'lineHeight': old.lineHeight,
+        'fontSpace': old.fontSpace,
+        'align': old.align,
+        'width': old.width,
+        'height': old.height,
+        'position': oldPosition,
+      };
+
+      final newProperties = {
+        'fontSize': current.fontSize,
+        'fontFamily': current.fontFamily,
+        'fontWeight': current.fontWeight,
+        'textColor': current.textColor,
+        'lineHeight': current.lineHeight,
+        'fontSpace': current.fontSpace,
+        'align': current.align,
+        'width': current.width,
+        'height': current.height,
+        'position': newPosition,
+      };
+
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: oldProperties,
+          newProperties: newProperties,
+        ),
+      );
+    }
+
+    _propertyDialogSnapshot = null;
   }
 
   /// 刷新文本框，重新计算尺寸（当属性变化时）
@@ -276,7 +424,19 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       backgroundColor: cfff6f2fb,
       body: Stack(
         children: [
-          Positioned(left: 0, top: 0, child: CanvasAppBar()),
+          Positioned(
+            left: 0,
+            top: 0,
+            child: Obx(
+              () => CanvasAppBar(
+                _handleBack,
+                _handleUndo,
+                _handleRedo,
+                canUndo: _historyManager.canUndo,
+                canRedo: _historyManager.canRedo,
+              ),
+            ),
+          ),
 
           Positioned(
             left: 0,
@@ -318,7 +478,10 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                         color: Colors.green,
                         width: displayWidth,
                         height: displayHeight,
-                        child: CanvasEditorWidget(key: _canvasKey),
+                        child: CanvasEditorWidget(
+                          key: _canvasKey,
+                          historyManager: _historyManager,
+                        ),
                       ),
                     ),
                   );
@@ -403,11 +566,24 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                   });
                 },
                 onLayerToggleVisibility: (layerId) {
+                  final layers = _canvasKey.currentState?.layers ?? [];
+                  final layer = layers.firstWhere((l) => l.id == layerId);
+                  final oldVisible = layer.visible;
+
                   setState(() {
-                    final layers = _canvasKey.currentState?.layers ?? [];
-                    final layer = layers.firstWhere((l) => l.id == layerId);
                     layer.visible = !layer.visible;
                   });
+
+                  // 记录命令
+                  final boxes = _canvasKey.currentState?.boxesList ?? [];
+                  _historyManager.executeCommand(
+                    ToggleVisibilityCommand(
+                      boxes: boxes,
+                      elementId: layerId,
+                      oldVisible: oldVisible,
+                      newVisible: layer.visible,
+                    ),
+                  );
                 },
               ),
             ),
@@ -418,6 +594,13 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   /// 显示图片属性弹框
   void _showImagePropertyDialog() {
+    if (_activeElement == null || _activeElement!.type != ElementType.image) {
+      return;
+    }
+
+    // 保存属性快照
+    _propertyDialogSnapshot = EditBoxDataClone.clone(_activeElement!);
+
     SmartDialog.show(
       builder: (context) => ImagePropertyDialog(
         imagePath: _activeElement?.imagePath ?? '',
@@ -438,12 +621,50 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       animationTime: Duration(milliseconds: 250),
       maskColor: Colors.black.withValues(alpha: 0.4),
       maskWidget: GestureDetector(
-        onTap: () => SmartDialog.dismiss(),
+        onTap: () {
+          _recordImagePropertyChange();
+          SmartDialog.dismiss();
+        },
         child: Container(color: Colors.transparent),
       ),
       useAnimation: true,
       usePenetrate: false,
     );
+  }
+
+  /// 记录图片属性变化
+  void _recordImagePropertyChange() {
+    if (_activeElement == null ||
+        _activeElement!.type != ElementType.image ||
+        _propertyDialogSnapshot == null)
+      return;
+
+    final current = _activeElement!;
+    final old = _propertyDialogSnapshot!;
+
+    // 检查是否有实际变化
+    final hasChanged =
+        old.width != current.width ||
+        old.height != current.height ||
+        old.imagePath != current.imagePath;
+
+    if (hasChanged) {
+      final boxes = _canvasKey.currentState?.boxesList ?? [];
+      _historyManager.executeCommand(
+        UpdateImagePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldWidth: old.width,
+          oldHeight: old.height,
+          oldImagePath: old.imagePath,
+          newWidth: current.width,
+          newHeight: current.height,
+          newImagePath: current.imagePath,
+        ),
+      );
+    }
+
+    _propertyDialogSnapshot = null;
   }
 
   /// 删除图片
@@ -497,5 +718,20 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
         },
       );
     }
+  }
+
+  /// 返回操作
+  void _handleBack() {
+    Get.back();
+  }
+
+  /// 撤销操作
+  void _handleUndo() {
+    _canvasKey.currentState?.undo();
+  }
+
+  /// 重做操作
+  void _handleRedo() {
+    _canvasKey.currentState?.redo();
   }
 }

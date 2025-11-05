@@ -1,8 +1,8 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../controllers/canvals_controller.dart';
-import '../../controllers/create_design_model.dart';
-import '../../../widgets/gradient_border.dart';
+import '../../model/create_design_model.dart';
+import '../../utils/gradient_border.dart';
 import 'dart:io';
 
 class CanvalsLayerDialog extends StatefulWidget {

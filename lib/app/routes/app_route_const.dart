@@ -8,6 +8,9 @@ class AppRoutes {
   /// TabBar
   static const main = '/main';
 
+  // 创建设计
+  static const designPage = '/create_design_page';
+
   /// 登录页
   static const login = '/login';
 
@@ -16,4 +19,6 @@ class AppRoutes {
 
   /// 404
   static const notFound = '/404';
+
+
 }

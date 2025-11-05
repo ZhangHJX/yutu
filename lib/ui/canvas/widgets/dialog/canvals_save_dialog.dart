@@ -109,7 +109,7 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                             _buildInputField(
                               label: '*模版描述',
                               controller: _descriptionController,
-                              hintText: '输入模版描述(可选填)',
+                              hintText: '输入模版描述',
                             ),
 
                             SizedBox(height: 12.w),

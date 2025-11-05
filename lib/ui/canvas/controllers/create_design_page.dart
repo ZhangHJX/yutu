@@ -1,17 +1,18 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../widgets/gradient_border.dart';
-import '../../app/routes/index.dart';
-import 'controllers/create_design_model.dart';
+import '../utils/gradient_border.dart';
+import '../../../app/routes/index.dart';
+import '../model/create_design_model.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
-class CreateDesignDialog extends StatefulWidget {
-  const CreateDesignDialog({super.key});
+class CreateDesignPage extends StatefulWidget {
+  const CreateDesignPage({super.key});
 
   @override
-  State<CreateDesignDialog> createState() => _CreateDesignDialogState();
+  State<CreateDesignPage> createState() => _CreateDesignPageState();
 }
 
-class _CreateDesignDialogState extends State<CreateDesignDialog>
+class _CreateDesignPageState extends State<CreateDesignPage>
     with TickerProviderStateMixin {
   int _selectedTab = 0;
   int _selectedAspectRatio = 0;
@@ -23,12 +24,12 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
 
   // 预设比例数据
   final List<Map<String, dynamic>> _aspectRatios = [
-    {'ratio': '3:4', 'name': '竖版海报', 'width': 84.w, 'height': 115.w},
-    {'ratio': '4:3', 'name': '横版海报', 'width': 84.w, 'height': 58.w},
-    {'ratio': '9:16', 'name': '竖版海报', 'width': 66.w, 'height': 115.w},
-    {'ratio': '16:9', 'name': '横屏海报', 'width': 92.w, 'height': 46.w},
-    {'ratio': '9:21', 'name': '超长竖屏', 'width': 52.w, 'height': 115.w},
-    {'ratio': '1:1', 'name': '正方形', 'width': 92.w, 'height': 92.w},
+    {'ratio': '3:4', 'name': '竖版海报', 'width': 56.w, 'height': 73.w},
+    {'ratio': '4:3', 'name': '横版海报', 'width': 59.w, 'height': 40.w},
+    {'ratio': '9:16', 'name': '竖版海报', 'width': 38.w, 'height': 62.w},
+    {'ratio': '16:9', 'name': '横屏海报', 'width': 56.w, 'height': 38.w},
+    {'ratio': '9:21', 'name': '超长竖屏', 'width': 41.w, 'height': 62.w},
+    {'ratio': '1:1', 'name': '正方形', 'width': 40.w, 'height': 40.w},
   ];
 
   // 预设比例数据
@@ -139,7 +140,7 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
         width: width,
         height: height,
       );
-
+      _onCancel();
       Get.toNamed(AppRoutes.createCanvalsPage, arguments: canvalsModel);
     } else {
       double width = double.parse(_widthController.text);
@@ -150,57 +151,62 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
         width: width,
         height: height,
       );
+      _onCancel();
       Get.toNamed(AppRoutes.createCanvalsPage, arguments: canvalsModel);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _heightAnimation,
-      builder: (context, child) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
+    return KeyboardDismissOnTap(
+      child: AnimatedBuilder(
+        animation: _heightAnimation,
+        builder: (context, child) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(18.w),
+                topRight: Radius.circular(18.w),
+              ),
             ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 标题
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: const Text(
-                  '创建设计',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xff262626),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 标题
+                Container(
+                  padding: EdgeInsets.only(top: 18.w),
+                  child: Text(
+                    '创建设计',
+                    style: TextStyle(
+                      fontSize: 16.w,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xff262626),
+                    ),
                   ),
                 ),
-              ),
 
-              // Tab 切换
-              buildTabSelector(),
+                SizedBox(height: 22.w),
 
-              // 内容区域
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                child: _selectedTab == 0
-                    ? buildPresetSizes()
-                    : buildCustomSizes(),
-              ),
+                // Tab 切换
+                buildTabSelector(),
 
-              // 底部按钮
-              buildBottomButtons(),
-            ],
-          ),
-        );
-      },
+                // 内容区域
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: _selectedTab == 0
+                      ? buildPresetSizes()
+                      : buildCustomSizes(),
+                ),
+
+                // 底部按钮
+                buildBottomButtons(),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -209,7 +215,7 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
       margin: EdgeInsets.symmetric(horizontal: 51.w),
       decoration: BoxDecoration(
         color: Color(0xFFF4F4F6),
-        borderRadius: BorderRadius.circular(12.w),
+        borderRadius: BorderRadius.circular(10.w),
       ),
       child: Padding(
         padding: EdgeInsets.all(2.w),
@@ -234,12 +240,14 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ).createShader(bounds),
+                    blendMode: BlendMode.srcIn,
                     child: Text(
                       '预设尺寸',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -265,12 +273,14 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ).createShader(bounds),
+                    blendMode: BlendMode.srcIn,
                     child: Text(
                       '自定义尺寸',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -284,59 +294,61 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
   }
 
   Widget buildPresetSizes() {
-    return Container(
-      height: 400, // 设置固定高度以启用滚动
-      padding: EdgeInsets.fromLTRB(20.w, 17.w, 20.w, 0),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
+    return Padding(
+      padding: EdgeInsets.only(left: 14.w, right: 14.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 14.w),
+
+          Padding(
+            padding: EdgeInsets.only(left: 10.w),
+            child: Text(
               '选择画布比例',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.w,
                 fontWeight: FontWeight.w500,
                 color: Color(0xFF3E3E3E),
               ),
             ),
+          ),
 
-            SizedBox(height: 9.w),
+          SizedBox(height: 12.w),
 
-            // 比例选择网格 - 改为一行两个
-            GridView.builder(
-              padding: EdgeInsets.zero,
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // 改为2列
-                childAspectRatio: 0.749, // 统一宽高比，确保所有卡片高度一致
-                crossAxisSpacing: 12.w,
-                mainAxisSpacing: 14.w,
-              ),
-              itemCount: _aspectRatios.length,
-              itemBuilder: (context, index) {
-                final ratio = _aspectRatios[index];
-                final isSelected = _selectedAspectRatio == index;
+          // 比例选择网格 - 改为一行三个
+          GridView.builder(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3, // 改为2列
+              childAspectRatio: 0.787, // 统一宽高比，确保所有卡片高度一致
+              crossAxisSpacing: 12.w,
+              mainAxisSpacing: 13.w,
+            ),
+            itemCount: _aspectRatios.length,
+            itemBuilder: (context, index) {
+              final ratio = _aspectRatios[index];
+              final isSelected = _selectedAspectRatio == index;
 
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedAspectRatio = index;
-                    });
-                  },
-                  child: GradientBorder(
-                    gradientColors: isSelected
-                        ? [Color(0xFFC86CFF), Color(0xFF5B98FF)]
-                        : [Color(0xFFE6E6E6), Color(0xFFE6E6E6)],
-                    borderWidth: 2.0,
-                    borderRadius: BorderRadius.circular(18.w),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // 比例预览容器 - 固定高度，内部居中
-                        SizedBox(
-                          height: 115.w, // 固定高度，适配最高的画布比例
-                          width: 92.w,
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedAspectRatio = index;
+                  });
+                },
+                child: GradientBorder(
+                  gradientColors: isSelected
+                      ? [Color(0xFFC86CFF), Color(0xFF5B98FF)]
+                      : [Color(0xFFE6E6E6), Color(0xFFE6E6E6)],
+                  borderWidth: 1.0,
+                  borderRadius: BorderRadius.circular(18.w),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 12.w),
                           child: Center(
                             child: GradientBorder(
                               gradientColors: [
@@ -353,55 +365,61 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
                             ),
                           ),
                         ),
+                      ),
 
-                        SizedBox(height: 7.w),
+                      SizedBox(height: 2.w),
 
-                        Text(
-                          ratio['ratio'],
-                          style: TextStyle(
-                            fontSize: 16.w, // 稍微增大字体
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF3E3E3E),
-                          ),
+                      Text(
+                        ratio['ratio'],
+                        style: TextStyle(
+                          fontSize: 16.w, // 稍微增大字体
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF3E3E3E),
                         ),
+                      ),
 
-                        Padding(
-                          padding: EdgeInsets.only(bottom: 12.w),
-                          child: Text(
-                            ratio['name'],
-                            style: TextStyle(
-                              fontSize: 16.w, // 稍微增大字体
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFF3E3E3E).withValues(alpha: 0.5),
-                            ),
-                          ),
+                      Text(
+                        ratio['name'],
+                        style: TextStyle(
+                          fontSize: 12.w, // 稍微增大字体
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF3E3E3E).withValues(alpha: 0.5),
                         ),
-                      ],
-                    ),
+                      ),
+                      SizedBox(height: 10.w),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
+          ),
 
-            // 清晰度选择
-            const Text(
-              '清晰度',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Container(
+                width: ScreenTools.screenWidth,
+                padding: EdgeInsets.only(top: 14.w, left: 10.w),
+                child: Text(
+                  '清晰度',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: "#3E3E3E".color,
+                  ),
+                ),
               ),
-            ),
-
-            SizedBox(height: 11.w),
-
-            buildClarityOption(0, '普通', '适合头像、资料卡等小尺寸图片'),
-
-            SizedBox(height: 11.w),
-
-            buildClarityOption(1, '高清', '适合背景、歌单等大尺寸图片'),
-          ],
-        ),
+              SizedBox(height: 11.w),
+              Row(
+                children: [
+                  buildClarityOption(0, '普通', '适合头像、资料卡\n等小尺寸图片'),
+                  SizedBox(width: 14.w),
+                  buildClarityOption(1, '高清', '适合背景、歌单等\n大尺寸图片'),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -418,48 +436,34 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
       child: GradientBorder(
         gradientColors: isSelected
             ? [Color(0xFFC86CFF), Color(0xFF5B98FF)]
-            : [Color(0xFFE6E6E6), Color(0xFFE6E6E6)],
+            : [Color(0xFFD6D6D6), Color(0xFFD6D6D6)],
         borderWidth: 1.0,
         borderRadius: BorderRadius.circular(18.w),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(24.w, 11.w, 26.w, 0),
-          child: Row(
+        child: Container(
+          width: 161.w,
+          height: 95.w,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18.w),
+            color: isSelected ? Colors.white : Color(0xFFF1F1F1),
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 12.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: EdgeInsets.fromLTRB(0.w, 20.w, 13.w, 24.w),
-                color: Colors.white,
-                child: isSelected
-                    ? Image.asset(
-                        'assets/images/canvals/canvals_qingxi_select.png',
-                        width: 18.w,
-                        height: 18.w,
-                        fit: BoxFit.fill,
-                      )
-                    : Image.asset(
-                        'assets/images/canvals/canvals_qingxi_unselect.png',
-                        width: 18.w,
-                        height: 18.w,
-                        fit: BoxFit.fill,
-                      ),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xff323232),
+                ),
               ),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xff323232),
-                      ),
-                    ),
-                    Text(
-                      description,
-                      style: TextStyle(fontSize: 14, color: Color(0xff9E9E9E)),
-                    ),
-                  ],
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xff9E9E9E),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -484,7 +488,7 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
             ),
           ),
 
-          SizedBox(height: 23.w),
+          SizedBox(height: 13.w),
 
           // 输入框
           Row(
@@ -498,7 +502,7 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
                       style: TextStyle(
                         fontSize: 16.w,
                         fontWeight: FontWeight.w400,
-                        color: Color(0xFF3E3E3E),
+                        color: Color(0xFF3E3E3E).withValues(alpha: 0.6),
                       ),
                     ),
 
@@ -510,10 +514,17 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
                       decoration: InputDecoration(
                         hintText: '如:1080',
                         hintStyle: TextStyle(
-                          color: Color(0xFF6C6C6C),
+                          color: Color(0xFF6C6C6C).withValues(alpha: 0.6),
                           fontWeight: FontWeight.w400,
                         ),
                         border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18.w),
+                          borderSide: BorderSide(
+                            color: Color(0xFFE6E6E6),
+                            width: 1.w,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18.w),
                           borderSide: BorderSide(
                             color: Color(0xFFE6E6E6),
@@ -562,7 +573,7 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
                       style: TextStyle(
                         fontSize: 16.w,
                         fontWeight: FontWeight.w400,
-                        color: Color(0xFF3E3E3E),
+                        color: Color(0xFF3E3E3E).withValues(alpha: 0.6),
                       ),
                     ),
 
@@ -574,7 +585,7 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
                       decoration: InputDecoration(
                         hintText: '如:1920',
                         hintStyle: TextStyle(
-                          color: Color(0xFF6C6C6C),
+                          color: Color(0xFF6C6C6C).withValues(alpha: 0.6),
                           fontWeight: FontWeight.w400,
                         ),
                         border: OutlineInputBorder(
@@ -585,6 +596,13 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18.w),
+                          borderSide: BorderSide(
+                            color: Color(0xFFE6E6E6),
+                            width: 1.w,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18.w),
                           borderSide: BorderSide(
                             color: Color(0xFFE6E6E6),
@@ -624,12 +642,13 @@ class _CreateDesignDialogState extends State<CreateDesignDialog>
   Widget buildBottomButtons() {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        25.w,
+        24.w,
         26.w,
         24.w,
         ScreenTools.bottomBarHeight,
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
             child: GestureDetector(

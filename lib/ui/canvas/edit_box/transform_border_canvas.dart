@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../controllers/create_design_model.dart';
+import '../model/create_design_model.dart';
 import '../utils/canvals_edit_box_util.dart';
 
 /// TransformCanvas 组件：用于在外层渲染控制框，将控制框从元素内部提取出来，避免受元素 Transform 影响
@@ -92,12 +92,12 @@ class TransformBorderCanvas extends StatelessWidget {
           height: editHitCircleSize,
           alignment: Alignment.center,
           child: Container(
-            width: 11,
-            height: 11,
+            width: 22,
+            height: 22,
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.blue, width: 1),
+              border: Border.all(color: Colors.blue, width: 2),
             ),
           ),
         ),

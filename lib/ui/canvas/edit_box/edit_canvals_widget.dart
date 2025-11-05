@@ -1,19 +1,22 @@
 import 'dart:io';
 import 'dart:ui' as ui;
-
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../controllers/canvals_controller.dart';
 import '../widgets/dialog/canvals_shape_dialog.dart';
-import '../controllers/create_design_model.dart';
+import '../model/create_design_model.dart';
 import 'edit_content_box.dart';
 import '../managers/canvas_gesture_manager.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../../../utils/text_measure_util.dart';
 import 'transform_border_canvas.dart';
+import '../managers/canvas_history_manager.dart';
+import '../utils/edit_box_data_clone.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
-  const CanvasEditorWidget({super.key});
+  final CanvasHistoryManager? historyManager;
+
+  const CanvasEditorWidget({super.key, this.historyManager});
   @override
   State<CanvasEditorWidget> createState() => CanvasEditorWidgetState();
 }
@@ -25,15 +28,46 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   // 手势管理器
   final _gestureManager = CanvasGestureManager();
 
+  // 历史管理器
+  CanvasHistoryManager? get historyManager => widget.historyManager;
+
+  // 暴露 boxes 列表供外部访问（用于历史记录）
+  List<EditBoxData> get boxesList => boxes;
+
   /// 获取图层列表（按显示顺序，最上面的在最后）
   List<EditBoxData> get layers => List.from(boxes);
 
   /// 重新排序图层
   void reorderLayers(int oldIndex, int newIndex) {
+    // 检查边界
+    if (boxes.isEmpty ||
+        oldIndex < 0 ||
+        oldIndex >= boxes.length ||
+        newIndex < 0 ||
+        newIndex >= boxes.length) {
+      debugPrint(
+        '警告: 图层重排序索引越界: oldIndex=$oldIndex, newIndex=$newIndex, boxes.length=${boxes.length}',
+      );
+      return;
+    }
+
+    final oldOrder = boxes.map((box) => box.id).toList();
     setState(() {
       final item = boxes.removeAt(oldIndex);
       boxes.insert(newIndex, item);
     });
+    final newOrder = boxes.map((box) => box.id).toList();
+
+    // 记录命令
+    if (historyManager != null && oldOrder.toString() != newOrder.toString()) {
+      historyManager!.executeCommand(
+        ReorderLayersCommand(
+          boxes: boxes,
+          oldOrder: oldOrder,
+          newOrder: newOrder,
+        ),
+      );
+    }
   }
 
   /// 添加形状元素
@@ -78,18 +112,24 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     final centerX = (canvasWidth - boxWidth) / 2; // 文本框宽度的一半
     final centerY = (canvasHeight - boxHeight) / 2; // 文本框高度的一半
 
+    final newElement = EditBoxData(
+      id: newId,
+      text: shapeName,
+      position: Offset(centerX, centerY),
+      type: elementType,
+      width: boxWidth,
+      height: boxHeight,
+    );
+
     setState(() {
-      boxes.add(
-        EditBoxData(
-          id: newId,
-          text: shapeName,
-          position: Offset(centerX, centerY),
-          type: elementType,
-          width: boxWidth,
-          height: boxHeight,
-        ),
-      );
+      boxes.add(newElement);
     });
+
+    // 记录命令
+    if (historyManager != null) {
+      historyManager!.executeCommand(AddElementCommand(boxes, newElement));
+    }
+
     // 自动选中新添加的元素
     _selectionController.select(newId);
   }
@@ -101,6 +141,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     _gestureManager.onDoubleTap = (String boxId) {
       showTextInputDialog(boxId);
     };
+    // 设置历史管理器到手势管理器
+    _gestureManager.historyManager = historyManager;
   }
 
   @override
@@ -225,19 +267,24 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     final centerX = (canvasWidth - finalWidth) / 2;
     final centerY = (canvasHeight - finalHeight) / 2;
 
+    final newElement = EditBoxData(
+      id: newId,
+      text: type == ElementType.text ? text : '',
+      position: Offset(centerX, centerY),
+      type: type,
+      imagePath: type == ElementType.image ? imagePath : '',
+      width: finalWidth,
+      height: finalHeight,
+    );
+
     setState(() {
-      boxes.add(
-        EditBoxData(
-          id: newId,
-          text: type == ElementType.text ? text : '',
-          position: Offset(centerX, centerY),
-          type: type,
-          imagePath: type == ElementType.image ? imagePath : '',
-          width: finalWidth,
-          height: finalHeight,
-        ),
-      );
+      boxes.add(newElement);
     });
+
+    // 记录命令
+    if (historyManager != null) {
+      historyManager!.executeCommand(AddElementCommand(boxes, newElement ));
+    }
 
     // 自动选中新添加的元素
     _selectionController.select(newId);
@@ -266,19 +313,44 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   }
 
   void deleteBox(String id) {
+    // 检查元素是否存在
+    final elementIndex = boxes.indexWhere((b) => b.id == id);
+    if (elementIndex == -1) {
+      debugPrint('警告: 尝试删除不存在的元素: $id');
+      return;
+    }
+
+    final element = boxes[elementIndex];
+    final clonedElement = EditBoxDataClone.clone(element);
+
     setState(() {
       boxes.removeWhere((b) => b.id == id);
       if (_selectionController.selectedId == id) {
         _selectionController.deselect();
       }
     });
+
+    // 记录命令
+    if (historyManager != null) {
+      historyManager!.executeCommand(
+        DeleteElementCommand(boxes, clonedElement),
+      );
+    }
   }
 
   /// 显示文本输
   /// 入对话框并更新文本框内容
   void showTextInputDialog(String boxId) {
     // 查找对应的文本框
-    final box = boxes.firstWhere((b) => b.id == boxId);
+    final boxIndex = boxes.indexWhere((b) => b.id == boxId);
+    if (boxIndex == -1) {
+      debugPrint('警告: 尝试编辑不存在的文本框: $boxId');
+      return;
+    }
+
+    final box = boxes[boxIndex];
+    final oldText = box.text;
+    final oldHeight = box.height;
 
     SmartDialog.show(
       alignment: Alignment.bottomCenter,
@@ -306,6 +378,20 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
               // box.width 保持不变，这样多行文本仍然是多行
               box.height = textSize.height;
             });
+
+            // 记录命令
+            if (historyManager != null && oldText != newText) {
+              historyManager!.executeCommand(
+                UpdateTextCommand(
+                  boxes: boxes,
+                  elementId: boxId,
+                  oldText: oldText,
+                  newText: newText,
+                  oldHeight: oldHeight,
+                  newHeight: box.height,
+                ),
+              );
+            }
 
             // 关闭对话框
             SmartDialog.dismiss();
@@ -438,4 +524,26 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       );
     });
   }
+
+
+
+
+
+
+
+  /// 撤销操作
+  void undo() {
+    historyManager?.undo();
+    if (boxes.isEmpty) {
+      return;
+    }
+    setState(() {});
+  }
+
+  /// 重做操作
+  void redo() {
+    historyManager?.redo();
+    setState(() {});
+  }
+
 }

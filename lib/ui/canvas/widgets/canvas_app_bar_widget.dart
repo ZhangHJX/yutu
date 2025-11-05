@@ -4,10 +4,19 @@ import 'package:flutter/material.dart';
 /// 画布顶部应用栏
 class CanvasAppBar extends StatelessWidget {
   final VoidCallback? onBack;
-  final VoidCallback? onUndo;
-  final VoidCallback? onRedo;
+  final VoidCallback onUndo;
+  final VoidCallback onRedo;
+  final bool canUndo;
+  final bool canRedo;
 
-  const CanvasAppBar({super.key, this.onBack, this.onUndo, this.onRedo});
+  const CanvasAppBar(
+    this.onBack,
+    this.onUndo,
+    this.onRedo, {
+    super.key,
+    this.canUndo = false,
+    this.canRedo = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +38,7 @@ class CanvasAppBar extends StatelessWidget {
                     width: 26.w,
                     height: 26.w,
                   ),
-                  onPressed: onBack ?? () => Get.back(),
+                  onPressed: onBack,
                 ),
                 Spacer(),
                 Row(
@@ -37,29 +46,33 @@ class CanvasAppBar extends StatelessWidget {
                     CButton(
                       text: "",
                       icon: Image.asset(
-                        'assets/images/canvals/edit_up_icon_no.png',
+                        canUndo
+                            ? 'assets/images/canvals/edit_up_icon_have.png'
+                            : 'assets/images/canvals/edit_up_icon_no.png',
                         width: 26.w,
                         height: 26.w,
                       ),
-                      onPressed:
-                          onUndo ??
-                          () {
-                            debugPrint("edit_up_icon_no-------");
-                          },
+                      onPressed: () {
+                        if (canUndo) {
+                          onUndo();
+                        }
+                      },
                     ),
                     SizedBox(width: 19),
                     CButton(
                       text: "",
                       icon: Image.asset(
-                        'assets/images/canvals/edit_next_icon_no.png',
+                        canRedo
+                            ? 'assets/images/canvals/edit_next_icon_have.png'
+                            : 'assets/images/canvals/edit_next_icon_no.png',
                         width: 26.w,
                         height: 26.w,
                       ),
-                      onPressed:
-                          onRedo ??
-                          () {
-                            debugPrint("edit_next_icon_no-------");
-                          },
+                      onPressed: () {
+                        if (canRedo) {
+                          onRedo();
+                        }
+                      },
                     ),
                     SizedBox(width: 23),
                   ],

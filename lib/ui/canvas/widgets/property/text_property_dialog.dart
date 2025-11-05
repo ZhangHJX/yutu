@@ -373,7 +373,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                 Container(
                   width: 64.w,
                   color: Colors.white,
-                  child: Tab(text: '填充'),
+                  child: Tab(text: '效果'),
                 ),
                 Container(
                   width: 64.w,
@@ -648,7 +648,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '颜色',
+                  '字色',
                   style: TextStyle(fontSize: 14.w, color: "#ff999999".color),
                 ),
 

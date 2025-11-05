@@ -137,15 +137,6 @@ class EditBoxData {
 }
 
 
-/*
-方式一：使用预定义常量（推荐）
-FontWeight.w100  // 最细 - Thin
-FontWeight.w200  // 超轻 - Extra Light
-FontWeight.w300  // 轻 - Light
-FontWeight.w400  // 正常 - Normal/Regular（默认）
-FontWeight.w500  // 中等 - Medium
-FontWeight.w600  // 半粗 - Semi Bold
-FontWeight.w700  // 粗体 - Bold
-FontWeight.w800  // 超粗 - Extra Bold
-FontWeight.w900  // 最粗 - Black
-*/ 
+
+
+

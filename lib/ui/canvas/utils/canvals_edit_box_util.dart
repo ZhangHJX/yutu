@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../controllers/create_design_model.dart';
+import '../model/create_design_model.dart';
 import 'dart:math' as math;
 
 class CanvalsEditBoxUtil {
