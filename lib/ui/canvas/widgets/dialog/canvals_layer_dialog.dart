@@ -147,14 +147,13 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                   SizedBox(width: 7.w),
 
                   // 拖拽手柄
-                  Opacity(
-                    opacity: isSelected ? 1.0 : 0,
-                    child: Image.asset(
-                      'assets/images/canvals/canvals_current_circle.png',
-                      width: 3.w,
-                      height: 12.w,
-                      fit: BoxFit.fill,
-                    ),
+                  Image.asset(
+                    isSelected
+                        ? 'assets/images/canvals/canvals_current_circle.png'
+                        : 'assets/images/canvals/canvals_current_uncircle.png',
+                    width: 3.w,
+                    height: 12.w,
+                    fit: BoxFit.fill,
                   ),
 
                   SizedBox(width: 7.w),
@@ -208,7 +207,9 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                                   ),
                                   child: Center(
                                     child: Image.asset(
-                                      'assets/images/canvals/canvals_layer_eye.png',
+                                      layer.visible
+                                          ? 'assets/images/canvals/canvals_layer_eye.png'
+                                          : 'assets/images/canvals/canvals_layer_uneye.png',
                                       width: 16.w,
                                       height: 16.w,
                                       fit: BoxFit.fill,

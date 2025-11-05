@@ -43,7 +43,6 @@ class EditBoxData {
   String textColor; // 字体颜色
   double lineHeight; // 行高/行间距（相对于fontSize的倍数）
   double fontSpace; // 字间距
-  String fontColor; // 字体背景色
   TextAlign align;
 
   // 阴影相关
@@ -96,10 +95,9 @@ class EditBoxData {
     this.fontFamily = "Courier",
     this.fontSize = 14,
     this.fontWeight = FontWeight.w500,
-    this.textColor = '#FFFFFF',
+    this.textColor = "#000000",
     this.lineHeight = 1.0,
     this.fontSpace = 0,
-    this.fontColor = '#FFFFFF',
     this.align = TextAlign.center,
 
     this.shawColor = '#D8D8D8',
@@ -135,8 +133,3 @@ class EditBoxData {
        resizeStartFontSpace = resizeStartFontSpace ?? fontSpace,
        resizeAspectRatio = resizeAspectRatio ?? (width / height);
 }
-
-
-
-
-

@@ -46,25 +46,6 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     super.initState();
   }
 
-  /// 显示形状弹框
-  void _showShapeDialog() {
-    SmartDialog.show(
-      builder: (context) => CanvalsShapeDialog(
-        onShapeSelected: (shapeType) {
-          _canvasKey.currentState?.addShape(shapeType);
-          SmartDialog.dismiss();
-        },
-      ),
-      alignment: Alignment.bottomCenter,
-      animationType: SmartAnimationType.centerFade_otherSlide,
-      animationTime: Duration(milliseconds: 250),
-      maskColor: Colors.transparent,
-      clickMaskDismiss: false,
-      useAnimation: true,
-      usePenetrate: false,
-    );
-  }
-
   /// 显示形状属性弹框
   void _showShapePropertyDialog() {
     if (_activeElement == null) return;
@@ -332,25 +313,6 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     }
   }
 
-  /// 显示文本输入对话框
-  void _showTextInputDialog() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true, // 允许控制高度
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.4),
-      builder: (context) => TextInputDialog(
-        onConfirm: (text) {
-          if (text.isEmpty) {
-            return;
-          }
-          _canvasKey.currentState?.addBox(type: ElementType.text, text: text);
-          Navigator.pop(context); // 关闭对话框
-        },
-      ),
-    );
-  }
-
   /// 获取当前激活的元素
   EditBoxData? get _activeElement {
     final selectedId = _canvalsController.selectedId;
@@ -364,57 +326,6 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     }
   }
 
-  /// 显示保存模版弹框
-  void _showSaveTemplateDialog() {
-    SmartDialog.show(
-      builder: (context) => CanvalsSaveTemplateDialog(),
-      alignment: Alignment.bottomCenter,
-      animationType: SmartAnimationType.centerFade_otherSlide,
-      animationTime: Duration(milliseconds: 250),
-      clickMaskDismiss: false,
-      maskColor: Colors.black,
-      useAnimation: true,
-      usePenetrate: false,
-    );
-  }
-
-  /// 显示图层弹框
-  void _toggleLayerDialog() {
-    setState(() {
-      _showLayerDialog = !_showLayerDialog;
-    });
-  }
-
-  Future<void> _captureAndSave() async {
-    // 请求存储权限
-    final res = await PermissionUtil.requestGalleryReadPermission();
-    if (res) {
-      try {
-        // 截取 widget
-        final imageBytes = await _screenshotController.capture(pixelRatio: 3.0);
-
-        if (imageBytes != null) {
-          // 保存到相册
-          final result = await ImageGallerySaverPlus.saveImage(
-            imageBytes,
-            quality: 100,
-            name: "canvas_${DateTime.now().millisecondsSinceEpoch}",
-          );
-
-          if (result['isSuccess']) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('图片已保存到相册')));
-          }
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('保存失败')));
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     _canvalsModel = Get.arguments as DesignCanvalsModel;
@@ -424,20 +335,6 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       backgroundColor: cfff6f2fb,
       body: Stack(
         children: [
-          Positioned(
-            left: 0,
-            top: 0,
-            child: Obx(
-              () => CanvasAppBar(
-                _handleBack,
-                _handleUndo,
-                _handleRedo,
-                canUndo: _historyManager.canUndo,
-                canRedo: _historyManager.canRedo,
-              ),
-            ),
-          ),
-
           Positioned(
             left: 0,
             top: ScreenTools.statusBarHeight + 51.w,
@@ -475,7 +372,10 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                     controller: _screenshotController,
                     child: Center(
                       child: Container(
-                        color: Colors.green,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: "#BFBFBF".color, width: 1),
+                        ),
                         width: displayWidth,
                         height: displayHeight,
                         child: CanvasEditorWidget(
@@ -490,24 +390,31 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
             ),
           ),
 
+          // 顶部导航栏
+          Positioned(
+            left: 0,
+            top: 0,
+            child: Obx(
+              () => CanvasAppBar(
+                _handleBack,
+                _handleUndo,
+                _handleRedo,
+                canUndo: _historyManager.canUndo,
+                canRedo: _historyManager.canRedo,
+              ),
+            ),
+          ),
+
+          // 底部tabBar
           Positioned(
             left: 0,
             bottom: 0,
             child: CanvasBottomBar(
               layerButtonKey: _layerButtonKey,
-              onLayerTap: _toggleLayerDialog,
-              onAddImage: () {
-                _canvalsController.selectImageHelper.onlyChooseImages(
-                  onSuccess: () {
-                    final imagePath =
-                        _canvalsController.selectImageHelper.image;
-                    if (imagePath != null) {
-                      debugPrint('选择的图片路径: $imagePath');
-                      _canvalsController.addNewImage(imagePath);
-                    }
-                  },
-                );
+              onLayerTap: () {
+                _toggleLayerDialog(true);
               },
+              onAddImage: _addImageDialog,
               onAddShape: _showShapeDialog,
               onAddText: _showTextInputDialog,
               onSave: _showSaveTemplateDialog,
@@ -720,6 +627,111 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     }
   }
 
+  void _addImageDialog() {
+    _canvalsController.selectImageHelper.onlyChooseImages(
+      onSuccess: () {
+        final imagePath = _canvalsController.selectImageHelper.image;
+        if (imagePath != null) {
+          debugPrint('选择的图片路径: $imagePath');
+          _canvalsController.addNewImage(imagePath);
+        }
+      },
+    );
+  }
+
+  /// 显示图层弹框
+  void _toggleLayerDialog(bool isLayer) {
+    if (!isLayer && !_showLayerDialog) {
+      return;
+    }
+    setState(() {
+      _showLayerDialog = !_showLayerDialog;
+    });
+  }
+
+  /// 显示形状弹框
+  void _showShapeDialog() {
+    SmartDialog.show(
+      builder: (context) => CanvalsShapeDialog(
+        onShapeSelected: (shapeType) {
+          _canvasKey.currentState?.addShape(shapeType);
+          SmartDialog.dismiss();
+        },
+      ),
+      alignment: Alignment.bottomCenter,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: Colors.transparent,
+      clickMaskDismiss: false,
+      useAnimation: true,
+      usePenetrate: false,
+    );
+  }
+
+  /// 显示文本输入对话框
+  void _showTextInputDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // 允许控制高度
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (context) => TextInputDialog(
+        onConfirm: (text) {
+          if (text.isEmpty) {
+            return;
+          }
+          _canvasKey.currentState?.addBox(type: ElementType.text, text: text);
+          Navigator.pop(context); // 关闭对话框
+        },
+      ),
+    );
+  }
+
+  /// 显示保存模版弹框
+  void _showSaveTemplateDialog() {
+    SmartDialog.show(
+      builder: (context) => CanvalsSaveTemplateDialog(),
+      alignment: Alignment.bottomCenter,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      clickMaskDismiss: false,
+      maskColor: Colors.black,
+      useAnimation: true,
+      usePenetrate: false,
+    );
+  }
+
+  /// 保存到系统相册
+  Future<void> _captureAndSave() async {
+    // 请求存储权限
+    final res = await PermissionUtil.requestGalleryReadPermission();
+    if (res) {
+      try {
+        // 截取 widget
+        final imageBytes = await _screenshotController.capture(pixelRatio: 3.0);
+
+        if (imageBytes != null) {
+          // 保存到相册
+          final result = await ImageGallerySaverPlus.saveImage(
+            imageBytes,
+            quality: 100,
+            name: "canvas_${DateTime.now().millisecondsSinceEpoch}",
+          );
+
+          if (result['isSuccess']) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('图片已保存到相册')));
+          }
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('保存失败')));
+      }
+    }
+  }
+
   /// 返回操作
   void _handleBack() {
     Get.back();
@@ -727,11 +739,13 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   /// 撤销操作
   void _handleUndo() {
+    _toggleLayerDialog(false);
     _canvasKey.currentState?.undo();
   }
 
   /// 重做操作
   void _handleRedo() {
+    _toggleLayerDialog(false);
     _canvasKey.currentState?.redo();
   }
 }

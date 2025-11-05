@@ -5,7 +5,7 @@ import 'package:voicetemplate/ui/not_found_page.dart';
 import 'package:voicetemplate/ui/splash/page.dart';
 import 'package:voicetemplate/ui/main/page.dart';
 import 'package:voicetemplate/ui/canvas/controllers/create_canvals_page.dart';
-import 'package:voicetemplate/ui/canvas/controllers/create_design_page.dart';
+// import 'package:voicetemplate/ui/canvas/controllers/create_design_page.dart';
 
 final List<GetPage> getPages = [
   /// 启动页

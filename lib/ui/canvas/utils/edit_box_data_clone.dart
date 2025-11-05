@@ -23,7 +23,6 @@ class EditBoxDataClone {
       textColor: source.textColor,
       lineHeight: source.lineHeight,
       fontSpace: source.fontSpace,
-      fontColor: source.fontColor,
       align: source.align,
       isShawOpen: source.isShawOpen,
       shawColor: source.shawColor,

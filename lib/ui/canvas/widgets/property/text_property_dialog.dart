@@ -45,10 +45,6 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
   TextAlign _textAlign = TextAlign.left;
 
   // 填充颜色
-  String _fillColor1 = '#00CED1';
-  final TextEditingController _fillColor1Controller = TextEditingController(
-    text: '#00CED1',
-  );
   String _fillColor2 = '#FFA500';
   final TextEditingController _fillColor2Controller = TextEditingController(
     text: '#FFA500',
@@ -128,10 +124,6 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     // 初始化对齐方式
     _textAlign = data.align ?? TextAlign.left;
 
-    // 初始化填充颜色
-    _fillColor1 = data.fillColor ?? '#00CED1';
-    _fillColor1Controller.text = _fillColor1;
-
     // 初始化描边（对应fillColor2）
     _fillColor2 = data.borderColor ?? '#FFA500';
     _fillColor2Controller.text = _fillColor2;
@@ -188,7 +180,6 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     _tabController.dispose();
     _fontSizeController.dispose();
     _textColorController.dispose();
-    _fillColor1Controller.dispose();
     _fillColor2Controller.dispose();
     _shadowColorController.dispose();
     _shadowXController.dispose();
@@ -234,9 +225,6 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
 
     // 更新对齐方式
     data.align = _textAlign;
-
-    // 更新填充颜色
-    data.fillColor = _fillColor1;
 
     // 更新描边
     data.borderColor = _fillColor2;
@@ -416,6 +404,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        SizedBox(height: 15.w),
         // 字体和字号
         _buildFontAndSizeSection(),
         SizedBox(height: 17.w),
@@ -777,19 +766,15 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     );
   }
 
-  // 填充标签页
+  // 效果标签页
   Widget _buildFillTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 填充
-        _buildFillSection(),
-        SizedBox(height: 18.w),
-
+        SizedBox(height: 15.w),
         // 描边
         _buildBorderSection(),
         SizedBox(height: 7.w),
-
         // 阴影
         _buildShadowSection(),
       ],
@@ -798,19 +783,16 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
 
   // 行距对齐标签页
   Widget _buildSpacingAlignmentTab() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(vertical: 20.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 行距和字距
-          _buildSpacingSection(),
-          SizedBox(height: 13.w),
-
-          // 对齐
-          _buildAlignmentSection(),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 15.w),
+        // 行距和字距
+        _buildSpacingSection(),
+        SizedBox(height: 13.w),
+        // 对齐
+        _buildAlignmentSection(),
+      ],
     );
   }
 
@@ -890,6 +872,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
             ],
           ),
           SizedBox(height: 7.w),
+
           _buildGradientSlider(
             _lineHeight,
             (value) {
@@ -985,90 +968,6 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                   '右对齐',
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFillSection() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            '填充',
-            style: TextStyle(
-              fontSize: 16.w,
-              color: "#ff3E3E3E".color,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-
-          SizedBox(width: 12.w),
-
-          // 上面的颜色输入框 - 固定宽度
-          GestureDetector(
-            onTap: () {
-              _openColorPicker(
-                initialColor: _fillColor1.color,
-                onColorSelected: (color) {
-                  setState(() {
-                    _fillColor1 = color.string;
-                    _fillColor1Controller.text = color.string;
-                    _updateModel();
-                  });
-                },
-              );
-            },
-            child: Container(
-              width: 58.w,
-              height: 50.w,
-              decoration: BoxDecoration(
-                color: _fillColor1.color,
-                borderRadius: BorderRadius.circular(18.w),
-              ),
-            ),
-          ),
-
-          SizedBox(width: 10.w),
-
-          // 颜色值输入框
-          Container(
-            width: 84.w,
-            height: 50.w,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18.w),
-              border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-            ),
-            alignment: Alignment.center,
-            child: TextField(
-              controller: _fillColor1Controller,
-              textAlign: TextAlign.center,
-              inputFormatters: [HexColorFormatter()],
-              onChanged: (value) {
-                if (value.isNotEmpty && value.length == 7) {
-                  setState(() {
-                    _fillColor1 = value;
-                    _updateModel();
-                  });
-                }
-              },
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 5.w),
-                hintText: '#FFFFFF',
-              ),
-              style: TextStyle(
-                fontSize: 14.w,
-                fontWeight: FontWeight.w600,
-                color: "#ff242424".color,
-              ),
             ),
           ),
         ],
@@ -1558,12 +1457,13 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
         final double percentage = (value - min) / (max - min);
         final double trackWidth = constraints.maxWidth;
 
-        return SizedBox(
-          height: 30.w,
+        return Container(
+          color: Colors.red,
+          height: 14.w,
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              trackHeight: 8.w,
-              thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12.w),
+              trackHeight: 14.w,
+              thumbShape: RoundSliderThumbShape(enabledThumbRadius: 14.w),
               overlayShape: RoundSliderOverlayShape(overlayRadius: 0),
               thumbColor: Colors.white,
               activeTrackColor: Colors.transparent,
@@ -1621,11 +1521,11 @@ class _CustomSliderTrackShape extends SliderTrackShape {
     bool isEnabled = false,
     bool isDiscrete = false,
   }) {
-    final double trackHeight = sliderTheme.trackHeight ?? 2.0;
-    final double trackWidth = parentBox.size.width;
-    final double trackTop =
-        offset.dy + (parentBox.size.height - trackHeight) / 2;
-    return Rect.fromLTWH(offset.dx, trackTop, trackWidth, trackHeight);
+    final trackHeight = sliderTheme.trackHeight ?? 4.0;
+    final trackLeft = offset.dx + 0;
+    final trackTop = offset.dy + (parentBox.size.height - trackHeight) / 2;
+    final trackWidth = parentBox.size.width;
+    return Rect.fromLTWH(trackLeft, trackTop, trackWidth, trackHeight);
   }
 
   @override
