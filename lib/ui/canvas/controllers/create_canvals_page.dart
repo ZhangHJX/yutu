@@ -17,6 +17,7 @@ import '../../../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
 import '../managers/canvas_history_manager.dart';
 import '../utils/edit_box_data_clone.dart';
+import '../utils/index.dart';
 
 class CreateCanvalsPage extends StatefulWidget {
   const CreateCanvalsPage({super.key});
@@ -627,17 +628,33 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     }
   }
 
-  void _addImageDialog() {
-    _toggleLayerDialog(false);
-    _canvalsController.selectImageHelper.onlyChooseImages(
-      onSuccess: () {
-        final imagePath = _canvalsController.selectImageHelper.image;
-        if (imagePath != null) {
-          debugPrint('选择的图片路径: $imagePath');
-          _canvalsController.addNewImage(imagePath);
-        }
-      },
-    );
+  // 增加图片
+  void _addImageDialog() async {
+    // _toggleLayerDialog(false);
+    final res = await PermissionUtil.requestGalleryReadPermission();
+    debugPrint("打印的相册请求权限-------$res");
+    if (res) {
+      _canvalsController.selectImageHelper.onlyChooseImages(
+        onSuccess: () {
+          final imagePath = _canvalsController.selectImageHelper.image;
+          if (imagePath != null) {
+            debugPrint('选择的图片路径: $imagePath');
+            _canvalsController.addNewImage(imagePath);
+          }
+        },
+      );
+    } else {
+      SmartDialog.show(
+        builder: (context) => PermissionHandlerWidget(),
+        alignment: Alignment.center,
+        animationType: SmartAnimationType.centerFade_otherSlide,
+        animationTime: Duration(milliseconds: 250),
+        maskColor: "#000000".color.withValues(alpha: 0.5),
+        clickMaskDismiss: false,
+        useAnimation: true,
+        usePenetrate: false,
+      );
+    }
   }
 
   /// 显示图层弹框
@@ -712,6 +729,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
     // 请求存储权限
     final res = await PermissionUtil.requestGalleryReadPermission();
+    debugPrint("打印的相册请求权限-------$res");
+
     if (res) {
       try {
         // 截取 widget
