@@ -129,10 +129,14 @@ class PermissionUtil {
         // 保存到相册
         if (response.statusCode == 200) {
           // 使用image_gallery_saver保存图片到相册
-          final result = await ImageGallerySaverPlus.saveFile(savePath, name: fileName);
+          final result = await ImageGallerySaverPlus.saveFile(
+            savePath,
+            name: fileName,
+          );
           final bool isSuccess =
               result != null &&
-              ((result is Map && result['isSuccess'] == true) || (result is bool && result));
+              ((result is Map && result['isSuccess'] == true) ||
+                  (result is bool && result));
 
           if (!isSuccess) {
             failCount++;
@@ -198,7 +202,8 @@ class PermissionUtil {
 
         final bool isSuccess =
             result != null &&
-            ((result is Map && result['isSuccess'] == true) || (result is bool && result));
+            ((result is Map && result['isSuccess'] == true) ||
+                (result is bool && result));
 
         if (isSuccess) {
           if (showResult) {
@@ -248,7 +253,11 @@ class PermissionUtil {
       }
 
       // 保存图片字节数据到相册
-      final result = await ImageGallerySaverPlus.saveImage(bytes, quality: quality, name: fileName);
+      final result = await ImageGallerySaverPlus.saveImage(
+        bytes,
+        quality: quality,
+        name: fileName,
+      );
 
       if (showResult) {
         SmartDialog.dismiss();
@@ -256,7 +265,8 @@ class PermissionUtil {
 
       final bool isSuccess =
           result != null &&
-          ((result is Map && result['isSuccess'] == true) || (result is bool && result));
+          ((result is Map && result['isSuccess'] == true) ||
+              (result is bool && result));
 
       if (isSuccess) {
         if (showResult) {
@@ -382,7 +392,8 @@ class PermissionUtil {
   }
 
   /// 检查并请求相机和相册权限（用于拍照和选择图片功能）
-  static Future<Map<String, bool>> checkAndRequestCameraAndGalleryPermissions() async {
+  static Future<Map<String, bool>>
+  checkAndRequestCameraAndGalleryPermissions() async {
     final cameraPermission = await checkAndRequestCameraPermission();
     final galleryPermission = await checkAndRequestGalleryReadPermission();
 

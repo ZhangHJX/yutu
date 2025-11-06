@@ -47,6 +47,7 @@ class _PermissionHandlerWidgetState extends State<PermissionHandlerWidget> {
                 color: "#434343".color,
                 fontWeight: FontWeight.w500,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
 

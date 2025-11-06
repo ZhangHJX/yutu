@@ -5,6 +5,7 @@ import '../widgets/canvas_bottom_bar_widget.dart';
 import '../widgets/dialog/canvals_layer_dialog.dart';
 import '../widgets/dialog/canvals_save_dialog.dart';
 import '../widgets/property/element_attribute_toolbar.dart';
+import '../widgets/property/canvals_property_dialog.dart';
 import '../widgets/property/image_property_dialog.dart';
 import '../widgets/property/shape_property_dialog.dart';
 import '../widgets/property/text_property_dialog.dart';
@@ -41,6 +42,9 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   // 用于保存对话框打开时的属性快照（用于历史记录）
   EditBoxData? _propertyDialogSnapshot;
+
+  // 用于保存上一次的属性值（用于判断是否需要重新计算尺寸）
+  EditBoxData? _lastPropertySnapshot;
 
   @override
   void initState() {
@@ -162,6 +166,9 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     // 保存属性快照
     _propertyDialogSnapshot = EditBoxDataClone.clone(activeElement);
 
+    // 保存上一次的属性值（用于判断是否需要重新计算尺寸）
+    _lastPropertySnapshot = EditBoxDataClone.clone(activeElement);
+
     SmartDialog.show(
       builder: (context) => TextPropertyDialog(
         editBoxData: activeElement,
@@ -257,6 +264,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     }
 
     _propertyDialogSnapshot = null;
+    _lastPropertySnapshot = null;
   }
 
   /// 刷新文本框，重新计算尺寸（当属性变化时）
@@ -267,41 +275,68 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     }
 
     final box = _activeElement!;
+
+    // 检查哪些属性改变了，判断是否需要重新计算尺寸
+    // 如果只是对齐方式、颜色、描边、阴影等不影响尺寸的属性改变，就不重新计算尺寸
+    bool needRecalculateSize = false;
+    if (_lastPropertySnapshot != null) {
+      final old = _lastPropertySnapshot!;
+      // 检查影响尺寸的属性是否改变（与上一次比较，而不是与打开对话框时比较）
+      needRecalculateSize =
+          old.fontSize != box.fontSize ||
+          old.fontFamily != box.fontFamily ||
+          old.fontWeight != box.fontWeight ||
+          old.lineHeight != box.lineHeight ||
+          old.fontSpace != box.fontSpace;
+    } else {
+      // 如果没有快照，说明是第一次属性改变，需要检查是否真的需要重算
+      // 如果只是对齐方式等不影响尺寸的属性改变，就不需要重算
+      // 这里默认不重算，因为第一次打开对话框时，属性应该已经是正确的
+      needRecalculateSize = false;
+    }
+
+    // 更新上一次的属性快照（在 setState 之前更新，避免下次比较时出错）
+    _lastPropertySnapshot = EditBoxDataClone.clone(box);
+
     setState(() {
-      // 先计算单行文本需要的宽度（不考虑宽度限制）
-      final singleLineSize = TextMeasureUtil.measureText(
-        text: box.text,
-        fontSize: box.fontSize,
-        fontFamily: box.fontFamily,
-        fontWeight: box.fontWeight,
-        letterSpacing: box.fontSpace,
-        lineHeight: box.lineHeight,
-      );
-
-      // 判断当前是否是多行状态
-      // 如果保存的宽度存在且小于单行宽度，说明是多行状态，应该保持这个宽度
-      final savedWidth = _savedTextWidth ?? box.width;
-      final isMultiLine = savedWidth < singleLineSize.width;
-
-      if (isMultiLine) {
-        // 多行状态：保持宽度不变，只根据新属性重新计算高度
-        final textSize = TextMeasureUtil.measureTextWithWidth(
+      if (needRecalculateSize) {
+        // 先计算单行文本需要的宽度（不考虑宽度限制）
+        final singleLineSize = TextMeasureUtil.measureText(
           text: box.text,
           fontSize: box.fontSize,
           fontFamily: box.fontFamily,
           fontWeight: box.fontWeight,
           letterSpacing: box.fontSpace,
           lineHeight: box.lineHeight,
-          maxWidth: savedWidth,
         );
-        box.width = savedWidth; // 保持保存的宽度
-        box.height = textSize.height; // 根据新属性重新计算高度
-      } else {
-        // 单行状态：根据新属性重新计算宽度和高度
-        box.width = singleLineSize.width;
-        box.height = singleLineSize.height;
+
+        // 判断当前是否是多行状态
+        // 如果保存的宽度存在且小于单行宽度，说明是多行状态，应该保持这个宽度
+        final savedWidth = _savedTextWidth ?? box.width;
+        final isMultiLine = savedWidth < singleLineSize.width;
+
+        if (isMultiLine) {
+          // 多行状态：保持宽度不变，只根据新属性重新计算高度
+          final textSize = TextMeasureUtil.measureTextWithWidth(
+            text: box.text,
+            fontSize: box.fontSize,
+            fontFamily: box.fontFamily,
+            fontWeight: box.fontWeight,
+            letterSpacing: box.fontSpace,
+            lineHeight: box.lineHeight,
+            maxWidth: savedWidth,
+          );
+          box.width = savedWidth; // 保持保存的宽度
+          box.height = textSize.height; // 根据新属性重新计算高度
+        } else {
+          // 单行状态：根据新属性重新计算宽度和高度
+          box.width = singleLineSize.width;
+          box.height = singleLineSize.height;
+        }
       }
-      // setState 会触发整个 widget 树重新构建，从而更新所有依赖 box 的组件（如 EditContentBox）
+      // 即使不需要重新计算尺寸，也需要调用 setState 来更新 UI
+      // 这样可以确保对齐方式等属性的变化能够正确显示
+      // 由于不重新计算尺寸，不会导致文字跳动
     });
   }
 
@@ -431,6 +466,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
               child: ElementAttributeToolbar(
                 activeElement: _activeElement,
                 onClose: () {
+                  // _showCanvalsPropertyDialog();
                   // 根据元素类型显示不同的属性弹框
                   if (_activeElement?.type == ElementType.image) {
                     _showImagePropertyDialog();
@@ -493,6 +529,9 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                     ),
                   );
                 },
+                onLayerLock: (layerId) {
+                  debugPrint("-----是否被锁----");
+                },
               ),
             ),
         ],
@@ -500,8 +539,35 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     );
   }
 
+  void _showCanvalsPropertyDialog() {
+    _toggleLayerDialog(false);
+
+    SmartDialog.show(
+      builder: (context) => CanvalsPropertyDialog(
+        editBoxData: _activeElement,
+        onPropertyChanged: () {
+          setState(() {}); // 触发界面重绘
+        },
+      ),
+      alignment: Alignment.bottomCenter,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: Colors.black.withValues(alpha: 0.4),
+      maskWidget: GestureDetector(
+        onTap: () {
+          _recordShapePropertyChange();
+          SmartDialog.dismiss();
+        },
+        child: Container(color: Colors.transparent),
+      ),
+      useAnimation: true,
+      usePenetrate: false,
+    );
+  }
+
   /// 显示图片属性弹框
   void _showImagePropertyDialog() {
+    _toggleLayerDialog(false);
     if (_activeElement == null || _activeElement!.type != ElementType.image) {
       return;
     }
@@ -630,9 +696,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   // 增加图片
   void _addImageDialog() async {
-    // _toggleLayerDialog(false);
+    _toggleLayerDialog(false);
     final res = await PermissionUtil.requestGalleryReadPermission();
-    debugPrint("打印的相册请求权限-------$res");
     if (res) {
       _canvalsController.selectImageHelper.onlyChooseImages(
         onSuccess: () {
@@ -726,36 +791,40 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
   /// 保存到系统相册
   Future<void> _captureAndSave() async {
     _toggleLayerDialog(false);
-
-    // 请求存储权限
     final res = await PermissionUtil.requestGalleryReadPermission();
-    debugPrint("打印的相册请求权限-------$res");
-
     if (res) {
       try {
-        // 截取 widget
         final imageBytes = await _screenshotController.capture(pixelRatio: 3.0);
-
         if (imageBytes != null) {
-          // 保存到相册
           final result = await ImageGallerySaverPlus.saveImage(
             imageBytes,
             quality: 100,
             name: "canvas_${DateTime.now().millisecondsSinceEpoch}",
           );
-
           if (result['isSuccess']) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('图片已保存到相册')));
+            showToast('图片已保存到相册');
+          } else {
+            showToast('保存失败');
           }
+        } else {
+          showToast('保存失败');
         }
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('保存失败')));
+        showToast('保存失败');
       }
-    }
+    } else {}
+    // else {
+    //   SmartDialog.show(
+    //     builder: (context) => PermissionHandlerWidget(),
+    //     alignment: Alignment.center,
+    //     animationType: SmartAnimationType.centerFade_otherSlide,
+    //     animationTime: Duration(milliseconds: 250),
+    //     maskColor: "#000000".color.withValues(alpha: 0.5),
+    //     clickMaskDismiss: false,
+    //     useAnimation: true,
+    //     usePenetrate: false,
+    //   );
+    // }
   }
 
   /// 返回操作

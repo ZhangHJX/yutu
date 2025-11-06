@@ -49,13 +49,16 @@ class _ElementAttributeToolbarState extends State<ElementAttributeToolbar> {
             onTap: () {
               widget.onClose?.call();
             },
-            child: Container(
+            child: SizedBox(
               width: 35.w,
               height: 35.w,
-              padding: EdgeInsets.all(8.w), // 添加内边距
-              child: Image.asset(
-                'assets/images/canvals/canvals_up_icon.png',
-                fit: BoxFit.cover,
+              child: Center(
+                child: Image.asset(
+                  'assets/images/canvals/canvals_up_icon.png',
+                  fit: BoxFit.fill,
+                  width: 14.w,
+                  height: 14.w,
+                ),
               ),
             ),
           ),
@@ -68,13 +71,16 @@ class _ElementAttributeToolbarState extends State<ElementAttributeToolbar> {
             },
             child: Padding(
               padding: EdgeInsets.only(right: 10.w),
-              child: Container(
+              child: SizedBox(
                 width: 35.w,
                 height: 35.w,
-                padding: EdgeInsets.all(8.w), // 添加内边距
-                child: Image.asset(
-                  'assets/images/canvals/canvals_close_icon.png',
-                  fit: BoxFit.cover,
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/canvals/canvals_close_icon.png',
+                    fit: BoxFit.fill,
+                    width: 14.w,
+                    height: 14.w,
+                  ),
                 ),
               ),
             ),
@@ -93,8 +99,10 @@ class _ElementAttributeToolbarState extends State<ElementAttributeToolbar> {
       return '形状属性';
     } else if (elementType == ElementType.text) {
       return '文字属性';
-    } else {
+    } else if (elementType == ElementType.image) {
       return '图片属性';
+    } else {
+      return '图层属性';
     }
   }
 }

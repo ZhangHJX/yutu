@@ -11,6 +11,7 @@ class CanvalsLayerDialog extends StatefulWidget {
   final Function(String) onLayerDelete;
   final Function(int, int) onLayerReorder;
   final Function(String) onLayerToggleVisibility;
+  final Function(String) onLayerLock;
   final double height;
   final double width;
 
@@ -21,6 +22,7 @@ class CanvalsLayerDialog extends StatefulWidget {
     required this.onLayerDelete,
     required this.onLayerReorder,
     required this.onLayerToggleVisibility,
+    required this.onLayerLock,
     required this.height,
     required this.width,
   });
@@ -127,6 +129,8 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
           return '形状 ${index + 1}';
         case ElementType.text:
           return layer.text;
+        case ElementType.canvals:
+          return "画布";
       }
     }
 
@@ -141,111 +145,138 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
           Obx(() {
             final isSelected = _controller.isSelected(layer.id);
 
-            return SizedBox(
-              child: Row(
-                children: [
-                  SizedBox(width: 7.w),
+            return Row(
+              children: [
+                SizedBox(width: 7.w),
 
-                  // 拖拽手柄
-                  Image.asset(
-                    isSelected
-                        ? 'assets/images/canvals/canvals_current_circle.png'
-                        : 'assets/images/canvals/canvals_current_uncircle.png',
-                    width: 3.w,
-                    height: 12.w,
-                    fit: BoxFit.fill,
-                  ),
+                // 拖拽手柄
+                Image.asset(
+                  isSelected
+                      ? 'assets/images/canvals/canvals_current_circle.png'
+                      : 'assets/images/canvals/canvals_current_uncircle.png',
+                  width: 3.w,
+                  height: 12.w,
+                  fit: BoxFit.fill,
+                ),
 
-                  SizedBox(width: 7.w),
+                SizedBox(width: 7.w),
 
-                  // 缩略图 - 传入isSelected参数
-                  _getLayerThumbnail(layer, isSelected: isSelected),
+                // 缩略图 - 传入isSelected参数
+                _getLayerThumbnail(layer, isSelected: isSelected),
 
-                  // 图层信息
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 名称和类型
-                        Padding(
-                          padding: EdgeInsets.only(left: 9.w),
-                          child: Text(
-                            getLayerName(),
-                            style: TextStyle(
-                              fontSize: 12.w,
-                              fontWeight: FontWeight.w500,
-                              color: "#FF3E3E3E".color,
+                // 图层信息
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 10.w),
+
+                      // 名称和类型
+                      Padding(
+                        padding: EdgeInsets.only(left: 2.5.w),
+                        child: Text(
+                          getLayerName(),
+                          style: TextStyle(
+                            fontSize: 12.w,
+                            fontWeight: FontWeight.w500,
+                            color: "#FF3E3E3E".color,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+
+                      SizedBox(height: 4.w),
+
+                      // 底部：操作按钮栏
+                      Container(
+                        margin: EdgeInsets.only(left: 2.5.w, right: 8.w),
+                        height: 23.w,
+                        decoration: BoxDecoration(
+                          color: "#DCEDFE".color.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(8.w),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                // 切换可见性
+                                widget.onLayerToggleVisibility(layer.id);
+                              },
+                              child: Container(
+                                padding: EdgeInsets.only(
+                                  left: 8.w,
+                                  right: 5.w,
+                                  top: 3.w,
+                                  bottom: 4.w,
+                                ),
+                                child: Center(
+                                  child: Image.asset(
+                                    layer.visible
+                                        ? 'assets/images/canvals/canvals_layer_eye.png'
+                                        : 'assets/images/canvals/canvals_layer_uneye.png',
+                                    width: 16.w,
+                                    height: 16.w,
+                                    fit: BoxFit.fill,
+                                  ),
+                                ),
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
 
-                        SizedBox(height: 4.w),
-
-                        // 底部：操作按钮栏
-                        Container(
-                          margin: EdgeInsets.only(left: 4.w, right: 17.w),
-                          width: double.infinity,
-                          height: 23.w,
-                          decoration: BoxDecoration(
-                            color: "#DCEDFE".color.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(8.w),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  // 切换可见性
-                                  widget.onLayerToggleVisibility(layer.id);
-                                },
-                                child: Container(
-                                  padding: EdgeInsets.only(
-                                    left: 8.w,
-                                    right: 5.w,
-                                  ),
-                                  child: Center(
-                                    child: Image.asset(
-                                      layer.visible
-                                          ? 'assets/images/canvals/canvals_layer_eye.png'
-                                          : 'assets/images/canvals/canvals_layer_uneye.png',
-                                      width: 16.w,
-                                      height: 16.w,
-                                      fit: BoxFit.fill,
-                                    ),
+                            GestureDetector(
+                              onTap: () {
+                                widget.onLayerDelete(layer.id); // 删除图层
+                              },
+                              child: Container(
+                                padding: EdgeInsets.only(
+                                  left: 5.w,
+                                  right: 3.5.w,
+                                  top: 4.w,
+                                  bottom: 5.w,
+                                ),
+                                height: 23.w,
+                                child: Center(
+                                  child: Image.asset(
+                                    'assets/images/canvals/canvals_layer_delete.png',
+                                    width: 14.w,
+                                    height: 14.w,
+                                    fit: BoxFit.fill,
                                   ),
                                 ),
                               ),
+                            ),
 
-                              GestureDetector(
-                                onTap: () {
-                                  widget.onLayerDelete(layer.id); // 删除图层
-                                },
-                                child: Container(
-                                  padding: EdgeInsets.only(
-                                    left: 5.w,
-                                    right: 5.w,
-                                  ),
-                                  height: 23.w,
-                                  child: Center(
-                                    child: Image.asset(
-                                      'assets/images/canvals/canvals_layer_delete.png',
-                                      width: 14.w,
-                                      height: 14.w,
-                                      fit: BoxFit.fill,
-                                    ),
+                            GestureDetector(
+                              onTap: () {
+                                widget.onLayerLock(layer.id); // 是否被锁
+                              },
+                              child: Container(
+                                padding: EdgeInsets.only(
+                                  left: 3.5.w,
+                                  right: 5.w,
+                                  top: 2.w,
+                                  bottom: 3.w,
+                                ),
+                                child: Center(
+                                  child: Image.asset(
+                                    layer.isLock
+                                        ? 'assets/images/canvals/canvals_layer_lock.png'
+                                        : 'assets/images/canvals/canvals_layer_unlock.png',
+                                    width: 18.w,
+                                    height: 18.w,
+                                    fit: BoxFit.fill,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           }),
         ],
@@ -296,6 +327,11 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
               color: "#3E3E3E".color,
             ),
           ),
+        );
+        break;
+      case ElementType.canvals:
+        content = Center(
+          child: Container(width: 36.w, height: 28.w, color: '#D8D8D8'.color),
         );
         break;
     }

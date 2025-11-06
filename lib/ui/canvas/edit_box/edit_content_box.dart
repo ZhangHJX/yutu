@@ -163,6 +163,8 @@ class EditContentBox extends StatelessWidget {
             maxLines: null,
           ),
         );
+      case ElementType.canvals:
+        return Container();
     }
   }
 }
