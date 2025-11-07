@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-enum ElementType { canvals, image, rectangle, ellipse, line, text }
+enum ElementType { image, rectangle, ellipse, line, text }
 
-// 整体的单个模型
+// 画布模型
+@JsonSerializable(explicitToJson: true)
 class DesignCanvalsModel {
   final String id;
   final double width;
   final double height;
   final double canvasRatio;
+
+  @JsonKey(name: 'canvasProperties')
+  CanvasProperties canvasProperties; // 独立的画布属性
+
   final List<EditBoxData>? editBoxData;
 
   DesignCanvalsModel({
@@ -17,7 +22,41 @@ class DesignCanvalsModel {
     required this.id,
     required this.width,
     required this.height,
+    CanvasProperties? canvasProperties,
+  }) : canvasProperties = canvasProperties ?? CanvasProperties();
+}
+
+// 画布属性类
+class CanvasProperties {
+  String fillColor;
+  double fillAlpha;
+  String borderColor;
+  double borderWidth;
+  double borderAlpha;
+  bool isLock;
+  bool isSelected;
+
+  CanvasProperties({
+    this.fillColor = '#FFFFFF',
+    this.fillAlpha = 1.0,
+    this.borderColor = '#BFBFBF',
+    this.borderWidth = 1.0,
+    this.borderAlpha = 1.0,
+    this.isLock = true,
+    this.isSelected = false,
   });
+
+  // 深拷贝方法
+  CanvasProperties copy() {
+    return CanvasProperties(
+      fillColor: fillColor,
+      fillAlpha: fillAlpha,
+      borderColor: borderColor,
+      borderWidth: borderWidth,
+      borderAlpha: borderAlpha,
+      isLock: isLock,
+    );
+  }
 }
 
 // 所有的模型数据
@@ -28,13 +67,6 @@ class EditBoxData {
   double width;
   double height;
   Offset position;
-
-  // 画布属性
-  String canvalsFillColor;
-  double canvalsFillAlpha;
-  String canvalsBorderColor;
-  double canvalsBorderWidth;
-  double canvalsBorderAlpha;
 
   // 图片相关属性
   String imagePath;
@@ -100,12 +132,6 @@ class EditBoxData {
     required this.width,
     required this.height,
     required this.position,
-
-    this.canvalsFillColor = '#FFFFFF',
-    this.canvalsFillAlpha = 1.0,
-    this.canvalsBorderColor = '#BFBFBF',
-    this.canvalsBorderWidth = 1.0,
-    this.canvalsBorderAlpha = 1.0,
 
     this.imagePath = '',
     this.imageAlpha = 1.0,

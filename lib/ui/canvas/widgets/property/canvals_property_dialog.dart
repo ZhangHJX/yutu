@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../../utils/index.dart';
 import './widgets/slider_input_field.dart';
+import '../../model/create_design_model.dart';
 
 class CanvalsPropertyDialog extends StatefulWidget {
-  final dynamic editBoxData; // EditBoxData from create_design_model
+  final CanvasProperties? canvasProperties;
   final VoidCallback? onPropertyChanged; // 属性改变时的回调
 
   const CanvalsPropertyDialog({
     super.key,
-    this.editBoxData,
+    this.canvasProperties,
     this.onPropertyChanged,
   });
 
@@ -21,19 +22,19 @@ class CanvalsPropertyDialog extends StatefulWidget {
 class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
     with SingleTickerProviderStateMixin {
   // 填充相关属性
-  String _canvalsFillColor = '#FFFFFF';
+  String _fillColor = '#FFFFFF';
   final TextEditingController _canvalsFillColorController =
       TextEditingController(text: '#FFFFFF');
-  double _canvalsFillAlpha = 1;
+  double _fillAlpha = 1;
 
   // 边框相关属性
-  String _canvalsBorderColor = '#BFBFBF';
+  String _borderColor = '#BFBFBF';
+  double _borderWidth = 1;
+  double _borderAlpha = 1;
   final TextEditingController _canvalsBorderColorController =
       TextEditingController();
   final TextEditingController _canvalsBorderWidthController =
       TextEditingController();
-  double _canvalsBorderWidth = 1;
-  double _canvalsBorderAlpha = 1;
 
   @override
   void initState() {
@@ -43,19 +44,17 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
 
   /// 从模型初始化UI状态
   void _initializeFromModel() {
-    if (widget.editBoxData == null) return;
-    final data = widget.editBoxData;
+    if (widget.canvasProperties == null) return;
+    final props = widget.canvasProperties!;
 
-    // 填充相关属性
-    _canvalsFillColor = data.canvalsFillColor;
-    _canvalsFillAlpha = data.canvalsFillAlpha;
-    // 边框相关属性
-    _canvalsBorderColor = data.canvalsBorderColor;
-    _canvalsBorderWidth = data.canvalsBorderWidth;
-    _canvalsBorderAlpha = data.canvalsBorderAlpha;
+    _fillColor = props.fillColor;
+    _fillAlpha = props.fillAlpha;
+    _borderColor = props.borderColor;
+    _borderWidth = props.borderWidth;
+    _borderAlpha = props.borderAlpha;
 
-    _canvalsBorderColorController.text = data.canvalsBorderColor;
-    _canvalsBorderWidthController.text = _canvalsBorderWidth.toInt().toString();
+    _canvalsBorderColorController.text = _fillColor;
+    _canvalsBorderWidthController.text = _borderWidth.toInt().toString();
   }
 
   @override
@@ -82,19 +81,13 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
 
   /// 更新数据模型
   void _updateModel() {
-    if (widget.editBoxData == null) return;
-
-    final data = widget.editBoxData;
-
-    // 填充相关属性
-    data.canvalsFillColor = _canvalsFillColor;
-    data.canvalsFillAlpha = _canvalsFillAlpha;
-    // 边框相关属性
-    data.canvalsBorderColor = _canvalsBorderColor;
-    data.canvalsBorderWidth = _canvalsBorderWidth;
-    data.canvalsBorderAlpha = _canvalsBorderAlpha;
-
-    // 通知外部属性已更新，触发实时刷新
+    if (widget.canvasProperties == null) return;
+    final props = widget.canvasProperties!;
+    props.fillColor = _fillColor;
+    props.fillAlpha = _fillAlpha;
+    props.borderColor = _borderColor;
+    props.borderWidth = _borderWidth;
+    props.borderAlpha = _borderAlpha;
     widget.onPropertyChanged?.call();
   }
 
@@ -225,10 +218,10 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
             GestureDetector(
               onTap: () {
                 _openColorPicker(
-                  initialColor: _canvalsFillColor.color,
+                  initialColor: _fillColor.color,
                   onColorSelected: (color) {
                     setState(() {
-                      _canvalsFillColor = color.string;
+                      _fillColor = color.string;
                       _canvalsFillColorController.text = color.string;
                       _updateModel();
                     });
@@ -239,7 +232,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
                 width: 84.w,
                 height: 38.w,
                 decoration: BoxDecoration(
-                  color: _canvalsFillColor.color,
+                  color: _fillColor.color,
                   borderRadius: BorderRadius.circular(12.w),
                   border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
                 ),
@@ -264,7 +257,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
                 onChanged: (value) {
                   if (value.isNotEmpty && value.length == 7) {
                     setState(() {
-                      _canvalsFillColor = value;
+                      _fillColor = value;
                       _updateModel();
                     });
                   }
@@ -295,7 +288,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
   Widget _buildFillAlphaSection() {
     return SliderInputField(
       title: '填充透明度',
-      value: _canvalsFillAlpha,
+      value: _fillAlpha,
       minValue: 0.0,
       maxValue: 1.0,
       trackHeight: 8.w,
@@ -305,7 +298,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
           double.tryParse(text.replaceAll('%', '')) ?? 0.0 / 100.0,
       onChanged: (value) {
         setState(() {
-          _canvalsFillAlpha = value;
+          _fillAlpha = value;
           _updateModel();
         });
       },
@@ -335,10 +328,10 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
             GestureDetector(
               onTap: () {
                 _openColorPicker(
-                  initialColor: _canvalsBorderColor.color,
+                  initialColor: _borderColor.color,
                   onColorSelected: (color) {
                     setState(() {
-                      _canvalsBorderColor = color.string;
+                      _borderColor = color.string;
                       _canvalsBorderColorController.text = color.string;
                       _updateModel();
                     });
@@ -349,7 +342,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
                 width: 84.w,
                 height: 38.w,
                 decoration: BoxDecoration(
-                  color: _canvalsBorderColor.color,
+                  color: _borderColor.color,
                   borderRadius: BorderRadius.circular(12.w),
                   border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
                 ),
@@ -375,7 +368,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
                 onChanged: (value) {
                   if (value.isNotEmpty && value.length == 7) {
                     setState(() {
-                      _canvalsBorderColor = value;
+                      _borderColor = value;
                       _updateModel();
                     });
                   }
@@ -427,7 +420,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
                   final width = double.tryParse(value);
                   if (width != null) {
                     setState(() {
-                      _canvalsBorderWidth = width;
+                      _borderWidth = width;
                       _updateModel();
                     });
                   }
@@ -457,7 +450,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
   Widget _buildShawAlphaSection() {
     return SliderInputField(
       title: '边框透明度',
-      value: _canvalsBorderAlpha,
+      value: _borderAlpha,
       minValue: 0.0,
       maxValue: 1.0,
       trackHeight: 8.w,
@@ -466,9 +459,8 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
       parser: (text) =>
           double.tryParse(text.replaceAll('%', '')) ?? 0.0 / 100.0,
       onChanged: (value) {
-        debugPrint("---------$value---");
         setState(() {
-          _canvalsBorderAlpha = value;
+          _borderAlpha = value;
           _updateModel();
         });
       },

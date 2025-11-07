@@ -162,25 +162,6 @@ class EditContentBox extends StatelessWidget {
             maxLines: null,
           ),
         );
-      case ElementType.canvals:
-        return Opacity(
-          opacity: data.canvalsFillAlpha,
-          child: Container(
-            width: data.width,
-            height: data.height,
-            decoration: BoxDecoration(
-              color: data.canvalsFillColor.color.withValues(
-                alpha: data.canvalsFillAlpha,
-              ),
-              border: Border.all(
-                color: data.canvalsBorderColor.color.withValues(
-                  alpha: data.canvalsBorderAlpha,
-                ),
-                width: data.canvalsBorderWidth,
-              ),
-            ),
-          ),
-        );
     }
   }
 }

@@ -22,17 +22,16 @@ import '../utils/index.dart';
 
 class CreateCanvalsPage extends StatefulWidget {
   const CreateCanvalsPage({super.key});
-
   @override
   State<CreateCanvalsPage> createState() => _CreateCanvalsPageState();
 }
 
 class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
   final CanvalsController _canvalsController = Get.put(CanvalsController());
-  late DesignCanvalsModel _canvalsModel;
   final ScreenshotController _screenshotController = ScreenshotController();
   final CanvasHistoryManager _historyManager = CanvasHistoryManager();
 
+  late DesignCanvalsModel _canvalsModel;
   final GlobalKey<CanvasEditorWidgetState> _canvasKey =
       GlobalKey<CanvasEditorWidgetState>();
 
@@ -403,8 +402,22 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                     child: Center(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: "#BFBFBF".color, width: 1),
+                          color: _canvalsModel.canvasProperties.fillColor.color
+                              .withValues(
+                                alpha: _canvalsModel.canvasProperties.fillAlpha,
+                              ),
+                          border: Border.all(
+                            color: _canvalsModel
+                                .canvasProperties
+                                .borderColor
+                                .color
+                                .withValues(
+                                  alpha: _canvalsModel
+                                      .canvasProperties
+                                      .borderAlpha,
+                                ),
+                            width: _canvalsModel.canvasProperties.borderWidth,
+                          ),
                         ),
                         width: displayWidth,
                         height: displayHeight,
@@ -459,22 +472,31 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
               bottom: 66.w + ScreenTools.bottomBarHeight,
               child: ElementAttributeToolbar(
                 activeElement: _activeElement,
+                isCanvasSelected: _canvalsModel.canvasProperties.isSelected,
                 onClose: () {
-                  _toggleLayerDialog(false);
-                  // _showCanvalsPropertyDialog();
-                  // 根据元素类型显示不同的属性弹框
-                  if (_activeElement?.type == ElementType.image) {
-                    _showImagePropertyDialog();
-                  } else if (_activeElement?.type == ElementType.rectangle ||
-                      _activeElement?.type == ElementType.ellipse ||
-                      _activeElement?.type == ElementType.line) {
-                    _showShapePropertyDialog();
-                  } else {
-                    _showTextPropertyDialog();
+                  _canvalsController.select('');
+                  if (_canvalsModel.canvasProperties.isSelected) {
+                    setState(() {
+                      _canvalsModel.canvasProperties.isSelected = false;
+                    });
                   }
                 },
-                onCollapse: () {
-                  _canvalsController.select('');
+                onCollapse: (text) {
+                  _toggleLayerDialog(false);
+                  if (text == "图层属性") {
+                    _showCanvalsPropertyDialog();
+                  } else {
+                    // 根据元素类型显示不同的属性弹框
+                    if (_activeElement?.type == ElementType.image) {
+                      _showImagePropertyDialog();
+                    } else if (_activeElement?.type == ElementType.rectangle ||
+                        _activeElement?.type == ElementType.ellipse ||
+                        _activeElement?.type == ElementType.line) {
+                      _showShapePropertyDialog();
+                    } else {
+                      _showTextPropertyDialog();
+                    }
+                  }
                 },
               ),
             ),
@@ -486,22 +508,18 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
               left: 16.w,
               bottom: 72.w + ScreenTools.bottomBarHeight, // 底部工具栏高度 + 10像素间距
               child: CanvalsLayerDialog(
-                height: 271.w,
-                width: 163.w,
+                canvasProperties: _canvalsModel.canvasProperties,
                 layers: _canvasKey.currentState?.layers ?? [],
                 onLayerTap: (layerId) {
-                  final layers = _canvasKey.currentState?.layers ?? [];
-                  final layer = layers.firstWhere((l) => l.id == layerId);
+                  // 选中元素时，确保画布未选中
+                  setState(() {
+                    _canvalsModel.canvasProperties.isSelected = false;
+                  });
 
-                  // 如果是画布图层，显示画布属性对话框
-                  if (layer.type == ElementType.canvals) {
-                    _showCanvalsPropertyDialog();
-                  } else {
-                    // 其他图层正常处理选中
-                    _canvalsController.isSelected(layerId)
-                        ? _canvalsController.deselect()
-                        : _canvalsController.select(layerId);
-                  }
+                  // 切换元素选中状态
+                  _canvalsController.isSelected(layerId)
+                      ? _canvalsController.deselect()
+                      : _canvalsController.select(layerId);
                 },
                 onLayerDelete: (layerId) {
                   setState(() {
@@ -539,6 +557,21 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                     layer.isLock = !layer.isLock;
                   });
                 },
+                onCanvalsActivie: () {
+                  setState(() {
+                    _canvalsModel.canvasProperties.isSelected = true;
+                    _canvalsController.deselect();
+                  });
+                },
+                onCanvalsLock: () {
+                  setState(() {
+                    _canvalsModel.canvasProperties.isLock =
+                        !_canvalsModel.canvasProperties.isLock;
+                    if (_canvalsModel.canvasProperties.isLock) {
+                      _canvalsController.deselect();
+                    }
+                  });
+                },
               ),
             ),
         ],
@@ -547,18 +580,10 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
   }
 
   void _showCanvalsPropertyDialog() {
-    _toggleLayerDialog(false);
-
     // 获取画布图层
-    final layers = _canvasKey.currentState?.layers ?? [];
-    final canvasLayer = layers.firstWhere(
-      (layer) => layer.type == ElementType.canvals,
-      orElse: () => layers.first, // 如果没有找到，使用第一个（应该不会发生）
-    );
-
     SmartDialog.show(
       builder: (context) => CanvalsPropertyDialog(
-        editBoxData: canvasLayer,
+        canvasProperties: _canvalsModel.canvasProperties,
         onPropertyChanged: () {
           setState(() {}); // 触发界面重绘
         },

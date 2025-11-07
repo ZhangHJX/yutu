@@ -143,8 +143,6 @@ class TransformBorderCanvas extends StatelessWidget {
         ];
       case ElementType.line:
         return ['left', 'top', 'right', 'bottom'];
-      case ElementType.canvals:
-        return [];
     }
   }
 

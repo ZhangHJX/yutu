@@ -5,11 +5,13 @@ import '../../model/create_design_model.dart';
 class ElementAttributeToolbar extends StatefulWidget {
   final EditBoxData? activeElement;
   final VoidCallback? onClose;
-  final VoidCallback? onCollapse;
+  final Function(String)? onCollapse;
+  final bool isCanvasSelected; // 是否选中画布
 
   const ElementAttributeToolbar({
     super.key,
     this.activeElement,
+    this.isCanvasSelected = false,
     this.onClose,
     this.onCollapse,
   });
@@ -22,7 +24,7 @@ class ElementAttributeToolbar extends StatefulWidget {
 class _ElementAttributeToolbarState extends State<ElementAttributeToolbar> {
   @override
   Widget build(BuildContext context) {
-    if (widget.activeElement == null) {
+    if (widget.activeElement == null && !widget.isCanvasSelected) {
       return SizedBox.shrink();
     }
     return Container(
@@ -47,7 +49,7 @@ class _ElementAttributeToolbarState extends State<ElementAttributeToolbar> {
 
           GestureDetector(
             onTap: () {
-              widget.onClose?.call();
+              widget.onCollapse?.call(_getToolbarTitle());
             },
             child: SizedBox(
               width: 35.w,
@@ -67,7 +69,7 @@ class _ElementAttributeToolbarState extends State<ElementAttributeToolbar> {
 
           GestureDetector(
             onTap: () {
-              widget.onCollapse?.call();
+              widget.onClose?.call();
             },
             child: Padding(
               padding: EdgeInsets.only(right: 10.w),

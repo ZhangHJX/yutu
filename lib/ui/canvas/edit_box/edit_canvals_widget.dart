@@ -15,27 +15,32 @@ import '../utils/edit_box_data_clone.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
+  final CanvasProperties? properties;
 
-  const CanvasEditorWidget({super.key, this.historyManager});
+  const CanvasEditorWidget({super.key, this.historyManager, this.properties});
   @override
   State<CanvasEditorWidget> createState() => CanvasEditorWidgetState();
 }
 
 class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   late CanvalsController _selectionController;
-  final List<EditBoxData> boxes = [];
+  final _gestureManager = CanvasGestureManager(); // 画布手势管理
+  CanvasHistoryManager? get historyManager => widget.historyManager; // 历史管理器
 
-  // 手势管理器
-  final _gestureManager = CanvasGestureManager();
+  final List<EditBoxData> boxes = []; // 画布元素的数组
+  List<EditBoxData> get boxesList => boxes; // 暴露 boxes 列表供外部访问（用于历史记录）
+  List<EditBoxData> get layers => List.from(boxes); // 获取图层列表（按显示顺序，最上面的在最后）
 
-  // 历史管理器
-  CanvasHistoryManager? get historyManager => widget.historyManager;
-
-  // 暴露 boxes 列表供外部访问（用于历史记录）
-  List<EditBoxData> get boxesList => boxes;
-
-  /// 获取图层列表（按显示顺序，最上面的在最后）
-  List<EditBoxData> get layers => List.from(boxes);
+  @override
+  void initState() {
+    super.initState();
+    _selectionController = Get.put(CanvalsController());
+    _gestureManager.onDoubleTap = (String boxId) {
+      showTextInputDialog(boxId);
+    };
+    // 设置历史管理器到手势管理器
+    _gestureManager.historyManager = historyManager;
+  }
 
   /// 重新排序图层
   void reorderLayers(int oldIndex, int newIndex) {
@@ -132,22 +137,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
     // 自动选中新添加的元素
     _selectionController.select(newId);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _selectionController = Get.put(CanvalsController());
-    _gestureManager.onDoubleTap = (String boxId) {
-      showTextInputDialog(boxId);
-    };
-    // 设置历史管理器到手势管理器
-    _gestureManager.historyManager = historyManager;
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   /// 获取图片的实际尺寸
