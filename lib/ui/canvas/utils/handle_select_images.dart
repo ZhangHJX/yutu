@@ -1,5 +1,4 @@
 import 'dart:collection';
-
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
@@ -16,17 +15,12 @@ class SelectImageHelper {
 
   String? get image => images.firstOrNull;
 
-  void onChooseImages({VoidCallback? onSuccess}) {
+  void onChooseImages({VoidCallback? onSuccess, BuildContext? context}) {
     showMyBottomSheet([
       BottomSheetItem(
         title: '从相册选择',
         onPressed: () async {
           try {
-            final res = await PermissionUtil.requestGalleryReadPermission();
-            if (!res) {
-              return showToast('没有相册读取权限，请到设置中开启');
-            }
-
             final left = maxCount - _images.length;
             if (maxCount == 1 || left == 1) {
               final res = await imagePicker.pickImage(
@@ -55,11 +49,6 @@ class SelectImageHelper {
       BottomSheetItem(
         title: '拍照',
         onPressed: () async {
-          final res = await PermissionUtil.requestCameraPermission();
-          if (!res) {
-            return showToast('没有相机权限，请到设置中开启');
-          }
-
           final cameraRes = await imagePicker.pickImage(
             source: ImageSource.camera,
           );
@@ -73,13 +62,11 @@ class SelectImageHelper {
   }
 
   // 只从相册获取数据
-  void onlyChooseImages({VoidCallback? onSuccess}) async {
+  void onlyChooseImages({
+    VoidCallback? onSuccess,
+    BuildContext? context,
+  }) async {
     try {
-      final res = await PermissionUtil.requestGalleryReadPermission();
-      if (!res) {
-        return showToast('没有相册读取权限，请到设置中开启');
-      }
-
       final left = maxCount - _images.length;
       if (maxCount == 1 || left == 1) {
         final res = await imagePicker.pickImage(source: ImageSource.gallery);

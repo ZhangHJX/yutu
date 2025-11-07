@@ -16,10 +16,10 @@ class CanvalsEditBoxUtil {
       'top-left': Offset(-1.5, -1.5), // 左上角
       'top-right': Offset(totalWidth - 4.5, 0), // 右上角
       'bottom-left': Offset(-1.5, totalHeight - 4.5), // 左下角
-      'bottom-right': Offset(totalWidth - 4.5, totalHeight - 4.5), // 右下角
+      'bottom-right': Offset(totalWidth - 4.5, totalHeight - 3), // 右下角
       // 四个边中点
       'left': Offset(-1.5, totalHeight / 2 - 3), // 左边中点
-      'right': Offset(totalWidth - 4.5, totalHeight / 2), // 右边中点
+      'right': Offset(totalWidth - 4.5, totalHeight / 2 - 1.5), // 右边中点
       'top': Offset(totalWidth / 2, -1.5), // 上边中点
       'bottom': Offset(totalWidth / 2, totalHeight - 4.5), // 下边中点
     };

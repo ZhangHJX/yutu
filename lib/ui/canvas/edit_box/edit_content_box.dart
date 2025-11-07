@@ -31,91 +31,27 @@ class EditContentBox extends StatelessWidget {
   Widget _buildContent() {
     switch (data.type) {
       case ElementType.image:
-        if (data.imagePath.isNotEmpty) {
-          return ClipRect(
+        return ClipRect(
+          child: Opacity(
+            opacity: data.imageAlpha,
             child: Image.asset(
               data.imagePath,
               width: data.width,
               height: data.height,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Colors.grey.shade200,
-                  child: const Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      color: Colors.grey,
-                      size: 48,
-                    ),
-                  ),
-                );
-              },
             ),
-          );
-        } else {
-          return Container(
-            color: Colors.grey.shade200,
-            child: const Center(
-              child: Icon(Icons.image, color: Colors.grey, size: 48),
-            ),
-          );
-        }
+          ),
+        );
       case ElementType.rectangle:
-        return Container(
-          width: data.width,
-          height: data.height,
-          decoration: BoxDecoration(
-            color: data.fillColor.color,
-            border: Border.all(
-              color: data.borderColor.color,
-              width: data.borderWidth,
-            ),
-            boxShadow: data.isShawOpen
-                ? [
-                    BoxShadow(
-                      color: data.shawColor.color,
-                      offset: Offset(data.shawX, data.shawY),
-                      blurRadius: data.blurValue,
-                      spreadRadius: 0,
-                    ),
-                  ]
-                : null,
-          ),
-        );
-      case ElementType.ellipse:
-        return Container(
-          width: data.width,
-          height: data.height,
-          decoration: BoxDecoration(
-            color: data.fillColor.color,
-            border: Border.all(
-              color: data.borderColor.color,
-              width: data.borderWidth,
-            ),
-            boxShadow: data.isShawOpen
-                ? [
-                    BoxShadow(
-                      color: data.shawColor.color,
-                      offset: Offset(data.shawX, data.shawY),
-                      blurRadius: data.blurValue,
-                      spreadRadius: 0,
-                    ),
-                  ]
-                : null,
-            borderRadius: BorderRadius.all(
-              Radius.elliptical(data.width / 2, data.height / 2),
-            ),
-          ),
-        );
-      case ElementType.line:
-        return Center(
+        return Opacity(
+          opacity: data.fillAlpha,
           child: Container(
             width: data.width,
-            height: data.height - 18.5.w,
+            height: data.height,
             decoration: BoxDecoration(
               color: data.fillColor.color,
               border: Border.all(
-                color: data.borderColor.color,
+                color: data.borderColor.color.withValues(alpha: data.fillAlpha),
                 width: data.borderWidth,
               ),
               boxShadow: data.isShawOpen
@@ -131,6 +67,65 @@ class EditContentBox extends StatelessWidget {
             ),
           ),
         );
+      case ElementType.ellipse:
+        return Opacity(
+          opacity: data.fillAlpha,
+          child: Container(
+            width: data.width,
+            height: data.height,
+            decoration: BoxDecoration(
+              color: data.fillColor.color,
+              border: Border.all(
+                color: data.borderColor.color.withValues(
+                  alpha: data.borderAlpha,
+                ),
+                width: data.borderWidth,
+              ),
+              boxShadow: data.isShawOpen
+                  ? [
+                      BoxShadow(
+                        color: data.shawColor.color,
+                        offset: Offset(data.shawX, data.shawY),
+                        blurRadius: data.blurValue,
+                        spreadRadius: 0,
+                      ),
+                    ]
+                  : null,
+              borderRadius: BorderRadius.all(
+                Radius.elliptical(data.width / 2, data.height / 2),
+              ),
+            ),
+          ),
+        );
+      case ElementType.line:
+        return Center(
+          child: Opacity(
+            opacity: data.fillAlpha,
+            child: Container(
+              width: data.width,
+              height: data.height - 18.5.w,
+              decoration: BoxDecoration(
+                color: data.fillColor.color,
+                border: Border.all(
+                  color: data.borderColor.color.withValues(
+                    alpha: data.borderAlpha,
+                  ),
+                  width: data.borderWidth,
+                ),
+                boxShadow: data.isShawOpen
+                    ? [
+                        BoxShadow(
+                          color: data.shawColor.color,
+                          offset: Offset(data.shawX, data.shawY),
+                          blurRadius: data.blurValue,
+                          spreadRadius: 0,
+                        ),
+                      ]
+                    : null,
+              ),
+            ),
+          ),
+        );
       case ElementType.text:
         return Container(
           width: data.width,
@@ -143,13 +138,15 @@ class EditContentBox extends StatelessWidget {
               fontFamily: data.fontFamily,
               fontSize: data.fontSize,
               fontWeight: data.fontWeight,
-              color: data.textColor.color,
+              color: data.textColor.color.withValues(alpha: data.textAlpha),
               height: data.lineHeight,
               letterSpacing: data.fontSpace,
               shadows: data.isShawOpen
                   ? [
                       Shadow(
-                        color: data.shawColor.color,
+                        color: data.shawColor.color.withValues(
+                          alpha: data.shawAlpha,
+                        ),
                         offset: Offset(data.shawX, data.shawY),
                         blurRadius: data.blurValue,
                       ),
@@ -158,13 +155,32 @@ class EditContentBox extends StatelessWidget {
             ),
             textAlign: data.align,
             strokeWidth: data.borderWidth, // 描边宽度，需要自己计算：fontSize * 0.18
-            strokeColor: data.borderColor.color,
-            fillColor: data.textColor.color,
+            strokeColor: data.borderColor.color.withValues(
+              alpha: data.borderAlpha,
+            ),
+            fillColor: data.textColor.color.withValues(alpha: data.textAlpha),
             maxLines: null,
           ),
         );
       case ElementType.canvals:
-        return Container();
+        return Opacity(
+          opacity: data.canvalsFillAlpha,
+          child: Container(
+            width: data.width,
+            height: data.height,
+            decoration: BoxDecoration(
+              color: data.canvalsFillColor.color.withValues(
+                alpha: data.canvalsFillAlpha,
+              ),
+              border: Border.all(
+                color: data.canvalsBorderColor.color.withValues(
+                  alpha: data.canvalsBorderAlpha,
+                ),
+                width: data.canvalsBorderWidth,
+              ),
+            ),
+          ),
+        );
     }
   }
 }

@@ -303,6 +303,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                 decoration: BoxDecoration(
                   color: _fillColor.color,
                   borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
                 ),
               ),
             ),
@@ -386,6 +387,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                 decoration: BoxDecoration(
                   color: _borderColor.color,
                   borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
                 ),
               ),
             ),
@@ -645,6 +647,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                 decoration: BoxDecoration(
                   color: _shadowColor.color,
                   borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
                 ),
               ),
             ),

@@ -752,6 +752,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                 decoration: BoxDecoration(
                   color: _textColor.color,
                   borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
                 ),
               ),
             ),
@@ -833,8 +834,9 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                 width: 50.w,
                 height: 38.w,
                 decoration: BoxDecoration(
-                  color: _borderColor.color,
+                  color: _textColor.color,
                   borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
                 ),
               ),
             ),
@@ -1094,6 +1096,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                 decoration: BoxDecoration(
                   color: _shadowColor.color,
                   borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
                 ),
               ),
             ),

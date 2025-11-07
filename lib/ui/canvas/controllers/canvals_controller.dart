@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:uuid/uuid.dart';
-import '../../../utils/handle_select_images.dart';
+import '../utils/handle_select_images.dart';
 
 /// 全局选择状态管理控制器
 /// 负责管理当前选中的文本框ID，确保只有一个文本框处于选中状态

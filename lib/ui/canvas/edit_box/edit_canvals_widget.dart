@@ -8,7 +8,7 @@ import '../model/create_design_model.dart';
 import 'edit_content_box.dart';
 import '../managers/canvas_gesture_manager.dart';
 import '../widgets/dialog/text_input_dialog.dart';
-import '../../../utils/text_measure_util.dart';
+import '../utils/text_measure_util.dart';
 import 'transform_border_canvas.dart';
 import '../managers/canvas_history_manager.dart';
 import '../utils/edit_box_data_clone.dart';
@@ -283,7 +283,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
     // 记录命令
     if (historyManager != null) {
-      historyManager!.executeCommand(AddElementCommand(boxes, newElement ));
+      historyManager!.executeCommand(AddElementCommand(boxes, newElement));
     }
 
     // 自动选中新添加的元素
@@ -495,7 +495,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
           elements: boxes,
           selectedId: _selectionController.selectedId,
           child: Stack(
-            clipBehavior: Clip.none,
+            clipBehavior: Clip.hardEdge,
             children: [
               // 未选中的元素（先渲染，在底层）
               ...boxes
@@ -525,12 +525,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     });
   }
 
-
-
-
-
-
-
   /// 撤销操作
   void undo() {
     historyManager?.undo();
@@ -545,5 +539,4 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     historyManager?.redo();
     setState(() {});
   }
-
 }

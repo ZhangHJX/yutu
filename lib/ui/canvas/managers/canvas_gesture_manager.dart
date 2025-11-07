@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../model/create_design_model.dart';
-import '../../../utils/text_measure_util.dart';
+import '../utils/text_measure_util.dart';
 import '../utils/canvals_edit_box_util.dart';
 import 'dart:math' as math;
 import 'canvas_history_manager.dart';

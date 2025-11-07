@@ -1,23 +1,21 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
+import './widgets/slider_input_field.dart';
+import '../../model/create_design_model.dart';
 
 class ImagePropertyDialog extends StatefulWidget {
-  final String? imagePath;
-  final double? currentWidth;
-  final double? currentHeight;
-  final Function(double width, double height)? onSizeChanged;
-  final VoidCallback? onReplaceImage;
+  final EditBoxData? editBoxData;
+  final VoidCallback? onValueChanged;
   final VoidCallback? onDeleteImage;
+  final VoidCallback? replaceImage;
 
   const ImagePropertyDialog({
     super.key,
-    this.imagePath,
-    this.currentWidth,
-    this.currentHeight,
-    this.onSizeChanged,
-    this.onReplaceImage,
+    this.editBoxData,
+    this.onValueChanged,
     this.onDeleteImage,
+    this.replaceImage,
   });
 
   @override
@@ -25,18 +23,36 @@ class ImagePropertyDialog extends StatefulWidget {
 }
 
 class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
-  late TextEditingController _widthController;
-  late TextEditingController _heightController;
+  final TextEditingController _widthController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+  String? _imagePath;
+  double? _imageWidth;
+  double? _imageHeight;
+  double _imageAlpha = 1.0;
 
   @override
   void initState() {
     super.initState();
-    _widthController = TextEditingController(
-      text: widget.currentWidth?.toInt().toString() ?? '200',
-    );
-    _heightController = TextEditingController(
-      text: widget.currentHeight?.toInt().toString() ?? '200',
-    );
+    _initializeFromModel();
+  }
+
+  void _initializeFromModel() {
+    _widthController.text =
+        widget.editBoxData?.width.toInt().toString() ?? "200";
+    _heightController.text =
+        widget.editBoxData?.height.toInt().toString() ?? "200";
+    _imagePath = widget.editBoxData?.imagePath;
+    _imageWidth = widget.editBoxData?.width;
+    _imageHeight = widget.editBoxData?.height;
+    _imageAlpha = widget.editBoxData?.imageAlpha ?? 1.0;
+  }
+
+  void _updateModel() {
+    widget.editBoxData?.width = _imageWidth ?? 0.0;
+    widget.editBoxData?.height = _imageHeight ?? 0.0;
+    widget.editBoxData?.imageAlpha = _imageAlpha;
+    widget.editBoxData?.imagePath = _imagePath ?? "";
+    widget.onValueChanged?.call();
   }
 
   @override
@@ -161,15 +177,10 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
                                   keyboardType: TextInputType.number,
                                   onChanged: (value) {
                                     final width = double.tryParse(value);
-                                    final height = double.tryParse(
-                                      _heightController.text,
-                                    );
-                                    if (width != null &&
-                                        height != null &&
-                                        width > 0 &&
-                                        height > 0) {
-                                      widget.onSizeChanged?.call(width, height);
-                                    }
+                                    setState(() {
+                                      _imageWidth = width;
+                                      _updateModel();
+                                    });
                                   },
                                   decoration: InputDecoration(
                                     hintText: '如:200',
@@ -238,15 +249,10 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
                                   keyboardType: TextInputType.number,
                                   onChanged: (value) {
                                     final height = double.tryParse(value);
-                                    final width = double.tryParse(
-                                      _widthController.text,
-                                    );
-                                    if (width != null &&
-                                        height != null &&
-                                        width > 0 &&
-                                        height > 0) {
-                                      widget.onSizeChanged?.call(width, height);
-                                    }
+                                    setState(() {
+                                      _imageHeight = height;
+                                      _updateModel();
+                                    });
                                   },
                                   decoration: InputDecoration(
                                     hintText: '如:200',
@@ -272,7 +278,29 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
                     ),
                   ),
 
-                  SizedBox(height: 28.w),
+                  SizedBox(height: 12.w),
+
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: SliderInputField(
+                      title: '图片透明度',
+                      value: _imageAlpha,
+                      minValue: 0.0,
+                      maxValue: 1.0,
+                      trackHeight: 8.w,
+                      thumbSize: 16.w,
+                      formatter: (value) => '${(value * 100).toInt()}%',
+                      parser: (text) =>
+                          double.tryParse(text.replaceAll('%', '')) ??
+                          0.0 / 100.0,
+                      onChanged: (value) {
+                        setState(() {
+                          _imageAlpha = value;
+                          _updateModel();
+                        });
+                      },
+                    ),
+                  ),
 
                   // 操作按钮区域
                   _buildBottomButtons(),
@@ -297,7 +325,7 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
               Expanded(
                 child: GestureDetector(
                   onTap: () {
-                    widget.onReplaceImage?.call();
+                    widget.replaceImage?.call();
                     SmartDialog.dismiss();
                   },
                   child: Image.asset(
@@ -329,8 +357,9 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
             ],
           ),
         ),
+
         // 底部安全区域
-        SizedBox(height: ScreenTools.bottomBarHeight),
+        SizedBox(height: ScreenTools.bottomBarHeight + 34.w),
       ],
     );
   }

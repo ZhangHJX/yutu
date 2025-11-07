@@ -90,9 +90,16 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
             child: ReorderableListView.builder(
               itemCount: widget.layers.length,
               onReorder: (oldIndex, newIndex) {
-                // 处理拖拽重排序，需要反转索引
+                // 画布图层固定在最底层（索引0），不允许移动
+                // 反转索引后，画布图层在列表的最后（索引 layers.length - 1）
                 final reversedOldIndex = widget.layers.length - 1 - oldIndex;
                 final reversedNewIndex = widget.layers.length - 1 - newIndex;
+
+                // 如果尝试移动画布图层，直接返回
+                if (reversedOldIndex == 0 || reversedNewIndex == 0) {
+                  return;
+                }
+
                 widget.onLayerReorder(reversedOldIndex, reversedNewIndex);
               },
               itemBuilder: (context, index) {
@@ -199,53 +206,56 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            GestureDetector(
-                              onTap: () {
-                                // 切换可见性
-                                widget.onLayerToggleVisibility(layer.id);
-                              },
-                              child: Container(
-                                padding: EdgeInsets.only(
-                                  left: 8.w,
-                                  right: 5.w,
-                                  top: 3.w,
-                                  bottom: 4.w,
-                                ),
-                                child: Center(
-                                  child: Image.asset(
-                                    layer.visible
-                                        ? 'assets/images/canvals/canvals_layer_eye.png'
-                                        : 'assets/images/canvals/canvals_layer_uneye.png',
-                                    width: 16.w,
-                                    height: 16.w,
-                                    fit: BoxFit.fill,
+                            if (layer.type != ElementType.canvals)
+                              GestureDetector(
+                                onTap: () {
+                                  // 切换可见性
+                                  widget.onLayerToggleVisibility(layer.id);
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.only(
+                                    left: 8.w,
+                                    right: 5.w,
+                                    top: 3.w,
+                                    bottom: 4.w,
+                                  ),
+                                  child: Center(
+                                    child: Image.asset(
+                                      layer.visible
+                                          ? 'assets/images/canvals/canvals_layer_eye.png'
+                                          : 'assets/images/canvals/canvals_layer_uneye.png',
+                                      width: 16.w,
+                                      height: 16.w,
+                                      fit: BoxFit.fill,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
 
-                            GestureDetector(
-                              onTap: () {
-                                widget.onLayerDelete(layer.id); // 删除图层
-                              },
-                              child: Container(
-                                padding: EdgeInsets.only(
-                                  left: 5.w,
-                                  right: 3.5.w,
-                                  top: 4.w,
-                                  bottom: 5.w,
-                                ),
-                                height: 23.w,
-                                child: Center(
-                                  child: Image.asset(
-                                    'assets/images/canvals/canvals_layer_delete.png',
-                                    width: 14.w,
-                                    height: 14.w,
-                                    fit: BoxFit.fill,
+                            // 画布图层不允许删除
+                            if (layer.type != ElementType.canvals)
+                              GestureDetector(
+                                onTap: () {
+                                  widget.onLayerDelete(layer.id); // 删除图层
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.only(
+                                    left: 5.w,
+                                    right: 3.5.w,
+                                    top: 4.w,
+                                    bottom: 5.w,
+                                  ),
+                                  height: 23.w,
+                                  child: Center(
+                                    child: Image.asset(
+                                      'assets/images/canvals/canvals_layer_delete.png',
+                                      width: 14.w,
+                                      height: 14.w,
+                                      fit: BoxFit.fill,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
 
                             GestureDetector(
                               onTap: () {
@@ -331,7 +341,21 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
         break;
       case ElementType.canvals:
         content = Center(
-          child: Container(width: 36.w, height: 28.w, color: '#D8D8D8'.color),
+          child: Container(
+            width: 36.w,
+            height: 28.w,
+            decoration: BoxDecoration(
+              color: layer.canvalsFillColor.color.withValues(
+                alpha: layer.canvalsFillAlpha,
+              ),
+              border: Border.all(
+                color: layer.canvalsBorderColor.color.withValues(
+                  alpha: layer.canvalsBorderAlpha,
+                ),
+                width: layer.canvalsBorderWidth,
+              ),
+            ),
+          ),
         );
         break;
     }

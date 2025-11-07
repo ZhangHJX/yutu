@@ -14,7 +14,7 @@ import '../widgets/dialog/canvals_shape_dialog.dart';
 import '../edit_box/edit_canvals_widget.dart';
 import 'canvals_controller.dart';
 import '../model/create_design_model.dart';
-import '../../../utils/text_measure_util.dart';
+import '../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
 import '../managers/canvas_history_manager.dart';
 import '../utils/edit_box_data_clone.dart';
@@ -45,11 +45,6 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   // 用于保存上一次的属性值（用于判断是否需要重新计算尺寸）
   EditBoxData? _lastPropertySnapshot;
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   /// 显示形状属性弹框
   void _showShapePropertyDialog() {
@@ -158,7 +153,6 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     if (_activeElement == null || _activeElement!.type != ElementType.text) {
       return;
     }
-
     final activeElement = _activeElement!;
     // 保存打开对话框时的宽度，用于判断是否是多行状态
     _savedTextWidth = activeElement.width;
@@ -466,6 +460,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
               child: ElementAttributeToolbar(
                 activeElement: _activeElement,
                 onClose: () {
+                  _toggleLayerDialog(false);
                   // _showCanvalsPropertyDialog();
                   // 根据元素类型显示不同的属性弹框
                   if (_activeElement?.type == ElementType.image) {
@@ -495,9 +490,18 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                 width: 163.w,
                 layers: _canvasKey.currentState?.layers ?? [],
                 onLayerTap: (layerId) {
-                  _canvalsController.isSelected(layerId)
-                      ? _canvalsController.deselect()
-                      : _canvalsController.select(layerId);
+                  final layers = _canvasKey.currentState?.layers ?? [];
+                  final layer = layers.firstWhere((l) => l.id == layerId);
+
+                  // 如果是画布图层，显示画布属性对话框
+                  if (layer.type == ElementType.canvals) {
+                    _showCanvalsPropertyDialog();
+                  } else {
+                    // 其他图层正常处理选中
+                    _canvalsController.isSelected(layerId)
+                        ? _canvalsController.deselect()
+                        : _canvalsController.select(layerId);
+                  }
                 },
                 onLayerDelete: (layerId) {
                   setState(() {
@@ -513,11 +517,9 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                   final layers = _canvasKey.currentState?.layers ?? [];
                   final layer = layers.firstWhere((l) => l.id == layerId);
                   final oldVisible = layer.visible;
-
                   setState(() {
                     layer.visible = !layer.visible;
                   });
-
                   // 记录命令
                   final boxes = _canvasKey.currentState?.boxesList ?? [];
                   _historyManager.executeCommand(
@@ -530,7 +532,12 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                   );
                 },
                 onLayerLock: (layerId) {
-                  debugPrint("-----是否被锁----");
+                  final layers = _canvasKey.currentState?.layers ?? [];
+                  final layer = layers.firstWhere((l) => l.id == layerId);
+                  // final oldIsLock = layer.isLock;
+                  setState(() {
+                    layer.isLock = !layer.isLock;
+                  });
                 },
               ),
             ),
@@ -542,9 +549,16 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
   void _showCanvalsPropertyDialog() {
     _toggleLayerDialog(false);
 
+    // 获取画布图层
+    final layers = _canvasKey.currentState?.layers ?? [];
+    final canvasLayer = layers.firstWhere(
+      (layer) => layer.type == ElementType.canvals,
+      orElse: () => layers.first, // 如果没有找到，使用第一个（应该不会发生）
+    );
+
     SmartDialog.show(
       builder: (context) => CanvalsPropertyDialog(
-        editBoxData: _activeElement,
+        editBoxData: canvasLayer,
         onPropertyChanged: () {
           setState(() {}); // 触发界面重绘
         },
@@ -555,7 +569,6 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       maskColor: Colors.black.withValues(alpha: 0.4),
       maskWidget: GestureDetector(
         onTap: () {
-          _recordShapePropertyChange();
           SmartDialog.dismiss();
         },
         child: Container(color: Colors.transparent),
@@ -567,24 +580,20 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
 
   /// 显示图片属性弹框
   void _showImagePropertyDialog() {
-    _toggleLayerDialog(false);
     if (_activeElement == null || _activeElement!.type != ElementType.image) {
       return;
     }
-
     // 保存属性快照
     _propertyDialogSnapshot = EditBoxDataClone.clone(_activeElement!);
 
     SmartDialog.show(
       builder: (context) => ImagePropertyDialog(
-        imagePath: _activeElement?.imagePath ?? '',
-        currentWidth: _activeElement?.width,
-        currentHeight: _activeElement?.height,
-        onSizeChanged: (width, height) {
-          _updateImageSize(width, height);
-        },
-        onReplaceImage: () {
+        editBoxData: _activeElement,
+        replaceImage: () {
           _replaceImage();
+        },
+        onValueChanged: () {
+          setState(() {}); // 触发界面重绘
         },
         onDeleteImage: () {
           _deleteImage();
@@ -649,21 +658,12 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     }
   }
 
-  /// 更新图片尺寸
-  void _updateImageSize(double width, double height) {
-    if (_activeElement != null) {
-      setState(() {
-        _activeElement!.width = width;
-        _activeElement!.height = height;
-      });
-    }
-  }
-
   /// 替换图片
   void _replaceImage() {
     if (_activeElement != null && _activeElement!.type == ElementType.image) {
       debugPrint('替换图片');
       _canvalsController.selectImageHelper.onlyChooseImages(
+        context: context,
         onSuccess: () {
           final imagePath = _canvalsController.selectImageHelper.image;
           if (imagePath != null) {
@@ -680,6 +680,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       // 如果激活的是文本框，也支持替换文本框内的图片
       debugPrint('替换文本框内的图片');
       _canvalsController.selectImageHelper.onlyChooseImages(
+        context: context,
         onSuccess: () {
           final imagePath = _canvalsController.selectImageHelper.image;
           if (imagePath != null) {
@@ -697,9 +698,10 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
   // 增加图片
   void _addImageDialog() async {
     _toggleLayerDialog(false);
-    final res = await PermissionUtil.requestGalleryReadPermission();
+    final res = await PermissionUtil.requestPhotoAlbumPermission();
     if (res) {
       _canvalsController.selectImageHelper.onlyChooseImages(
+        context: context,
         onSuccess: () {
           final imagePath = _canvalsController.selectImageHelper.image;
           if (imagePath != null) {
@@ -791,7 +793,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
   /// 保存到系统相册
   Future<void> _captureAndSave() async {
     _toggleLayerDialog(false);
-    final res = await PermissionUtil.requestGalleryReadPermission();
+    final res = await PermissionUtil.requestPhotoAlbumPermission();
     if (res) {
       try {
         final imageBytes = await _screenshotController.capture(pixelRatio: 3.0);
@@ -803,28 +805,25 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
           );
           if (result['isSuccess']) {
             showToast('图片已保存到相册');
-          } else {
-            showToast('保存失败');
+            return;
           }
-        } else {
-          showToast('保存失败');
         }
+        showToast('保存失败');
       } catch (e) {
         showToast('保存失败');
       }
-    } else {}
-    // else {
-    //   SmartDialog.show(
-    //     builder: (context) => PermissionHandlerWidget(),
-    //     alignment: Alignment.center,
-    //     animationType: SmartAnimationType.centerFade_otherSlide,
-    //     animationTime: Duration(milliseconds: 250),
-    //     maskColor: "#000000".color.withValues(alpha: 0.5),
-    //     clickMaskDismiss: false,
-    //     useAnimation: true,
-    //     usePenetrate: false,
-    //   );
-    // }
+    } else {
+      SmartDialog.show(
+        builder: (context) => PermissionHandlerWidget(),
+        alignment: Alignment.center,
+        animationType: SmartAnimationType.centerFade_otherSlide,
+        animationTime: Duration(milliseconds: 250),
+        maskColor: "#000000".color.withValues(alpha: 0.5),
+        clickMaskDismiss: false,
+        useAnimation: true,
+        usePenetrate: false,
+      );
+    }
   }
 
   /// 返回操作

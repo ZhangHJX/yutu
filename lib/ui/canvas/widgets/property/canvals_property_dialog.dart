@@ -241,6 +241,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
                 decoration: BoxDecoration(
                   color: _canvalsFillColor.color,
                   borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
                 ),
               ),
             ),
@@ -350,6 +351,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
                 decoration: BoxDecoration(
                   color: _canvalsBorderColor.color,
                   borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
                 ),
               ),
             ),

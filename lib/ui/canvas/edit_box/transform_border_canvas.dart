@@ -34,16 +34,20 @@ class TransformBorderCanvas extends StatelessWidget {
       (element) => element.id == selectedId,
       orElse: () => elements.first,
     );
-
     final List<Widget> controls = [];
 
     // 渲染边框矩形（在最底层）
     controls.add(_buildBorder(selectedElement));
 
     // 渲染调整大小的控制点
-    controls.addAll(_buildResizeHandles(selectedElement));
+    if (!selectedElement.isLock) {
+      controls.addAll(_buildResizeHandles(selectedElement));
+    }
+
     // 渲染旋转按钮
-    controls.add(_buildRotationButton(selectedElement));
+    if (!selectedElement.isLock) {
+      controls.add(_buildRotationButton(selectedElement));
+    }
     return controls;
   }
 

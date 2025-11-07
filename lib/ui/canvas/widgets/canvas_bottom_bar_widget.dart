@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../../utils/image_text_btn.dart';
+import '../utils/image_text_btn.dart';
 
 /// 画布底部工具栏
 class CanvasBottomBar extends StatelessWidget {
