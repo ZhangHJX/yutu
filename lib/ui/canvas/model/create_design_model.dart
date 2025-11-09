@@ -12,18 +12,18 @@ class DesignCanvalsModel {
   final double canvasRatio;
 
   @JsonKey(name: 'canvasProperties')
-  CanvasProperties canvasProperties; // 独立的画布属性
+  CanvasProperties properties; // 独立的画布属性
 
-  final List<EditBoxData>? editBoxData;
+  final List<CanvasElement>? elements;
 
   DesignCanvalsModel({
     required this.canvasRatio,
-    this.editBoxData,
+    this.elements,
     required this.id,
     required this.width,
     required this.height,
-    CanvasProperties? canvasProperties,
-  }) : canvasProperties = canvasProperties ?? CanvasProperties();
+    CanvasProperties? properties,
+  }) : properties = properties ?? CanvasProperties();
 }
 
 // 画布属性类
@@ -61,7 +61,7 @@ class CanvasProperties {
 
 // 所有的模型数据
 @JsonSerializable(explicitToJson: true)
-class EditBoxData {
+class CanvasElement {
   final String id;
   final ElementType type;
   double width;
@@ -126,7 +126,7 @@ class EditBoxData {
   // 旋转相关属性
   Offset? rotateLastPosition; // 旋转时的上一次触摸位置
 
-  EditBoxData({
+  CanvasElement({
     required this.id,
     required this.type,
     required this.width,

@@ -11,7 +11,7 @@ import '../widgets/property/shape_property_dialog.dart';
 import '../widgets/property/text_property_dialog.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../widgets/dialog/canvals_shape_dialog.dart';
-import '../edit_box/edit_canvals_widget.dart';
+import '../edit_box/canvals_editor_widget.dart';
 import 'canvals_controller.dart';
 import '../model/create_design_model.dart';
 import '../utils/text_measure_util.dart';
@@ -20,13 +20,13 @@ import '../managers/canvas_history_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../utils/index.dart';
 
-class CreateCanvalsPage extends StatefulWidget {
-  const CreateCanvalsPage({super.key});
+class CanvasEditorPage extends StatefulWidget {
+  const CanvasEditorPage({super.key});
   @override
-  State<CreateCanvalsPage> createState() => _CreateCanvalsPageState();
+  State<CanvasEditorPage> createState() => _CanvasEditorPagePageState();
 }
 
-class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
+class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   final CanvalsController _canvalsController = Get.put(CanvalsController());
   final ScreenshotController _screenshotController = ScreenshotController();
   final CanvasHistoryManager _historyManager = CanvasHistoryManager();
@@ -40,26 +40,26 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
   double? _savedTextWidth; // 保存打开文本属性对话框时的宽度
 
   // 用于保存对话框打开时的属性快照（用于历史记录）
-  EditBoxData? _propertyDialogSnapshot;
+  CanvasElement? _propertyDialogSnapshot;
 
   // 用于保存上一次的属性值（用于判断是否需要重新计算尺寸）
-  EditBoxData? _lastPropertySnapshot;
+  CanvasElement? _lastPropertySnapshot;
 
   /// 显示形状属性弹框
   void _showShapePropertyDialog() {
     if (_activeElement == null) return;
 
     // 保存属性快照
-    _propertyDialogSnapshot = EditBoxDataClone.clone(_activeElement!);
+    _propertyDialogSnapshot = CanvasElementClone.clone(_activeElement!);
 
     SmartDialog.show(
       builder: (context) => ShapePropertyDialog(
-        editBoxData: _activeElement,
+        element: _activeElement,
         onDeleteShape: () {
           _deleteShape();
         },
         onPropertiesChanged: (updatedData) {
-          // 属性已经直接更新到 EditBoxData 对象，画布会自动响应
+          // 属性已经直接更新到 CanvasElement 对象，画布会自动响应
           setState(() {}); // 触发界面重绘
         },
       ),
@@ -157,14 +157,14 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     _savedTextWidth = activeElement.width;
 
     // 保存属性快照
-    _propertyDialogSnapshot = EditBoxDataClone.clone(activeElement);
+    _propertyDialogSnapshot = CanvasElementClone.clone(activeElement);
 
     // 保存上一次的属性值（用于判断是否需要重新计算尺寸）
-    _lastPropertySnapshot = EditBoxDataClone.clone(activeElement);
+    _lastPropertySnapshot = CanvasElementClone.clone(activeElement);
 
     SmartDialog.show(
       builder: (context) => TextPropertyDialog(
-        editBoxData: activeElement,
+        element: activeElement,
         onDeleteText: () {
           _deleteText();
         },
@@ -289,7 +289,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     }
 
     // 更新上一次的属性快照（在 setState 之前更新，避免下次比较时出错）
-    _lastPropertySnapshot = EditBoxDataClone.clone(box);
+    _lastPropertySnapshot = CanvasElementClone.clone(box);
 
     setState(() {
       if (needRecalculateSize) {
@@ -343,7 +343,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
   }
 
   /// 获取当前激活的元素
-  EditBoxData? get _activeElement {
+  CanvasElement? get _activeElement {
     final selectedId = _canvalsController.selectedId;
     if (selectedId.isEmpty) return null;
 
@@ -402,21 +402,16 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                     child: Center(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: _canvalsModel.canvasProperties.fillColor.color
+                          color: _canvalsModel.properties.fillColor.color
                               .withValues(
-                                alpha: _canvalsModel.canvasProperties.fillAlpha,
+                                alpha: _canvalsModel.properties.fillAlpha,
                               ),
                           border: Border.all(
-                            color: _canvalsModel
-                                .canvasProperties
-                                .borderColor
-                                .color
+                            color: _canvalsModel.properties.borderColor.color
                                 .withValues(
-                                  alpha: _canvalsModel
-                                      .canvasProperties
-                                      .borderAlpha,
+                                  alpha: _canvalsModel.properties.borderAlpha,
                                 ),
-                            width: _canvalsModel.canvasProperties.borderWidth,
+                            width: _canvalsModel.properties.borderWidth,
                           ),
                         ),
                         width: displayWidth,
@@ -472,12 +467,12 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
               bottom: 66.w + ScreenTools.bottomBarHeight,
               child: ElementAttributeToolbar(
                 activeElement: _activeElement,
-                isCanvasSelected: _canvalsModel.canvasProperties.isSelected,
+                isCanvasSelected: _canvalsModel.properties.isSelected,
                 onClose: () {
                   _canvalsController.select('');
-                  if (_canvalsModel.canvasProperties.isSelected) {
+                  if (_canvalsModel.properties.isSelected) {
                     setState(() {
-                      _canvalsModel.canvasProperties.isSelected = false;
+                      _canvalsModel.properties.isSelected = false;
                     });
                   }
                 },
@@ -508,12 +503,12 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
               left: 16.w,
               bottom: 72.w + ScreenTools.bottomBarHeight, // 底部工具栏高度 + 10像素间距
               child: CanvalsLayerDialog(
-                canvasProperties: _canvalsModel.canvasProperties,
+                canvasProperties: _canvalsModel.properties,
                 layers: _canvasKey.currentState?.layers ?? [],
                 onLayerTap: (layerId) {
                   // 选中元素时，确保画布未选中
                   setState(() {
-                    _canvalsModel.canvasProperties.isSelected = false;
+                    _canvalsModel.properties.isSelected = false;
                   });
 
                   // 切换元素选中状态
@@ -559,15 +554,15 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
                 },
                 onCanvalsActivie: () {
                   setState(() {
-                    _canvalsModel.canvasProperties.isSelected = true;
+                    _canvalsModel.properties.isSelected = true;
                     _canvalsController.deselect();
                   });
                 },
                 onCanvalsLock: () {
                   setState(() {
-                    _canvalsModel.canvasProperties.isLock =
-                        !_canvalsModel.canvasProperties.isLock;
-                    if (_canvalsModel.canvasProperties.isLock) {
+                    _canvalsModel.properties.isLock =
+                        !_canvalsModel.properties.isLock;
+                    if (_canvalsModel.properties.isLock) {
                       _canvalsController.deselect();
                     }
                   });
@@ -583,7 +578,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
     // 获取画布图层
     SmartDialog.show(
       builder: (context) => CanvalsPropertyDialog(
-        canvasProperties: _canvalsModel.canvasProperties,
+        canvasProperties: _canvalsModel.properties,
         onPropertyChanged: () {
           setState(() {}); // 触发界面重绘
         },
@@ -609,11 +604,11 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage> {
       return;
     }
     // 保存属性快照
-    _propertyDialogSnapshot = EditBoxDataClone.clone(_activeElement!);
+    _propertyDialogSnapshot = CanvasElementClone.clone(_activeElement!);
 
     SmartDialog.show(
       builder: (context) => ImagePropertyDialog(
-        editBoxData: _activeElement,
+        element: _activeElement,
         replaceImage: () {
           _replaceImage();
         },

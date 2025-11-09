@@ -4,12 +4,12 @@ import '../model/create_design_model.dart';
 import '../utils/canvals_edit_box_util.dart';
 
 /// TransformCanvas 组件：用于在外层渲染控制框，将控制框从元素内部提取出来，避免受元素 Transform 影响
-class TransformBorderCanvas extends StatelessWidget {
-  final List<EditBoxData> elements;
+class TransformCanvas extends StatelessWidget {
+  final List<CanvasElement> elements;
   final String? selectedId;
   final Widget child; // 内容层
 
-  const TransformBorderCanvas({
+  const TransformCanvas({
     super.key,
     required this.elements,
     this.selectedId,
@@ -52,7 +52,7 @@ class TransformBorderCanvas extends StatelessWidget {
   }
 
   /// 构建边框矩形
-  Widget _buildBorder(EditBoxData element) {
+  Widget _buildBorder(CanvasElement element) {
     // 计算包含边框的总尺寸
     final totalWidth = element.width + editBorderWidth * 2;
     final totalHeight = element.height + editBorderWidth * 2;
@@ -80,7 +80,7 @@ class TransformBorderCanvas extends StatelessWidget {
   }
 
   /// 构建调整大小的控制点
-  List<Widget> _buildResizeHandles(EditBoxData element) {
+  List<Widget> _buildResizeHandles(CanvasElement element) {
     final handlePositions = CanvalsEditBoxUtil.getResizeHandleCenters(element);
     final handles = _getControlHandlesForType(element.type, element);
 
@@ -112,7 +112,7 @@ class TransformBorderCanvas extends StatelessWidget {
   /// 根据元素类型获取需要显示的控制点
   List<String> _getControlHandlesForType(
     ElementType type,
-    EditBoxData element,
+    CanvasElement element,
   ) {
     switch (type) {
       case ElementType.image:
@@ -147,7 +147,7 @@ class TransformBorderCanvas extends StatelessWidget {
   }
 
   /// 构建旋转按钮
-  Widget _buildRotationButton(EditBoxData element) {
+  Widget _buildRotationButton(CanvasElement element) {
     final buttonCenter = CanvalsEditBoxUtil.getRotationButtonCenter(element);
     return Positioned(
       left: buttonCenter.dx - rotationButtonSize / 2,

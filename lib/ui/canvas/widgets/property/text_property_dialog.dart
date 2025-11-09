@@ -7,13 +7,13 @@ import './widgets/slider_input_field.dart';
 
 class TextPropertyDialog extends StatefulWidget {
   final VoidCallback? onDeleteText;
-  final dynamic editBoxData; // EditBoxData from create_design_model
+  final dynamic element; // EditBoxData from create_design_model
   final VoidCallback? onPropertyChanged; // 属性改变时的回调
 
   const TextPropertyDialog({
     super.key,
     this.onDeleteText,
-    this.editBoxData,
+    this.element,
     this.onPropertyChanged,
   });
 
@@ -115,9 +115,9 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
 
   /// 从模型初始化UI状态
   void _initializeFromModel() {
-    if (widget.editBoxData == null) return;
+    if (widget.element == null) return;
 
-    final data = widget.editBoxData;
+    final data = widget.element;
 
     // 初始化字体和字号
     _fontFamily = data.fontFamily ?? '系统默认';
@@ -221,9 +221,9 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
 
   /// 更新数据模型
   void _updateModel() {
-    if (widget.editBoxData == null) return;
+    if (widget.element == null) return;
 
-    final data = widget.editBoxData;
+    final data = widget.element;
 
     // 更新字体和字号
     data.fontFamily = _fontFamily == '系统默认' ? 'Courier' : _fontFamily;

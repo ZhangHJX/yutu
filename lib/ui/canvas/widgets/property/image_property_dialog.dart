@@ -5,14 +5,14 @@ import './widgets/slider_input_field.dart';
 import '../../model/create_design_model.dart';
 
 class ImagePropertyDialog extends StatefulWidget {
-  final EditBoxData? editBoxData;
+  final CanvasElement? element;
   final VoidCallback? onValueChanged;
   final VoidCallback? onDeleteImage;
   final VoidCallback? replaceImage;
 
   const ImagePropertyDialog({
     super.key,
-    this.editBoxData,
+    this.element,
     this.onValueChanged,
     this.onDeleteImage,
     this.replaceImage,
@@ -37,21 +37,19 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
   }
 
   void _initializeFromModel() {
-    _widthController.text =
-        widget.editBoxData?.width.toInt().toString() ?? "200";
-    _heightController.text =
-        widget.editBoxData?.height.toInt().toString() ?? "200";
-    _imagePath = widget.editBoxData?.imagePath;
-    _imageWidth = widget.editBoxData?.width;
-    _imageHeight = widget.editBoxData?.height;
-    _imageAlpha = widget.editBoxData?.imageAlpha ?? 1.0;
+    _widthController.text = widget.element?.width.toInt().toString() ?? "200";
+    _heightController.text = widget.element?.height.toInt().toString() ?? "200";
+    _imagePath = widget.element?.imagePath;
+    _imageWidth = widget.element?.width;
+    _imageHeight = widget.element?.height;
+    _imageAlpha = widget.element?.imageAlpha ?? 1.0;
   }
 
   void _updateModel() {
-    widget.editBoxData?.width = _imageWidth ?? 0.0;
-    widget.editBoxData?.height = _imageHeight ?? 0.0;
-    widget.editBoxData?.imageAlpha = _imageAlpha;
-    widget.editBoxData?.imagePath = _imagePath ?? "";
+    widget.element?.width = _imageWidth ?? 0.0;
+    widget.element?.height = _imageHeight ?? 0.0;
+    widget.element?.imageAlpha = _imageAlpha;
+    widget.element?.imagePath = _imagePath ?? "";
     widget.onValueChanged?.call();
   }
 

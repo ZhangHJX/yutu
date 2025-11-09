@@ -5,19 +5,18 @@ import 'package:flutter/material.dart';
 import '../controllers/canvals_controller.dart';
 import '../widgets/dialog/canvals_shape_dialog.dart';
 import '../model/create_design_model.dart';
-import 'edit_content_box.dart';
+import 'canvas_element_widget.dart';
 import '../managers/canvas_gesture_manager.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../utils/text_measure_util.dart';
-import 'transform_border_canvas.dart';
+import 'transform_canvas.dart';
 import '../managers/canvas_history_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
-  final CanvasProperties? properties;
 
-  const CanvasEditorWidget({super.key, this.historyManager, this.properties});
+  const CanvasEditorWidget({super.key, this.historyManager});
   @override
   State<CanvasEditorWidget> createState() => CanvasEditorWidgetState();
 }
@@ -27,9 +26,9 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   final _gestureManager = CanvasGestureManager(); // 画布手势管理
   CanvasHistoryManager? get historyManager => widget.historyManager; // 历史管理器
 
-  final List<EditBoxData> boxes = []; // 画布元素的数组
-  List<EditBoxData> get boxesList => boxes; // 暴露 boxes 列表供外部访问（用于历史记录）
-  List<EditBoxData> get layers => List.from(boxes); // 获取图层列表（按显示顺序，最上面的在最后）
+  final List<CanvasElement> boxes = []; // 画布元素的数组
+  List<CanvasElement> get boxesList => boxes; // 暴露 boxes 列表供外部访问（用于历史记录）
+  List<CanvasElement> get layers => List.from(boxes); // 获取图层列表（按显示顺序，最上面的在最后）
 
   @override
   void initState() {
@@ -117,7 +116,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     final centerX = (canvasWidth - boxWidth) / 2; // 文本框宽度的一半
     final centerY = (canvasHeight - boxHeight) / 2; // 文本框高度的一半
 
-    final newElement = EditBoxData(
+    final newElement = CanvasElement(
       id: newId,
       text: shapeName,
       position: Offset(centerX, centerY),
@@ -256,7 +255,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     final centerX = (canvasWidth - finalWidth) / 2;
     final centerY = (canvasHeight - finalHeight) / 2;
 
-    final newElement = EditBoxData(
+    final newElement = CanvasElement(
       id: newId,
       text: type == ElementType.text ? text : '',
       position: Offset(centerX, centerY),
@@ -310,7 +309,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
 
     final element = boxes[elementIndex];
-    final clonedElement = EditBoxDataClone.clone(element);
+    final clonedElement = CanvasElementClone.clone(element);
 
     setState(() {
       boxes.removeWhere((b) => b.id == id);
@@ -480,7 +479,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         onPointerUp: _handlePointerUp,
         onPointerCancel: _handlePointerCancel,
         behavior: HitTestBehavior.translucent,
-        child: TransformBorderCanvas(
+        child: TransformCanvas(
           elements: boxes,
           selectedId: _selectionController.selectedId,
           child: Stack(
@@ -490,7 +489,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
               ...boxes
                   .where((box) => !_selectionController.isSelected(box.id))
                   .map(
-                    (box) => EditContentBox(
+                    (box) => CanvasElementWidget(
                       key: ValueKey(box.id),
                       data: box,
                       isActive: false,
@@ -501,7 +500,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
               ...boxes
                   .where((box) => _selectionController.isSelected(box.id))
                   .map(
-                    (box) => EditContentBox(
+                    (box) => CanvasElementWidget(
                       key: ValueKey(box.id),
                       data: box,
                       isActive: true,
