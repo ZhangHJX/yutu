@@ -7,7 +7,7 @@ import 'dart:io';
 
 class CanvalsLayerDialog extends StatefulWidget {
   final CanvasProperties canvasProperties;
-  final List<EditBoxData> layers;
+  final List<CanvasElement> layers;
 
   final Function(String) onLayerTap;
   final Function(String) onLayerDelete;
@@ -147,7 +147,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
 
   Widget _buildLayerItem({
     required Key key,
-    required EditBoxData layer,
+    required CanvasElement layer,
     required int index,
     required int displayIndex, // SliverReorderableList 中的显示索引
   }) {
@@ -461,7 +461,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
     );
   }
 
-  Widget _getLayerThumbnail(EditBoxData layer, {required bool isSelected}) {
+  Widget _getLayerThumbnail(CanvasElement layer, {required bool isSelected}) {
     Widget content;
 
     switch (layer.type) {

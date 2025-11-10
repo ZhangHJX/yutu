@@ -5,7 +5,7 @@ import 'dart:math' as math;
 
 class CanvalsEditBoxUtil {
   // 辅助方法：获取调整大小控制点的全局位置
-  static Map<String, Offset> getResizeHandleCenters(EditBoxData data) {
+  static Map<String, Offset> getResizeHandleCenters(CanvasElement data) {
     // 外层容器始终包含边框
     final totalWidth = data.width + editBorderWidth * 2;
     final totalHeight = data.height + editBorderWidth * 2;
@@ -61,7 +61,7 @@ class CanvalsEditBoxUtil {
   }
 
   // 辅助方法：获取旋转按钮的全局位置（用于外部判断点击）
-  static Offset getRotationButtonCenter(EditBoxData data) {
+  static Offset getRotationButtonCenter(CanvasElement data) {
     // 旋转按钮在容器底部中心，有padding
     // 外层容器始终包含边框
     final totalWidth = data.width + editBorderWidth * 2;

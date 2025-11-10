@@ -6,13 +6,13 @@ import '../../utils/index.dart';
 import './widgets/slider_input_field.dart';
 
 class ShapePropertyDialog extends StatefulWidget {
-  final EditBoxData? editBoxData;
+  final CanvasElement? element;
   final VoidCallback? onDeleteShape;
-  final Function(EditBoxData)? onPropertiesChanged;
+  final Function(CanvasElement)? onPropertiesChanged;
 
   const ShapePropertyDialog({
     super.key,
-    this.editBoxData,
+    this.element,
     this.onDeleteShape,
     this.onPropertiesChanged,
   });
@@ -54,7 +54,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
 
   /// 从模型数据初始化所有属性
   void _initializeFromModel() {
-    final data = widget.editBoxData;
+    final data = widget.element;
 
     // 初始化填充颜色
     _fillColor = data?.fillColor ?? '#D8D8D8';
@@ -83,7 +83,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
 
   /// 更新模型数据
   void _updateModel() {
-    final data = widget.editBoxData;
+    final data = widget.element;
     if (data != null) {
       data.fillColor = _fillColorController.text;
       data.borderColor = _borderColorController.text;

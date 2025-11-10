@@ -88,8 +88,8 @@ class CanvasHistoryManager {
 
 /// 添加元素命令
 class AddElementCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
-  final EditBoxData element;
+  final List<CanvasElement> boxes;
+  final CanvasElement element;
 
   AddElementCommand(this.boxes, this.element);
 
@@ -112,8 +112,8 @@ class AddElementCommand implements CanvasCommand {
 
 /// 删除元素命令
 class DeleteElementCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
-  final EditBoxData element;
+  final List<CanvasElement> boxes;
+  final CanvasElement element;
   final int originalIndex;
 
   DeleteElementCommand(this.boxes, this.element)
@@ -146,7 +146,7 @@ class DeleteElementCommand implements CanvasCommand {
 
 /// 移动元素命令
 class MoveElementCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
+  final List<CanvasElement> boxes;
   final String elementId;
   final Offset oldPosition;
   final Offset newPosition;
@@ -158,7 +158,7 @@ class MoveElementCommand implements CanvasCommand {
     this.newPosition,
   );
 
-  EditBoxData? _findElement() {
+  CanvasElement? _findElement() {
     try {
       return boxes.firstWhere((box) => box.id == elementId);
     } catch (e) {
@@ -188,7 +188,7 @@ class MoveElementCommand implements CanvasCommand {
 
 /// 调整大小命令
 class ResizeElementCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
+  final List<CanvasElement> boxes;
   final String elementId;
   final double oldWidth;
   final double oldHeight;
@@ -216,7 +216,7 @@ class ResizeElementCommand implements CanvasCommand {
     this.newFontSpace,
   });
 
-  EditBoxData? _findElement() {
+  CanvasElement? _findElement() {
     try {
       return boxes.firstWhere((box) => box.id == elementId);
     } catch (e) {
@@ -262,7 +262,7 @@ class ResizeElementCommand implements CanvasCommand {
 
 /// 旋转元素命令
 class RotateElementCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
+  final List<CanvasElement> boxes;
   final String elementId;
   final double oldRotation;
   final double newRotation;
@@ -274,7 +274,7 @@ class RotateElementCommand implements CanvasCommand {
     this.newRotation,
   );
 
-  EditBoxData? _findElement() {
+  CanvasElement? _findElement() {
     try {
       return boxes.firstWhere((box) => box.id == elementId);
     } catch (e) {
@@ -304,7 +304,7 @@ class RotateElementCommand implements CanvasCommand {
 
 /// 缩放元素命令（双指缩放）
 class ScaleElementCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
+  final List<CanvasElement> boxes;
   final String elementId;
   final double oldCumulativeScale;
   final double newCumulativeScale;
@@ -332,7 +332,7 @@ class ScaleElementCommand implements CanvasCommand {
     this.newFontSize,
   });
 
-  EditBoxData? _findElement() {
+  CanvasElement? _findElement() {
     try {
       return boxes.firstWhere((box) => box.id == elementId);
     } catch (e) {
@@ -374,7 +374,7 @@ class ScaleElementCommand implements CanvasCommand {
 
 /// 更新文本内容命令
 class UpdateTextCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
+  final List<CanvasElement> boxes;
   final String elementId;
   final String oldText;
   final String newText;
@@ -390,7 +390,7 @@ class UpdateTextCommand implements CanvasCommand {
     required this.newHeight,
   });
 
-  EditBoxData? _findElement() {
+  CanvasElement? _findElement() {
     try {
       return boxes.firstWhere((box) => box.id == elementId);
     } catch (e) {
@@ -422,7 +422,7 @@ class UpdateTextCommand implements CanvasCommand {
 
 /// 更新文本属性命令
 class UpdateTextPropertiesCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
+  final List<CanvasElement> boxes;
   final String elementId;
   final Map<String, dynamic> oldProperties;
   final Map<String, dynamic> newProperties;
@@ -434,7 +434,7 @@ class UpdateTextPropertiesCommand implements CanvasCommand {
     required this.newProperties,
   });
 
-  EditBoxData? _findElement() {
+  CanvasElement? _findElement() {
     try {
       return boxes.firstWhere((box) => box.id == elementId);
     } catch (e) {
@@ -494,7 +494,7 @@ class UpdateTextPropertiesCommand implements CanvasCommand {
 
 /// 更新形状属性命令
 class UpdateShapePropertiesCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
+  final List<CanvasElement> boxes;
   final String elementId;
   final Map<String, dynamic> oldProperties;
   final Map<String, dynamic> newProperties;
@@ -506,7 +506,7 @@ class UpdateShapePropertiesCommand implements CanvasCommand {
     required this.newProperties,
   });
 
-  EditBoxData? _findElement() {
+  CanvasElement? _findElement() {
     try {
       return boxes.firstWhere((box) => box.id == elementId);
     } catch (e) {
@@ -563,7 +563,7 @@ class UpdateShapePropertiesCommand implements CanvasCommand {
 
 /// 更新图片属性命令
 class UpdateImagePropertiesCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
+  final List<CanvasElement> boxes;
   final String elementId;
   final double? oldWidth;
   final double? oldHeight;
@@ -583,7 +583,7 @@ class UpdateImagePropertiesCommand implements CanvasCommand {
     this.newImagePath,
   });
 
-  EditBoxData? _findElement() {
+  CanvasElement? _findElement() {
     try {
       return boxes.firstWhere((box) => box.id == elementId);
     } catch (e) {
@@ -617,7 +617,7 @@ class UpdateImagePropertiesCommand implements CanvasCommand {
 
 /// 重新排序图层命令
 class ReorderLayersCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
+  final List<CanvasElement> boxes;
   final List<String> oldOrder; // 按ID列表表示旧顺序
   final List<String> newOrder; // 按ID列表表示新顺序
 
@@ -634,7 +634,7 @@ class ReorderLayersCommand implements CanvasCommand {
       return;
     }
 
-    final Map<String, EditBoxData> elementMap = {
+    final Map<String, CanvasElement> elementMap = {
       for (var box in boxes) box.id: box,
     };
 
@@ -663,7 +663,7 @@ class ReorderLayersCommand implements CanvasCommand {
 
 /// 切换可见性命令
 class ToggleVisibilityCommand implements CanvasCommand {
-  final List<EditBoxData> boxes;
+  final List<CanvasElement> boxes;
   final String elementId;
   final bool oldVisible;
   final bool newVisible;
@@ -675,7 +675,7 @@ class ToggleVisibilityCommand implements CanvasCommand {
     required this.newVisible,
   });
 
-  EditBoxData? _findElement() {
+  CanvasElement? _findElement() {
     try {
       return boxes.firstWhere((box) => box.id == elementId);
     } catch (e) {

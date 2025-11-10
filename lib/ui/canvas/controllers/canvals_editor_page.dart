@@ -11,7 +11,7 @@ import '../widgets/property/shape_property_dialog.dart';
 import '../widgets/property/text_property_dialog.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../widgets/dialog/canvals_shape_dialog.dart';
-import '../edit_box/canvals_editor_widget.dart';
+import '../canvals/canvals_editor_widget.dart';
 import 'canvals_controller.dart';
 import '../model/create_design_model.dart';
 import '../utils/text_measure_util.dart';

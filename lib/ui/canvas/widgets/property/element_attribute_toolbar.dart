@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../model/create_design_model.dart';
 
 class ElementAttributeToolbar extends StatefulWidget {
-  final EditBoxData? activeElement;
+  final CanvasElement? activeElement;
   final VoidCallback? onClose;
   final Function(String)? onCollapse;
   final bool isCanvasSelected; // 是否选中画布

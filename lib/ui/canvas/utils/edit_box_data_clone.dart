@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../model/create_design_model.dart';
 
-/// EditBoxData 深度克隆工具
-class EditBoxDataClone {
-  /// 深度克隆 EditBoxData 对象
+/// CanvasElement 深度克隆工具
+class CanvasElementClone {
+  /// 深度克隆 CanvasElement 对象
   /// 创建所有属性的完全副本，用于命令模式保存状态
-  static EditBoxData clone(EditBoxData source) {
-    return EditBoxData(
+  static CanvasElement clone(CanvasElement source) {
+    return CanvasElement(
       id: source.id,
       type: source.type,
       width: source.width,

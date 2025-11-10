@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../model/create_design_model.dart';
 import 'out_lined_text.dart';
 
-class EditContentBox extends StatelessWidget {
-  final EditBoxData data;
+class CanvasElementWidget extends StatelessWidget {
+  final CanvasElement data;
   final bool isActive;
 
-  const EditContentBox({super.key, required this.data, required this.isActive});
+  const CanvasElementWidget({super.key, required this.data, required this.isActive});
 
   @override
   Widget build(BuildContext context) {

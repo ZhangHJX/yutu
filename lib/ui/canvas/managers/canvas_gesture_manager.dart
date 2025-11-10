@@ -49,7 +49,7 @@ class CanvasGestureManager {
   /// 处理指针按下事件
   void handlePointerDown(
     PointerDownEvent event,
-    List<EditBoxData> boxes,
+    List<CanvasElement> boxes,
     String selectedId,
     Function(String?) onSelect,
   ) {
@@ -65,7 +65,7 @@ class CanvasGestureManager {
   /// 处理单指按下
   void _handleSinglePointerDown(
     PointerDownEvent event,
-    List<EditBoxData> boxes,
+    List<CanvasElement> boxes,
     String selectedId,
     Function(String?) onSelect,
   ) {
@@ -73,7 +73,7 @@ class CanvasGestureManager {
     dragStartPosition = event.localPosition;
     pendingClickBoxId = null;
 
-    EditBoxData? selectedBox;
+    CanvasElement? selectedBox;
 
     isTapBox = false;
 
@@ -185,7 +185,7 @@ class CanvasGestureManager {
   }
 
   /// 处理双指按下
-  void _handleDoublePointerDown(List<EditBoxData> boxes, String selectedId) {
+  void _handleDoublePointerDown(List<CanvasElement> boxes, String selectedId) {
     if (selectedId.isEmpty) return;
 
     currentInteraction = 'scale';
@@ -226,7 +226,7 @@ class CanvasGestureManager {
   /// 处理指针移动事件
   bool handlePointerMove(
     PointerMoveEvent event,
-    List<EditBoxData> boxes,
+    List<CanvasElement> boxes,
     String selectedId,
   ) {
     pointers[event.pointer] = event.localPosition;
@@ -243,7 +243,7 @@ class CanvasGestureManager {
   /// 处理单指移动
   bool _handleSinglePointerMove(
     PointerMoveEvent event,
-    List<EditBoxData> boxes,
+    List<CanvasElement> boxes,
     String selectedId,
   ) {
     // 如果是激活操作，立即返回，不处理任何移动
@@ -316,7 +316,7 @@ class CanvasGestureManager {
   }
 
   /// 处理双指移动
-  bool _handleDoublePointerMove(List<EditBoxData> boxes, String selectedId) {
+  bool _handleDoublePointerMove(List<CanvasElement> boxes, String selectedId) {
     if (selectedId.isEmpty) return false;
 
     final currentScale = _computeScale();
@@ -381,7 +381,7 @@ class CanvasGestureManager {
   /// 处理指针抬起事件
   bool handlePointerUp(
     PointerUpEvent event,
-    List<EditBoxData> boxes,
+    List<CanvasElement> boxes,
     String selectedId,
     Function(String?) onSelect,
   ) {
@@ -401,7 +401,7 @@ class CanvasGestureManager {
   /// 处理所有指针抬起
   bool _handleAllPointersUp(
     PointerUpEvent event,
-    List<EditBoxData> boxes,
+    List<CanvasElement> boxes,
     String selectedId,
     Function(String?) onSelect,
   ) {
@@ -442,7 +442,7 @@ class CanvasGestureManager {
   }
 
   /// 清理交互状态
-  void _cleanupInteraction(List<EditBoxData> boxes, String selectedId) {
+  void _cleanupInteraction(List<CanvasElement> boxes, String selectedId) {
     // 在清理状态前，记录命令（如果操作有实际变化）
     if (selectedId.isNotEmpty && hasMoved && historyManager != null) {
       try {
@@ -587,7 +587,7 @@ class CanvasGestureManager {
   }
 
   /// 检测点击了哪个元素或控制点
-  String? _detectHitTarget(Offset position, EditBoxData box) {
+  String? _detectHitTarget(Offset position, CanvasElement box) {
     // 1. 检测旋转按钮
     final rotationCenter = CanvalsEditBoxUtil.getRotationButtonCenter(box);
     if (_isPointInCircle(position, rotationCenter, rotationButtonSize / 2)) {
@@ -634,7 +634,7 @@ class CanvasGestureManager {
   }
 
   /// 开始调整大小
-  void _startResize(EditBoxData box, String handle, Offset position) {
+  void _startResize(CanvasElement box, String handle, Offset position) {
     box.resizingHandle = handle;
     box.resizeStartWidth = box.width;
     box.resizeStartHeight = box.height;
@@ -699,7 +699,7 @@ class CanvasGestureManager {
   }
 
   /// 更新调整大小
-  void _updateResize(EditBoxData box, Offset currentPosition) {
+  void _updateResize(CanvasElement box, Offset currentPosition) {
     if (box.resizingHandle == null ||
         box.resizeStartPosition == null ||
         box.resizeAnchorPoint == null) {
@@ -984,7 +984,7 @@ class CanvasGestureManager {
   }
 
   /// 更新旋转
-  void _updateRotation(EditBoxData box, Offset currentPosition) {
+  void _updateRotation(CanvasElement box, Offset currentPosition) {
     if (box.rotateLastPosition == null) return;
 
     // 计算容器中心（外层容器包含边框）
@@ -1029,7 +1029,7 @@ class CanvasGestureManager {
   /// 根据最小字体大小计算文本框的最小尺寸
   /// [box] 文本框数据
   /// 返回最小宽度和最小高度
-  Size _calculateMinTextSize(EditBoxData box) {
+  Size _calculateMinTextSize(CanvasElement box) {
     // 如果没有文本，返回默认最小值
     if (box.text.isEmpty) {
       return Size(minBoxSize, minBoxSize);
