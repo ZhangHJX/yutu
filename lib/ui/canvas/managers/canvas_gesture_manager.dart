@@ -1,10 +1,9 @@
-import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../model/create_design_model.dart';
 import '../utils/text_measure_util.dart';
-import '../utils/canvals_edit_box_util.dart';
 import 'dart:math' as math;
 import 'canvas_history_manager.dart';
+import 'gesture_manager_utils.dart';
 
 /// 画布手势管理器： 负责处理所有的手势交互逻辑
 class CanvasGestureManager {
@@ -12,6 +11,7 @@ class CanvasGestureManager {
   void Function(String boxId)? onDoubleTap;
   // 判断点击是否是文本框内
   bool isTapBox = false;
+  Size? canvasSize; // 画布尺寸（宽度和高度）
 
   // 历史管理器
   CanvasHistoryManager? historyManager;
@@ -79,16 +79,22 @@ class CanvasGestureManager {
 
     isTapBox = false;
 
+    bool isCanvasl = GestureManagerUtils.isPointInCanvas(
+      event.localPosition,
+      canvasSize,
+    );
+
     if (selectedId.isNotEmpty) {
       CanvasElement selectedBox = boxes.firstWhere(
         (box) => box.id == selectedId,
       );
-      final hitTarget = _detectHitTarget(event.localPosition, selectedBox);
+      final hitTarget = GestureManagerUtils.detectHitTarget(
+        event.localPosition,
+        selectedBox,
+      );
 
       if (hitTarget != null) {
-        bool isSelectNext = selectedBox.isLock;
         if (selectedBox.isLock) {
-          debugPrint("----哈哈哈哈哈哈--$isSelectNext----$hitTarget-");
           if (hitTarget == 'content') {
             onSelect(null);
           }
@@ -124,6 +130,14 @@ class CanvasGestureManager {
           debugPrint('✅ 判定为缩放: $selectedId, 控制点: $handle');
           return;
         } else if (hitTarget == 'content') {
+          // 检查元素是否在画布内，如果不在画布内则不响应
+
+          if (!isCanvasl) {
+            debugPrint('⚠️ 元素 ${selectedBox.id} 不在画布内，不响应');
+            onSelect(null);
+            return;
+          }
+
           // 待定状态：可能是拖动，也可能是点击取消激活
           currentInteraction = 'pending_drag_or_tap';
           isTapBox = true;
@@ -149,7 +163,6 @@ class CanvasGestureManager {
               selectedBox.initialFontSize = selectedBox.fontSize;
             }
           }
-
           debugPrint('✅ 待定状态: 可能拖动或点击取消激活 $selectedId');
           return;
         }
@@ -182,8 +195,16 @@ class CanvasGestureManager {
         // 跳过已选中的元素（已经在上面处理过了）
         if (box.id == selectedId) continue;
 
-        final hitTarget = _detectHitTarget(event.localPosition, box);
+        final hitTarget = GestureManagerUtils.detectHitTarget(
+          event.localPosition,
+          box,
+        );
         if (hitTarget == 'content') {
+          if (!isCanvasl) {
+            debugPrint('⚠️ 元素 ${box.id} 不在画布内，不激活');
+            continue;
+          }
+
           // 点击了未选中的元素，立即激活它（不能拖动）
           currentInteraction = 'activate';
           pendingClickBoxId = box.id; // 保存要激活的元素ID
@@ -432,17 +453,22 @@ class CanvasGestureManager {
       debugPrint('✅ 点击背景，取消激活');
     }
 
-    // 如果是激活操作，已经在按下时激活了，这里不需要再处理
-    // 如果是待定状态（没有移动），判定为点击取消激活
+    // 如果是激活操作，已经在按下时激活了，这里不需要再处理 如果是待定状态（没有移动），判定为点击取消激活
     if (currentInteraction == 'pending_drag_or_tap' && !hasMoved) {
       if (pendingClickBoxId != null && pendingClickBoxId == selectedId) {
         final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+        bool isCanvals = GestureManagerUtils.isPointInCanvas(
+          event.localPosition,
+          canvasSize,
+        );
+
         if (selectedBox.type == ElementType.text && isTapBox) {
           onDoubleTap?.call(selectedId);
+        } else if (!isCanvals) {
+          onSelect(null);
         } else {
           onSelect(null);
         }
-        debugPrint('✅ 点击已选中元素，取消激活: $pendingClickBoxId');
       }
     }
 
@@ -605,53 +631,6 @@ class CanvasGestureManager {
     _operationStartCumulativeScale = null;
     _operationStartFontSize = null;
     _operationStartFontSpace = null;
-  }
-
-  /// 检测点击了哪个元素或控制点
-  String? _detectHitTarget(Offset position, CanvasElement box) {
-    // 1. 检测旋转按钮
-    final rotationCenter = CanvalsEditBoxUtil.getRotationButtonCenter(box);
-    if (_isPointInCircle(position, rotationCenter, rotationButtonSize / 2)) {
-      return 'rotate';
-    }
-
-    // 2. 检测调整大小控制点
-    final resizeHandles = CanvalsEditBoxUtil.getResizeHandleCenters(box);
-    for (var entry in resizeHandles.entries) {
-      if (_isPointInCircle(position, entry.value, editHitCircleSize / 2)) {
-        return 'resize:${entry.key}';
-      }
-    }
-
-    // 3. 检测是否在元素内部
-    // 外层容器始终包含边框
-    final totalWidth = box.width;
-    final totalHeight = box.height;
-
-    final localX = position.dx - box.position.dx;
-    final localY = position.dy - box.position.dy;
-
-    final cos = math.cos(-box.rotation);
-    final sin = math.sin(-box.rotation);
-    final unrotatedX = localX * cos - localY * sin;
-    final unrotatedY = localX * sin + localY * cos;
-
-    // 判断是否在外层容器内（包含边框区域）
-    if (unrotatedX >= 0 &&
-        unrotatedX <= totalWidth &&
-        unrotatedY >= 0 &&
-        unrotatedY <= totalHeight) {
-      return 'content';
-    }
-
-    return null;
-  }
-
-  /// 检测点是否在圆内
-  bool _isPointInCircle(Offset point, Offset center, double radius) {
-    final dx = point.dx - center.dx;
-    final dy = point.dy - center.dy;
-    return (dx * dx + dy * dy) <= (radius * radius);
   }
 
   /// 开始调整大小

@@ -396,8 +396,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
   }
 
-  // 处理指针按下事件
-  void _handlePointerDown(PointerDownEvent event) {
+  // 处理指针按下事件（改为公有方法，供外部调用）
+  void handlePointerDown(PointerDownEvent event) {
     _gestureManager.handlePointerDown(
       event,
       boxes,
@@ -406,8 +406,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     );
   }
 
-  // 处理指针移动事件
-  void _handlePointerMove(PointerMoveEvent event) {
+  // 处理指针移动事件（改为公有方法，供外部调用）
+  void handlePointerMove(PointerMoveEvent event) {
     if (_gestureManager.handlePointerMove(
       event,
       boxes,
@@ -417,8 +417,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
   }
 
-  // 处理指针抬起事件
-  void _handlePointerUp(PointerUpEvent event) {
+  // 处理指针抬起事件（改为公有方法，供外部调用）
+  void handlePointerUp(PointerUpEvent event) {
     _gestureManager.handlePointerUp(
       event,
       boxes,
@@ -437,8 +437,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     );
   }
 
-  // 处理指针取消事件
-  void _handlePointerCancel(PointerCancelEvent event) {
+  // 处理指针取消事件（改为公有方法，供外部调用）
+  void handlePointerCancel(PointerCancelEvent event) {
     _gestureManager.handlePointerCancel(event);
   }
 
@@ -473,41 +473,35 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         });
       }
 
-      return Listener(
-        onPointerDown: _handlePointerDown,
-        onPointerMove: _handlePointerMove,
-        onPointerUp: _handlePointerUp,
-        onPointerCancel: _handlePointerCancel,
-        behavior: HitTestBehavior.translucent,
-        child: TransformCanvas(
-          elements: boxes,
-          selectedId: _selectionController.selectedId,
-          child: Stack(
-            clipBehavior: Clip.hardEdge,
-            children: [
-              // 未选中的元素（先渲染，在底层）
-              ...boxes
-                  .where((box) => !_selectionController.isSelected(box.id))
-                  .map(
-                    (box) => CanvasElementWidget(
-                      key: ValueKey(box.id),
-                      data: box,
-                      isActive: false,
-                    ),
+      // 移除 Listener，直接返回 TransformCanvas
+      return TransformCanvas(
+        elements: boxes,
+        selectedId: _selectionController.selectedId,
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            // 未选中的元素（先渲染，在底层）
+            ...boxes
+                .where((box) => !_selectionController.isSelected(box.id))
+                .map(
+                  (box) => CanvasElementWidget(
+                    key: ValueKey(box.id),
+                    data: box,
+                    isActive: false,
                   ),
+                ),
 
-              // 选中的元素（后渲染，在最上层）
-              ...boxes
-                  .where((box) => _selectionController.isSelected(box.id))
-                  .map(
-                    (box) => CanvasElementWidget(
-                      key: ValueKey(box.id),
-                      data: box,
-                      isActive: true,
-                    ),
+            // 选中的元素（后渲染，在最上层）
+            ...boxes
+                .where((box) => _selectionController.isSelected(box.id))
+                .map(
+                  (box) => CanvasElementWidget(
+                    key: ValueKey(box.id),
+                    data: box,
+                    isActive: true,
                   ),
-            ],
-          ),
+                ),
+          ],
         ),
       );
     });
@@ -526,5 +520,10 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   void redo() {
     historyManager?.redo();
     setState(() {});
+  }
+
+  /// 设置画布尺寸（供外部调用）
+  void setCanvasSize(Size size) {
+    _gestureManager.canvasSize = size;
   }
 }
