@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../model/create_design_model.dart';
@@ -7,7 +9,11 @@ class CanvasElementWidget extends StatelessWidget {
   final CanvasElement data;
   final bool isActive;
 
-  const CanvasElementWidget({super.key, required this.data, required this.isActive});
+  const CanvasElementWidget({
+    super.key,
+    required this.data,
+    required this.isActive,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +40,8 @@ class CanvasElementWidget extends StatelessWidget {
         return ClipRect(
           child: Opacity(
             opacity: data.imageAlpha,
-            child: Image.asset(
-              data.imagePath,
+            child: Image.file(
+              File(data.imagePath),
               width: data.width,
               height: data.height,
               fit: BoxFit.cover,

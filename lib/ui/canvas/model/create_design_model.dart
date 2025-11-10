@@ -40,7 +40,7 @@ class CanvasProperties {
     this.fillColor = '#FFFFFF',
     this.fillAlpha = 1.0,
     this.borderColor = '#BFBFBF',
-    this.borderWidth = 1.0,
+    this.borderWidth = 0.0,
     this.borderAlpha = 1.0,
     this.isLock = true,
     this.isSelected = false,
