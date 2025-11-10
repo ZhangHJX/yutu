@@ -397,6 +397,9 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                         constraints.maxHeight * _canvalsModel.canvasRatio;
                   }
 
+                  final width = _canvalsModel.properties.borderWidth;
+                  debugPrint("--你好啊啊啊---$width-----");
+
                   return Screenshot(
                     controller: _screenshotController,
                     child: Center(
@@ -409,7 +412,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                           border: Border.all(
                             color: _canvalsModel.properties.borderColor.color
                                 .withValues(
-                                  alpha: _canvalsModel.properties.borderAlpha,
+                                  alpha:
+                                      _canvalsModel.properties.borderWidth > 0
+                                      ? _canvalsModel.properties.borderAlpha
+                                      : 0.0,
                                 ),
                             width: _canvalsModel.properties.borderWidth,
                           ),
