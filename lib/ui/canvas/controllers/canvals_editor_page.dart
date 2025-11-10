@@ -551,6 +551,9 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                   setState(() {
                     layer.isLock = !layer.isLock;
                   });
+                  // if (_canvalsController.isSelected(layerId)) {
+                  //   _canvalsController.deselect();
+                  // }
                 },
                 onCanvalsActivie: () {
                   setState(() {

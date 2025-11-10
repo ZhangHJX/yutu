@@ -58,6 +58,10 @@ class CanvasGestureManager {
     if (pointers.length == 1) {
       _handleSinglePointerDown(event, boxes, selectedId, onSelect);
     } else if (pointers.length == 2) {
+      final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+      if (selectedBox.isLock) {
+        return;
+      }
       _handleDoublePointerDown(boxes, selectedId);
     }
   }
@@ -73,16 +77,24 @@ class CanvasGestureManager {
     dragStartPosition = event.localPosition;
     pendingClickBoxId = null;
 
-    CanvasElement? selectedBox;
-
     isTapBox = false;
 
-    // 先检查当前选中的元素
     if (selectedId.isNotEmpty) {
-      selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+      CanvasElement selectedBox = boxes.firstWhere(
+        (box) => box.id == selectedId,
+      );
       final hitTarget = _detectHitTarget(event.localPosition, selectedBox);
 
       if (hitTarget != null) {
+        bool isSelectNext = selectedBox.isLock;
+        if (selectedBox.isLock) {
+          debugPrint("----哈哈哈哈哈哈--$isSelectNext----$hitTarget-");
+          if (hitTarget == 'content') {
+            onSelect(null);
+          }
+          return;
+        }
+
         if (hitTarget == 'rotate') {
           // 开始旋转
           currentInteraction = 'rotate';
@@ -176,6 +188,9 @@ class CanvasGestureManager {
           currentInteraction = 'activate';
           pendingClickBoxId = box.id; // 保存要激活的元素ID
           // 立即激活，不等待抬起事件
+          if (box.isLock) {
+            return;
+          }
           onSelect(box.id);
           debugPrint('✅ 立即激活未选中元素: ${box.id}');
           return;
@@ -187,11 +202,11 @@ class CanvasGestureManager {
   /// 处理双指按下
   void _handleDoublePointerDown(List<CanvasElement> boxes, String selectedId) {
     if (selectedId.isEmpty) return;
+    final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
 
     currentInteraction = 'scale';
     lastScale = _computeScale();
 
-    final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
     selectedBox.cumulativeScale = 1.0;
 
     // 始终重新计算缩放中心点（基于当前文本框的中心）
@@ -280,6 +295,9 @@ class CanvasGestureManager {
     if (boxId.isEmpty) return false;
 
     final targetBox = boxes.firstWhere((box) => box.id == boxId);
+    if (targetBox.isLock) {
+      return false;
+    }
 
     switch (currentInteraction) {
       case 'drag':
@@ -323,6 +341,9 @@ class CanvasGestureManager {
     final scale = (currentScale / lastScale).clamp(0.5, 2.0);
 
     final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+    if (selectedBox.isLock) {
+      return false;
+    }
 
     selectedBox.cumulativeScale *= scale;
     selectedBox.cumulativeScale = selectedBox.cumulativeScale.clamp(0.1, 10.0);
