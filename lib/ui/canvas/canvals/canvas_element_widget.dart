@@ -7,13 +7,7 @@ import 'out_lined_text.dart';
 
 class CanvasElementWidget extends StatelessWidget {
   final CanvasElement data;
-  final bool isActive;
-
-  const CanvasElementWidget({
-    super.key,
-    required this.data,
-    required this.isActive,
-  });
+  const CanvasElementWidget({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
