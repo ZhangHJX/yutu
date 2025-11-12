@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/canvas_app_bar_widget.dart';
 import '../widgets/canvas_bottom_bar_widget.dart';
 import '../widgets/canvas_control_widget.dart';
+import '../gesture/canvas_gesture_listener.dart';
 import '../widgets/dialog/canvals_layer_dialog.dart';
 import '../widgets/dialog/canvals_save_dialog.dart';
 import '../widgets/property/element_attribute_toolbar.dart';
@@ -389,56 +390,92 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           Positioned(
             left: 0,
             top: ScreenTools.statusBarHeight + 51.w,
-            child: Listener(
+            child: CanvasGestureListener(
               onPointerDown: (event) {
-                final hasActiveElement =
-                    _canvalsController.selectedId.isNotEmpty;
-                if (!hasActiveElement) {
-                  // 没有元素激活，处理画布操作
-                  _canvasStatusManager.handlePointerDown(event);
-                } else {
-                  _handlePointerEvent(event, (localEvent) {
-                    _canvasKey.currentState?.handlePointerDown(localEvent);
-                  });
-                }
+                _handlePointerEvent(event, (localEvent) {
+                  // 处理指针按下
+                  final canvasState = _canvasKey.currentState;
+                  if (canvasState != null) {
+                    final hitElement = canvasState.detectHitElement(
+                      localEvent.position,
+                    );
+                    if (hitElement != null) {
+                      // 点击在元素上，处理元素操作
+                      canvasState.handlePointerDown(localEvent);
+                    } else {
+                      // 点击在空白区域，处理画布操作
+                      _canvasStatusManager.handlePointerDown(event);
+                    }
+                  } else {
+                    // 如果 canvas state 还没初始化，尝试处理画布操作
+                    _canvasStatusManager.handlePointerDown(event);
+                  }
+                });
               },
               onPointerMove: (event) {
-                final hasActiveElement =
-                    _canvalsController.selectedId.isNotEmpty;
-                if (!hasActiveElement) {
-                  // 没有元素激活，处理画布操作
-                  if (_canvasStatusManager.handlePointerMove(event)) {
-                    // handlePointerMove 返回 true 表示有变化，UI会自动更新（通过回调）
+                _handlePointerEvent(event, (localEvent) {
+                  // 处理指针移动（拖动）
+                  final canvasState = _canvasKey.currentState;
+                  if (canvasState != null) {
+                    final hitElement = canvasState.detectHitElement(
+                      localEvent.position,
+                    );
+                    if (hitElement != null ||
+                        _canvalsController.selectedId.isNotEmpty) {
+                      // 有元素被点击或已选中，处理元素拖动
+                      canvasState.handlePointerMove(localEvent);
+                    } else {
+                      // 没有元素，处理画布平移
+                      if (_canvasStatusManager.handlePointerMove(event)) {
+                        // handlePointerMove 返回 true 表示有变化，UI会自动更新（通过回调）
+                      }
+                    }
                   }
-                } else {
-                  _handlePointerEvent(event, (localEvent) {
-                    _canvasKey.currentState?.handlePointerMove(localEvent);
-                  });
-                }
+                });
               },
               onPointerUp: (event) {
-                final hasActiveElement =
-                    _canvalsController.selectedId.isNotEmpty;
-                if (!hasActiveElement) {
-                  // 没有元素激活，处理画布操作
-                  _canvasStatusManager.handlePointerUp(event);
-                } else {
-                  _handlePointerEvent(event, (localEvent) {
-                    _canvasKey.currentState?.handlePointerUp(localEvent);
-                  });
-                }
+                _handlePointerEvent(event, (localEvent) {
+                  // 处理指针抬起
+                  final canvasState = _canvasKey.currentState;
+                  if (canvasState != null) {
+                    final hitElement = canvasState.detectHitElement(
+                      localEvent.position,
+                    );
+                    if (hitElement != null ||
+                        _canvalsController.selectedId.isNotEmpty) {
+                      // 有元素被点击或已选中，处理元素操作
+                      canvasState.handlePointerUp(localEvent);
+                    } else {
+                      // 没有元素，处理画布操作
+                      _canvasStatusManager.handlePointerUp(event);
+                    }
+                  } else {
+                    // 如果 canvas state 还没初始化，尝试处理画布操作
+                    _canvasStatusManager.handlePointerUp(event);
+                  }
+                });
               },
               onPointerCancel: (event) {
-                final hasActiveElement =
-                    _canvalsController.selectedId.isNotEmpty;
-                if (!hasActiveElement) {
-                  // 没有元素激活，处理画布操作
-                  _canvasStatusManager.handlePointerCancel(event);
-                } else {
-                  _canvasKey.currentState?.handlePointerCancel(event);
+                final canvasState = _canvasKey.currentState;
+                if (canvasState != null) {
+                  canvasState.handlePointerCancel(event);
+                }
+                _canvasStatusManager.handlePointerCancel(event);
+              },
+              onTap: (event) {
+                debugPrint('Canvas tapped at ${event.position}');
+                final canvasState = _canvasKey.currentState;
+                if (canvasState != null) {
+                  final hitElement = canvasState.detectHitElement(
+                    event.position,
+                  );
+                  if (hitElement != null) {
+                    debugPrint('Tapped element: $hitElement');
+                  } else {
+                    debugPrint('Tapped empty area');
+                  }
                 }
               },
-              behavior: HitTestBehavior.translucent,
               child: Container(
                 key: _containerKey,
                 width: ScreenTools.screenWidth,

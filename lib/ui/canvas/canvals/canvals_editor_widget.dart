@@ -7,6 +7,7 @@ import '../widgets/dialog/canvals_shape_dialog.dart';
 import '../model/create_design_model.dart';
 import 'canvas_element_widget.dart';
 import '../managers/canvas_gesture_manager.dart';
+import '../managers/gesture_manager_utils.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../utils/text_measure_util.dart';
 import 'transform_canvas.dart';
@@ -397,6 +398,20 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   }
 
   // 处理指针按下事件（改为公有方法，供外部调用）
+  /// 检测点击是否在某个元素上（不改变选中状态）
+  /// 返回被点击的元素ID，如果没有点击到任何元素则返回 null
+  String? detectHitElement(Offset position) {
+    // 遍历所有元素，从后向前（因为后面的元素在最上层）
+    for (int i = boxes.length - 1; i >= 0; i--) {
+      final box = boxes[i];
+      final hitTarget = GestureManagerUtils.detectHitTarget(position, box);
+      if (hitTarget != null) {
+        return box.id;
+      }
+    }
+    return null;
+  }
+
   void handlePointerDown(PointerDownEvent event) {
     _gestureManager.handlePointerDown(
       event,
