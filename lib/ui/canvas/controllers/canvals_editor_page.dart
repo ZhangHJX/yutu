@@ -2,6 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../widgets/canvas_app_bar_widget.dart';
 import '../widgets/canvas_bottom_bar_widget.dart';
+import '../widgets/canvas_control_widget.dart';
 import '../widgets/dialog/canvals_layer_dialog.dart';
 import '../widgets/dialog/canvals_save_dialog.dart';
 import '../widgets/property/element_attribute_toolbar.dart';
@@ -17,6 +18,7 @@ import '../model/create_design_model.dart';
 import '../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
 import '../managers/canvas_history_manager.dart';
+import '../managers/canvas_status_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../utils/index.dart';
 
@@ -44,9 +46,26 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
 
   // 用于保存对话框打开时的属性快照（用于历史记录）
   CanvasElement? _propertyDialogSnapshot;
-
   // 用于保存上一次的属性值（用于判断是否需要重新计算尺寸）
   CanvasElement? _lastPropertySnapshot;
+  // 画布手势管理器
+  final _canvasStatusManager = CanvasStatusManager();
+
+  // 画布变换状态（用于UI更新）
+  Offset _canvasOffset = Offset.zero;
+  double _canvasScale = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    // 监听画布变换变化
+    _canvasStatusManager.onTransformChanged = (offset, scale) {
+      setState(() {
+        _canvasOffset = offset;
+        _canvasScale = scale;
+      });
+    };
+  }
 
   /// 显示形状属性弹框
   void _showShapePropertyDialog() {
@@ -372,22 +391,52 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
             top: ScreenTools.statusBarHeight + 51.w,
             child: Listener(
               onPointerDown: (event) {
-                _handlePointerEvent(event, (localEvent) {
-                  _canvasKey.currentState?.handlePointerDown(localEvent);
-                });
+                final hasActiveElement =
+                    _canvalsController.selectedId.isNotEmpty;
+                if (!hasActiveElement) {
+                  // 没有元素激活，处理画布操作
+                  _canvasStatusManager.handlePointerDown(event);
+                } else {
+                  _handlePointerEvent(event, (localEvent) {
+                    _canvasKey.currentState?.handlePointerDown(localEvent);
+                  });
+                }
               },
               onPointerMove: (event) {
-                _handlePointerEvent(event, (localEvent) {
-                  _canvasKey.currentState?.handlePointerMove(localEvent);
-                });
+                final hasActiveElement =
+                    _canvalsController.selectedId.isNotEmpty;
+                if (!hasActiveElement) {
+                  // 没有元素激活，处理画布操作
+                  if (_canvasStatusManager.handlePointerMove(event)) {
+                    // handlePointerMove 返回 true 表示有变化，UI会自动更新（通过回调）
+                  }
+                } else {
+                  _handlePointerEvent(event, (localEvent) {
+                    _canvasKey.currentState?.handlePointerMove(localEvent);
+                  });
+                }
               },
               onPointerUp: (event) {
-                _handlePointerEvent(event, (localEvent) {
-                  _canvasKey.currentState?.handlePointerUp(localEvent);
-                });
+                final hasActiveElement =
+                    _canvalsController.selectedId.isNotEmpty;
+                if (!hasActiveElement) {
+                  // 没有元素激活，处理画布操作
+                  _canvasStatusManager.handlePointerUp(event);
+                } else {
+                  _handlePointerEvent(event, (localEvent) {
+                    _canvasKey.currentState?.handlePointerUp(localEvent);
+                  });
+                }
               },
               onPointerCancel: (event) {
-                _canvasKey.currentState?.handlePointerCancel(event);
+                final hasActiveElement =
+                    _canvalsController.selectedId.isNotEmpty;
+                if (!hasActiveElement) {
+                  // 没有元素激活，处理画布操作
+                  _canvasStatusManager.handlePointerCancel(event);
+                } else {
+                  _canvasKey.currentState?.handlePointerCancel(event);
+                }
               },
               behavior: HitTestBehavior.translucent,
               child: Container(
@@ -430,30 +479,45 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
 
                     return Screenshot(
                       controller: _screenshotController,
-                      child: Center(
-                        child: Container(
-                          key: _canvasContainerKey,
-                          decoration: BoxDecoration(
-                            color: _canvalsModel.properties.fillColor.color
-                                .withValues(
-                                  alpha: _canvalsModel.properties.fillAlpha,
+                      child: Transform.translate(
+                        offset: _canvasOffset,
+                        child: Transform.scale(
+                          scale: _canvasScale,
+                          alignment: Alignment.center,
+                          child: Center(
+                            child: Container(
+                              key: _canvasContainerKey,
+                              decoration: BoxDecoration(
+                                color: _canvalsModel.properties.fillColor.color
+                                    .withValues(
+                                      alpha: _canvalsModel.properties.fillAlpha,
+                                    ),
+                                border: Border.all(
+                                  color: _canvalsModel
+                                      .properties
+                                      .borderColor
+                                      .color
+                                      .withValues(
+                                        alpha:
+                                            _canvalsModel
+                                                    .properties
+                                                    .borderWidth >
+                                                0
+                                            ? _canvalsModel
+                                                  .properties
+                                                  .borderAlpha
+                                            : 0.0,
+                                      ),
+                                  width: _canvalsModel.properties.borderWidth,
                                 ),
-                            border: Border.all(
-                              color: _canvalsModel.properties.borderColor.color
-                                  .withValues(
-                                    alpha:
-                                        _canvalsModel.properties.borderWidth > 0
-                                        ? _canvalsModel.properties.borderAlpha
-                                        : 0.0,
-                                  ),
-                              width: _canvalsModel.properties.borderWidth,
+                              ),
+                              width: displayWidth,
+                              height: displayHeight,
+                              child: CanvasEditorWidget(
+                                key: _canvasKey,
+                                historyManager: _historyManager,
+                              ),
                             ),
-                          ),
-                          width: displayWidth,
-                          height: displayHeight,
-                          child: CanvasEditorWidget(
-                            key: _canvasKey,
-                            historyManager: _historyManager,
                           ),
                         ),
                       ),
@@ -478,6 +542,27 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
               ),
             ),
           ),
+
+          // 缩放控制浮框（当缩放比例不是100%时显示，固定在顶部居中位置）
+          if ((_canvasScale - 1.0).abs() > 0.01)
+            Positioned(
+              right: 10.w,
+              top: ScreenTools.statusBarHeight + 51.w,
+              child: Center(
+                child: CanvasControlWidget(
+                  scale: _canvasScale,
+                  onFitScreen: () {
+                    _canvasStatusManager.reset(); // 适应屏幕：重置画布变换
+                  },
+                  onZoomIn: () {
+                    _canvasStatusManager.zoomIn(); // 放大画布
+                  },
+                  onZoomOut: () {
+                    _canvasStatusManager.zoomOut(); // 缩小画布
+                  },
+                ),
+              ),
+            ),
 
           // 底部tabBar
           Positioned(
@@ -911,82 +996,115 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     final RenderBox? canvasBox =
         _canvasContainerKey.currentContext?.findRenderObject() as RenderBox?;
     if (canvasBox != null) {
-      final localPosition = canvasBox.globalToLocal(event.position);
+      // 获取外层容器的 RenderBox
+      final RenderBox? containerBox =
+          _containerKey.currentContext?.findRenderObject() as RenderBox?;
+      if (containerBox != null) {
+        // 先转换为外层容器的本地坐标
+        final containerLocal = containerBox.globalToLocal(event.position);
 
-      // 创建新的本地事件
-      T localEvent;
-      if (event is PointerDownEvent) {
-        localEvent =
-            PointerDownEvent(
-                  position: localPosition,
-                  timeStamp: event.timeStamp,
-                  pointer: event.pointer,
-                  kind: event.kind,
-                  buttons: event.buttons,
-                  pressure: event.pressure,
-                  pressureMin: event.pressureMin,
-                  pressureMax: event.pressureMax,
-                  distanceMax: event.distanceMax,
-                  size: event.size,
-                  radiusMajor: event.radiusMajor,
-                  radiusMinor: event.radiusMinor,
-                  radiusMin: event.radiusMin,
-                  radiusMax: event.radiusMax,
-                  orientation: event.orientation,
-                  tilt: event.tilt,
-                  embedderId: event.embedderId,
-                )
-                as T;
-      } else if (event is PointerMoveEvent) {
-        localEvent =
-            PointerMoveEvent(
-                  position: localPosition,
-                  timeStamp: event.timeStamp,
-                  pointer: event.pointer,
-                  kind: event.kind,
-                  buttons: event.buttons,
-                  pressure: event.pressure,
-                  pressureMin: event.pressureMin,
-                  pressureMax: event.pressureMax,
-                  size: event.size,
-                  radiusMajor: event.radiusMajor,
-                  radiusMinor: event.radiusMinor,
-                  radiusMin: event.radiusMin,
-                  radiusMax: event.radiusMax,
-                  orientation: event.orientation,
-                  tilt: event.tilt,
-                  embedderId: event.embedderId,
-                  delta: event.delta,
-                )
-                as T;
-      } else if (event is PointerUpEvent) {
-        localEvent =
-            PointerUpEvent(
-                  position: localPosition,
-                  timeStamp: event.timeStamp,
-                  pointer: event.pointer,
-                  kind: event.kind,
-                  buttons: event.buttons,
-                  pressure: event.pressure,
-                  pressureMin: event.pressureMin,
-                  pressureMax: event.pressureMax,
-                  size: event.size,
-                  radiusMajor: event.radiusMajor,
-                  radiusMinor: event.radiusMinor,
-                  radiusMin: event.radiusMin,
-                  radiusMax: event.radiusMax,
-                  orientation: event.orientation,
-                  tilt: event.tilt,
-                  embedderId: event.embedderId,
-                )
-                as T;
-      } else {
-        // PointerCancelEvent 不需要坐标转换
-        localEvent = event;
+        // 获取画布容器在外层容器中的中心点
+        // 由于画布是居中的，中心点应该是外层容器的中心
+        final containerSize = containerBox.size;
+        final containerCenter = Offset(
+          containerSize.width / 2,
+          containerSize.height / 2,
+        );
+
+        // 反向变换：先考虑平移，再考虑缩放
+        // 1. 减去画布偏移量（Transform.translate 的 offset）
+        Offset transformedPosition = containerLocal - _canvasOffset;
+
+        // 2. 考虑缩放（Transform.scale 以中心为基准）
+        // 先减去中心点，除以缩放比例，再加上中心点
+        transformedPosition =
+            (transformedPosition - containerCenter) / _canvasScale +
+            containerCenter;
+
+        // 3. 转换为画布容器的本地坐标
+        // 由于画布是居中的，需要计算画布容器相对于外层容器的位置
+        final canvasSize = canvasBox.size;
+        final canvasTopLeft =
+            containerCenter -
+            Offset(canvasSize.width / 2, canvasSize.height / 2);
+        final localPosition = transformedPosition - canvasTopLeft;
+
+        // 创建新的本地事件
+        T localEvent;
+        if (event is PointerDownEvent) {
+          localEvent =
+              PointerDownEvent(
+                    position: localPosition,
+                    timeStamp: event.timeStamp,
+                    pointer: event.pointer,
+                    kind: event.kind,
+                    buttons: event.buttons,
+                    pressure: event.pressure,
+                    pressureMin: event.pressureMin,
+                    pressureMax: event.pressureMax,
+                    distanceMax: event.distanceMax,
+                    size: event.size,
+                    radiusMajor: event.radiusMajor,
+                    radiusMinor: event.radiusMinor,
+                    radiusMin: event.radiusMin,
+                    radiusMax: event.radiusMax,
+                    orientation: event.orientation,
+                    tilt: event.tilt,
+                    embedderId: event.embedderId,
+                  )
+                  as T;
+        } else if (event is PointerMoveEvent) {
+          localEvent =
+              PointerMoveEvent(
+                    position: localPosition,
+                    timeStamp: event.timeStamp,
+                    pointer: event.pointer,
+                    kind: event.kind,
+                    buttons: event.buttons,
+                    pressure: event.pressure,
+                    pressureMin: event.pressureMin,
+                    pressureMax: event.pressureMax,
+                    size: event.size,
+                    radiusMajor: event.radiusMajor,
+                    radiusMinor: event.radiusMinor,
+                    radiusMin: event.radiusMin,
+                    radiusMax: event.radiusMax,
+                    orientation: event.orientation,
+                    tilt: event.tilt,
+                    embedderId: event.embedderId,
+                    delta: event.delta,
+                  )
+                  as T;
+        } else if (event is PointerUpEvent) {
+          localEvent =
+              PointerUpEvent(
+                    position: localPosition,
+                    timeStamp: event.timeStamp,
+                    pointer: event.pointer,
+                    kind: event.kind,
+                    buttons: event.buttons,
+                    pressure: event.pressure,
+                    pressureMin: event.pressureMin,
+                    pressureMax: event.pressureMax,
+                    size: event.size,
+                    radiusMajor: event.radiusMajor,
+                    radiusMinor: event.radiusMinor,
+                    radiusMin: event.radiusMin,
+                    radiusMax: event.radiusMax,
+                    orientation: event.orientation,
+                    tilt: event.tilt,
+                    embedderId: event.embedderId,
+                  )
+                  as T;
+        } else {
+          // PointerCancelEvent 不需要坐标转换
+          localEvent = event;
+        }
+
+        callback(localEvent);
+        return;
       }
-
-      callback(localEvent);
-      return;
+      // 如果 containerBox 为 null，继续执行回退逻辑
     }
 
     // 如果画布Container还没有渲染，回退到外层Container
