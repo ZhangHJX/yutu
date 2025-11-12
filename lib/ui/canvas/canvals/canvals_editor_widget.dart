@@ -484,22 +484,16 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
             ...boxes
                 .where((box) => !_selectionController.isSelected(box.id))
                 .map(
-                  (box) => CanvasElementWidget(
-                    key: ValueKey(box.id),
-                    data: box,
-                    isActive: false,
-                  ),
+                  (box) =>
+                      CanvasElementWidget(key: ValueKey(box.id), data: box),
                 ),
 
             // 选中的元素（后渲染，在最上层）
             ...boxes
                 .where((box) => _selectionController.isSelected(box.id))
                 .map(
-                  (box) => CanvasElementWidget(
-                    key: ValueKey(box.id),
-                    data: box,
-                    isActive: true,
-                  ),
+                  (box) =>
+                      CanvasElementWidget(key: ValueKey(box.id), data: box),
                 ),
           ],
         ),
