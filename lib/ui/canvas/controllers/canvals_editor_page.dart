@@ -392,28 +392,18 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           Positioned(
             left: 0,
             top: ScreenTools.statusBarHeight + 51.w,
-            child: GestureDetector(
-              // 使用 GestureDetector 统一处理画布平移与缩放
-              onScaleStart: (details) {
-                final box =
-                    _containerKey.currentContext?.findRenderObject()
-                        as RenderBox?;
-                final localFocal =
-                    box?.globalToLocal(details.focalPoint) ??
-                    details.focalPoint;
-                _canvasStatusManager.onScaleStart(localFocal);
+            child: Listener(
+              onPointerDown: (event) {
+                _canvasStatusManager.handlePointerDown(event);
               },
-              onScaleUpdate: (details) {
-                final box =
-                    _containerKey.currentContext?.findRenderObject()
-                        as RenderBox?;
-                final localFocal =
-                    box?.globalToLocal(details.focalPoint) ??
-                    details.focalPoint;
-                _canvasStatusManager.onScaleUpdate(details.scale, localFocal);
+              onPointerMove: (event) {
+                _canvasStatusManager.handlePointerMove(event);
               },
-              onScaleEnd: (details) {
-                _canvasStatusManager.onScaleEnd();
+              onPointerUp: (event) {
+                _canvasStatusManager.handlePointerUp(event);
+              },
+              onPointerCancel: (event) {
+                _canvasStatusManager.handlePointerCancel(event);
               },
               child: Container(
                 key: _containerKey,
@@ -427,21 +417,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     // 使用工具函数转换画布尺寸
-                    final displaySize = CanvasSizeUtil.convertToDisplaySize(
-                      _canvalsModel,
+                    final displaySize = _canvalsModel.getCanvalsSize(
                       constraints.maxWidth,
                       constraints.maxHeight,
                     );
-                    final displayWidth = displaySize.width;
-                    final displayHeight = displaySize.height;
-
-                    debugPrint(
-                      "--哈哈哈哈哈--$displayWidth--哈哈哈哈哈---$displayHeight----",
-                    );
-
-                    // controllers.initCanvasTransform(
-                    //   Size(constraints.maxWidth, constraints.maxHeight),
-                    // );
 
                     // 设置画布尺寸到手势管理器
                     // WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -453,9 +432,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                     return Screenshot(
                       controller: _screenshotController,
                       child: Transform(
-                        // 直接使用 CanvasModel 的变换矩阵（以左上角为原点）
                         transform: _canvalsModel.transform,
-                        alignment: Alignment.topLeft,
+                        alignment: Alignment.center,
                         child: Center(
                           child: Container(
                             key: _canvasContainerKey,
@@ -473,8 +451,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                                 width: _canvalsModel.borderWidth,
                               ),
                             ),
-                            width: displayWidth,
-                            height: displayHeight,
+                            width: displaySize.width,
+                            height: displaySize.height,
                             child: CanvasEditorWidget(
                               key: _canvasKey,
                               historyManager: _historyManager,
@@ -505,7 +483,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           ),
 
           // 缩放控制浮框（当缩放比例不是100%时显示，固定在顶部居中位置）
-          if ((_canvasScale - 1.0).abs() <= 0.01) _buildScaleOverlay(),
+          if ((_canvasScale - 1.0).abs() > 0.01) _buildScaleOverlay(),
 
           // 底部tabBar
           Positioned(

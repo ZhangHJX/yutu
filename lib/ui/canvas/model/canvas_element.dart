@@ -58,6 +58,28 @@ class CanvasElement {
     Offset(-width / 2, height / 2),
   ];
 
+  // Pointer 相关属性
+  double rotation; // 旋转角度
+  double cumulativeScale; // 累积缩放比例
+  Offset? fixedScaleCenter; // 固定的缩放中心点
+  double initialWidth; // 初始宽度（用于缩放计算）
+  double initialHeight; // 初始高度（用于缩放计算）
+  double initialFontSize; // 初始字体大小（用于缩放计算）
+
+  // 调整大小相关属性
+  String? resizingHandle; // 当前正在调整的控制点位置
+  double resizeStartWidth; // 调整大小开始时的宽度
+  double resizeStartHeight; // 调整大小开始时的高度
+  double resizeStartFontSize; // 调整大小开始时的字体大小
+  double resizeStartLineHeight; // 调整大小开始时的行高
+  double resizeStartFontSpace; // 调整大小开始时的字间距
+  double resizeAspectRatio; // 调整大小开始时的宽高比
+  Offset? resizeStartPosition; // 调整大小开始时的触摸位置
+  Offset? resizeAnchorPoint; // 调整大小时的锚点（对角点）
+
+  // 旋转相关属性
+  Offset? rotateLastPosition; // 旋转时的上一次触摸位置
+
   CanvasElement({
     this.id = '',
     required this.type,
@@ -97,5 +119,32 @@ class CanvasElement {
     this.locked = false,
     this.selected = false,
     Matrix4? transform,
-  }) : transform = transform ?? Matrix4.identity();
+
+    // Pointer 相关属性的默认值
+    this.rotation = 0.0,
+    this.cumulativeScale = 1.0,
+    this.fixedScaleCenter,
+    double? initialWidth,
+    double? initialHeight,
+
+    // 调整大小相关属性的默认值
+    this.resizingHandle,
+    this.resizeStartWidth = 300.0,
+    this.resizeStartHeight = 200.0,
+    this.resizeStartFontSize = 14.0,
+    double? resizeStartLineHeight,
+    double? resizeStartFontSpace,
+    double? resizeAspectRatio,
+    this.resizeStartPosition,
+    this.resizeAnchorPoint,
+
+    // 旋转相关属性的默认值
+    this.rotateLastPosition,
+  }) : transform = transform ?? Matrix4.identity(),
+       initialWidth = initialWidth ?? width,
+       initialHeight = initialHeight ?? height,
+       initialFontSize = fontSize,
+       resizeStartLineHeight = resizeStartLineHeight ?? lineHeight,
+       resizeStartFontSpace = resizeStartFontSpace ?? fontSpace,
+       resizeAspectRatio = resizeAspectRatio ?? (width / height);
 }
