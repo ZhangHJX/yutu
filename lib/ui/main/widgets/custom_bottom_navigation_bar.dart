@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../logic.dart';
 import 'custom_tab_bar.dart';
-import 'package:voicetemplate/ui/canvas/controllers/create_design_page.dart';
+import 'package:voicetemplate/ui/canvas/controllers/create_canvals_page.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   const CustomBottomNavigationBar({super.key});
@@ -49,7 +49,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
 
   void _showCreateDesignDialog() {
     SmartDialog.show(
-      builder: (context) => const CreateDesignPage(),
+      builder: (context) => const CreateCanvalsPage(),
       alignment: Alignment.bottomCenter,
       animationType: SmartAnimationType.centerFade_otherSlide,
       maskColor: Colors.black,

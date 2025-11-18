@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../model/create_design_model.dart';
+import '../model/index.dart';
 
 /// CanvasElement 深度克隆工具
 class CanvasElementClone {
@@ -29,14 +29,14 @@ class CanvasElementClone {
       shawX: source.shawX,
       shawY: source.shawY,
       blurValue: source.blurValue,
-      rotation: source.rotation,
-      cumulativeScale: source.cumulativeScale,
-      fixedScaleCenter: source.fixedScaleCenter != null
-          ? Offset(source.fixedScaleCenter!.dx, source.fixedScaleCenter!.dy)
-          : null,
-      initialWidth: source.initialWidth,
-      initialHeight: source.initialHeight,
-      visible: source.visible,
+      // rotation: source.rotation,
+      // cumulativeScale: source.cumulativeScale,
+      // fixedScaleCenter: source.fixedScaleCenter != null
+      //     ? Offset(source.fixedScaleCenter!.dx, source.fixedScaleCenter!.dy)
+      //     : null,
+      // initialWidth: source.initialWidth,
+      // initialHeight: source.initialHeight,
+      // visible: source.visible,
     );
   }
 }

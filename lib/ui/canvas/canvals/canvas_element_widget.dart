@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../model/create_design_model.dart';
 import 'out_lined_text.dart';
+import '../model/index.dart';
+import 'dart:io';
 
 class CanvasElementWidget extends StatelessWidget {
   final CanvasElement data;
@@ -14,15 +13,11 @@ class CanvasElementWidget extends StatelessWidget {
     return Positioned(
       left: data.position.dx,
       top: data.position.dy,
-      child: Transform.rotate(
-        angle: data.rotation,
-        alignment: Alignment.center, // 围绕中心旋转
-        child: SizedBox(
-          // 外层容器始终包含边框空间
-          width: data.width,
-          height: data.height,
-          child: data.visible ? _buildContent() : null,
-        ),
+      child: SizedBox(
+        // 外层容器始终包含边框空间
+        width: data.width,
+        height: data.height,
+        child: data.hidden ? _buildContent() : null,
       ),
     );
   }

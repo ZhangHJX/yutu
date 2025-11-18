@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../../utils/index.dart';
 import './widgets/slider_input_field.dart';
-import '../../model/create_design_model.dart';
+import '../../model/index.dart';
 
 class CanvalsPropertyDialog extends StatefulWidget {
-  final CanvasProperties? canvasProperties;
+  final CanvasModel? canvasModel;
   final VoidCallback? onPropertyChanged; // 属性改变时的回调
 
   const CanvalsPropertyDialog({
     super.key,
-    this.canvasProperties,
+    this.canvasModel,
     this.onPropertyChanged,
   });
 
@@ -44,8 +44,8 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
 
   /// 从模型初始化UI状态
   void _initializeFromModel() {
-    if (widget.canvasProperties == null) return;
-    final props = widget.canvasProperties!;
+    if (widget.canvasModel == null) return;
+    final props = widget.canvasModel!;
 
     _fillColor = props.fillColor;
     _fillAlpha = props.fillAlpha;
@@ -81,8 +81,8 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
 
   /// 更新数据模型
   void _updateModel() {
-    if (widget.canvasProperties == null) return;
-    final props = widget.canvasProperties!;
+    if (widget.canvasModel == null) return;
+    final props = widget.canvasModel!;
     props.fillColor = _fillColor;
     props.fillAlpha = _fillAlpha;
     props.borderColor = _borderColor;

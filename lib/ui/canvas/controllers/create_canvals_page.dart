@@ -2,17 +2,16 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../utils/gradient_border.dart';
 import '../../../app/routes/index.dart';
-import '../model/create_design_model.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
+import '../model/index.dart';
 
-class CreateDesignPage extends StatefulWidget {
-  const CreateDesignPage({super.key});
-
+class CreateCanvalsPage extends StatefulWidget {
+  const CreateCanvalsPage({super.key});
   @override
-  State<CreateDesignPage> createState() => _CreateDesignPageState();
+  State<CreateCanvalsPage> createState() => _CreateCanvalsPageState();
 }
 
-class _CreateDesignPageState extends State<CreateDesignPage>
+class _CreateCanvalsPageState extends State<CreateCanvalsPage>
     with TickerProviderStateMixin {
   int _selectedTab = 0;
   int _selectedAspectRatio = 0;
@@ -134,23 +133,13 @@ class _CreateDesignPageState extends State<CreateDesignPage>
       double height = _selectedClarity == 0
           ? result["normalH"].toDouble()
           : result["hdH"].toDouble();
-      DesignCanvalsModel canvalsModel = DesignCanvalsModel(
-        id: "",
-        canvasRatio: width / height,
-        width: width,
-        height: height,
-      );
+      CanvasModel canvalsModel = CanvasModel(width: width, height: height);
       _onCancel();
       Get.toNamed(AppRoutes.createCanvalsPage, arguments: canvalsModel);
     } else {
       double width = double.parse(_widthController.text);
       double height = double.parse(_heightController.text);
-      DesignCanvalsModel canvalsModel = DesignCanvalsModel(
-        id: "",
-        canvasRatio: width / height,
-        width: width,
-        height: height,
-      );
+      CanvasModel canvalsModel = CanvasModel(width: width, height: height);
       _onCancel();
       Get.toNamed(AppRoutes.createCanvalsPage, arguments: canvalsModel);
     }

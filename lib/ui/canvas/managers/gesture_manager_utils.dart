@@ -1,46 +1,46 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../utils/canvals_edit_box_util.dart';
-import '../model/create_design_model.dart';
+import '../model/index.dart';
 import 'dart:math' as math;
 
 class GestureManagerUtils {
   /// 检测点击了哪个元素或控制点
   static String? detectHitTarget(Offset position, CanvasElement box) {
     // 1. 检测旋转按钮
-    final rotationCenter = CanvalsEditBoxUtil.getRotationButtonCenter(box);
-    if (_isPointInCircle(position, rotationCenter, rotationButtonSize / 2)) {
-      return 'rotate';
-    }
+    // final rotationCenter = CanvalsEditBoxUtil.getRotationButtonCenter(box);
+    // if (_isPointInCircle(position, rotationCenter, rotationButtonSize / 2)) {
+    //   return 'rotate';
+    // }
 
     // 2. 检测调整大小控制点
-    final resizeHandles = CanvalsEditBoxUtil.getResizeHandleCenters(box);
-    for (var entry in resizeHandles.entries) {
-      if (_isPointInCircle(position, entry.value, editHitCircleSize / 2)) {
-        return 'resize:${entry.key}';
-      }
-    }
+    // final resizeHandles = CanvalsEditBoxUtil.getResizeHandleCenters(box);
+    // for (var entry in resizeHandles.entries) {
+    //   if (_isPointInCircle(position, entry.value, editHitCircleSize / 2)) {
+    //     return 'resize:${entry.key}';
+    //   }
+    // }
 
     // 3. 检测是否在元素内部
     // 外层容器始终包含边框
-    final totalWidth = box.width;
-    final totalHeight = box.height;
+    // final totalWidth = box.width;
+    // final totalHeight = box.height;
 
-    final localX = position.dx - box.position.dx;
-    final localY = position.dy - box.position.dy;
+    // final localX = position.dx - box.position.dx;
+    // final localY = position.dy - box.position.dy;
 
-    final cos = math.cos(-box.rotation);
-    final sin = math.sin(-box.rotation);
-    final unrotatedX = localX * cos - localY * sin;
-    final unrotatedY = localX * sin + localY * cos;
+    // final cos = math.cos(-box.rotation);
+    // final sin = math.sin(-box.rotation);
+    // final unrotatedX = localX * cos - localY * sin;
+    // final unrotatedY = localX * sin + localY * cos;
 
-    // 判断是否在外层容器内（包含边框区域）
-    if (unrotatedX >= 0 &&
-        unrotatedX <= totalWidth &&
-        unrotatedY >= 0 &&
-        unrotatedY <= totalHeight) {
-      return 'content';
-    }
+    // // 判断是否在外层容器内（包含边框区域）
+    // if (unrotatedX >= 0 &&
+    //     unrotatedX <= totalWidth &&
+    //     unrotatedY >= 0 &&
+    //     unrotatedY <= totalHeight) {
+    //   return 'content';
+    // }
 
     return null;
   }

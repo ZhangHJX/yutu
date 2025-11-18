@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:common/common.dart';
-import '../model/create_design_model.dart';
-
+import '../model/index.dart';
 
 /// 命令基类
 abstract class CanvasCommand {
@@ -286,7 +285,7 @@ class RotateElementCommand implements CanvasCommand {
   void execute() {
     final element = _findElement();
     if (element != null) {
-      element.rotation = newRotation;
+      // element.rotation = newRotation;
     }
   }
 
@@ -294,7 +293,7 @@ class RotateElementCommand implements CanvasCommand {
   void undo() {
     final element = _findElement();
     if (element != null) {
-      element.rotation = oldRotation;
+      // element.rotation = oldRotation;
     }
   }
 
@@ -344,7 +343,7 @@ class ScaleElementCommand implements CanvasCommand {
   void execute() {
     final element = _findElement();
     if (element != null) {
-      element.cumulativeScale = newCumulativeScale;
+      // element.cumulativeScale = newCumulativeScale;
       element.width = newWidth;
       element.height = newHeight;
       element.position = newPosition;
@@ -358,7 +357,7 @@ class ScaleElementCommand implements CanvasCommand {
   void undo() {
     final element = _findElement();
     if (element != null) {
-      element.cumulativeScale = oldCumulativeScale;
+      // element.cumulativeScale = oldCumulativeScale;
       element.width = oldWidth;
       element.height = oldHeight;
       element.position = oldPosition;
@@ -687,7 +686,7 @@ class ToggleVisibilityCommand implements CanvasCommand {
   void execute() {
     final element = _findElement();
     if (element != null) {
-      element.visible = newVisible;
+      element.hidden = newVisible;
     }
   }
 
@@ -695,7 +694,7 @@ class ToggleVisibilityCommand implements CanvasCommand {
   void undo() {
     final element = _findElement();
     if (element != null) {
-      element.visible = oldVisible;
+      element.hidden = oldVisible;
     }
   }
 

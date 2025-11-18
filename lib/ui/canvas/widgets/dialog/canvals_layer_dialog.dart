@@ -1,12 +1,12 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../controllers/canvals_controller.dart';
-import '../../model/create_design_model.dart';
 import '../../utils/gradient_border.dart';
+import '../../model/index.dart';
 import 'dart:io';
 
 class CanvalsLayerDialog extends StatefulWidget {
-  final CanvasProperties canvasProperties;
+  final CanvasModel canvasModel;
   final List<CanvasElement> layers;
 
   final Function(String) onLayerTap;
@@ -20,7 +20,7 @@ class CanvalsLayerDialog extends StatefulWidget {
 
   const CanvalsLayerDialog({
     super.key,
-    required this.canvasProperties,
+    required this.canvasModel,
     required this.layers,
     required this.onLayerTap,
     required this.onLayerDelete,
@@ -183,11 +183,11 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
               final isSelected = _controller.isSelected(layer.id);
 
               // 如果元素被选中，确保画布未选中（在下一帧更新，避免在 build 中直接修改状态）
-              if (isSelected && widget.canvasProperties.isSelected) {
+              if (isSelected && widget.canvasModel.isSelected) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) {
                     setState(() {
-                      widget.canvasProperties.isSelected = false;
+                      widget.canvasModel.isSelected = false;
                     });
                   }
                 });
@@ -260,7 +260,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                                   ),
                                   child: Center(
                                     child: Image.asset(
-                                      layer.visible
+                                      layer.hidden
                                           ? 'assets/images/canvals/canvals_layer_eye.png'
                                           : 'assets/images/canvals/canvals_layer_uneye.png',
                                       width: 16.w,
@@ -308,7 +308,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                                   ),
                                   child: Center(
                                     child: Image.asset(
-                                      layer.isLock
+                                      layer.locked
                                           ? 'assets/images/canvals/canvals_layer_lock.png'
                                           : 'assets/images/canvals/canvals_layer_unlock.png',
                                       width: 18.w,
@@ -346,11 +346,11 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
             final hasElementSelected = _controller.selectedId.isNotEmpty;
 
             // 如果元素被选中，确保画布未选中（在下一帧更新，避免在 build 中直接修改状态）
-            if (hasElementSelected && widget.canvasProperties.isSelected) {
+            if (hasElementSelected && widget.canvasModel.isSelected) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
                   setState(() {
-                    widget.canvasProperties.isSelected = false;
+                    widget.canvasModel.isSelected = false;
                   });
                 }
               });
@@ -361,7 +361,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                 SizedBox(width: 7.w),
                 // 拖拽手柄
                 Image.asset(
-                  widget.canvasProperties.isSelected
+                  widget.canvasModel.isSelected
                       ? 'assets/images/canvals/canvals_current_circle.png'
                       : 'assets/images/canvals/canvals_current_uncircle.png',
                   width: 3.w,
@@ -377,7 +377,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                     widget.onCanvalsActivie();
                   },
                   child: GradientBorder(
-                    borderWidth: widget.canvasProperties.isSelected ? 1.5 : 0,
+                    borderWidth: widget.canvasModel.isSelected ? 1.5 : 0,
                     gradientColors: [Color(0xFFC86CFF), Color(0xFF5B98FF)],
                     borderRadius: BorderRadius.circular(12.w),
                     child: ClipRRect(
@@ -437,7 +437,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                                 width: 28.w,
                                 child: Center(
                                   child: Image.asset(
-                                    widget.canvasProperties.isLock
+                                    widget.canvasModel.locked
                                         ? 'assets/images/canvals/canvals_layer_lock.png'
                                         : 'assets/images/canvals/canvals_layer_unlock.png',
                                     width: 18.w,
@@ -513,7 +513,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
       onTap: () {
         // 点击元素项：选中元素，取消画布选中
         setState(() {
-          widget.canvasProperties.isSelected = false;
+          widget.canvasModel.isSelected = false;
         });
         // 调用原有的图层点击回调
         widget.onLayerTap(layer.id);

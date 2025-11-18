@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../widgets/canvas_app_bar_widget.dart';
 import '../widgets/canvas_bottom_bar_widget.dart';
 import '../widgets/canvas_control_widget.dart';
-import '../gesture/canvas_gesture_listener.dart';
 import '../widgets/dialog/canvals_layer_dialog.dart';
 import '../widgets/dialog/canvals_save_dialog.dart';
 import '../widgets/property/element_attribute_toolbar.dart';
@@ -15,13 +14,13 @@ import '../widgets/dialog/text_input_dialog.dart';
 import '../widgets/dialog/canvals_shape_dialog.dart';
 import '../canvals/canvals_editor_widget.dart';
 import 'canvals_controller.dart';
-import '../model/create_design_model.dart';
 import '../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
 import '../managers/canvas_history_manager.dart';
 import '../managers/canvas_status_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../utils/index.dart';
+import '../model/index.dart';
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -34,7 +33,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   final ScreenshotController _screenshotController = ScreenshotController();
   final CanvasHistoryManager _historyManager = CanvasHistoryManager();
 
-  late DesignCanvalsModel _canvalsModel;
+  late CanvasModel _canvalsModel;
   final GlobalKey<CanvasEditorWidgetState> _canvasKey =
       GlobalKey<CanvasEditorWidgetState>();
 
@@ -52,18 +51,21 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   // 画布手势管理器
   final _canvasStatusManager = CanvasStatusManager();
 
-  // 画布变换状态（用于UI更新）
-  Offset _canvasOffset = Offset.zero;
+  // 画布变换状态（用于UI更新，仅用于显示缩放比例）
   double _canvasScale = 1.0;
 
   @override
   void initState() {
     super.initState();
-    // 监听画布变换变化
+    // 监听画布变换变化（统一写回 CanvasModel）
     _canvasStatusManager.onTransformChanged = (offset, scale) {
+      if (!mounted) return;
       setState(() {
-        _canvasOffset = offset;
+        // UI 层用来显示当前缩放比例
         _canvasScale = scale;
+
+        // 将变换写回 CanvasModel，作为单一数据源
+        _canvalsModel.applyViewportTransform(offset, scale);
       });
     };
   }
@@ -380,7 +382,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    _canvalsModel = Get.arguments as DesignCanvalsModel;
+    _canvalsModel = Get.arguments as CanvasModel;
 
     return Scaffold(
       resizeToAvoidBottomInset: false, // 防止键盘弹出时底部工具栏上移
@@ -390,91 +392,28 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           Positioned(
             left: 0,
             top: ScreenTools.statusBarHeight + 51.w,
-            child: CanvasGestureListener(
-              onPointerDown: (event) {
-                _handlePointerEvent(event, (localEvent) {
-                  // 处理指针按下
-                  final canvasState = _canvasKey.currentState;
-                  if (canvasState != null) {
-                    final hitElement = canvasState.detectHitElement(
-                      localEvent.position,
-                    );
-                    if (hitElement != null) {
-                      // 点击在元素上，处理元素操作
-                      canvasState.handlePointerDown(localEvent);
-                    } else {
-                      // 点击在空白区域，处理画布操作
-                      _canvasStatusManager.handlePointerDown(event);
-                    }
-                  } else {
-                    // 如果 canvas state 还没初始化，尝试处理画布操作
-                    _canvasStatusManager.handlePointerDown(event);
-                  }
-                });
+            child: GestureDetector(
+              // 使用 GestureDetector 统一处理画布平移与缩放
+              onScaleStart: (details) {
+                final box =
+                    _containerKey.currentContext?.findRenderObject()
+                        as RenderBox?;
+                final localFocal =
+                    box?.globalToLocal(details.focalPoint) ??
+                    details.focalPoint;
+                _canvasStatusManager.onScaleStart(localFocal);
               },
-              onPointerMove: (event) {
-                _handlePointerEvent(event, (localEvent) {
-                  // 处理指针移动（拖动）
-                  final canvasState = _canvasKey.currentState;
-                  if (canvasState != null) {
-                    final hitElement = canvasState.detectHitElement(
-                      localEvent.position,
-                    );
-                    if (hitElement != null ||
-                        _canvalsController.selectedId.isNotEmpty) {
-                      // 有元素被点击或已选中，处理元素拖动
-                      canvasState.handlePointerMove(localEvent);
-                    } else {
-                      // 没有元素，处理画布平移
-                      if (_canvasStatusManager.handlePointerMove(event)) {
-                        // handlePointerMove 返回 true 表示有变化，UI会自动更新（通过回调）
-                      }
-                    }
-                  }
-                });
+              onScaleUpdate: (details) {
+                final box =
+                    _containerKey.currentContext?.findRenderObject()
+                        as RenderBox?;
+                final localFocal =
+                    box?.globalToLocal(details.focalPoint) ??
+                    details.focalPoint;
+                _canvasStatusManager.onScaleUpdate(details.scale, localFocal);
               },
-              onPointerUp: (event) {
-                _handlePointerEvent(event, (localEvent) {
-                  // 处理指针抬起
-                  final canvasState = _canvasKey.currentState;
-                  if (canvasState != null) {
-                    final hitElement = canvasState.detectHitElement(
-                      localEvent.position,
-                    );
-                    if (hitElement != null ||
-                        _canvalsController.selectedId.isNotEmpty) {
-                      // 有元素被点击或已选中，处理元素操作
-                      canvasState.handlePointerUp(localEvent);
-                    } else {
-                      // 没有元素，处理画布操作
-                      _canvasStatusManager.handlePointerUp(event);
-                    }
-                  } else {
-                    // 如果 canvas state 还没初始化，尝试处理画布操作
-                    _canvasStatusManager.handlePointerUp(event);
-                  }
-                });
-              },
-              onPointerCancel: (event) {
-                final canvasState = _canvasKey.currentState;
-                if (canvasState != null) {
-                  canvasState.handlePointerCancel(event);
-                }
-                _canvasStatusManager.handlePointerCancel(event);
-              },
-              onTap: (event) {
-                debugPrint('Canvas tapped at ${event.position}');
-                final canvasState = _canvasKey.currentState;
-                if (canvasState != null) {
-                  final hitElement = canvasState.detectHitElement(
-                    event.position,
-                  );
-                  if (hitElement != null) {
-                    debugPrint('Tapped element: $hitElement');
-                  } else {
-                    debugPrint('Tapped empty area');
-                  }
-                }
+              onScaleEnd: (details) {
+                _canvasStatusManager.onScaleEnd();
               },
               child: Container(
                 key: _containerKey,
@@ -487,73 +426,58 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                 color: cfff6f2fb,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    // 计算画布宽高比
-                    final availableRatio =
-                        constraints.maxWidth / constraints.maxHeight;
+                    // 使用工具函数转换画布尺寸
+                    final displaySize = CanvasSizeUtil.convertToDisplaySize(
+                      _canvalsModel,
+                      constraints.maxWidth,
+                      constraints.maxHeight,
+                    );
+                    final displayWidth = displaySize.width;
+                    final displayHeight = displaySize.height;
 
-                    // 根据比例确定最终显示尺寸
-                    double displayWidth;
-                    double displayHeight;
+                    debugPrint(
+                      "--哈哈哈哈哈--$displayWidth--哈哈哈哈哈---$displayHeight----",
+                    );
 
-                    if (_canvalsModel.canvasRatio > availableRatio) {
-                      // 画布更宽，以宽度为基准充满
-                      displayWidth = constraints.maxWidth;
-                      displayHeight =
-                          constraints.maxWidth / _canvalsModel.canvasRatio;
-                    } else {
-                      // 画布更高，以高度为基准充满
-                      displayHeight = constraints.maxHeight;
-                      displayWidth =
-                          constraints.maxHeight * _canvalsModel.canvasRatio;
-                    }
+                    // controllers.initCanvasTransform(
+                    //   Size(constraints.maxWidth, constraints.maxHeight),
+                    // );
 
                     // 设置画布尺寸到手势管理器
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _canvasKey.currentState?.setCanvasSize(
-                        Size(displayWidth, displayHeight),
-                      );
-                    });
+                    // WidgetsBinding.instance.addPostFrameCallback((_) {
+                    //   _canvasKey.currentState?.setCanvasSize(
+                    //     Size(displayWidth, displayHeight),
+                    //   );
+                    // });
 
                     return Screenshot(
                       controller: _screenshotController,
-                      child: Transform.translate(
-                        offset: _canvasOffset,
-                        child: Transform.scale(
-                          scale: _canvasScale,
-                          alignment: Alignment.center,
-                          child: Center(
-                            child: Container(
-                              key: _canvasContainerKey,
-                              decoration: BoxDecoration(
-                                color: _canvalsModel.properties.fillColor.color
+                      child: Transform(
+                        // 直接使用 CanvasModel 的变换矩阵（以左上角为原点）
+                        transform: _canvalsModel.transform,
+                        alignment: Alignment.topLeft,
+                        child: Center(
+                          child: Container(
+                            key: _canvasContainerKey,
+                            decoration: BoxDecoration(
+                              color: _canvalsModel.fillColor.color.withValues(
+                                alpha: _canvalsModel.fillAlpha,
+                              ),
+                              border: Border.all(
+                                color: _canvalsModel.borderColor.color
                                     .withValues(
-                                      alpha: _canvalsModel.properties.fillAlpha,
+                                      alpha: _canvalsModel.borderWidth > 0
+                                          ? _canvalsModel.borderAlpha
+                                          : 0.0,
                                     ),
-                                border: Border.all(
-                                  color: _canvalsModel
-                                      .properties
-                                      .borderColor
-                                      .color
-                                      .withValues(
-                                        alpha:
-                                            _canvalsModel
-                                                    .properties
-                                                    .borderWidth >
-                                                0
-                                            ? _canvalsModel
-                                                  .properties
-                                                  .borderAlpha
-                                            : 0.0,
-                                      ),
-                                  width: _canvalsModel.properties.borderWidth,
-                                ),
+                                width: _canvalsModel.borderWidth,
                               ),
-                              width: displayWidth,
-                              height: displayHeight,
-                              child: CanvasEditorWidget(
-                                key: _canvasKey,
-                                historyManager: _historyManager,
-                              ),
+                            ),
+                            width: displayWidth,
+                            height: displayHeight,
+                            child: CanvasEditorWidget(
+                              key: _canvasKey,
+                              historyManager: _historyManager,
                             ),
                           ),
                         ),
@@ -581,25 +505,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           ),
 
           // 缩放控制浮框（当缩放比例不是100%时显示，固定在顶部居中位置）
-          if ((_canvasScale - 1.0).abs() > 0.01)
-            Positioned(
-              right: 10.w,
-              top: ScreenTools.statusBarHeight + 51.w,
-              child: Center(
-                child: CanvasControlWidget(
-                  scale: _canvasScale,
-                  onFitScreen: () {
-                    _canvasStatusManager.reset(); // 适应屏幕：重置画布变换
-                  },
-                  onZoomIn: () {
-                    _canvasStatusManager.zoomIn(); // 放大画布
-                  },
-                  onZoomOut: () {
-                    _canvasStatusManager.zoomOut(); // 缩小画布
-                  },
-                ),
-              ),
-            ),
+          if ((_canvasScale - 1.0).abs() <= 0.01) _buildScaleOverlay(),
 
           // 底部tabBar
           Positioned(
@@ -618,118 +524,45 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
             ),
           ),
 
-          // 元素属性工具栏
-          Obx(
-            () => Positioned(
-              left: 0,
-              bottom: 66.w + ScreenTools.bottomBarHeight,
-              child: ElementAttributeToolbar(
-                activeElement: _activeElement,
-                isCanvasSelected: _canvalsModel.properties.isSelected,
-                onClose: () {
-                  _canvalsController.select('');
-                  if (_canvalsModel.properties.isSelected) {
-                    setState(() {
-                      _canvalsModel.properties.isSelected = false;
-                    });
-                  }
-                },
-                onCollapse: (text) {
-                  _toggleLayerDialog(false);
-                  if (text == "图层属性") {
-                    _showCanvalsPropertyDialog();
-                  } else {
-                    // 根据元素类型显示不同的属性弹框
-                    if (_activeElement?.type == ElementType.image) {
-                      _showImagePropertyDialog();
-                    } else if (_activeElement?.type == ElementType.rectangle ||
-                        _activeElement?.type == ElementType.ellipse ||
-                        _activeElement?.type == ElementType.line) {
-                      _showShapePropertyDialog();
-                    } else {
-                      _showTextPropertyDialog();
-                    }
-                  }
-                },
-              ),
-            ),
-          ),
+          // // 元素属性工具栏
+          // Obx(
+          //   () => Positioned(
+          //     left: 0,
+          //     bottom: 66.w + ScreenTools.bottomBarHeight,
+          //     child: ElementAttributeToolbar(
+          //       activeElement: _activeElement,
+          //       isCanvasSelected: _canvalsModel.isSelected,
+          //       onClose: () {
+          //         _canvalsController.select('');
+          //         if (_canvalsModel.isSelected) {
+          //           setState(() {
+          //             _canvalsModel.isSelected = false;
+          //           });
+          //         }
+          //       },
+          //       onCollapse: (text) {
+          //         _toggleLayerDialog(false);
+          //         if (text == "图层属性") {
+          //           _showCanvalsPropertyDialog();
+          //         } else {
+          //           // 根据元素类型显示不同的属性弹框
+          //           if (_activeElement?.type == ElementType.image) {
+          //             _showImagePropertyDialog();
+          //           } else if (_activeElement?.type == ElementType.rectangle ||
+          //               _activeElement?.type == ElementType.ellipse ||
+          //               _activeElement?.type == ElementType.line) {
+          //             _showShapePropertyDialog();
+          //           } else {
+          //             _showTextPropertyDialog();
+          //           }
+          //         }
+          //       },
+          //     ),
+          //   ),
+          // ),
 
-          // 图层弹框
-          if (_showLayerDialog)
-            Positioned(
-              left: 16.w,
-              bottom: 72.w + ScreenTools.bottomBarHeight, // 底部工具栏高度 + 10像素间距
-              child: CanvalsLayerDialog(
-                canvasProperties: _canvalsModel.properties,
-                layers: _canvasKey.currentState?.layers ?? [],
-                onLayerTap: (layerId) {
-                  // 选中元素时，确保画布未选中
-                  setState(() {
-                    _canvalsModel.properties.isSelected = false;
-                  });
-
-                  // 切换元素选中状态
-                  _canvalsController.isSelected(layerId)
-                      ? _canvalsController.deselect()
-                      : _canvalsController.select(layerId);
-                },
-                onLayerDelete: (layerId) {
-                  setState(() {
-                    _canvasKey.currentState?.deleteBox(layerId);
-                  });
-                },
-                onLayerReorder: (oldIndex, newIndex) {
-                  setState(() {
-                    _canvasKey.currentState?.reorderLayers(oldIndex, newIndex);
-                  });
-                },
-                onLayerToggleVisibility: (layerId) {
-                  final layers = _canvasKey.currentState?.layers ?? [];
-                  final layer = layers.firstWhere((l) => l.id == layerId);
-                  final oldVisible = layer.visible;
-                  setState(() {
-                    layer.visible = !layer.visible;
-                  });
-                  // 记录命令
-                  final boxes = _canvasKey.currentState?.boxesList ?? [];
-                  _historyManager.executeCommand(
-                    ToggleVisibilityCommand(
-                      boxes: boxes,
-                      elementId: layerId,
-                      oldVisible: oldVisible,
-                      newVisible: layer.visible,
-                    ),
-                  );
-                },
-                onLayerLock: (layerId) {
-                  final layers = _canvasKey.currentState?.layers ?? [];
-                  final layer = layers.firstWhere((l) => l.id == layerId);
-                  // final oldIsLock = layer.isLock;
-                  setState(() {
-                    layer.isLock = !layer.isLock;
-                  });
-                  // if (_canvalsController.isSelected(layerId)) {
-                  //   _canvalsController.deselect();
-                  // }
-                },
-                onCanvalsActivie: () {
-                  setState(() {
-                    _canvalsModel.properties.isSelected = true;
-                    _canvalsController.deselect();
-                  });
-                },
-                onCanvalsLock: () {
-                  setState(() {
-                    _canvalsModel.properties.isLock =
-                        !_canvalsModel.properties.isLock;
-                    if (_canvalsModel.properties.isLock) {
-                      _canvalsController.deselect();
-                    }
-                  });
-                },
-              ),
-            ),
+          // // 图层弹框
+          // _buildLayerDialog(),
         ],
       ),
     );
@@ -739,7 +572,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     // 获取画布图层
     SmartDialog.show(
       builder: (context) => CanvalsPropertyDialog(
-        canvasProperties: _canvalsModel.properties,
+        canvasModel: _canvalsModel,
         onPropertyChanged: () {
           setState(() {}); // 触发界面重绘
         },
@@ -1024,204 +857,101 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     _canvasKey.currentState?.redo();
   }
 
-  /// 处理指针事件，将全局坐标转换为相对于画布的本地坐标
-  void _handlePointerEvent<T extends PointerEvent>(
-    T event,
-    void Function(T localEvent) callback,
-  ) {
-    // 优先使用画布Container的坐标系统
-    final RenderBox? canvasBox =
-        _canvasContainerKey.currentContext?.findRenderObject() as RenderBox?;
-    if (canvasBox != null) {
-      // 获取外层容器的 RenderBox
-      final RenderBox? containerBox =
-          _containerKey.currentContext?.findRenderObject() as RenderBox?;
-      if (containerBox != null) {
-        // 先转换为外层容器的本地坐标
-        final containerLocal = containerBox.globalToLocal(event.position);
+  /// 构建缩放控制浮框（当缩放比例不是100%时显示）
+  Widget _buildScaleOverlay() {
+    return Positioned(
+      right: 10.w,
+      top: ScreenTools.statusBarHeight + 51.w,
+      child: Center(
+        child: CanvasControlWidget(
+          scale: _canvasScale,
+          onFitScreen: () {
+            _canvasStatusManager.reset(); // 适应屏幕：重置画布变换
+          },
+          onZoomIn: () {
+            _canvasStatusManager.zoomIn(); // 放大画布
+          },
+          onZoomOut: () {
+            _canvasStatusManager.zoomOut(); // 缩小画布
+          },
+        ),
+      ),
+    );
+  }
 
-        // 获取画布容器在外层容器中的中心点
-        // 由于画布是居中的，中心点应该是外层容器的中心
-        final containerSize = containerBox.size;
-        final containerCenter = Offset(
-          containerSize.width / 2,
-          containerSize.height / 2,
-        );
-
-        // 反向变换：先考虑平移，再考虑缩放
-        // 1. 减去画布偏移量（Transform.translate 的 offset）
-        Offset transformedPosition = containerLocal - _canvasOffset;
-
-        // 2. 考虑缩放（Transform.scale 以中心为基准）
-        // 先减去中心点，除以缩放比例，再加上中心点
-        transformedPosition =
-            (transformedPosition - containerCenter) / _canvasScale +
-            containerCenter;
-
-        // 3. 转换为画布容器的本地坐标
-        // 由于画布是居中的，需要计算画布容器相对于外层容器的位置
-        final canvasSize = canvasBox.size;
-        final canvasTopLeft =
-            containerCenter -
-            Offset(canvasSize.width / 2, canvasSize.height / 2);
-        final localPosition = transformedPosition - canvasTopLeft;
-
-        // 创建新的本地事件
-        T localEvent;
-        if (event is PointerDownEvent) {
-          localEvent =
-              PointerDownEvent(
-                    position: localPosition,
-                    timeStamp: event.timeStamp,
-                    pointer: event.pointer,
-                    kind: event.kind,
-                    buttons: event.buttons,
-                    pressure: event.pressure,
-                    pressureMin: event.pressureMin,
-                    pressureMax: event.pressureMax,
-                    distanceMax: event.distanceMax,
-                    size: event.size,
-                    radiusMajor: event.radiusMajor,
-                    radiusMinor: event.radiusMinor,
-                    radiusMin: event.radiusMin,
-                    radiusMax: event.radiusMax,
-                    orientation: event.orientation,
-                    tilt: event.tilt,
-                    embedderId: event.embedderId,
-                  )
-                  as T;
-        } else if (event is PointerMoveEvent) {
-          localEvent =
-              PointerMoveEvent(
-                    position: localPosition,
-                    timeStamp: event.timeStamp,
-                    pointer: event.pointer,
-                    kind: event.kind,
-                    buttons: event.buttons,
-                    pressure: event.pressure,
-                    pressureMin: event.pressureMin,
-                    pressureMax: event.pressureMax,
-                    size: event.size,
-                    radiusMajor: event.radiusMajor,
-                    radiusMinor: event.radiusMinor,
-                    radiusMin: event.radiusMin,
-                    radiusMax: event.radiusMax,
-                    orientation: event.orientation,
-                    tilt: event.tilt,
-                    embedderId: event.embedderId,
-                    delta: event.delta,
-                  )
-                  as T;
-        } else if (event is PointerUpEvent) {
-          localEvent =
-              PointerUpEvent(
-                    position: localPosition,
-                    timeStamp: event.timeStamp,
-                    pointer: event.pointer,
-                    kind: event.kind,
-                    buttons: event.buttons,
-                    pressure: event.pressure,
-                    pressureMin: event.pressureMin,
-                    pressureMax: event.pressureMax,
-                    size: event.size,
-                    radiusMajor: event.radiusMajor,
-                    radiusMinor: event.radiusMinor,
-                    radiusMin: event.radiusMin,
-                    radiusMax: event.radiusMax,
-                    orientation: event.orientation,
-                    tilt: event.tilt,
-                    embedderId: event.embedderId,
-                  )
-                  as T;
-        } else {
-          // PointerCancelEvent 不需要坐标转换
-          localEvent = event;
-        }
-
-        callback(localEvent);
-        return;
-      }
-      // 如果 containerBox 为 null，继续执行回退逻辑
+  /// 构建图层弹框
+  Widget _buildLayerDialog() {
+    if (!_showLayerDialog) {
+      return const SizedBox.shrink();
     }
 
-    // 如果画布Container还没有渲染，回退到外层Container
-    final RenderBox? containerBox =
-        _containerKey.currentContext?.findRenderObject() as RenderBox?;
-    if (containerBox != null) {
-      final localPosition = containerBox.globalToLocal(event.position);
+    return Positioned(
+      left: 16.w,
+      bottom: 72.w + ScreenTools.bottomBarHeight, // 底部工具栏高度 + 10像素间距
+      child: CanvalsLayerDialog(
+        canvasModel: _canvalsModel,
+        layers: _canvasKey.currentState?.layers ?? [],
+        onLayerTap: (layerId) {
+          // 选中元素时，确保画布未选中
+          setState(() {
+            _canvalsModel.isSelected = false;
+          });
 
-      // 创建新的本地事件
-      T localEvent;
-      if (event is PointerDownEvent) {
-        localEvent =
-            PointerDownEvent(
-                  position: localPosition,
-                  timeStamp: event.timeStamp,
-                  pointer: event.pointer,
-                  kind: event.kind,
-                  buttons: event.buttons,
-                  pressure: event.pressure,
-                  pressureMin: event.pressureMin,
-                  pressureMax: event.pressureMax,
-                  distanceMax: event.distanceMax,
-                  size: event.size,
-                  radiusMajor: event.radiusMajor,
-                  radiusMinor: event.radiusMinor,
-                  radiusMin: event.radiusMin,
-                  radiusMax: event.radiusMax,
-                  orientation: event.orientation,
-                  tilt: event.tilt,
-                  embedderId: event.embedderId,
-                )
-                as T;
-      } else if (event is PointerMoveEvent) {
-        localEvent =
-            PointerMoveEvent(
-                  position: localPosition,
-                  timeStamp: event.timeStamp,
-                  pointer: event.pointer,
-                  kind: event.kind,
-                  buttons: event.buttons,
-                  pressure: event.pressure,
-                  pressureMin: event.pressureMin,
-                  pressureMax: event.pressureMax,
-                  size: event.size,
-                  radiusMajor: event.radiusMajor,
-                  radiusMinor: event.radiusMinor,
-                  radiusMin: event.radiusMin,
-                  radiusMax: event.radiusMax,
-                  orientation: event.orientation,
-                  tilt: event.tilt,
-                  embedderId: event.embedderId,
-                  delta: event.delta,
-                )
-                as T;
-      } else if (event is PointerUpEvent) {
-        localEvent =
-            PointerUpEvent(
-                  position: localPosition,
-                  timeStamp: event.timeStamp,
-                  pointer: event.pointer,
-                  kind: event.kind,
-                  buttons: event.buttons,
-                  pressure: event.pressure,
-                  pressureMin: event.pressureMin,
-                  pressureMax: event.pressureMax,
-                  size: event.size,
-                  radiusMajor: event.radiusMajor,
-                  radiusMinor: event.radiusMinor,
-                  radiusMin: event.radiusMin,
-                  radiusMax: event.radiusMax,
-                  orientation: event.orientation,
-                  tilt: event.tilt,
-                  embedderId: event.embedderId,
-                )
-                as T;
-      } else {
-        localEvent = event;
-      }
-
-      callback(localEvent);
-    }
+          // 切换元素选中状态
+          _canvalsController.isSelected(layerId)
+              ? _canvalsController.deselect()
+              : _canvalsController.select(layerId);
+        },
+        onLayerDelete: (layerId) {
+          setState(() {
+            _canvasKey.currentState?.deleteBox(layerId);
+          });
+        },
+        onLayerReorder: (oldIndex, newIndex) {
+          setState(() {
+            _canvasKey.currentState?.reorderLayers(oldIndex, newIndex);
+          });
+        },
+        onLayerToggleVisibility: (layerId) {
+          final layers = _canvasKey.currentState?.layers ?? [];
+          final layer = layers.firstWhere((l) => l.id == layerId);
+          final oldVisible = layer.hidden;
+          setState(() {
+            layer.hidden = !layer.hidden;
+          });
+          // 记录命令
+          final boxes = _canvasKey.currentState?.boxesList ?? [];
+          _historyManager.executeCommand(
+            ToggleVisibilityCommand(
+              boxes: boxes,
+              elementId: layerId,
+              oldVisible: oldVisible,
+              newVisible: layer.hidden,
+            ),
+          );
+        },
+        onLayerLock: (layerId) {
+          final layers = _canvasKey.currentState?.layers ?? [];
+          final layer = layers.firstWhere((l) => l.id == layerId);
+          setState(() {
+            layer.locked = !layer.locked;
+          });
+        },
+        onCanvalsActivie: () {
+          setState(() {
+            _canvalsModel.isSelected = true;
+            _canvalsController.deselect();
+          });
+        },
+        onCanvalsLock: () {
+          setState(() {
+            _canvalsModel.locked = !_canvalsModel.locked;
+            if (_canvalsModel.locked) {
+              _canvalsController.deselect();
+            }
+          });
+        },
+      ),
+    );
   }
 }

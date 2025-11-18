@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../model/create_design_model.dart';
 import '../utils/canvals_edit_box_util.dart';
+import '../model/index.dart';
 
 /// TransformCanvas 组件：用于在外层渲染控制框，将控制框从元素内部提取出来，避免受元素 Transform 影响
 class TransformCanvas extends StatelessWidget {
@@ -40,12 +40,12 @@ class TransformCanvas extends StatelessWidget {
     controls.add(_buildBorder(selectedElement));
 
     // 渲染调整大小的控制点
-    if (!selectedElement.isLock) {
+    if (!selectedElement.hidden) {
       controls.addAll(_buildResizeHandles(selectedElement));
     }
 
     // 渲染旋转按钮
-    if (!selectedElement.isLock) {
+    if (!selectedElement.hidden) {
       controls.add(_buildRotationButton(selectedElement));
     }
     return controls;
@@ -60,20 +60,13 @@ class TransformCanvas extends StatelessWidget {
     return Positioned(
       left: element.position.dx - editBorderWidth,
       top: element.position.dy - editBorderWidth,
-      child: Transform.rotate(
-        angle: element.rotation,
-        alignment: Alignment.center,
-        child: Container(
-          width: totalWidth,
-          height: totalHeight,
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            // 只有边框显隐变化，尺寸不变
-            border: Border.all(
-              color: "#ff147EFF".color,
-              width: editBorderWidth,
-            ),
-          ),
+      child: Container(
+        width: totalWidth,
+        height: totalHeight,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          // 只有边框显隐变化，尺寸不变
+          border: Border.all(color: "#ff147EFF".color, width: editBorderWidth),
         ),
       ),
     );
@@ -81,16 +74,16 @@ class TransformCanvas extends StatelessWidget {
 
   /// 构建调整大小的控制点
   List<Widget> _buildResizeHandles(CanvasElement element) {
-    final handlePositions = CanvalsEditBoxUtil.getResizeHandleCenters(element);
+    // final handlePositions = CanvalsEditBoxUtil.getResizeHandleCenters(element);
     final handles = _getControlHandlesForType(element.type, element);
 
     return handles.map((handleKey) {
-      final position = handlePositions[handleKey];
-      if (position == null) return const SizedBox.shrink();
+      // final position = handlePositions[handleKey];
+      // if (position == null) return const SizedBox.shrink();
 
       return Positioned(
-        left: position.dx - editHitCircleSize / 2,
-        top: position.dy - editHitCircleSize / 2,
+        // left: position.dx - editHitCircleSize / 2,
+        // top: position.dy - editHitCircleSize / 2,
         child: Container(
           width: editHitCircleSize,
           height: editHitCircleSize,
@@ -148,11 +141,10 @@ class TransformCanvas extends StatelessWidget {
 
   /// 构建旋转按钮
   Widget _buildRotationButton(CanvasElement element) {
-    final buttonCenter = CanvalsEditBoxUtil.getRotationButtonCenter(element);
+    // final buttonCenter = CanvalsEditBoxUtil.getRotationButtonCenter(element);
     return Positioned(
-      left: buttonCenter.dx - rotationButtonSize / 2,
-      top: buttonCenter.dy - rotationButtonSize / 2,
-      // child: const Icon(Icons.rotate_right, color: Colors.white, size: 16),
+      // left: buttonCenter.dx - rotationButtonSize / 2,
+      // top: buttonCenter.dy - rotationButtonSize / 2,
       child: Image.asset(
         'assets/images/canvals/edit_rotation_icon.png',
         width: rotationButtonSize,

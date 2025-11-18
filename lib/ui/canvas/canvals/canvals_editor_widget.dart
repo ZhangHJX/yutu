@@ -4,7 +4,6 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../controllers/canvals_controller.dart';
 import '../widgets/dialog/canvals_shape_dialog.dart';
-import '../model/create_design_model.dart';
 import 'canvas_element_widget.dart';
 import '../managers/canvas_gesture_manager.dart';
 import '../managers/gesture_manager_utils.dart';
@@ -13,6 +12,7 @@ import '../utils/text_measure_util.dart';
 import 'transform_canvas.dart';
 import '../managers/canvas_history_manager.dart';
 import '../utils/edit_box_data_clone.dart';
+import '../model/index.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
