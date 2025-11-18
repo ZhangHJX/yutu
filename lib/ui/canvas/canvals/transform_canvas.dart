@@ -1,6 +1,5 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../utils/canvals_edit_box_util.dart';
 import '../model/index.dart';
 
 /// TransformCanvas 组件：用于在外层渲染控制框，将控制框从元素内部提取出来，避免受元素 Transform 影响
@@ -53,16 +52,26 @@ class TransformCanvas extends StatelessWidget {
 
   /// 构建边框矩形
   Widget _buildBorder(CanvasElement element) {
-    // 计算包含边框的总尺寸
-    final totalWidth = element.width + editBorderWidth * 2;
-    final totalHeight = element.height + editBorderWidth * 2;
+    final corners = _worldCorners(element);
+    final tl = corners[0];
+    final tr = corners[1];
+    final br = corners[2];
+    final bl = corners[3];
+
+    final minX = [tl.dx, tr.dx, br.dx, bl.dx].reduce((a, b) => a < b ? a : b);
+    final maxX = [tl.dx, tr.dx, br.dx, bl.dx].reduce((a, b) => a > b ? a : b);
+    final minY = [tl.dy, tr.dy, br.dy, bl.dy].reduce((a, b) => a < b ? a : b);
+    final maxY = [tl.dy, tr.dy, br.dy, bl.dy].reduce((a, b) => a > b ? a : b);
+
+    final width = maxX - minX;
+    final height = maxY - minY;
 
     return Positioned(
-      left: element.position.dx - editBorderWidth,
-      top: element.position.dy - editBorderWidth,
+      left: minX - editBorderWidth,
+      top: minY - editBorderWidth,
       child: Container(
-        width: totalWidth,
-        height: totalHeight,
+        width: width + editBorderWidth * 2,
+        height: height + editBorderWidth * 2,
         decoration: BoxDecoration(
           color: Colors.transparent,
           // 只有边框显隐变化，尺寸不变
@@ -74,16 +83,32 @@ class TransformCanvas extends StatelessWidget {
 
   /// 构建调整大小的控制点
   List<Widget> _buildResizeHandles(CanvasElement element) {
-    // final handlePositions = CanvalsEditBoxUtil.getResizeHandleCenters(element);
+    final corners = _worldCorners(element);
+    final tl = corners[0];
+    final tr = corners[1];
+    final br = corners[2];
+    final bl = corners[3];
+
+    final centers = <String, Offset>{
+      'top-left': tl,
+      'top-right': tr,
+      'bottom-right': br,
+      'bottom-left': bl,
+      'top': Offset((tl.dx + tr.dx) / 2, (tl.dy + tr.dy) / 2),
+      'right': Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2),
+      'bottom': Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2),
+      'left': Offset((bl.dx + tl.dx) / 2, (bl.dy + tl.dy) / 2),
+    };
+
     final handles = _getControlHandlesForType(element.type, element);
 
     return handles.map((handleKey) {
-      // final position = handlePositions[handleKey];
-      // if (position == null) return const SizedBox.shrink();
+      final position = centers[handleKey];
+      if (position == null) return const SizedBox.shrink();
 
       return Positioned(
-        // left: position.dx - editHitCircleSize / 2,
-        // top: position.dy - editHitCircleSize / 2,
+        left: position.dx - editHitCircleSize / 2,
+        top: position.dy - editHitCircleSize / 2,
         child: Container(
           width: editHitCircleSize,
           height: editHitCircleSize,
@@ -100,6 +125,40 @@ class TransformCanvas extends StatelessWidget {
         ),
       );
     }).toList();
+  }
+
+  /// 构建旋转按钮
+  Widget _buildRotationButton(CanvasElement element) {
+    final corners = _worldCorners(element);
+    final br = corners[2];
+    final bl = corners[3];
+    final bottomCenter = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
+
+    // 向外偏移 rotationButtonPadding
+    final direction = (bottomCenter - corners[0]).direction; // 简单取一条向下的方向也可以
+    final buttonCenter =
+        bottomCenter +
+        Offset(0, rotationButtonPadding + rotationButtonSize / 2);
+
+    return Positioned(
+      left: buttonCenter.dx - rotationButtonSize / 2,
+      top: buttonCenter.dy - rotationButtonSize / 2,
+      child: Image.asset(
+        'assets/images/canvals/edit_rotation_icon.png',
+        width: rotationButtonSize,
+        height: rotationButtonSize,
+        fit: BoxFit.contain,
+        // 确保图片不旋转
+        alignment: Alignment.center,
+      ),
+    );
+  }
+
+  List<Offset> _worldCorners(CanvasElement e) {
+    // 确保使用最新的元素变换矩阵
+    e.updateMatrix4();
+    // TransformCanvas 在画布内部，所以 canvasMatrix 可以先用 identity
+    return MatrixUtilsX.worldCorners(e, Matrix4.identity());
   }
 
   /// 根据元素类型获取需要显示的控制点
@@ -137,22 +196,5 @@ class TransformCanvas extends StatelessWidget {
       case ElementType.line:
         return ['left', 'top', 'right', 'bottom'];
     }
-  }
-
-  /// 构建旋转按钮
-  Widget _buildRotationButton(CanvasElement element) {
-    // final buttonCenter = CanvalsEditBoxUtil.getRotationButtonCenter(element);
-    return Positioned(
-      // left: buttonCenter.dx - rotationButtonSize / 2,
-      // top: buttonCenter.dy - rotationButtonSize / 2,
-      child: Image.asset(
-        'assets/images/canvals/edit_rotation_icon.png',
-        width: rotationButtonSize,
-        height: rotationButtonSize,
-        fit: BoxFit.contain,
-        // 确保图片不旋转
-        alignment: Alignment.center,
-      ),
-    );
   }
 }

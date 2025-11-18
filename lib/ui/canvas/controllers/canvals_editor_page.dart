@@ -21,6 +21,7 @@ import '../managers/canvas_status_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../utils/index.dart';
 import '../model/index.dart';
+import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -51,9 +52,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   // 画布手势管理器
   final _canvasStatusManager = CanvasStatusManager();
 
-  // 画布变换状态（用于UI更新，仅用于显示缩放比例）
-  double _canvasScale = 1.0;
-
   @override
   void initState() {
     super.initState();
@@ -61,11 +59,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     _canvasStatusManager.onTransformChanged = (offset, scale) {
       if (!mounted) return;
       setState(() {
-        // UI 层用来显示当前缩放比例
-        _canvasScale = scale;
-
-        // 将变换写回 CanvasModel，作为单一数据源
-        _canvalsModel.applyViewportTransform(offset, scale);
+        _canvalsModel.updateMatrix4(offset, scale);
       });
     };
   }
@@ -394,16 +388,28 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
             top: ScreenTools.statusBarHeight + 51.w,
             child: Listener(
               onPointerDown: (event) {
-                _canvasStatusManager.handlePointerDown(event);
+                if (_canvalsController.selectedId.isNotEmpty) {
+                } else {
+                  _canvasStatusManager.handlePointerDown(event);
+                }
               },
               onPointerMove: (event) {
-                _canvasStatusManager.handlePointerMove(event);
+                if (_canvalsController.selectedId.isNotEmpty) {
+                } else {
+                  _canvasStatusManager.handlePointerMove(event);
+                }
               },
               onPointerUp: (event) {
-                _canvasStatusManager.handlePointerUp(event);
+                if (_canvalsController.selectedId.isNotEmpty) {
+                } else {
+                  _canvasStatusManager.handlePointerUp(event);
+                }
               },
               onPointerCancel: (event) {
-                _canvasStatusManager.handlePointerCancel(event);
+                if (_canvalsController.selectedId.isNotEmpty) {
+                } else {
+                  _canvasStatusManager.handlePointerCancel(event);
+                }
               },
               child: Container(
                 key: _containerKey,
@@ -483,7 +489,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           ),
 
           // 缩放控制浮框（当缩放比例不是100%时显示，固定在顶部居中位置）
-          if ((_canvasScale - 1.0).abs() > 0.01) _buildScaleOverlay(),
+          if ((_canvalsModel.scale - 1.0).abs() > 0.01) _buildScaleOverlay(),
 
           // 底部tabBar
           Positioned(
@@ -502,45 +508,45 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
             ),
           ),
 
-          // // 元素属性工具栏
-          // Obx(
-          //   () => Positioned(
-          //     left: 0,
-          //     bottom: 66.w + ScreenTools.bottomBarHeight,
-          //     child: ElementAttributeToolbar(
-          //       activeElement: _activeElement,
-          //       isCanvasSelected: _canvalsModel.isSelected,
-          //       onClose: () {
-          //         _canvalsController.select('');
-          //         if (_canvalsModel.isSelected) {
-          //           setState(() {
-          //             _canvalsModel.isSelected = false;
-          //           });
-          //         }
-          //       },
-          //       onCollapse: (text) {
-          //         _toggleLayerDialog(false);
-          //         if (text == "图层属性") {
-          //           _showCanvalsPropertyDialog();
-          //         } else {
-          //           // 根据元素类型显示不同的属性弹框
-          //           if (_activeElement?.type == ElementType.image) {
-          //             _showImagePropertyDialog();
-          //           } else if (_activeElement?.type == ElementType.rectangle ||
-          //               _activeElement?.type == ElementType.ellipse ||
-          //               _activeElement?.type == ElementType.line) {
-          //             _showShapePropertyDialog();
-          //           } else {
-          //             _showTextPropertyDialog();
-          //           }
-          //         }
-          //       },
-          //     ),
-          //   ),
-          // ),
+          // 元素属性工具栏
+          Obx(
+            () => Positioned(
+              left: 0,
+              bottom: 66.w + ScreenTools.bottomBarHeight,
+              child: ElementAttributeToolbar(
+                activeElement: _activeElement,
+                isCanvasSelected: _canvalsModel.isSelected,
+                onClose: () {
+                  _canvalsController.select('');
+                  if (_canvalsModel.isSelected) {
+                    setState(() {
+                      _canvalsModel.isSelected = false;
+                    });
+                  }
+                },
+                onCollapse: (text) {
+                  _toggleLayerDialog(false);
+                  if (text == "图层属性") {
+                    _showCanvalsPropertyDialog();
+                  } else {
+                    // 根据元素类型显示不同的属性弹框
+                    if (_activeElement?.type == ElementType.image) {
+                      _showImagePropertyDialog();
+                    } else if (_activeElement?.type == ElementType.rectangle ||
+                        _activeElement?.type == ElementType.ellipse ||
+                        _activeElement?.type == ElementType.line) {
+                      _showShapePropertyDialog();
+                    } else {
+                      _showTextPropertyDialog();
+                    }
+                  }
+                },
+              ),
+            ),
+          ),
 
-          // // 图层弹框
-          // _buildLayerDialog(),
+          // 图层弹框\
+          if (_showLayerDialog) _buildLayerDialog(),
         ],
       ),
     );
@@ -732,7 +738,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     SmartDialog.show(
       builder: (context) => CanvalsShapeDialog(
         onShapeSelected: (shapeType) {
-          _canvasKey.currentState?.addShape(shapeType);
+          addShape(shapeType);
           SmartDialog.dismiss();
         },
       ),
@@ -842,7 +848,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       top: ScreenTools.statusBarHeight + 51.w,
       child: Center(
         child: CanvasControlWidget(
-          scale: _canvasScale,
+          scale: _canvalsModel.scale,
           onFitScreen: () {
             _canvasStatusManager.reset(); // 适应屏幕：重置画布变换
           },
@@ -859,10 +865,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
 
   /// 构建图层弹框
   Widget _buildLayerDialog() {
-    if (!_showLayerDialog) {
-      return const SizedBox.shrink();
-    }
-
     return Positioned(
       left: 16.w,
       bottom: 72.w + ScreenTools.bottomBarHeight, // 底部工具栏高度 + 10像素间距
@@ -931,5 +933,71 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
         },
       ),
     );
+  }
+
+  void addShape(ShapeType shapeType) {
+    ElementType elementType;
+    String shapeName;
+    double boxWidth = 150.w;
+    double boxHeight = 150.w;
+
+    switch (shapeType) {
+      case ShapeType.rectangle:
+        elementType = ElementType.rectangle;
+        shapeName = '矩形';
+        break;
+      case ShapeType.ellipse:
+        elementType = ElementType.ellipse;
+        shapeName = '椭圆';
+        boxWidth = 150.w;
+        boxHeight = 87.w;
+        break;
+      case ShapeType.line:
+        elementType = ElementType.line;
+        shapeName = '线条';
+        boxWidth = 216.w;
+        boxHeight = 20.w;
+        break;
+    }
+
+    final newId = _canvalsController.generateId();
+
+    // 获取画布容器的实际尺寸（逻辑画布尺寸，不受 Matrix4 的缩放/平移影响）
+    final RenderBox? renderBox =
+        _canvasKey.currentState?.context.findRenderObject() as RenderBox?;
+    double canvasWidth = ScreenTools.screenWidth;
+    double canvasHeight =
+        ScreenTools.screenHeight -
+        ScreenTools.statusBarHeight -
+        ScreenTools.bottomBarHeight -
+        117.w;
+
+    if (renderBox != null) {
+      canvasWidth = renderBox.size.width;
+      canvasHeight = renderBox.size.height;
+    }
+
+    // ✅ 计算“画布几何中心”的左上角 position
+    final centerX = (canvasWidth - boxWidth) / 2;
+    final centerY = (canvasHeight - boxHeight) / 2;
+
+    final newElement = CanvasElement(
+      id: newId,
+      text: shapeName,
+      position: Offset(centerX, centerY), // 左上角以几何中心为基准
+      type: elementType,
+      width: boxWidth,
+      height: boxHeight,
+    );
+
+    setState(() {
+      _canvasKey.currentState?.boxes.add(newElement);
+    });
+
+    _historyManager.executeCommand(
+      AddElementCommand(_canvasKey.currentState?.boxes ?? [], newElement),
+    );
+
+    _canvalsController.select(newId);
   }
 }

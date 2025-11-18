@@ -228,7 +228,7 @@ class CanvasGestureManager {
     currentInteraction = 'scale';
     lastScale = _computeScale();
 
-    selectedBox.cumulativeScale = 1.0;
+    selectedBox.scale = 1.0;
 
     // 始终重新计算缩放中心点（基于当前文本框的中心）
     final totalWidth = selectedBox.width;
@@ -245,7 +245,7 @@ class CanvasGestureManager {
     }
 
     // 保存操作开始时的状态
-    _operationStartCumulativeScale = selectedBox.cumulativeScale;
+    _operationStartCumulativeScale = selectedBox.scale;
     _operationStartWidth = selectedBox.width;
     _operationStartHeight = selectedBox.height;
     _operationStartPosition = Offset(
@@ -366,8 +366,8 @@ class CanvasGestureManager {
       return false;
     }
 
-    selectedBox.cumulativeScale *= scale;
-    selectedBox.cumulativeScale = selectedBox.cumulativeScale.clamp(0.1, 10.0);
+    selectedBox.scale *= scale;
+    selectedBox.scale = selectedBox.scale.clamp(0.1, 10.0);
 
     lastScale = currentScale;
     hasMoved = true;
@@ -382,13 +382,14 @@ class CanvasGestureManager {
         minHeight = minTextSize.height;
       }
 
-      final newWidth = (selectedBox.initialWidth * selectedBox.cumulativeScale)
-          .clamp(minWidth, double.infinity);
-      final newHeight =
-          (selectedBox.initialHeight * selectedBox.cumulativeScale).clamp(
-            minHeight,
-            double.infinity,
-          );
+      final newWidth = (selectedBox.initialWidth * selectedBox.scale).clamp(
+        minWidth,
+        double.infinity,
+      );
+      final newHeight = (selectedBox.initialHeight * selectedBox.scale).clamp(
+        minHeight,
+        double.infinity,
+      );
 
       // 计算新的外层容器总尺寸（包含边框）
       final totalNewWidth = newWidth;
@@ -406,11 +407,8 @@ class CanvasGestureManager {
 
       // 如果是文本类型，同时缩放字体大小
       if (selectedBox.type == ElementType.text) {
-        selectedBox.fontSize =
-            (selectedBox.initialFontSize * selectedBox.cumulativeScale).clamp(
-              minFontSize,
-              double.infinity,
-            );
+        selectedBox.fontSize = (selectedBox.initialFontSize * selectedBox.scale)
+            .clamp(minFontSize, double.infinity);
       }
       // 移除频繁的调试打印，提升性能
 
@@ -565,8 +563,7 @@ class CanvasGestureManager {
                 _operationStartWidth != null &&
                 _operationStartHeight != null &&
                 _operationStartPosition != null &&
-                (_operationStartCumulativeScale !=
-                        selectedBox.cumulativeScale ||
+                (_operationStartCumulativeScale != selectedBox.scale ||
                     _operationStartWidth != selectedBox.width ||
                     _operationStartHeight != selectedBox.height ||
                     _operationStartPosition!.dx != currentPosition.dx ||
@@ -576,7 +573,7 @@ class CanvasGestureManager {
                   boxes: boxes,
                   elementId: selectedId,
                   oldCumulativeScale: _operationStartCumulativeScale!,
-                  newCumulativeScale: selectedBox.cumulativeScale,
+                  newCumulativeScale: selectedBox.scale,
                   oldWidth: _operationStartWidth!,
                   oldHeight: _operationStartHeight!,
                   oldPosition: _operationStartPosition!,

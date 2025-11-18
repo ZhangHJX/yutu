@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 enum ElementType { image, rectangle, ellipse, line, text }
 
@@ -6,7 +7,6 @@ class CanvasElement {
   String id;
   ElementType type;
   Matrix4 transform;
-  Offset position;
   double width;
   double height;
 
@@ -46,21 +46,11 @@ class CanvasElement {
   double borderWidth;
   double borderAlpha;
 
-  /// local rect centered at origin
-  Rect get localRect =>
-      Rect.fromCenter(center: Offset.zero, width: width, height: height);
-
-  /// local corners around origin (center-based)
-  List<Offset> get localCorners => [
-    Offset(-width / 2, -height / 2),
-    Offset(width / 2, -height / 2),
-    Offset(width / 2, height / 2),
-    Offset(-width / 2, height / 2),
-  ];
-
   // Pointer 相关属性
+  Offset position;
   double rotation; // 旋转角度
-  double cumulativeScale; // 累积缩放比例
+  double scale; // 放比例
+
   Offset? fixedScaleCenter; // 固定的缩放中心点
   double initialWidth; // 初始宽度（用于缩放计算）
   double initialHeight; // 初始高度（用于缩放计算）
@@ -122,7 +112,7 @@ class CanvasElement {
 
     // Pointer 相关属性的默认值
     this.rotation = 0.0,
-    this.cumulativeScale = 1.0,
+    this.scale = 1.0,
     this.fixedScaleCenter,
     double? initialWidth,
     double? initialHeight,
@@ -147,4 +137,32 @@ class CanvasElement {
        resizeStartLineHeight = resizeStartLineHeight ?? lineHeight,
        resizeStartFontSpace = resizeStartFontSpace ?? fontSpace,
        resizeAspectRatio = resizeAspectRatio ?? (width / height);
+
+  /// 用当前 position / rotation / scale 更新 Matrix4
+  void updateMatrix4() {
+    // position 为元素左上角；这里构造一个围绕元素中心的变换矩阵
+    final cx = position.dx + width / 2;
+    final cy = position.dy + height / 2;
+    transform = Matrix4.identity()
+      // 1) 平移到元素中心
+      ..translateByVector3(Vector3(cx, cy, 0))
+      // 2) 旋转（围绕中心）
+      ..rotateZ(rotation)
+      // 3) 缩放（围绕中心）
+      ..scaleByVector3(Vector3(scale, scale, 1))
+      // 4) 把原点移回左上角
+      ..translateByVector3(Vector3(-width / 2, -height / 2, 0));
+  }
+
+  /// 元素本地坐标系下的矩形（以左上角为原点）
+  Rect get localRect => Rect.fromLTWH(0, 0, width, height);
+
+  /// 元素本地坐标系下的四个顶点（以左上角为原点）
+  /// 顺序：TL, TR, BR, BL
+  List<Offset> get localCorners => [
+    const Offset(0, 0),
+    Offset(width, 0),
+    Offset(width, height),
+    Offset(0, height),
+  ];
 }

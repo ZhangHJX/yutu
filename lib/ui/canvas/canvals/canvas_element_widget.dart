@@ -10,14 +10,17 @@ class CanvasElementWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      left: data.position.dx,
-      top: data.position.dy,
+    data.updateMatrix4();
+    return Transform(
+      transform: data.transform,
+      // Matrix 已经把原点移到了元素左上角，这里用 topLeft 避免再次做居中偏移
+      alignment: Alignment.topLeft,
       child: SizedBox(
         // 外层容器始终包含边框空间
         width: data.width,
         height: data.height,
-        child: data.hidden ? _buildContent() : null,
+        // hidden=true 表示不可见
+        child: data.hidden ? null : _buildContent(),
       ),
     );
   }

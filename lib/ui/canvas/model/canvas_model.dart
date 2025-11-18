@@ -33,7 +33,7 @@ class CanvasModel {
 
   /// 根据视口偏移和缩放更新画布变换
   /// 注意：这里是“设值”，不是在原有矩阵上叠加，否则每一帧都会累乘，导致拖动/缩放越来越失控。
-  void applyViewportTransform(Offset offset, double scale) {
+  void updateMatrix4(Offset offset, double scale) {
     transform = Matrix4.identity()
       ..translateByVector3(Vector3(offset.dx, offset.dy, 0))
       ..scaleByVector3(Vector3(scale, scale, 1));
