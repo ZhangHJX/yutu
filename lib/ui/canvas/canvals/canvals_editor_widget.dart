@@ -15,8 +15,14 @@ import '../model/index.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
+  final dynamic canvasStatusManager; // CanvasStatusManager 实例
 
-  const CanvasEditorWidget({super.key, this.historyManager});
+  const CanvasEditorWidget({
+    super.key,
+    this.historyManager,
+    this.canvasStatusManager,
+  });
+
   @override
   State<CanvasEditorWidget> createState() => CanvasEditorWidgetState();
 }
@@ -187,14 +193,29 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       finalHeight = textSize.height;
     }
 
-    // 计算子组件在画布中心的位置
-    final centerX = (canvasWidth - finalWidth) / 2;
-    final centerY = (canvasHeight - finalHeight) / 2;
+    // 获取屏幕中心在画布坐标中的位置（考虑平移和缩放）
+    final Offset elementPos;
+    if (widget.canvasStatusManager != null) {
+      // 使用 CanvasStatusManager 进行坐标转换
+      // 注意：CanvasStatusManager 的矩阵应该与外部的 _canvalsModel.transform 保持同步
+      final canvasCenter = widget.canvasStatusManager!
+          .getScreenCenterInCanvas(Size(canvasWidth, canvasHeight));
+      // 计算元素左上角位置（相对于元素中心）
+      elementPos = canvasCenter - Offset(finalWidth / 2, finalHeight / 2);
+      debugPrint('[addBox] canvasCenter: $canvasCenter');
+      debugPrint('[addBox] elementPos: $elementPos');
+    } else {
+      // 回退方案：如果没有 statusManager，使用屏幕坐标计算
+      final centerX = (canvasWidth - finalWidth) / 2;
+      final centerY = (canvasHeight - finalHeight) / 2;
+      elementPos = Offset(centerX, centerY);
+      debugPrint('[addBox] 使用回退方案，elementPos: $elementPos');
+    }
 
     final newElement = CanvasElement(
       id: newId,
       text: type == ElementType.text ? text : '',
-      position: Offset(centerX, centerY),
+      position: elementPos,
       type: type,
       imagePath: type == ElementType.image ? imagePath : '',
       width: finalWidth,

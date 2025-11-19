@@ -52,6 +52,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   // 画布手势管理器
   final _canvasStatusManager = CanvasStatusManager();
 
+  bool _matrixInitialized = false;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +61,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     _canvasStatusManager.onMatrixChanged = (matrix, scale, offset) {
       if (!mounted) return;
       setState(() {
+        // _canvalsModel.transform = matrix.clone();
         _canvalsModel.updateMatrix4(matrix, scale, offset);
       });
     };
@@ -445,15 +448,9 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                     ScreenTools.statusBarHeight -
                     ScreenTools.bottomBarHeight -
                     117.w,
-                color: cfff6f2fb,
+                color: Colors.red,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    // 使用工具函数转换画布尺寸
-                    final displaySize = _canvalsModel.getCanvalsSize(
-                      constraints.maxWidth,
-                      constraints.maxHeight,
-                    );
-
                     // 设置画布尺寸到手势管理器
                     // WidgetsBinding.instance.addPostFrameCallback((_) {
                     //   _canvasKey.currentState?.setCanvasSize(
@@ -461,34 +458,49 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                     //   );
                     // });
 
+                    // 只在第一次初始化
+                    if (!_matrixInitialized) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _canvasStatusManager.initMatrixForWidget(
+                          Size(_canvalsModel.width, _canvalsModel.height),
+                          Size(
+                            ScreenTools.screenWidth,
+                            ScreenTools.screenHeight -
+                                ScreenTools.statusBarHeight -
+                                ScreenTools.bottomBarHeight -
+                                117.w,
+                          ),
+                          // Size(constraints.maxWidth, constraints.maxHeight),
+                        );
+                        _matrixInitialized = true;
+                      });
+                    }
+
                     return Screenshot(
                       controller: _screenshotController,
-                      child: Center(
-                        child: Transform(
-                          transform: _canvalsModel.transform,
-                          alignment: Alignment.topLeft,
-                          child: Container(
-                            key: _canvasContainerKey,
-                            decoration: BoxDecoration(
-                              color: _canvalsModel.fillColor.color.withValues(
-                                alpha: _canvalsModel.fillAlpha,
-                              ),
-                              border: Border.all(
-                                color: _canvalsModel.borderColor.color
-                                    .withValues(
-                                      alpha: _canvalsModel.borderWidth > 0
-                                          ? _canvalsModel.borderAlpha
-                                          : 0.0,
-                                    ),
-                                width: _canvalsModel.borderWidth,
-                              ),
+                      child: Transform(
+                        transform: _canvalsModel.transform,
+                        alignment: Alignment.topLeft,
+                        child: Container(
+                          key: _canvasContainerKey,
+                          decoration: BoxDecoration(
+                            color: _canvalsModel.fillColor.color.withValues(
+                              alpha: _canvalsModel.fillAlpha,
                             ),
-                            width: displaySize.width,
-                            height: displaySize.height,
-                            child: CanvasEditorWidget(
-                              key: _canvasKey,
-                              historyManager: _historyManager,
+                            border: Border.all(
+                              color: _canvalsModel.borderColor.color.withValues(
+                                alpha: _canvalsModel.borderWidth > 0
+                                    ? _canvalsModel.borderAlpha
+                                    : 0.0,
+                              ),
+                              width: _canvalsModel.borderWidth,
                             ),
+                          ),
+                          width: _canvalsModel.width,
+                          height: _canvalsModel.height,
+                          child: CanvasEditorWidget(
+                            key: _canvasKey,
+                            historyManager: _historyManager,
                           ),
                         ),
                       ),

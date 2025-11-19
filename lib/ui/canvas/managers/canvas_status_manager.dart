@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart';
 import '../model/index.dart';
@@ -101,17 +103,24 @@ class CanvasStatusManager {
     final nowDistance = _getDistance();
     if (nowDistance == 0) return false;
 
-    // 计算缩放比例
-    final scaleDelta = nowDistance / _scaleStartDistance!;
-    final currentScale = _getScale();
-    final newScale = (currentScale * scaleDelta).clamp(minScale, maxScale);
-    final trueScale = newScale / currentScale;
-
     // 获取当前双指中心（屏幕坐标）
     final focalScreen = _getFocalPoint();
 
+    // 计算缩放比例（本次缩放的增量）
+    final scaleDelta = nowDistance / _scaleStartDistance!;
+    final currentScale = _getScale();
+    final newScale = (currentScale * scaleDelta).clamp(minScale, maxScale);
+
+    // 计算真实的缩放倍数（可能被限制）
+    final trueScale = newScale / currentScale;
+
+    // 如果缩放倍数太小，跳过
+    if ((trueScale - 1.0).abs() < 0.001) {
+      return false;
+    }
+
     // 构建缩放矩阵：以画布坐标中的基准点为中心进行缩放
-    // 变换顺序：T(focal) * S(scale) * T(-focal) * M
+    // 变换顺序：T(focal) * S(scale) * T(-focal)
     final scaleTransform = Matrix4.identity()
       ..translateByVector3(
         Vector3(_scaleStartFocalPoint!.dx, _scaleStartFocalPoint!.dy, 0),
@@ -134,9 +143,19 @@ class CanvasStatusManager {
     final compensation =
         focalScreen - Offset(scaledFocalScreen.x, scaledFocalScreen.y);
 
-    // 添加补偿平移
-    matrix.translateByVector3(Vector3(compensation.dx, compensation.dy, 0));
+    // 限制补偿范围，避免浮点误差导致的大幅跳跃
+    final maxCompensation = 30.0; // 最大补偿 30 像素
+    final clampedCompensation = Offset(
+      compensation.dx.clamp(-maxCompensation, maxCompensation),
+      compensation.dy.clamp(-maxCompensation, maxCompensation),
+    );
 
+    // 添加补偿平移
+    matrix.translateByVector3(
+      Vector3(clampedCompensation.dx, clampedCompensation.dy, 0),
+    );
+
+    // 更新起始距离为当前距离
     _scaleStartDistance = nowDistance;
     return true;
   }
@@ -233,5 +252,62 @@ extension CanvasStatusManagerMinx on CanvasStatusManager {
   Offset getOffset() {
     final translation = matrix.getTranslation();
     return Offset(translation.x, translation.y);
+  }
+
+  // ====================== 坐标转换方法 ======================
+
+  /// 获取屏幕中心在画布坐标中的位置（考虑平移和缩放）
+  /// 返回：屏幕中心对应的画布坐标
+  /// 使用场景：添加元素到画布中心时调用
+  /// 注意：参数 screenSize 应该是 CanvasEditorWidget 容器的尺寸
+  /// 示例：
+  /// ```dart
+  /// Offset canvasCenter = _canvasStatusManager.getScreenCenterInCanvas(screenSize);
+  /// ```
+  Offset getScreenCenterInCanvas(Size screenSize) {
+    // screenSize.width / 2 和 screenSize.height / 2 是容器中心在容器本地坐标系中的位置
+    // 这已经是相对于 CanvasEditorWidget 的坐标了
+    final screenCenter = Offset(screenSize.width / 2, screenSize.height / 2);
+    // 使用矩阵的逆变换，将屏幕坐标转换为原始画布坐标
+    return MatrixUtilsX.screenToCanvas(screenCenter, matrix);
+  }
+
+  /// 屏幕坐标转换为画布坐标
+  /// 参数：screenPos - 屏幕坐标
+  /// 返回：对应的画布坐标
+  Offset screenToCanvas(Offset screenPos) {
+    return MatrixUtilsX.screenToCanvas(screenPos, matrix);
+  }
+
+  // ------------------------------
+  // 初始化画布矩阵（按逻辑尺寸居中显示）
+  // ------------------------------
+  void initMatrixForWidget(Size canvasSize, Size constraintsSize) {
+    final scaleW = constraintsSize.width / canvasSize.width;
+    final scaleH = constraintsSize.height / canvasSize.height;
+    final double scale = math.min(scaleW, scaleH);
+
+    final double displayWidth = canvasSize.width * scale;
+    final double displayHeight = canvasSize.height * scale;
+    final double offsetX = (constraintsSize.width - displayWidth) / 2.0;
+    final double offsetY = (constraintsSize.height - displayHeight) / 2.0;
+
+    matrix = Matrix4.identity()
+      ..scaleByVector3(
+        Vector3(
+          displayWidth / constraintsSize.width,
+          displayHeight / constraintsSize.height,
+          1,
+        ),
+      )
+      ..translateByVector3(
+        Vector3(
+          offsetX / (displayWidth / constraintsSize.width),
+          offsetY / (displayHeight / constraintsSize.height),
+          0,
+        ),
+      );
+
+    onMatrixChanged?.call(matrix, scale, Offset(offsetX, offsetY));
   }
 }
