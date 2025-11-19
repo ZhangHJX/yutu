@@ -3,7 +3,6 @@ import 'dart:ui' as ui;
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../controllers/canvals_controller.dart';
-import '../widgets/dialog/canvals_shape_dialog.dart';
 import 'canvas_element_widget.dart';
 import '../managers/canvas_gesture_manager.dart';
 import '../managers/gesture_manager_utils.dart';

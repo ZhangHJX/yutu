@@ -134,8 +134,7 @@ class TransformCanvas extends StatelessWidget {
     final bl = corners[3];
     final bottomCenter = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
 
-    // 向外偏移 rotationButtonPadding
-    final direction = (bottomCenter - corners[0]).direction; // 简单取一条向下的方向也可以
+    // 向外偏移 rotationButtonPadding（这里简单按垂直方向偏移）
     final buttonCenter =
         bottomCenter +
         Offset(0, rotationButtonPadding + rotationButtonSize / 2);
@@ -155,7 +154,9 @@ class TransformCanvas extends StatelessWidget {
   }
 
   List<Offset> _worldCorners(CanvasElement e) {
-    // 确保使用最新的元素变换矩阵
+    // 确保每次使用最新的元素变换矩阵
+    // 新增元素（例如通过 addShape）时，外部可能还没有调用 updateMatrix4，
+    // 会导致编辑框位置和内容不一致，这里统一刷新一次。
     e.updateMatrix4();
     // TransformCanvas 在画布内部，所以 canvasMatrix 可以先用 identity
     return MatrixUtilsX.worldCorners(e, Matrix4.identity());

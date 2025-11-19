@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'canvas_element.dart';
-import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 class CanvasModel {
   Matrix4 transform = Matrix4.identity();
@@ -33,11 +32,8 @@ class CanvasModel {
 
   /// 根据视口偏移和缩放更新画布变换
   /// 注意：这里是“设值”，不是在原有矩阵上叠加，否则每一帧都会累乘，导致拖动/缩放越来越失控。
-  void updateMatrix4(Offset offset, double scale) {
-    transform = Matrix4.identity()
-      ..translateByVector3(Vector3(offset.dx, offset.dy, 0))
-      ..scaleByVector3(Vector3(scale, scale, 1));
-
+  void updateMatrix4(Matrix4 matrix, double scale, Offset offset) {
+    transform = matrix;
     this.offset = offset;
     this.scale = scale;
   }

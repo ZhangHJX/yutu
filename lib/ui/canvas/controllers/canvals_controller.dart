@@ -1,13 +1,13 @@
 import 'package:common/common.dart';
 import 'package:uuid/uuid.dart';
 import '../utils/handle_select_images.dart';
-import 'package:vector_math/vector_math_64.dart';
-import 'package:flutter/material.dart';
 
 /// 全局选择状态管理控制器
 /// 负责管理当前选中的文本框ID，确保只有一个文本框处于选中状态
 class CanvalsController extends GetxController {
   final selectImageHelper = SelectImageHelper(maxCount: 1);
+
+  String? activeHitElementId; // 当前这次手势命中的元素
 
   //激活卡片
   final RxBool _showToolbar = false.obs;
@@ -110,63 +110,5 @@ class CanvalsController extends GetxController {
   /// 清除删除标记
   void clearDeleteFlag() {
     _shouldDelete.value = false;
-  }
-
-  // 画布相关
-  final scale = 1.0.obs;
-  final offset = Offset.zero.obs;
-
-  // --- 手势基线 ---
-  double startScale = 1;
-  Offset startOffset = Offset.zero;
-
-  Matrix4 get matrix => Matrix4.identity()
-    ..translateByVector3(Vector3(offset.value.dx, offset.value.dy, 0))
-    ..scaleByVector3(Vector3(scale.value, scale.value, scale.value));
-
-  void onScaleStart() {
-    startScale = scale.value;
-    startOffset = offset.value;
-  }
-
-  void onScale(double scaleDelta, Offset focal) {
-    final newScale = startScale * scaleDelta;
-    scale.value = newScale;
-
-    // 保持焦点
-    final Matrix4 invOld = Matrix4.inverted(matrix);
-    final focalOld = _transform(invOld, focal);
-
-    final Matrix4 newMatrix = Matrix4.identity()
-      ..translateByVector3(Vector3(offset.value.dx, offset.value.dy, 0))
-      ..scaleByVector3(Vector3(scale.value, scale.value, scale.value));
-
-    final Matrix4 invNew = Matrix4.inverted(newMatrix);
-    final focalNew = _transform(invNew, focal);
-
-    offset.value += (focalNew - focalOld);
-  }
-
-  void onPan(Offset delta) {
-    offset.value += delta;
-  }
-
-  Offset _transform(Matrix4 m, Offset p) {
-    final v = m.transform3(Vector3(p.dx, p.dy, 0));
-    return Offset(v.x, v.y);
-  }
-
-  // ============================================================
-  // 逻辑坐标（画布坐标）转换
-  // ============================================================
-
-  Offset screenToCanvas(Offset screenPoint) {
-    final inv = Matrix4.inverted(matrix);
-    return _transform(inv, screenPoint);
-  }
-
-  Offset canvasToScreen(Offset canvasPoint) {
-    final v = matrix.transform3(Vector3(canvasPoint.dx, canvasPoint.dy, 0));
-    return Offset(v.x, v.y);
   }
 }

@@ -56,10 +56,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   void initState() {
     super.initState();
     // 监听画布变换变化（统一写回 CanvasModel）
-    _canvasStatusManager.onTransformChanged = (offset, scale) {
+    _canvasStatusManager.onMatrixChanged = (matrix, scale, offset) {
       if (!mounted) return;
       setState(() {
-        _canvalsModel.updateMatrix4(offset, scale);
+        _canvalsModel.updateMatrix4(matrix, scale, offset);
       });
     };
   }
@@ -388,22 +388,48 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
             top: ScreenTools.statusBarHeight + 51.w,
             child: Listener(
               onPointerDown: (event) {
-                if (_canvalsController.selectedId.isNotEmpty) {
+                final localPos = _canvasLocal(event.position); // 已转成画布坐标
+                final hitId = _canvasKey.currentState?.detectHitElement(
+                  localPos,
+                );
+                if (_canvalsController.selectedId.isNotEmpty || hitId != null) {
+                  _canvalsController.activeHitElementId = hitId;
+                  _canvasKey.currentState?.handlePointerDown(
+                    PointerDownEvent(
+                      position: localPos,
+                      pointer: event.pointer,
+                    ),
+                  );
                 } else {
                   _canvasStatusManager.handlePointerDown(event);
                 }
               },
               onPointerMove: (event) {
-                if (_canvalsController.selectedId.isNotEmpty) {
+                if (_canvalsController.selectedId.isNotEmpty ||
+                    _canvalsController.activeHitElementId != null) {
+                  final localPos = _canvasLocal(event.position);
+                  _canvasKey.currentState?.handlePointerMove(
+                    PointerMoveEvent(
+                      position: localPos,
+                      pointer: event.pointer,
+                      delta: event.delta,
+                    ),
+                  );
                 } else {
                   _canvasStatusManager.handlePointerMove(event);
                 }
               },
               onPointerUp: (event) {
-                if (_canvalsController.selectedId.isNotEmpty) {
+                if (_canvalsController.selectedId.isNotEmpty ||
+                    _canvalsController.activeHitElementId != null) {
+                  final localPos = _canvasLocal(event.position);
+                  _canvasKey.currentState?.handlePointerUp(
+                    PointerUpEvent(position: localPos, pointer: event.pointer),
+                  );
                 } else {
                   _canvasStatusManager.handlePointerUp(event);
                 }
+                _canvalsController.activeHitElementId = null;
               },
               onPointerCancel: (event) {
                 if (_canvalsController.selectedId.isNotEmpty) {
@@ -437,10 +463,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
 
                     return Screenshot(
                       controller: _screenshotController,
-                      child: Transform(
-                        transform: _canvalsModel.transform,
-                        alignment: Alignment.center,
-                        child: Center(
+                      child: Center(
+                        child: Transform(
+                          transform: _canvalsModel.transform,
+                          alignment: Alignment.topLeft,
                           child: Container(
                             key: _canvasContainerKey,
                             decoration: BoxDecoration(
@@ -752,6 +778,69 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     );
   }
 
+  void addShape(ShapeType shapeType) {
+    ElementType elementType;
+    String shapeName;
+    double boxWidth = 150.w;
+    double boxHeight = 150.w;
+
+    switch (shapeType) {
+      case ShapeType.rectangle:
+        elementType = ElementType.rectangle;
+        shapeName = '矩形';
+        break;
+      case ShapeType.ellipse:
+        elementType = ElementType.ellipse;
+        shapeName = '椭圆';
+        boxWidth = 150.w;
+        boxHeight = 87.w;
+        break;
+      case ShapeType.line:
+        elementType = ElementType.line;
+        shapeName = '线条';
+        boxWidth = 216.w;
+        boxHeight = 20.w;
+        break;
+    }
+
+    final newId = _canvalsController.generateId();
+
+    // 画布在屏幕上的可见区域尺寸（RenderBox 或 canvas widget size）
+    final RenderBox box =
+        _canvasKey.currentContext!.findRenderObject() as RenderBox;
+    final Size size = box.size;
+
+    final Offset screenCenter = Offset(size.width / 2, size.height / 2);
+
+    // screen → canvas（使用逆矩阵）
+    final Offset canvasCenter = MatrixUtilsX.screenToCanvas(
+      screenCenter,
+      _canvasStatusManager.matrix,
+    );
+
+    // 元素左上角
+    final Offset pos = canvasCenter - Offset(boxWidth / 2, boxHeight / 2);
+
+    final newElement = CanvasElement(
+      id: newId,
+      text: shapeName,
+      position: pos,
+      type: elementType,
+      width: boxWidth,
+      height: boxHeight,
+    );
+
+    setState(() {
+      _canvasKey.currentState?.boxes.add(newElement);
+    });
+
+    _historyManager.executeCommand(
+      AddElementCommand(_canvasKey.currentState?.boxes ?? [], newElement),
+    );
+
+    _canvalsController.select(newId);
+  }
+
   /// 显示文本输入对话框
   void _showTextInputDialog() {
     _toggleLayerDialog(false);
@@ -850,13 +939,13 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
         child: CanvasControlWidget(
           scale: _canvalsModel.scale,
           onFitScreen: () {
-            _canvasStatusManager.reset(); // 适应屏幕：重置画布变换
+            _canvasStatusManager.resetMatrix(); // 适应屏幕：重置画布变换
           },
           onZoomIn: () {
-            _canvasStatusManager.zoomIn(); // 放大画布
+            // _canvasStatusManager.zoomIn(); // 放大画布
           },
           onZoomOut: () {
-            _canvasStatusManager.zoomOut(); // 缩小画布
+            // _canvasStatusManager.zoomOut(); // 缩小画布
           },
         ),
       ),
@@ -935,69 +1024,21 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     );
   }
 
-  void addShape(ShapeType shapeType) {
-    ElementType elementType;
-    String shapeName;
-    double boxWidth = 150.w;
-    double boxHeight = 150.w;
+  /// 将全局坐标（PointerEvent.position）转换为画布逻辑坐标
+  Offset _canvasLocal(Offset globalPosition) {
+    // 1. 先把 global -> 画布容器局部（即 Transform 那层 Container 的坐标系）
+    final RenderBox? canvasBox =
+        _canvasContainerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (canvasBox == null) return globalPosition;
 
-    switch (shapeType) {
-      case ShapeType.rectangle:
-        elementType = ElementType.rectangle;
-        shapeName = '矩形';
-        break;
-      case ShapeType.ellipse:
-        elementType = ElementType.ellipse;
-        shapeName = '椭圆';
-        boxWidth = 150.w;
-        boxHeight = 87.w;
-        break;
-      case ShapeType.line:
-        elementType = ElementType.line;
-        shapeName = '线条';
-        boxWidth = 216.w;
-        boxHeight = 20.w;
-        break;
-    }
+    final Offset localInCanvasWidget = canvasBox.globalToLocal(globalPosition);
 
-    final newId = _canvalsController.generateId();
+    // 2. 再用画布 Matrix4 的逆，把“视图坐标”还原成“画布逻辑坐标”
+    //    相当于 screenToCanvas（你可以直接用 MatrixUtilsX.screenToCanvas）
+    final Matrix4 inv = Matrix4.inverted(_canvalsModel.transform);
+    final v = Vector3(localInCanvasWidget.dx, localInCanvasWidget.dy, 0);
+    final r = inv.transform3(v);
 
-    // 获取画布容器的实际尺寸（逻辑画布尺寸，不受 Matrix4 的缩放/平移影响）
-    final RenderBox? renderBox =
-        _canvasKey.currentState?.context.findRenderObject() as RenderBox?;
-    double canvasWidth = ScreenTools.screenWidth;
-    double canvasHeight =
-        ScreenTools.screenHeight -
-        ScreenTools.statusBarHeight -
-        ScreenTools.bottomBarHeight -
-        117.w;
-
-    if (renderBox != null) {
-      canvasWidth = renderBox.size.width;
-      canvasHeight = renderBox.size.height;
-    }
-
-    // ✅ 计算“画布几何中心”的左上角 position
-    final centerX = (canvasWidth - boxWidth) / 2;
-    final centerY = (canvasHeight - boxHeight) / 2;
-
-    final newElement = CanvasElement(
-      id: newId,
-      text: shapeName,
-      position: Offset(centerX, centerY), // 左上角以几何中心为基准
-      type: elementType,
-      width: boxWidth,
-      height: boxHeight,
-    );
-
-    setState(() {
-      _canvasKey.currentState?.boxes.add(newElement);
-    });
-
-    _historyManager.executeCommand(
-      AddElementCommand(_canvasKey.currentState?.boxes ?? [], newElement),
-    );
-
-    _canvalsController.select(newId);
+    return Offset(r.x, r.y);
   }
 }
