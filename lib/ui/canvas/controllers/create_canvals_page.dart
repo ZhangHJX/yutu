@@ -134,12 +134,14 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
           ? result["normalH"].toDouble()
           : result["hdH"].toDouble();
       CanvasModel canvalsModel = CanvasModel(width: width, height: height);
+      canvalsModel.getMatrix4();
       _onCancel();
       Get.toNamed(AppRoutes.createCanvalsPage, arguments: canvalsModel);
     } else {
       double width = double.parse(_widthController.text);
       double height = double.parse(_heightController.text);
       CanvasModel canvalsModel = CanvasModel(width: width, height: height);
+      canvalsModel.getMatrix4();
       _onCancel();
       Get.toNamed(AppRoutes.createCanvalsPage, arguments: canvalsModel);
     }

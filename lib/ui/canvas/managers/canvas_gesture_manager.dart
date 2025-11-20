@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../utils/text_measure_util.dart';
-import 'dart:math' as math;
 import 'canvas_history_manager.dart';
 import 'gesture_manager_utils.dart';
 import '../model/index.dart';
+import 'dart:math' as math;
 
 /// 画布手势管理器： 负责处理所有的手势交互逻辑
 class CanvasGestureManager {
@@ -79,7 +79,7 @@ class CanvasGestureManager {
 
     isTapBox = false;
 
-    bool isCanvasl = GestureManagerUtils.isPointInCanvas(
+    bool isCanvasl = MatrixUtilsXGesture.isPointInCanvas(
       event.localPosition,
       canvasSize,
     );
@@ -88,7 +88,7 @@ class CanvasGestureManager {
       CanvasElement selectedBox = boxes.firstWhere(
         (box) => box.id == selectedId,
       );
-      final hitTarget = GestureManagerUtils.detectHitTarget(
+      final hitTarget = MatrixUtilsXGesture.detectHitTarget(
         event.localPosition,
         selectedBox,
       );
@@ -195,7 +195,7 @@ class CanvasGestureManager {
         // 跳过已选中的元素（已经在上面处理过了）
         if (box.id == selectedId) continue;
 
-        final hitTarget = GestureManagerUtils.detectHitTarget(
+        final hitTarget = MatrixUtilsXGesture.detectHitTarget(
           event.localPosition,
           box,
         );
@@ -455,7 +455,7 @@ class CanvasGestureManager {
     if (currentInteraction == 'pending_drag_or_tap' && !hasMoved) {
       if (pendingClickBoxId != null && pendingClickBoxId == selectedId) {
         final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-        bool isCanvals = GestureManagerUtils.isPointInCanvas(
+        bool isCanvals = MatrixUtilsXGesture.isPointInCanvas(
           event.localPosition,
           canvasSize,
         );

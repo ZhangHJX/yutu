@@ -21,7 +21,7 @@ import '../managers/canvas_status_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../utils/index.dart';
 import '../model/index.dart';
-import '../managers/canvas_transform_clipper.dart';
+import 'transform_canvas.dart';
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -378,6 +378,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   @override
   Widget build(BuildContext context) {
     _canvalsModel = Get.arguments as CanvasModel;
+    _canvasStatusManager.matrix = _canvalsModel.transform;
 
     return Scaffold(
       resizeToAvoidBottomInset: false, // 防止键盘弹出时底部工具栏上移
@@ -395,7 +396,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                   final localPos = MatrixUtilsX.canvasLocal(
                     event.position,
                     _canvasContainerKey,
-                  ); // 已转成画布坐标
+                  );
                   _canvasKey.currentState?.handlePointerDown(
                     PointerDownEvent(
                       position: localPos,
@@ -424,7 +425,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                 }
               },
               onPointerUp: (event) {
-                debugPrint("-----onPointerUp-----");
                 final localPos = MatrixUtilsX.canvasLocal(
                   event.position,
                   _canvasContainerKey,
@@ -481,39 +481,67 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                         constraints.maxHeight,
                       );
 
+                      final canvasContent = ClipRect(
+                        child: SizedBox(
+                          width: canvasSize.width,
+                          height: canvasSize.height,
+                          child: Container(
+                            key: _canvasContainerKey,
+                            decoration: BoxDecoration(
+                              color: _canvalsModel.fillColor.color.withValues(
+                                alpha: _canvalsModel.fillAlpha,
+                              ),
+                              border: Border.all(
+                                color: _canvalsModel.borderColor.color
+                                    .withValues(
+                                      alpha: _canvalsModel.borderWidth > 0
+                                          ? _canvalsModel.borderAlpha
+                                          : 0.0,
+                                    ),
+                                width: _canvalsModel.borderWidth,
+                              ),
+                            ),
+                            child: CanvasEditorWidget(
+                              key: _canvasKey,
+                              historyManager: _historyManager,
+                              canvasModel: _canvalsModel,
+                              canvasSize: canvasSize,
+                              onContentChanged: () {
+                                if (mounted) {
+                                  setState(() {});
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+
+                      final transformedCanvas = Transform(
+                        transform: _canvalsModel.transform,
+                        alignment: Alignment.topLeft,
+                        child: canvasContent,
+                      );
+
+                      final boxes = _canvasKey.currentState?.boxesList ?? [];
+
                       return Screenshot(
                         controller: _screenshotController,
-                        child: Transform(
-                          transform: _canvalsModel.transform,
-                          alignment: Alignment.topLeft,
-                          child: Center(
-                            child: SizedBox(
-                              width: canvasSize.width,
-                              height: canvasSize.height,
-                              child: Container(
-                                key: _canvasContainerKey,
-                                decoration: BoxDecoration(
-                                  color: _canvalsModel.fillColor.color
-                                      .withValues(
-                                        alpha: _canvalsModel.fillAlpha,
-                                      ),
-                                  border: Border.all(
-                                    color: _canvalsModel.borderColor.color
-                                        .withValues(
-                                          alpha: _canvalsModel.borderWidth > 0
-                                              ? _canvalsModel.borderAlpha
-                                              : 0.0,
-                                        ),
-                                    width: _canvalsModel.borderWidth,
+                        child: Center(
+                          child: SizedBox(
+                            width: constraints.maxWidth,
+                            height: constraints.maxHeight,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                transformedCanvas,
+                                Obx(
+                                  () => TransformCanvas(
+                                    elements: boxes,
+                                    selectedId: _canvalsController.selectedId,
+                                    canvasMatrix: _canvalsModel.transform,
                                   ),
                                 ),
-                                child: CanvasEditorWidget(
-                                  key: _canvasKey,
-                                  historyManager: _historyManager,
-                                  canvasModel: _canvalsModel,
-                                  canvasSize: canvasSize,
-                                ),
-                              ),
+                              ],
                             ),
                           ),
                         ),
@@ -902,7 +930,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
         child: CanvasControlWidget(
           scale: _canvalsModel.scale,
           onFitScreen: () {
-            _canvasStatusManager.resetMatrix(); // 适应屏幕：重置画布变换
+            _canvasStatusManager.resetMatrix(_canvalsModel); // 适应屏幕：重置画布变换
           },
           onZoomIn: () {
             // _canvasStatusManager.zoomIn(); // 放大画布

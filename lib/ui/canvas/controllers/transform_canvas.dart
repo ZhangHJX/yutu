@@ -1,31 +1,33 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import '../model/index.dart';
 
 /// TransformCanvas 组件：用于在外层渲染控制框，将控制框从元素内部提取出来，避免受元素 Transform 影响
 class TransformCanvas extends StatelessWidget {
-  final double canvasScale;
+  final vm.Matrix4 canvasMatrix;
   final List<CanvasElement> elements;
   final String? selectedId;
-  final Widget child; // 内容层
 
   const TransformCanvas({
     super.key,
+    required this.canvasMatrix,
     required this.elements,
     this.selectedId,
-    this.canvasScale = 1.0,
-    required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    bool isSelected = (selectedId != null && selectedId!.isNotEmpty);
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        child, // 内容层
-        if (isSelected) ..._buildControlLayer(), // 控制框层（在最上层）
-      ],
+    final hasSelection = selectedId != null && selectedId!.isNotEmpty;
+    if (!hasSelection || elements.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return IgnorePointer(
+      ignoring: true,
+      child: SizedBox.expand(
+        child: Stack(clipBehavior: Clip.none, children: _buildControlLayer()),
+      ),
     );
   }
 
@@ -68,11 +70,9 @@ class TransformCanvas extends StatelessWidget {
     final width = maxX - minX;
     final height = maxY - minY;
 
-    final borderWidth = editBorderWidth / canvasScale;
-
     return Positioned(
-      left: minX - borderWidth,
-      top: minY - borderWidth,
+      left: minX - editBorderWidth,
+      top: minY - editBorderWidth,
       child: Container(
         width: width + editBorderWidth * 2,
         height: height + editBorderWidth * 2,
@@ -106,22 +106,20 @@ class TransformCanvas extends StatelessWidget {
 
     final handles = _getControlHandlesForType(element.type, element);
 
-    final circleSize = editHitCircleSize / canvasScale;
-
     return handles.map((handleKey) {
       final position = centers[handleKey];
       if (position == null) return const SizedBox.shrink();
 
       return Positioned(
-        left: position.dx - circleSize / 2,
-        top: position.dy - circleSize / 2,
+        left: position.dx - editHitCircleSize / 2,
+        top: position.dy - editHitCircleSize / 2,
         child: Container(
-          width: circleSize,
-          height: circleSize,
+          width: editHitCircleSize,
+          height: editHitCircleSize,
           alignment: Alignment.center,
           child: Container(
-            width: 22 / canvasScale,
-            height: 22 / canvasScale,
+            width: 22,
+            height: 22,
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
@@ -142,19 +140,17 @@ class TransformCanvas extends StatelessWidget {
 
     // 向外偏移 rotationButtonPadding（这里简单按垂直方向偏移）
 
-    final buttonSize = rotationButtonSize / canvasScale;
-
     final buttonCenter =
         bottomCenter +
-        Offset(0, rotationButtonPadding / canvasScale + buttonSize / 2);
+        Offset(0, rotationButtonPadding + rotationButtonSize / 2);
 
     return Positioned(
-      left: buttonCenter.dx - buttonSize / 2,
-      top: buttonCenter.dy - buttonSize / 2,
+      left: buttonCenter.dx - rotationButtonSize / 2,
+      top: buttonCenter.dy - rotationButtonSize / 2,
       child: Image.asset(
         'assets/images/canvals/edit_rotation_icon.png',
-        width: buttonSize,
-        height: buttonSize,
+        width: rotationButtonSize,
+        height: rotationButtonSize,
         fit: BoxFit.contain,
         // 确保图片不旋转
         alignment: Alignment.center,
@@ -168,7 +164,7 @@ class TransformCanvas extends StatelessWidget {
     // 会导致编辑框位置和内容不一致，这里统一刷新一次。
     e.updateMatrix4();
     // TransformCanvas 在画布内部，所以 canvasMatrix 可以先用 identity
-    return MatrixUtilsX.worldCorners(e, Matrix4.identity());
+    return MatrixUtilsX.worldCorners(e, canvasMatrix);
   }
 
   /// 根据元素类型获取需要显示的控制点

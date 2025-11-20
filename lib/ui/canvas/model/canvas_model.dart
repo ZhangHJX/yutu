@@ -1,11 +1,13 @@
+import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'canvas_element.dart';
 import 'package:vector_math/vector_math_64.dart';
+import 'dart:math' as math;
 
 class CanvasModel {
   double scale;
-  Offset offset;
-  Matrix4 transform;
+  Offset offset = Offset.zero;
+  Matrix4 transform = Matrix4.identity();
   double width;
   double height;
 
@@ -30,11 +32,7 @@ class CanvasModel {
     this.locked = true,
     this.isSelected = false,
     this.scale = 1.0,
-    this.offset = Offset.zero,
-    Matrix4? transform,
-  }) : transform = transform ?? Matrix4.identity()
-         ..scaleByVector3(Vector3(scale, scale, 1))
-         ..translateByVector3(Vector3(offset.dx, offset.dy, 0));
+  });
 
   /// 根据视口偏移和缩放更新画布变换
   /// 注意：这里是“设值”，不是在原有矩阵上叠加，否则每一帧都会累乘，导致拖动/缩放越来越失控。
@@ -46,23 +44,32 @@ class CanvasModel {
 
   /// 画布尺寸转换工具类
   Size getCanvalsSize(double availableWidth, double availableHeight) {
-    // 计算画布宽高比
-    final canvasRatio = width / height;
-    final availableRatio = availableWidth / availableHeight;
+    final scaleW = availableWidth / width;
+    final scaleH = availableHeight / height;
+    final double minScale = math.min(scaleW, scaleH);
+    return Size(width * minScale, height * minScale);
+  }
 
-    double displayWidth;
-    double displayHeight;
+  void getMatrix4() {
+    final containerHeight =
+        ScreenTools.screenHeight -
+        ScreenTools.statusBarHeight -
+        ScreenTools.bottomBarHeight -
+        117.w;
+    final containerWidth = ScreenTools.screenWidth;
+    final scaleW = containerWidth / width;
+    final scaleH = containerHeight / height;
+    final double minScale = math.min(scaleW, scaleH);
 
-    if (canvasRatio > availableRatio) {
-      // 画布更宽，以宽度为基准充满
-      displayWidth = availableWidth;
-      displayHeight = availableWidth / canvasRatio;
-    } else {
-      // 画布更高，以高度为基准充满
-      displayHeight = availableHeight;
-      displayWidth = availableHeight * (width / height);
-    }
+    final double displayWidth = width * minScale;
+    final double displayHeight = height * minScale;
+    final double offsetX = (containerWidth - displayWidth) / 2.0;
+    final double offsetY = (containerHeight - displayHeight) / 2.0;
 
-    return Size(displayWidth, displayHeight);
+    offset = Offset(offsetX, offsetY);
+
+    transform = Matrix4.identity()
+      ..scaleByVector3(Vector3(scale, scale, 1))
+      ..translateByVector3(Vector3(offsetX, offsetY, 0));
   }
 }

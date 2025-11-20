@@ -1,8 +1,8 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart';
+import 'package:common/common.dart';
 import '../model/index.dart';
+import 'dart:math' as math;
 
 /// 画布状态管理器：处理平移和缩放手势
 class CanvasStatusManager {
@@ -198,10 +198,29 @@ extension CanvasStatusManagerMinx on CanvasStatusManager {
   /// ```dart
   /// _canvasStatusManager.resetMatrix();
   /// ```
-  void resetMatrix() {
-    matrix = Matrix4.identity();
+  void resetMatrix(CanvasModel model) {
+    final containerHeight =
+        ScreenTools.screenHeight -
+        ScreenTools.statusBarHeight -
+        ScreenTools.bottomBarHeight -
+        117.w;
+    final containerWidth = ScreenTools.screenWidth;
+
+    final scaleW = containerWidth / model.width;
+    final scaleH = containerHeight / model.height;
+    final double minScale = math.min(scaleW, scaleH);
+
+    final double displayWidth = model.width * minScale;
+    final double displayHeight = model.height * minScale;
+    final double offsetX = (containerWidth - displayWidth) / 2.0;
+    final double offsetY = (containerHeight - displayHeight) / 2.0;
+
+    matrix = Matrix4.identity()
+      ..scaleByVector3(Vector3(1.0, 1.0, 1))
+      ..translateByVector3(Vector3(offsetX, offsetY, 0));
+
     _reset();
-    onMatrixChanged?.call(matrix.clone(), _getScale(), Offset.zero);
+    onMatrixChanged?.call(matrix.clone(), 1.0, Offset(offsetX, offsetY));
   }
 
   /// 恢复到指定的矩阵状态
@@ -252,5 +271,22 @@ extension CanvasStatusManagerMinx on CanvasStatusManager {
   Offset getOffset() {
     final translation = matrix.getTranslation();
     return Offset(translation.x, translation.y);
+  }
+
+  void updateModelMatrix4(Size canvasSize, Size constraintsSize, double scale) {
+    final scaleW = constraintsSize.width / canvasSize.width;
+    final scaleH = constraintsSize.height / canvasSize.height;
+    final double minScale = math.min(scaleW, scaleH);
+
+    final double displayWidth = canvasSize.width * minScale;
+    final double displayHeight = canvasSize.height * minScale;
+    final double offsetX = (constraintsSize.width - displayWidth) / 2.0;
+    final double offsetY = (constraintsSize.height - displayHeight) / 2.0;
+
+    Matrix4 matrix = Matrix4.identity()
+      ..scaleByVector3(Vector3(scale, scale, 1))
+      ..translateByVector3(Vector3(offsetX, offsetY, 0));
+
+    onMatrixChanged?.call(matrix, scale, Offset(offsetX, offsetY));
   }
 }

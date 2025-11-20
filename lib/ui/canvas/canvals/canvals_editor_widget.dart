@@ -8,22 +8,22 @@ import '../managers/canvas_gesture_manager.dart';
 import '../managers/gesture_manager_utils.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../utils/text_measure_util.dart';
-import 'transform_canvas.dart';
 import '../managers/canvas_history_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../model/index.dart';
-import '../managers/canvas_transform_clipper.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
   final CanvasModel? canvasModel;
   final Size canvasSize;
+  final VoidCallback? onContentChanged;
 
   const CanvasEditorWidget({
     super.key,
     this.historyManager,
     this.canvasModel,
     this.canvasSize = Size.zero,
+    this.onContentChanged,
   });
 
   @override
@@ -39,6 +39,12 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   final List<CanvasElement> boxes = []; // 画布元素的数组
   List<CanvasElement> get boxesList => boxes; // 暴露 boxes 列表供外部访问（用于历史记录）
   List<CanvasElement> get layers => List.from(boxes); // 获取图层列表（按显示顺序，最上面的在最后）
+  @override
+  void setState(VoidCallback fn) {
+    if (!mounted) return;
+    super.setState(fn);
+    widget.onContentChanged?.call();
+  }
 
   @override
   void initState() {
@@ -389,7 +395,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     // 遍历所有元素，从后向前（因为后面的元素在最上层）
     for (int i = boxes.length - 1; i >= 0; i--) {
       final box = boxes[i];
-      final hitTarget = GestureManagerUtils.detectHitTarget(position, box);
+      final hitTarget = MatrixUtilsXGesture.detectHitTarget(position, box);
       if (hitTarget != null) {
         return box.id;
       }
@@ -473,30 +479,24 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         });
       }
 
-      // 移除 Listener，直接返回 TransformCanvas
-      return TransformCanvas(
-        elements: boxes,
-        selectedId: _selectionController.selectedId,
-        canvasScale: widget.canvasModel?.scale ?? 1.0,
-        child: Stack(
-          children: [
-            // 未选中的元素（先渲染，在底层）
-            ...boxes
-                .where((box) => !_selectionController.isSelected(box.id))
-                .map(
-                  (box) =>
-                      CanvasElementWidget(key: ValueKey(box.id), data: box),
-                ),
+      // 仅负责渲染内容层，裁剪和控制层在外部处理
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // 未选中的元素（先渲染，在底层）
+          ...boxes
+              .where((box) => !_selectionController.isSelected(box.id))
+              .map(
+                (box) => CanvasElementWidget(key: ValueKey(box.id), data: box),
+              ),
 
-            // 选中的元素（后渲染，在最上层）
-            ...boxes
-                .where((box) => _selectionController.isSelected(box.id))
-                .map(
-                  (box) =>
-                      CanvasElementWidget(key: ValueKey(box.id), data: box),
-                ),
-          ],
-        ),
+          // 选中的元素（后渲染，在最上层）
+          ...boxes
+              .where((box) => _selectionController.isSelected(box.id))
+              .map(
+                (box) => CanvasElementWidget(key: ValueKey(box.id), data: box),
+              ),
+        ],
       );
     });
   }
