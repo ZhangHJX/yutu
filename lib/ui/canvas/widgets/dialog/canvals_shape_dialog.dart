@@ -1,10 +1,11 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import '../../model/index.dart';
 
 enum ShapeType { rectangle, ellipse, line }
 
 class CanvalsShapeDialog extends StatefulWidget {
-  final Function(ShapeType) onShapeSelected;
+  final Function(ElementType) onShapeSelected;
   const CanvalsShapeDialog({super.key, required this.onShapeSelected});
   @override
   State<CanvalsShapeDialog> createState() => _CanvalsShapeDialogState();
@@ -71,9 +72,9 @@ class _CanvalsShapeDialogState extends State<CanvalsShapeDialog> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildShapeButton(label: '矩形', shapeType: ShapeType.rectangle),
-                _buildShapeButton(label: '椭圆', shapeType: ShapeType.ellipse),
-                _buildShapeButton(label: '线条', shapeType: ShapeType.line),
+                _buildShapeButton(label: '矩形', type: ElementType.rectangle),
+                _buildShapeButton(label: '椭圆', type: ElementType.ellipse),
+                _buildShapeButton(label: '线条', type: ElementType.line),
               ],
             ),
           ),
@@ -85,13 +86,10 @@ class _CanvalsShapeDialogState extends State<CanvalsShapeDialog> {
     );
   }
 
-  Widget _buildShapeButton({
-    required String label,
-    required ShapeType shapeType,
-  }) {
+  Widget _buildShapeButton({required String label, required ElementType type}) {
     return GestureDetector(
       onTap: () {
-        widget.onShapeSelected(shapeType);
+        widget.onShapeSelected(type);
         SmartDialog.dismiss();
       },
       child: Container(
@@ -105,7 +103,7 @@ class _CanvalsShapeDialogState extends State<CanvalsShapeDialog> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            if (shapeType == ShapeType.rectangle)
+            if (type == ElementType.rectangle)
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: '#FF2E2E2E'.color, width: 2.w),
@@ -115,7 +113,7 @@ class _CanvalsShapeDialogState extends State<CanvalsShapeDialog> {
                 width: 33.w,
               ),
 
-            if (shapeType == ShapeType.ellipse)
+            if (type == ElementType.ellipse)
               Padding(
                 padding: EdgeInsets.only(bottom: 6.w),
                 child: Container(
@@ -134,7 +132,7 @@ class _CanvalsShapeDialogState extends State<CanvalsShapeDialog> {
                 ),
               ),
 
-            if (shapeType == ShapeType.line)
+            if (type == ElementType.line)
               Padding(
                 padding: EdgeInsets.only(bottom: 15.w),
                 child: Container(

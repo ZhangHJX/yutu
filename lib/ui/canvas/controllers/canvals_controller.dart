@@ -1,13 +1,15 @@
 import 'package:common/common.dart';
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../utils/handle_select_images.dart';
 
 /// 全局选择状态管理控制器
 /// 负责管理当前选中的文本框ID，确保只有一个文本框处于选中状态
 class CanvalsController extends GetxController {
-  final selectImageHelper = SelectImageHelper(maxCount: 1);
+  // 画布点击
+  PointerEvent? currentPoint;
 
-  String? activeHitElementId; // 当前这次手势命中的元素
+  final selectImageHelper = SelectImageHelper(maxCount: 1);
 
   //激活卡片
   final RxBool _showToolbar = false.obs;

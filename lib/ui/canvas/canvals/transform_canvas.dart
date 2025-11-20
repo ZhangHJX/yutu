@@ -4,6 +4,7 @@ import '../model/index.dart';
 
 /// TransformCanvas 组件：用于在外层渲染控制框，将控制框从元素内部提取出来，避免受元素 Transform 影响
 class TransformCanvas extends StatelessWidget {
+  final double canvasScale;
   final List<CanvasElement> elements;
   final String? selectedId;
   final Widget child; // 内容层
@@ -12,6 +13,7 @@ class TransformCanvas extends StatelessWidget {
     super.key,
     required this.elements,
     this.selectedId,
+    this.canvasScale = 1.0,
     required this.child,
   });
 
@@ -66,9 +68,11 @@ class TransformCanvas extends StatelessWidget {
     final width = maxX - minX;
     final height = maxY - minY;
 
+    final borderWidth = editBorderWidth / canvasScale;
+
     return Positioned(
-      left: minX - editBorderWidth,
-      top: minY - editBorderWidth,
+      left: minX - borderWidth,
+      top: minY - borderWidth,
       child: Container(
         width: width + editBorderWidth * 2,
         height: height + editBorderWidth * 2,
@@ -102,20 +106,22 @@ class TransformCanvas extends StatelessWidget {
 
     final handles = _getControlHandlesForType(element.type, element);
 
+    final circleSize = editHitCircleSize / canvasScale;
+
     return handles.map((handleKey) {
       final position = centers[handleKey];
       if (position == null) return const SizedBox.shrink();
 
       return Positioned(
-        left: position.dx - editHitCircleSize / 2,
-        top: position.dy - editHitCircleSize / 2,
+        left: position.dx - circleSize / 2,
+        top: position.dy - circleSize / 2,
         child: Container(
-          width: editHitCircleSize,
-          height: editHitCircleSize,
+          width: circleSize,
+          height: circleSize,
           alignment: Alignment.center,
           child: Container(
-            width: 22,
-            height: 22,
+            width: 22 / canvasScale,
+            height: 22 / canvasScale,
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
@@ -135,17 +141,20 @@ class TransformCanvas extends StatelessWidget {
     final bottomCenter = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
 
     // 向外偏移 rotationButtonPadding（这里简单按垂直方向偏移）
+
+    final buttonSize = rotationButtonSize / canvasScale;
+
     final buttonCenter =
         bottomCenter +
-        Offset(0, rotationButtonPadding + rotationButtonSize / 2);
+        Offset(0, rotationButtonPadding / canvasScale + buttonSize / 2);
 
     return Positioned(
-      left: buttonCenter.dx - rotationButtonSize / 2,
-      top: buttonCenter.dy - rotationButtonSize / 2,
+      left: buttonCenter.dx - buttonSize / 2,
+      top: buttonCenter.dy - buttonSize / 2,
       child: Image.asset(
         'assets/images/canvals/edit_rotation_icon.png',
-        width: rotationButtonSize,
-        height: rotationButtonSize,
+        width: buttonSize,
+        height: buttonSize,
         fit: BoxFit.contain,
         // 确保图片不旋转
         alignment: Alignment.center,

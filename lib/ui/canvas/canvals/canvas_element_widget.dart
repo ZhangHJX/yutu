@@ -13,13 +13,11 @@ class CanvasElementWidget extends StatelessWidget {
     data.updateMatrix4();
     return Transform(
       transform: data.transform,
-      // Matrix 已经把原点移到了元素左上角，这里用 topLeft 避免再次做居中偏移
-      alignment: Alignment.topLeft,
+      alignment:
+          Alignment.topLeft, // Matrix 已经把原点移到了元素左上角，这里用 topLeft 避免再次做居中偏移
       child: SizedBox(
-        // 外层容器始终包含边框空间
         width: data.width,
         height: data.height,
-        // hidden=true 表示不可见
         child: data.hidden ? null : _buildContent(),
       ),
     );

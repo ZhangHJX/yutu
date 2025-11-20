@@ -21,7 +21,6 @@ import '../managers/canvas_status_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../utils/index.dart';
 import '../model/index.dart';
-import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -51,8 +50,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   CanvasElement? _lastPropertySnapshot;
   // 画布手势管理器
   final _canvasStatusManager = CanvasStatusManager();
-
-  bool _matrixInitialized = false;
 
   @override
   void initState() {
@@ -391,12 +388,13 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
             top: ScreenTools.statusBarHeight + 51.w,
             child: Listener(
               onPointerDown: (event) {
-                final localPos = _canvasLocal(event.position); // 已转成画布坐标
-                final hitId = _canvasKey.currentState?.detectHitElement(
-                  localPos,
-                );
-                if (_canvalsController.selectedId.isNotEmpty || hitId != null) {
-                  _canvalsController.activeHitElementId = hitId;
+                _canvalsController.currentPoint = event;
+
+                if (_canvalsController.selectedId.isNotEmpty) {
+                  final localPos = MatrixUtilsX.canvasLocal(
+                    event.position,
+                    _canvasContainerKey,
+                  ); // 已转成画布坐标
                   _canvasKey.currentState?.handlePointerDown(
                     PointerDownEvent(
                       position: localPos,
@@ -408,9 +406,11 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                 }
               },
               onPointerMove: (event) {
-                if (_canvalsController.selectedId.isNotEmpty ||
-                    _canvalsController.activeHitElementId != null) {
-                  final localPos = _canvasLocal(event.position);
+                if (_canvalsController.selectedId.isNotEmpty) {
+                  final localPos = MatrixUtilsX.canvasLocal(
+                    event.position,
+                    _canvasContainerKey,
+                  );
                   _canvasKey.currentState?.handlePointerMove(
                     PointerMoveEvent(
                       position: localPos,
@@ -423,16 +423,18 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                 }
               },
               onPointerUp: (event) {
-                if (_canvalsController.selectedId.isNotEmpty ||
-                    _canvalsController.activeHitElementId != null) {
-                  final localPos = _canvasLocal(event.position);
+                debugPrint("-----onPointerUp-----");
+                final localPos = MatrixUtilsX.canvasLocal(
+                  event.position,
+                  _canvasContainerKey,
+                );
+                if (_canvalsController.selectedId.isNotEmpty) {
                   _canvasKey.currentState?.handlePointerUp(
                     PointerUpEvent(position: localPos, pointer: event.pointer),
                   );
                 } else {
                   _canvasStatusManager.handlePointerUp(event);
                 }
-                _canvalsController.activeHitElementId = null;
               },
               onPointerCancel: (event) {
                 if (_canvalsController.selectedId.isNotEmpty) {
@@ -440,72 +442,86 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                   _canvasStatusManager.handlePointerCancel(event);
                 }
               },
-              child: Container(
-                key: _containerKey,
-                width: ScreenTools.screenWidth,
-                height:
-                    ScreenTools.screenHeight -
-                    ScreenTools.statusBarHeight -
-                    ScreenTools.bottomBarHeight -
-                    117.w,
-                color: Colors.red,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    // 设置画布尺寸到手势管理器
-                    // WidgetsBinding.instance.addPostFrameCallback((_) {
-                    //   _canvasKey.currentState?.setCanvasSize(
-                    //     Size(displayWidth, displayHeight),
-                    //   );
-                    // });
+              child: GestureDetector(
+                onTap: () {
+                  final localPos = MatrixUtilsX.canvasLocal(
+                    _canvalsController.currentPoint!.position,
+                    _canvasContainerKey,
+                  );
+                  final hitId = _canvasKey.currentState?.detectHitElement(
+                    localPos,
+                  );
+                  if (hitId != null) {
+                    _canvalsController.isSelected(hitId)
+                        ? _canvalsController.deselect()
+                        : _canvalsController.select(hitId);
+                  }
+                },
+                child: Container(
+                  key: _containerKey,
+                  width: ScreenTools.screenWidth,
+                  height:
+                      ScreenTools.screenHeight -
+                      ScreenTools.statusBarHeight -
+                      ScreenTools.bottomBarHeight -
+                      117.w,
+                  color: cfff6f2fb,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // 设置画布尺寸到手势管理器
+                      // WidgetsBinding.instance.addPostFrameCallback((_) {
+                      //   _canvasKey.currentState?.setCanvasSize(
+                      //     Size(displayWidth, displayHeight),
+                      //   );
+                      // });
 
-                    // 只在第一次初始化
-                    if (!_matrixInitialized) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        _canvasStatusManager.initMatrixForWidget(
-                          Size(_canvalsModel.width, _canvalsModel.height),
-                          Size(
-                            ScreenTools.screenWidth,
-                            ScreenTools.screenHeight -
-                                ScreenTools.statusBarHeight -
-                                ScreenTools.bottomBarHeight -
-                                117.w,
-                          ),
-                          // Size(constraints.maxWidth, constraints.maxHeight),
-                        );
-                        _matrixInitialized = true;
-                      });
-                    }
+                      final canvasSize = _canvalsModel.getCanvalsSize(
+                        constraints.maxWidth,
+                        constraints.maxHeight,
+                      );
 
-                    return Screenshot(
-                      controller: _screenshotController,
-                      child: Transform(
-                        transform: _canvalsModel.transform,
-                        alignment: Alignment.topLeft,
-                        child: Container(
-                          key: _canvasContainerKey,
-                          decoration: BoxDecoration(
-                            color: _canvalsModel.fillColor.color.withValues(
-                              alpha: _canvalsModel.fillAlpha,
-                            ),
-                            border: Border.all(
-                              color: _canvalsModel.borderColor.color.withValues(
-                                alpha: _canvalsModel.borderWidth > 0
-                                    ? _canvalsModel.borderAlpha
-                                    : 0.0,
+                      return Screenshot(
+                        controller: _screenshotController,
+                        child: Transform(
+                          transform: _canvalsModel.transform,
+                          alignment: Alignment.topLeft,
+                          child: Container(
+                            color: Colors.blue,
+                            width: double.infinity,
+                            height: double.infinity,
+                            child: Center(
+                              child: Container(
+                                key: _canvasContainerKey,
+                                decoration: BoxDecoration(
+                                  color: _canvalsModel.fillColor.color
+                                      .withValues(
+                                        alpha: _canvalsModel.fillAlpha,
+                                      ),
+                                  border: Border.all(
+                                    color: _canvalsModel.borderColor.color
+                                        .withValues(
+                                          alpha: _canvalsModel.borderWidth > 0
+                                              ? _canvalsModel.borderAlpha
+                                              : 0.0,
+                                        ),
+                                    width: _canvalsModel.borderWidth,
+                                  ),
+                                ),
+                                width: canvasSize.width,
+                                height: canvasSize.height,
+                                child: CanvasEditorWidget(
+                                  key: _canvasKey,
+                                  historyManager: _historyManager,
+                                  canvasModel: _canvalsModel,
+                                  canvasSize: canvasSize,
+                                ),
                               ),
-                              width: _canvalsModel.borderWidth,
                             ),
-                          ),
-                          width: _canvalsModel.width,
-                          height: _canvalsModel.height,
-                          child: CanvasEditorWidget(
-                            key: _canvasKey,
-                            historyManager: _historyManager,
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -775,8 +791,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     _toggleLayerDialog(false);
     SmartDialog.show(
       builder: (context) => CanvalsShapeDialog(
-        onShapeSelected: (shapeType) {
-          addShape(shapeType);
+        onShapeSelected: (type) {
+          _canvasKey.currentState?.addShape(type);
           SmartDialog.dismiss();
         },
       ),
@@ -788,69 +804,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       useAnimation: true,
       usePenetrate: false,
     );
-  }
-
-  void addShape(ShapeType shapeType) {
-    ElementType elementType;
-    String shapeName;
-    double boxWidth = 150.w;
-    double boxHeight = 150.w;
-
-    switch (shapeType) {
-      case ShapeType.rectangle:
-        elementType = ElementType.rectangle;
-        shapeName = '矩形';
-        break;
-      case ShapeType.ellipse:
-        elementType = ElementType.ellipse;
-        shapeName = '椭圆';
-        boxWidth = 150.w;
-        boxHeight = 87.w;
-        break;
-      case ShapeType.line:
-        elementType = ElementType.line;
-        shapeName = '线条';
-        boxWidth = 216.w;
-        boxHeight = 20.w;
-        break;
-    }
-
-    final newId = _canvalsController.generateId();
-
-    // 画布在屏幕上的可见区域尺寸（RenderBox 或 canvas widget size）
-    final RenderBox box =
-        _canvasKey.currentContext!.findRenderObject() as RenderBox;
-    final Size size = box.size;
-
-    final Offset screenCenter = Offset(size.width / 2, size.height / 2);
-
-    // screen → canvas（使用逆矩阵）
-    final Offset canvasCenter = MatrixUtilsX.screenToCanvas(
-      screenCenter,
-      _canvasStatusManager.matrix,
-    );
-
-    // 元素左上角
-    final Offset pos = canvasCenter - Offset(boxWidth / 2, boxHeight / 2);
-
-    final newElement = CanvasElement(
-      id: newId,
-      text: shapeName,
-      position: pos,
-      type: elementType,
-      width: boxWidth,
-      height: boxHeight,
-    );
-
-    setState(() {
-      _canvasKey.currentState?.boxes.add(newElement);
-    });
-
-    _historyManager.executeCommand(
-      AddElementCommand(_canvasKey.currentState?.boxes ?? [], newElement),
-    );
-
-    _canvalsController.select(newId);
   }
 
   /// 显示文本输入对话框
@@ -1034,23 +987,5 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
         },
       ),
     );
-  }
-
-  /// 将全局坐标（PointerEvent.position）转换为画布逻辑坐标
-  Offset _canvasLocal(Offset globalPosition) {
-    // 1. 先把 global -> 画布容器局部（即 Transform 那层 Container 的坐标系）
-    final RenderBox? canvasBox =
-        _canvasContainerKey.currentContext?.findRenderObject() as RenderBox?;
-    if (canvasBox == null) return globalPosition;
-
-    final Offset localInCanvasWidget = canvasBox.globalToLocal(globalPosition);
-
-    // 2. 再用画布 Matrix4 的逆，把“视图坐标”还原成“画布逻辑坐标”
-    //    相当于 screenToCanvas（你可以直接用 MatrixUtilsX.screenToCanvas）
-    final Matrix4 inv = Matrix4.inverted(_canvalsModel.transform);
-    final v = Vector3(localInCanvasWidget.dx, localInCanvasWidget.dy, 0);
-    final r = inv.transform3(v);
-
-    return Offset(r.x, r.y);
   }
 }

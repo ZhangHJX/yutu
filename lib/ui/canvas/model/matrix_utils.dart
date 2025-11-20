@@ -42,4 +42,13 @@ class MatrixUtilsX {
     final v2 = canvasMatrix.transform3(Vector3(v.x, v.y, 0));
     return Offset(v2.x, v2.y);
   }
+
+  // 将事件转换为本地坐标
+  static Offset canvasLocal(Offset globalPosition, GlobalKey containerKey) {
+    final RenderBox? canvasBox =
+        containerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (canvasBox == null) return globalPosition;
+
+    return canvasBox.globalToLocal(globalPosition);
+  }
 }

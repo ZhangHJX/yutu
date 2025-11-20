@@ -12,15 +12,18 @@ import 'transform_canvas.dart';
 import '../managers/canvas_history_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../model/index.dart';
+import '../managers/canvas_transform_clipper.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
-  final dynamic canvasStatusManager; // CanvasStatusManager 实例
+  final CanvasModel? canvasModel;
+  final Size canvasSize;
 
   const CanvasEditorWidget({
     super.key,
     this.historyManager,
-    this.canvasStatusManager,
+    this.canvasModel,
+    this.canvasSize = Size.zero,
   });
 
   @override
@@ -30,6 +33,7 @@ class CanvasEditorWidget extends StatefulWidget {
 class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   late CanvalsController _selectionController;
   final _gestureManager = CanvasGestureManager(); // 画布手势管理
+
   CanvasHistoryManager? get historyManager => widget.historyManager; // 历史管理器
 
   final List<CanvasElement> boxes = []; // 画布元素的数组
@@ -140,6 +144,55 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     return Size(width, height);
   }
 
+  Future<void> addShape(ElementType type) async {
+    String shapeName = '';
+    double boxWidth = 150.w;
+    double boxHeight = 150.w;
+
+    if (type == ElementType.rectangle) {
+      shapeName = '矩形';
+    }
+
+    if (type == ElementType.ellipse) {
+      shapeName = '椭圆';
+      boxWidth = 150.w;
+      boxHeight = 87.w;
+    }
+
+    if (type == ElementType.line) {
+      shapeName = '线条';
+      boxWidth = 216.w;
+      boxHeight = 20.w;
+    }
+
+    final newId = _selectionController.generateId();
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    double canvasWidth = renderBox.size.width;
+    double canvasHeight = renderBox.size.height;
+
+    final centerX = (canvasWidth - boxWidth) / 2;
+    final centerY = (canvasHeight - boxHeight) / 2;
+    final Offset elementPos = Offset(centerX, centerY);
+
+    final newElement = CanvasElement(
+      id: newId,
+      text: shapeName,
+      position: elementPos,
+      type: type,
+      width: boxWidth,
+      height: boxHeight,
+    );
+
+    setState(() {
+      boxes.add(newElement);
+    });
+
+    if (historyManager != null) {
+      historyManager!.executeCommand(AddElementCommand(boxes, newElement));
+    }
+    _selectionController.select(newId);
+  }
+
   Future<void> addBox({
     required ElementType type,
     String imagePath = '',
@@ -148,19 +201,9 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     final newId = _selectionController.generateId();
 
     // 获取画布容器的实际尺寸
-    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-
-    double canvasWidth = ScreenTools.screenWidth; // 默认宽度
-    double canvasHeight =
-        ScreenTools.screenHeight -
-        ScreenTools.statusBarHeight -
-        ScreenTools.bottomBarHeight -
-        117.w; // 默认高度
-
-    if (renderBox != null) {
-      canvasWidth = renderBox.size.width;
-      canvasHeight = renderBox.size.height;
-    }
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    double canvasWidth = renderBox.size.width;
+    double canvasHeight = renderBox.size.height;
 
     // 根据类型确定宽高
     double finalWidth = 200.w; // 默认宽度
@@ -194,23 +237,9 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
 
     // 获取屏幕中心在画布坐标中的位置（考虑平移和缩放）
-    final Offset elementPos;
-    if (widget.canvasStatusManager != null) {
-      // 使用 CanvasStatusManager 进行坐标转换
-      // 注意：CanvasStatusManager 的矩阵应该与外部的 _canvalsModel.transform 保持同步
-      final canvasCenter = widget.canvasStatusManager!
-          .getScreenCenterInCanvas(Size(canvasWidth, canvasHeight));
-      // 计算元素左上角位置（相对于元素中心）
-      elementPos = canvasCenter - Offset(finalWidth / 2, finalHeight / 2);
-      debugPrint('[addBox] canvasCenter: $canvasCenter');
-      debugPrint('[addBox] elementPos: $elementPos');
-    } else {
-      // 回退方案：如果没有 statusManager，使用屏幕坐标计算
-      final centerX = (canvasWidth - finalWidth) / 2;
-      final centerY = (canvasHeight - finalHeight) / 2;
-      elementPos = Offset(centerX, centerY);
-      debugPrint('[addBox] 使用回退方案，elementPos: $elementPos');
-    }
+    final centerX = (canvasWidth - finalWidth) / 2;
+    final centerY = (canvasHeight - finalHeight) / 2;
+    final Offset elementPos = Offset(centerX, centerY);
 
     final newElement = CanvasElement(
       id: newId,
@@ -448,8 +477,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       return TransformCanvas(
         elements: boxes,
         selectedId: _selectionController.selectedId,
+        canvasScale: widget.canvasModel?.scale ?? 1.0,
         child: Stack(
-          clipBehavior: Clip.hardEdge,
           children: [
             // 未选中的元素（先渲染，在底层）
             ...boxes
