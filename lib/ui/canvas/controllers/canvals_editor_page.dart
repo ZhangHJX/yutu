@@ -21,6 +21,7 @@ import '../managers/canvas_status_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../utils/index.dart';
 import '../model/index.dart';
+import '../managers/canvas_transform_clipper.dart';
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -465,7 +466,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                       ScreenTools.statusBarHeight -
                       ScreenTools.bottomBarHeight -
                       117.w,
-                  color: cfff6f2fb,
+                  color: Colors.red,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       // 设置画布尺寸到手势管理器
@@ -485,11 +486,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                         child: Transform(
                           transform: _canvalsModel.transform,
                           alignment: Alignment.topLeft,
-                          child: Container(
-                            color: Colors.blue,
-                            width: double.infinity,
-                            height: double.infinity,
-                            child: Center(
+                          child: Center(
+                            child: SizedBox(
+                              width: canvasSize.width,
+                              height: canvasSize.height,
                               child: Container(
                                 key: _canvasContainerKey,
                                 decoration: BoxDecoration(
@@ -507,8 +507,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                                     width: _canvalsModel.borderWidth,
                                   ),
                                 ),
-                                width: canvasSize.width,
-                                height: canvasSize.height,
                                 child: CanvasEditorWidget(
                                   key: _canvasKey,
                                   historyManager: _historyManager,
