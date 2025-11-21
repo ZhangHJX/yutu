@@ -66,6 +66,14 @@ extension MatrixUtilsXGesture on MatrixUtilsX {
   ) {
     final localPos = MatrixUtilsX.canvasLocal(event.position, containerKey);
 
+    final isCanvals = MatrixUtilsXGesture.isPointInCanvas(
+      localPos,
+      canvalsSize,
+    );
+    if (!isCanvals) {
+      return null;
+    }
+
     // 遍历所有元素，从后向前（因为后面的元素在最上层）
     for (int i = boxes.length - 1; i >= 0; i--) {
       final box = boxes[i];
