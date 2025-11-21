@@ -141,13 +141,15 @@ class TransformCanvas extends StatelessWidget {
     return Positioned(
       left: buttonCenter.dx - rotationButtonSize / 2,
       top: buttonCenter.dy - rotationButtonSize / 2,
-      child: Image.asset(
-        'assets/images/canvals/edit_rotation_icon.png',
-        width: rotationButtonSize,
-        height: rotationButtonSize,
-        fit: BoxFit.contain,
-        // 确保图片不旋转
-        alignment: Alignment.center,
+      child: Transform.rotate(
+        angle: element.rotation,
+        child: Image.asset(
+          'assets/images/canvals/edit_rotation_icon.png',
+          width: rotationButtonSize,
+          height: rotationButtonSize,
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+        ),
       ),
     );
   }

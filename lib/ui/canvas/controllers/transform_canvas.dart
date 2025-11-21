@@ -67,8 +67,9 @@ class TransformCanvas extends StatelessWidget {
 
     final width = maxX - minX;
     final height = maxY - minY;
-    final relativeCorners =
-        corners.map((offset) => Offset(offset.dx - minX, offset.dy - minY));
+    final relativeCorners = corners.map(
+      (offset) => Offset(offset.dx - minX, offset.dy - minY),
+    );
 
     return Positioned(
       left: minX,
@@ -143,13 +144,16 @@ class TransformCanvas extends StatelessWidget {
     return Positioned(
       left: buttonCenter.dx - rotationButtonSize / 2,
       top: buttonCenter.dy - rotationButtonSize / 2,
-      child: Image.asset(
-        'assets/images/canvals/edit_rotation_icon.png',
-        width: rotationButtonSize,
-        height: rotationButtonSize,
-        fit: BoxFit.contain,
-        // 确保图片不旋转
-        alignment: Alignment.center,
+      child: Transform.rotate(
+        angle: element.rotation,
+        child: Image.asset(
+          'assets/images/canvals/edit_rotation_icon.png',
+          width: rotationButtonSize,
+          height: rotationButtonSize,
+          fit: BoxFit.contain,
+          // 确保图片不旋转
+          alignment: Alignment.center,
+        ),
       ),
     );
   }
@@ -168,10 +172,7 @@ class _RotatedBorderPainter extends CustomPainter {
   final List<Offset> corners;
   final double borderWidth;
 
-  _RotatedBorderPainter({
-    required this.corners,
-    required this.borderWidth,
-  });
+  _RotatedBorderPainter({required this.corners, required this.borderWidth});
 
   @override
   void paint(Canvas canvas, Size size) {
