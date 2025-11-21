@@ -261,8 +261,8 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                                   child: Center(
                                     child: Image.asset(
                                       layer.hidden
-                                          ? 'assets/images/canvals/canvals_layer_eye.png'
-                                          : 'assets/images/canvals/canvals_layer_uneye.png',
+                                          ? 'assets/images/canvals/canvals_layer_uneye.png'
+                                          : 'assets/images/canvals/canvals_layer_eye.png',
                                       width: 16.w,
                                       height: 16.w,
                                       fit: BoxFit.fill,

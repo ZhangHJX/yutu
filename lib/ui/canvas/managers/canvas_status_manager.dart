@@ -6,6 +6,23 @@ import 'dart:math' as math;
 
 /// 画布状态管理器：处理平移和缩放手势
 class CanvasStatusManager {
+  List<double> numberArray = [
+    0.25,
+    0.5,
+    0.8,
+    1,
+    1.2,
+    1.4,
+    1.6,
+    1.8,
+    2.0,
+    2.2,
+    2.4,
+    2.6,
+    2.8,
+    3,
+  ];
+
   Matrix4 matrix = Matrix4.identity();
   void Function(Matrix4 matrix, double scale, Offset offset)? onMatrixChanged;
 
@@ -185,6 +202,60 @@ class CanvasStatusManager {
     _panStartMatrix = null;
     _scaleStartDistance = null;
     _scaleStartFocalPoint = null;
+  }
+
+  /// 放大：跳到 numberArray 的下一档
+  void zoomIn(Size canvasSize) {
+    _jumpZoomOnCanvasCenter(canvasSize, enlarge: true);
+  }
+
+  /// 缩小：跳到 numberArray 的上一档
+  void zoomOut(Size canvasSize) {
+    _jumpZoomOnCanvasCenter(canvasSize, enlarge: false);
+  }
+
+  /// 内部缩放逻辑：以画布中心为缩放基准
+  void _jumpZoomOnCanvasCenter(Size canvasSize, {required bool enlarge}) {
+    final current = _getScale();
+
+    // 找下一档 / 上一档
+    double target = current;
+    if (enlarge) {
+      for (final v in numberArray) {
+        if (v > current) {
+          target = v;
+          break;
+        }
+      }
+    } else {
+      for (final v in numberArray.reversed) {
+        if (v < current) {
+          target = v;
+          break;
+        }
+      }
+    }
+
+    // 限制范围
+    target = target.clamp(minScale, maxScale);
+    if ((target - current).abs() < 0.001) return;
+
+    // 本次真实缩放倍数
+    final trueScale = target / current;
+
+    // 🎯 画布中心点（屏幕坐标）
+    final centerScreen = Offset(canvasSize.width / 2, canvasSize.height / 2);
+    // 🎯 转换为画布坐标（逆矩阵）
+    final centerCanvas = MatrixUtilsX.screenToCanvas(centerScreen, matrix);
+
+    // 计算新矩阵：围绕画布中心缩放
+    final newMatrix = matrix.clone()
+      ..translateByVector3(Vector3(centerCanvas.dx, centerCanvas.dy, 0))
+      ..scaleByVector3(Vector3(trueScale, trueScale, 1))
+      ..translateByVector3(Vector3(-centerCanvas.dx, -centerCanvas.dy, 0));
+
+    // 最终统一更新（回调 + 重置）
+    restoreMatrix(newMatrix);
   }
 }
 

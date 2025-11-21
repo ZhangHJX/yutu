@@ -927,10 +927,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
             _canvasStatusManager.resetMatrix(_canvalsModel); // 适应屏幕：重置画布变换
           },
           onZoomIn: () {
-            // _canvasStatusManager.zoomIn(); // 放大画布
+            _canvasStatusManager.zoomIn(_canvalsController.canvalsSize); // 放大画布
           },
           onZoomOut: () {
-            // _canvasStatusManager.zoomOut(); // 缩小画布
+            _canvasStatusManager.zoomOut(
+              _canvalsController.canvalsSize,
+            ); // 缩小画布
           },
         ),
       ),
