@@ -104,7 +104,10 @@ class TransformCanvas extends StatelessWidget {
       'left': Offset((bl.dx + tl.dx) / 2, (bl.dy + tl.dy) / 2),
     };
 
-    final handles = _getControlHandlesForType(element.type, element);
+    final handles = MatrixUtilsXGesture.controlHandlesForType(
+      element.type,
+      element,
+    );
 
     return handles.map((handleKey) {
       final position = centers[handleKey];
@@ -165,42 +168,5 @@ class TransformCanvas extends StatelessWidget {
     e.updateMatrix4();
     // TransformCanvas 在画布内部，所以 canvasMatrix 可以先用 identity
     return MatrixUtilsX.worldCorners(e, canvasMatrix);
-  }
-
-  /// 根据元素类型获取需要显示的控制点
-  List<String> _getControlHandlesForType(
-    ElementType type,
-    CanvasElement element,
-  ) {
-    switch (type) {
-      case ElementType.image:
-      case ElementType.rectangle:
-      case ElementType.ellipse:
-        return [
-          'top-left',
-          'top',
-          'top-right',
-          'right',
-          'bottom-right',
-          'bottom',
-          'bottom-left',
-          'left',
-        ];
-      case ElementType.text:
-        final totalHeight = element.height + editBorderWidth * 2;
-        if (totalHeight < 25.0) {
-          return ['bottom-right'];
-        }
-        return [
-          'top-left',
-          'top-right',
-          'right',
-          'bottom-right',
-          'bottom-left',
-          'left',
-        ];
-      case ElementType.line:
-        return ['left', 'top', 'right', 'bottom'];
-    }
   }
 }

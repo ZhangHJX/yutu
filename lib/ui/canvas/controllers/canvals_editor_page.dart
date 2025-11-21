@@ -450,7 +450,9 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                     _canvasContainerKey,
                     _canvasKey.currentState?.boxes ?? [],
                     _canvalsController.canvalsSize,
+                    _canvalsModel.transform,
                   );
+
                   if (hitId != null) {
                     _canvalsController.toggleSelection(hitId);
                   } else {
@@ -502,6 +504,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                                   setState(() {});
                                 }
                               },
+                              canvasMatrix: _canvalsModel.transform,
                             ),
                           ),
                         ),

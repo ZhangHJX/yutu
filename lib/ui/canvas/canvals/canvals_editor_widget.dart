@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:vector_math/vector_math_64.dart';
 import '../controllers/canvals_controller.dart';
 import 'canvas_element_widget.dart';
 import '../managers/canvas_gesture_manager.dart';
@@ -14,11 +15,13 @@ import '../model/index.dart';
 class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
   final VoidCallback? onContentChanged;
+  final Matrix4 canvasMatrix;
 
   const CanvasEditorWidget({
     super.key,
     this.historyManager,
     this.onContentChanged,
+    required this.canvasMatrix,
   });
 
   @override
@@ -380,6 +383,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   }
 
   void handlePointerDown(PointerDownEvent event) {
+    _gestureManager.updateCanvasMatrix(widget.canvasMatrix);
     _gestureManager.handlePointerDown(
       event,
       boxes,
@@ -390,6 +394,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
   // 处理指针移动事件（改为公有方法，供外部调用）
   void handlePointerMove(PointerMoveEvent event) {
+    _gestureManager.updateCanvasMatrix(widget.canvasMatrix);
     if (_gestureManager.handlePointerMove(
       event,
       boxes,
@@ -401,6 +406,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
   // 处理指针抬起事件（改为公有方法，供外部调用）
   void handlePointerUp(PointerUpEvent event) {
+    _gestureManager.updateCanvasMatrix(widget.canvasMatrix);
     _gestureManager.handlePointerUp(
       event,
       boxes,
@@ -421,6 +427,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
   // 处理指针取消事件（改为公有方法，供外部调用）
   void handlePointerCancel(PointerCancelEvent event) {
+    _gestureManager.updateCanvasMatrix(widget.canvasMatrix);
     _gestureManager.handlePointerCancel(event);
   }
 

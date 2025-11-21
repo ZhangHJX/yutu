@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vector_math/vector_math_64.dart';
 import '../utils/text_measure_util.dart';
 import 'canvas_history_manager.dart';
 import '../model/index.dart';
@@ -36,6 +37,12 @@ class CanvasGestureManager {
   static const double minFontSize = 5.0; // 最小字体大小
   static const double minBoxSize = 5.0; // 最小文本框尺寸（用于非文本类型或后备）
 
+  Matrix4 canvasMatrix = Matrix4.identity();
+
+  void updateCanvasMatrix(Matrix4 matrix) {
+    canvasMatrix = Matrix4.copy(matrix);
+  }
+
   /// 处理指针按下事件
   void handlePointerDown(
     PointerDownEvent event,
@@ -69,6 +76,7 @@ class CanvasGestureManager {
     final hitTarget = MatrixUtilsXGesture.detectHitTarget(
       event.position,
       selectedBox,
+      canvasMatrix,
     );
 
     debugPrint('✅ 哈哈哈哈哈哈哈---$hitTarget');
