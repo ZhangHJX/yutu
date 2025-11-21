@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:vector_math/vector_math_64.dart';
 import '../utils/text_measure_util.dart';
 import 'canvas_history_manager.dart';
 import '../model/index.dart';
@@ -51,9 +50,18 @@ class CanvasGestureManager {
     Function(String?) onSelect,
   ) {
     pointers[event.pointer] = event.localPosition;
+
     if (pointers.length == 1) {
+      // 单指按下：如果之前有残留状态，先清理
+      if (currentInteraction == 'scale') {
+        _resetDragState();
+        currentInteraction = null;
+        debugPrint('⚠️ 单指按下时检测到残留的缩放状态，已重置');
+      }
       _handleSinglePointerDown(event, boxes, selectedId, onSelect);
     } else if (pointers.length == 2) {
+      // 双指按下：清除拖动相关状态，准备进入缩放模式
+      _resetDragState();
       final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
       if (selectedBox.locked) {
         return;
@@ -69,8 +77,17 @@ class CanvasGestureManager {
     String selectedId,
     Function(String?) onSelect,
   ) {
+    // 如果之前是缩放状态，确保完全重置所有状态
+    if (currentInteraction == 'scale') {
+      _resetDragState();
+      currentInteraction = null;
+      debugPrint('⚠️ 单指按下时检测到残留的缩放状态，已重置');
+    }
+
+    // 重置拖动状态并设置新的起始位置
     hasMoved = false;
-    dragStartPosition = event.position;
+    dragStartPosition =
+        event.localPosition; // 使用 localPosition 而不是 position，保持一致性
 
     CanvasElement selectedBox = boxes.firstWhere((box) => box.id == selectedId);
     final hitTarget = MatrixUtilsXGesture.detectHitTarget(
@@ -191,10 +208,26 @@ class CanvasGestureManager {
     String selectedId,
   ) {
     pointers[event.pointer] = event.localPosition;
+
     if (pointers.length == 1) {
+      // 单指移动：如果之前是缩放状态，应该先重置状态
+      if (currentInteraction == 'scale') {
+        _resetDragState();
+        currentInteraction = null;
+        debugPrint('⚠️ 单指移动时检测到残留的缩放状态，已重置');
+        return false;
+      }
       return _handleSinglePointerMove(event, boxes, selectedId);
-    } else if (pointers.length == 2 && currentInteraction == 'scale') {
-      return _handleDoublePointerMove(boxes, selectedId);
+    } else if (pointers.length == 2) {
+      // 双指移动：只处理缩放状态
+      if (currentInteraction == 'scale') {
+        return _handleDoublePointerMove(boxes, selectedId);
+      } else {
+        // 如果双指移动但状态不是缩放，可能是从其他状态切换过来的，重置状态
+        debugPrint('⚠️ 双指移动但交互状态不是 scale: $currentInteraction');
+        _resetDragState();
+        return false;
+      }
     }
     return false;
   }
@@ -210,14 +243,29 @@ class CanvasGestureManager {
       return false;
     }
 
+    // 如果当前交互是缩放状态，不应该处理单指移动（防止从双指缩放切换到单指时误触发拖动）
+    if (currentInteraction == 'scale') {
+      return false;
+    }
+
     // 检测移动距离（仅对待定状态）
     if (currentInteraction == 'pending_drag_or_tap' &&
         dragStartPosition != null) {
+      // 确保 dragStartPosition 是有效的（使用 localPosition 进行比较）
       final delta = event.localPosition - dragStartPosition!;
       if (delta.distance > dragStartThreshold) {
-        hasMoved = true;
-        currentInteraction = 'drag';
-        debugPrint('✅ 移动超过阈值，从待定状态转为拖动');
+        // 只有在 dragStartBoxPosition 也存在时才允许转为拖动
+        if (dragStartBoxPosition != null) {
+          hasMoved = true;
+          currentInteraction = 'drag';
+          debugPrint('✅ 移动超过阈值，从待定状态转为拖动');
+        } else {
+          // 如果 dragStartBoxPosition 不存在，说明状态不一致，重置状态
+          debugPrint('⚠️ 状态不一致：dragStartBoxPosition 为空，重置拖动状态');
+          _resetDragState();
+          currentInteraction = null;
+          return false;
+        }
       } else {
         // 还在阈值内，不处理
         return false;
@@ -240,15 +288,20 @@ class CanvasGestureManager {
 
     switch (currentInteraction) {
       case 'drag':
+        // 严格检查拖动状态的有效性
         if (dragStartPosition != null && dragStartBoxPosition != null) {
           final delta = event.localPosition - dragStartPosition!;
           targetBox.position = dragStartBoxPosition! + delta;
           // 如果还没有保存初始位置，现在保存（首次移动时）
           _operationStartPosition ??= dragStartBoxPosition;
         } else {
+          // 状态不一致，重置并停止拖动
           debugPrint(
-            '⚠️ 拖动失败: dragStartPosition=$dragStartPosition, dragStartBoxPosition=$dragStartBoxPosition',
+            '⚠️ 拖动失败: dragStartPosition=$dragStartPosition, dragStartBoxPosition=$dragStartBoxPosition，重置状态',
           );
+          _resetDragState();
+          currentInteraction = null;
+          return false;
         }
         break;
       case 'rotate':
@@ -589,6 +642,12 @@ class CanvasGestureManager {
   bool _handleDoublePointerMove(List<CanvasElement> boxes, String selectedId) {
     if (selectedId.isEmpty) return false;
 
+    // 确保当前交互是缩放状态
+    if (currentInteraction != 'scale') {
+      debugPrint('⚠️ 双指移动时交互状态不是 scale: $currentInteraction');
+      return false;
+    }
+
     final currentScale = _computeScale();
     final scale = (currentScale / lastScale).clamp(0.5, 2.0);
 
@@ -602,6 +661,11 @@ class CanvasGestureManager {
 
     lastScale = currentScale;
     hasMoved = true;
+
+    // 双指缩放时，确保拖动相关状态被清除（防止误触发拖动）
+    if (dragStartPosition != null || dragStartBoxPosition != null) {
+      _resetDragState();
+    }
 
     if (selectedBox.fixedScaleCenter != null) {
       // 对于文本类型，根据最小字体大小计算最小尺寸
@@ -659,9 +723,11 @@ class CanvasGestureManager {
     if (pointers.isEmpty) {
       return _handleAllPointersUp(event, boxes, selectedId, onSelect);
     } else if (pointers.length == 1) {
+      // 从双指切换到单指时，完全重置所有状态，防止单指误触发拖动
+      _resetDragState();
       lastScale = 1.0;
       currentInteraction = null;
-      debugPrint('从双指切换到单指');
+      debugPrint('从双指切换到单指，已重置拖动状态');
     }
 
     return false;
@@ -815,12 +881,17 @@ class CanvasGestureManager {
     debugPrint('指针抬起，重置状态');
   }
 
-  /// 重置所有状态
-  void reset() {
-    currentInteraction = null;
+  /// 重置拖动相关状态（用于从双指切换到单指等场景）
+  void _resetDragState() {
     hasMoved = false;
     dragStartPosition = null;
     dragStartBoxPosition = null;
+  }
+
+  /// 重置所有状态
+  void reset() {
+    currentInteraction = null;
+    _resetDragState();
     lastScale = 1.0;
     // 清除操作开始时的状态快照
     _operationStartPosition = null;

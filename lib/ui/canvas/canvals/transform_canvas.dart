@@ -117,12 +117,12 @@ class TransformCanvas extends StatelessWidget {
           height: editHitCircleSize,
           alignment: Alignment.center,
           child: Container(
-            width: 22,
-            height: 22,
+            width: 18,
+            height: 18,
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.blue, width: 2),
+              border: Border.all(color: Colors.blue, width: 1),
             ),
           ),
         ),
