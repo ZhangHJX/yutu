@@ -27,15 +27,13 @@ class CanvasElementWidget extends StatelessWidget {
   Widget _buildContent() {
     switch (data.type) {
       case ElementType.image:
-        return ClipRect(
-          child: Opacity(
-            opacity: data.imageAlpha,
-            child: Image.file(
-              File(data.imagePath),
-              width: data.width,
-              height: data.height,
-              fit: BoxFit.cover,
-            ),
+        return Opacity(
+          opacity: data.imageAlpha,
+          child: Image.file(
+            File(data.imagePath),
+            width: data.width,
+            height: data.height,
+            fit: BoxFit.cover,
           ),
         );
       case ElementType.rectangle:

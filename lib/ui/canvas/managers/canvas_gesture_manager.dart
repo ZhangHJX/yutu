@@ -32,12 +32,12 @@ class CanvasGestureManager {
   double? _operationStartFontSpace;
 
   // 尺寸限制
-  static const double maxSize = 1000000.0;
+  static const double maxSize = double.infinity;
   static const double minFontSize = 5.0; // 最小字体大小
   static const double minBoxSize = 5.0; // 最小文本框尺寸（用于非文本类型或后备）
 
+  // 适配画布Matrix4缩放
   Matrix4 canvasMatrix = Matrix4.identity();
-
   void updateCanvasMatrix(Matrix4 matrix) {
     canvasMatrix = Matrix4.copy(matrix);
   }
@@ -47,7 +47,6 @@ class CanvasGestureManager {
     PointerDownEvent event,
     List<CanvasElement> boxes,
     String selectedId,
-    Function(String?) onSelect,
   ) {
     pointers[event.pointer] = event.localPosition;
 
@@ -58,7 +57,7 @@ class CanvasGestureManager {
         currentInteraction = null;
         debugPrint('⚠️ 单指按下时检测到残留的缩放状态，已重置');
       }
-      _handleSinglePointerDown(event, boxes, selectedId, onSelect);
+      _handleSinglePointerDown(event, boxes, selectedId);
     } else if (pointers.length == 2) {
       // 双指按下：清除拖动相关状态，准备进入缩放模式
       _resetDragState();
@@ -75,7 +74,6 @@ class CanvasGestureManager {
     PointerDownEvent event,
     List<CanvasElement> boxes,
     String selectedId,
-    Function(String?) onSelect,
   ) {
     // 如果之前是缩放状态，确保完全重置所有状态
     if (currentInteraction == 'scale') {
@@ -716,12 +714,11 @@ class CanvasGestureManager {
     PointerUpEvent event,
     List<CanvasElement> boxes,
     String selectedId,
-    Function(String?) onSelect,
   ) {
     pointers.remove(event.pointer);
 
     if (pointers.isEmpty) {
-      return _handleAllPointersUp(event, boxes, selectedId, onSelect);
+      return _handleAllPointersUp(event, boxes, selectedId);
     } else if (pointers.length == 1) {
       // 从双指切换到单指时，完全重置所有状态，防止单指误触发拖动
       _resetDragState();
@@ -738,7 +735,6 @@ class CanvasGestureManager {
     PointerUpEvent event,
     List<CanvasElement> boxes,
     String selectedId,
-    Function(String?) onSelect,
   ) {
     // 清理状态
     _cleanupInteraction(boxes, selectedId);

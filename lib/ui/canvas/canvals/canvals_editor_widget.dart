@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'package:vector_math/vector_math_64.dart';
 import '../controllers/canvals_controller.dart';
 import 'canvas_element_widget.dart';
 import '../managers/canvas_gesture_manager.dart';
@@ -388,7 +387,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       event,
       boxes,
       _selectionController.selectedId,
-      setActive,
     );
   }
 
@@ -411,17 +409,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       event,
       boxes,
       _selectionController.selectedId,
-      (String? id) {
-        if (id != null) {
-          _selectionController.select(id);
-          _selectionController.updateToolBar(true);
-          debugPrint('激活元素: $id');
-        } else {
-          _selectionController.deselect();
-          _selectionController.updateToolBar(false);
-          debugPrint('取消激活');
-        }
-      },
     );
   }
 

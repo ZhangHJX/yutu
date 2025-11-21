@@ -467,7 +467,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                       ScreenTools.statusBarHeight -
                       ScreenTools.bottomBarHeight -
                       117.w,
-                  color: Colors.red,
+                  color: cfff6f2fb,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       _canvalsController.canvalsSize = _canvalsModel
