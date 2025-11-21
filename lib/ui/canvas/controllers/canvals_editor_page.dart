@@ -619,7 +619,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
             ),
           ),
 
-          // 图层弹框\
+          // 图层弹框
           if (_showLayerDialog) _buildLayerDialog(),
         ],
       ),
