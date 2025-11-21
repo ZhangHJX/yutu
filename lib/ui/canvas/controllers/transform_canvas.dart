@@ -57,29 +57,27 @@ class TransformCanvas extends StatelessWidget {
   /// 构建边框矩形
   Widget _buildBorder(CanvasElement element) {
     final corners = _worldCorners(element);
-    final tl = corners[0];
-    final tr = corners[1];
-    final br = corners[2];
-    final bl = corners[3];
-
-    final minX = [tl.dx, tr.dx, br.dx, bl.dx].reduce((a, b) => a < b ? a : b);
-    final maxX = [tl.dx, tr.dx, br.dx, bl.dx].reduce((a, b) => a > b ? a : b);
-    final minY = [tl.dy, tr.dy, br.dy, bl.dy].reduce((a, b) => a < b ? a : b);
-    final maxY = [tl.dy, tr.dy, br.dy, bl.dy].reduce((a, b) => a > b ? a : b);
+    final xs = corners.map((offset) => offset.dx).toList();
+    final ys = corners.map((offset) => offset.dy).toList();
+    final padding = editBorderWidth;
+    final minX = xs.reduce((a, b) => a < b ? a : b) - padding;
+    final maxX = xs.reduce((a, b) => a > b ? a : b) + padding;
+    final minY = ys.reduce((a, b) => a < b ? a : b) - padding;
+    final maxY = ys.reduce((a, b) => a > b ? a : b) + padding;
 
     final width = maxX - minX;
     final height = maxY - minY;
+    final relativeCorners =
+        corners.map((offset) => Offset(offset.dx - minX, offset.dy - minY));
 
     return Positioned(
-      left: minX - editBorderWidth,
-      top: minY - editBorderWidth,
-      child: Container(
-        width: width + editBorderWidth * 2,
-        height: height + editBorderWidth * 2,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          // 只有边框显隐变化，尺寸不变
-          border: Border.all(color: "#ff147EFF".color, width: editBorderWidth),
+      left: minX,
+      top: minY,
+      child: CustomPaint(
+        size: Size(width, height),
+        painter: _RotatedBorderPainter(
+          corners: relativeCorners.toList(),
+          borderWidth: editBorderWidth,
         ),
       ),
     );
@@ -136,16 +134,11 @@ class TransformCanvas extends StatelessWidget {
 
   /// 构建旋转按钮
   Widget _buildRotationButton(CanvasElement element) {
-    final corners = _worldCorners(element);
-    final br = corners[2];
-    final bl = corners[3];
-    final bottomCenter = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
-
-    // 向外偏移 rotationButtonPadding（这里简单按垂直方向偏移）
-
-    final buttonCenter =
-        bottomCenter +
-        Offset(0, rotationButtonPadding + rotationButtonSize / 2);
+    element.updateMatrix4();
+    final buttonCenter = MatrixUtilsXGesture.worldRotationButtonCenter(
+      element,
+      canvasMatrix,
+    );
 
     return Positioned(
       left: buttonCenter.dx - rotationButtonSize / 2,
@@ -168,5 +161,49 @@ class TransformCanvas extends StatelessWidget {
     e.updateMatrix4();
     // TransformCanvas 在画布内部，所以 canvasMatrix 可以先用 identity
     return MatrixUtilsX.worldCorners(e, canvasMatrix);
+  }
+}
+
+class _RotatedBorderPainter extends CustomPainter {
+  final List<Offset> corners;
+  final double borderWidth;
+
+  _RotatedBorderPainter({
+    required this.corners,
+    required this.borderWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (corners.length != 4) {
+      return;
+    }
+    final path = Path()
+      ..moveTo(corners[0].dx, corners[0].dy)
+      ..lineTo(corners[1].dx, corners[1].dy)
+      ..lineTo(corners[2].dx, corners[2].dy)
+      ..lineTo(corners[3].dx, corners[3].dy)
+      ..close();
+
+    final paint = Paint()
+      ..color = "#ff147EFF".color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = borderWidth;
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _RotatedBorderPainter oldDelegate) {
+    if (borderWidth != oldDelegate.borderWidth ||
+        corners.length != oldDelegate.corners.length) {
+      return true;
+    }
+    for (int i = 0; i < corners.length; i++) {
+      if (corners[i] != oldDelegate.corners[i]) {
+        return true;
+      }
+    }
+    return false;
   }
 }

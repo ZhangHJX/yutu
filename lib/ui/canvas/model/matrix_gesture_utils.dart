@@ -129,11 +129,7 @@ extension MatrixUtilsXGesture on MatrixUtilsX {
     Matrix4 canvasMatrix,
   ) {
     final corners = MatrixUtilsX.worldCorners(element, canvasMatrix);
-    final br = corners[2];
-    final bl = corners[3];
-    final bottomCenter = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
-    return bottomCenter +
-        Offset(0, rotationButtonPadding + rotationButtonSize / 2);
+    return _rotationHandleCenterFromCorners(corners);
   }
 
   static List<String> controlHandlesForType(
@@ -175,5 +171,27 @@ extension MatrixUtilsXGesture on MatrixUtilsX {
   static Offset _transformPoint(Matrix4 matrix, Offset point) {
     final vector = matrix.transform3(Vector3(point.dx, point.dy, 0));
     return Offset(vector.x, vector.y);
+  }
+
+  static Offset _rotationHandleCenterFromCorners(List<Offset> corners) {
+    if (corners.length < 4) {
+      return Offset.zero;
+    }
+    final tl = corners[0];
+    final br = corners[2];
+    final bl = corners[3];
+    final bottomCenter = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
+    final center = Offset((tl.dx + br.dx) / 2, (tl.dy + br.dy) / 2);
+    final direction = bottomCenter - center;
+    final magnitude = direction.distance;
+    final outwardDistance = rotationButtonPadding + rotationButtonSize / 2;
+
+    if (magnitude < 1e-3) {
+      // 退化为默认向下偏移
+      return bottomCenter + Offset(0, outwardDistance);
+    }
+
+    final normalized = direction / magnitude;
+    return bottomCenter + normalized * outwardDistance;
   }
 }
