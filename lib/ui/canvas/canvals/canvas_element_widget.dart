@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'out_lined_text.dart';
+import 'canvas_text_widget.dart';
 import '../model/index.dart';
 import 'dart:io';
 
@@ -128,7 +128,7 @@ class CanvasElementWidget extends StatelessWidget {
           height: data.height,
           color: Colors.transparent,
           alignment: Alignment.topLeft,
-          child: OutlinedText(
+          child: CanvasTextWidget(
             text: data.text,
             textStyle: TextStyle(
               fontFamily: data.fontFamily,

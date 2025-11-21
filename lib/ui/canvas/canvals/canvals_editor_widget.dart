@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../controllers/canvals_controller.dart';
 import 'canvas_element_widget.dart';
 import '../managers/canvas_gesture_manager.dart';
-import '../managers/gesture_manager_utils.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../utils/text_measure_util.dart';
 import '../managers/canvas_history_manager.dart';
@@ -14,15 +13,11 @@ import '../model/index.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
-  final CanvasModel? canvasModel;
-  final Size canvasSize;
   final VoidCallback? onContentChanged;
 
   const CanvasEditorWidget({
     super.key,
     this.historyManager,
-    this.canvasModel,
-    this.canvasSize = Size.zero,
     this.onContentChanged,
   });
 
@@ -50,11 +45,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   void initState() {
     super.initState();
     _selectionController = Get.put(CanvalsController());
-    _gestureManager.onDoubleTap = (String boxId) {
-      showTextInputDialog(boxId);
-    };
-    // 设置历史管理器到手势管理器
-    _gestureManager.historyManager = historyManager;
+    _gestureManager.historyManager = historyManager; // 设置历史管理器到手势管理器
   }
 
   /// 重新排序图层
@@ -388,21 +379,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
   }
 
-  // 处理指针按下事件（改为公有方法，供外部调用）
-  /// 检测点击是否在某个元素上（不改变选中状态）
-  /// 返回被点击的元素ID，如果没有点击到任何元素则返回 null
-  String? detectHitElement(Offset position) {
-    // 遍历所有元素，从后向前（因为后面的元素在最上层）
-    for (int i = boxes.length - 1; i >= 0; i--) {
-      final box = boxes[i];
-      final hitTarget = MatrixUtilsXGesture.detectHitTarget(position, box);
-      if (hitTarget != null) {
-        return box.id;
-      }
-    }
-    return null;
-  }
-
   void handlePointerDown(PointerDownEvent event) {
     _gestureManager.handlePointerDown(
       event,
@@ -514,10 +490,5 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   void redo() {
     historyManager?.redo();
     setState(() {});
-  }
-
-  /// 设置画布尺寸（供外部调用）
-  void setCanvasSize(Size size) {
-    _gestureManager.canvasSize = size;
   }
 }

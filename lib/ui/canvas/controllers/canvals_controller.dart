@@ -6,8 +6,8 @@ import '../utils/handle_select_images.dart';
 /// 全局选择状态管理控制器
 /// 负责管理当前选中的文本框ID，确保只有一个文本框处于选中状态
 class CanvalsController extends GetxController {
-  // 画布点击
-  PointerEvent? currentPoint;
+  PointerEvent? currentPoint; // 画布点击
+  Size canvalsSize = Size.zero; //画布大小
 
   final selectImageHelper = SelectImageHelper(maxCount: 1);
 

@@ -58,13 +58,46 @@ class MatrixUtilsX {
 
 /// 手势相关的判断方法
 extension MatrixUtilsXGesture on MatrixUtilsX {
+  static String? detectHitElement(
+    PointerEvent event,
+    GlobalKey containerKey,
+    List<CanvasElement> boxes,
+    Size canvalsSize,
+  ) {
+    final localPos = MatrixUtilsX.canvasLocal(event.position, containerKey);
+
+    // 遍历所有元素，从后向前（因为后面的元素在最上层）
+    for (int i = boxes.length - 1; i >= 0; i--) {
+      final box = boxes[i];
+      final hitTarget = MatrixUtilsXGesture.detectHitTarget(localPos, box);
+      if (hitTarget != null) {
+        return box.id;
+      }
+    }
+    return null;
+  }
+
   static String? detectHitTarget(Offset canvasPos, CanvasElement box) {
     box.updateMatrix4(); // 确保最新矩阵
 
     // ① 画布 → 元素本地
     final local = MatrixUtilsX.canvasToElement(canvasPos, box.transform);
 
-    // ② 本体命中
+    // ② 旋转按钮命中（local）
+    final rotLocal = MatrixUtilsXGesture.localRotationButtonCenter(box);
+    if (_hitCircleLocal(local, rotLocal, rotationButtonSize / 2)) {
+      return 'rotate';
+    }
+
+    //  ③ 缩放手柄命中（local）
+    final handles = MatrixUtilsXGesture.localResizeHandleCenters(box);
+    for (var e in handles.entries) {
+      if (_hitCircleLocal(local, e.value, editHitCircleSize / 2)) {
+        return 'resize:${e.key}';
+      }
+    }
+
+    // ④ 本体命中
     if (local.dx >= 0 &&
         local.dx <= box.width &&
         local.dy >= 0 &&
@@ -72,19 +105,6 @@ extension MatrixUtilsXGesture on MatrixUtilsX {
       return 'content';
     }
 
-    // ③ 旋转按钮命中（local）
-    final rotLocal = MatrixUtilsXGesture.localRotationButtonCenter(box);
-    if (_hitCircleLocal(local, rotLocal, rotationButtonSize / 2)) {
-      return 'rotate';
-    }
-
-    // ④ 缩放手柄命中（local）
-    final handles = MatrixUtilsXGesture.localResizeHandleCenters(box);
-    for (var e in handles.entries) {
-      if (_hitCircleLocal(local, e.value, editHitCircleSize / 2)) {
-        return 'resize:${e.key}';
-      }
-    }
     return null;
   }
 

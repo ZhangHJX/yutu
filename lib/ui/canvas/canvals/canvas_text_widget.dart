@@ -67,7 +67,7 @@ class OutlinedTextPainter extends CustomPainter {
 }
 
 // 使用组件
-class OutlinedText extends StatelessWidget {
+class CanvasTextWidget extends StatelessWidget {
   final String text;
   final TextStyle textStyle;
   final double strokeWidth;
@@ -76,7 +76,7 @@ class OutlinedText extends StatelessWidget {
   final TextAlign textAlign;
   final int? maxLines;
 
-  const OutlinedText({
+  const CanvasTextWidget({
     super.key,
     required this.text,
     required this.textStyle,

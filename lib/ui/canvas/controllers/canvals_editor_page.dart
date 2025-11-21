@@ -21,7 +21,7 @@ import '../managers/canvas_status_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../utils/index.dart';
 import '../model/index.dart';
-import 'transform_canvas.dart';
+import '../canvals/transform_canvas.dart';
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -445,17 +445,16 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
               },
               child: GestureDetector(
                 onTap: () {
-                  final localPos = MatrixUtilsX.canvasLocal(
-                    _canvalsController.currentPoint!.position,
+                  final hitId = MatrixUtilsXGesture.detectHitElement(
+                    _canvalsController.currentPoint!,
                     _canvasContainerKey,
-                  );
-                  final hitId = _canvasKey.currentState?.detectHitElement(
-                    localPos,
+                    _canvasKey.currentState?.boxes ?? [],
+                    _canvalsController.canvalsSize,
                   );
                   if (hitId != null) {
-                    _canvalsController.isSelected(hitId)
-                        ? _canvalsController.deselect()
-                        : _canvalsController.select(hitId);
+                    _canvalsController.toggleSelection(hitId);
+                  } else {
+                    _canvalsController.deselect();
                   }
                 },
                 child: Container(
@@ -469,22 +468,16 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                   color: Colors.red,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      // 设置画布尺寸到手势管理器
-                      // WidgetsBinding.instance.addPostFrameCallback((_) {
-                      //   _canvasKey.currentState?.setCanvasSize(
-                      //     Size(displayWidth, displayHeight),
-                      //   );
-                      // });
-
-                      final canvasSize = _canvalsModel.getCanvalsSize(
-                        constraints.maxWidth,
-                        constraints.maxHeight,
-                      );
+                      _canvalsController.canvalsSize = _canvalsModel
+                          .getCanvalsSize(
+                            constraints.maxWidth,
+                            constraints.maxHeight,
+                          );
 
                       final canvasContent = ClipRect(
                         child: SizedBox(
-                          width: canvasSize.width,
-                          height: canvasSize.height,
+                          width: _canvalsController.canvalsSize.width,
+                          height: _canvalsController.canvalsSize.height,
                           child: Container(
                             key: _canvasContainerKey,
                             decoration: BoxDecoration(
@@ -504,8 +497,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                             child: CanvasEditorWidget(
                               key: _canvasKey,
                               historyManager: _historyManager,
-                              canvasModel: _canvalsModel,
-                              canvasSize: canvasSize,
                               onContentChanged: () {
                                 if (mounted) {
                                   setState(() {});

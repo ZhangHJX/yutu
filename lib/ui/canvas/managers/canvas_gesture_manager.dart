@@ -1,35 +1,25 @@
 import 'package:flutter/material.dart';
 import '../utils/text_measure_util.dart';
 import 'canvas_history_manager.dart';
-import 'gesture_manager_utils.dart';
 import '../model/index.dart';
 import 'dart:math' as math;
 
 /// 画布手势管理器： 负责处理所有的手势交互逻辑
 class CanvasGestureManager {
-  // 文本类型的文本框，处于激活状态时，点击弹出输入框
-  void Function(String boxId)? onDoubleTap;
-  // 判断点击是否是文本框内
-  bool isTapBox = false;
-  Size? canvasSize; // 画布尺寸（宽度和高度）
-
+  // 缩放相关
+  final Map<int, Offset> pointers = {};
   // 历史管理器
   CanvasHistoryManager? historyManager;
+  // 拖动相关
+  bool hasMoved = false;
+  Offset? dragStartPosition;
+  Offset? dragStartBoxPosition;
+  static const double dragStartThreshold = 5.0; // 开始拖动的距离阈值
 
   // 交互状态
   String?
-  currentInteraction; // 'drag', 'rotate', 'resize', 'scale', 'pending_drag_or_tap', 'activate'
+  currentInteraction; // 'drag', 'rotate', 'resize', 'scale', 'pending_drag_or_tap' 'activate'
 
-  bool hasMoved = false;
-  String? pendingClickBoxId; // 待激活或取消激活的元素ID
-  static const double dragStartThreshold = 5.0; // 开始拖动的距离阈值
-
-  // 拖动相关
-  Offset? dragStartPosition;
-  Offset? dragStartBoxPosition;
-
-  // 缩放相关
-  final Map<int, Offset> pointers = {};
   double lastScale = 1.0;
 
   // 操作开始时的状态快照（用于历史记录）
@@ -54,7 +44,6 @@ class CanvasGestureManager {
     Function(String?) onSelect,
   ) {
     pointers[event.pointer] = event.localPosition;
-
     if (pointers.length == 1) {
       _handleSinglePointerDown(event, boxes, selectedId, onSelect);
     } else if (pointers.length == 2) {
@@ -74,103 +63,57 @@ class CanvasGestureManager {
     Function(String?) onSelect,
   ) {
     hasMoved = false;
-    dragStartPosition = event.localPosition;
-    pendingClickBoxId = null;
+    dragStartPosition = event.position;
 
-    isTapBox = false;
-
-    bool isCanvasl = MatrixUtilsXGesture.isPointInCanvas(
-      event.localPosition,
-      canvasSize,
+    CanvasElement selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+    final hitTarget = MatrixUtilsXGesture.detectHitTarget(
+      event.position,
+      selectedBox,
     );
 
-    if (selectedId.isNotEmpty) {
-      CanvasElement selectedBox = boxes.firstWhere(
-        (box) => box.id == selectedId,
-      );
-      final hitTarget = MatrixUtilsXGesture.detectHitTarget(
-        event.localPosition,
-        selectedBox,
-      );
+    debugPrint('✅ 哈哈哈哈哈哈哈---$hitTarget');
+    if (hitTarget != null) {
+      if (selectedBox.locked) {
+        return;
+      }
 
-      if (hitTarget != null) {
-        if (selectedBox.locked) {
-          if (hitTarget == 'content') {
-            onSelect(null);
-          }
-          return;
+      if (hitTarget == 'rotate') {
+        // 开始旋转
+        currentInteraction = 'rotate';
+        hasMoved = true; // 判定为旋转操作
+        selectedBox.rotateLastPosition = event.localPosition;
+        // 保存操作开始时的状态
+        _operationStartRotation = selectedBox.rotation;
+        debugPrint('✅ 判定为旋转: $selectedId');
+        return;
+      } else if (hitTarget.startsWith('resize:')) {
+        // 开始调整大小
+        final handle = hitTarget.substring(7);
+        currentInteraction = 'resize';
+        hasMoved = true; // 判定为缩放操作
+        // 保存操作开始时的状态
+        _operationStartWidth = selectedBox.width;
+        _operationStartHeight = selectedBox.height;
+        _operationStartPosition = Offset(
+          selectedBox.position.dx,
+          selectedBox.position.dy,
+        );
+        if (selectedBox.type == ElementType.text) {
+          _operationStartFontSize = selectedBox.fontSize;
+          _operationStartFontSpace = selectedBox.fontSpace;
         }
-
-        if (hitTarget == 'rotate') {
-          // 开始旋转
-          currentInteraction = 'rotate';
-          hasMoved = true; // 判定为旋转操作
-          selectedBox.rotateLastPosition = event.localPosition;
-          // 保存操作开始时的状态
-          _operationStartRotation = selectedBox.rotation;
-          debugPrint('✅ 判定为旋转: $selectedId');
-          return;
-        } else if (hitTarget.startsWith('resize:')) {
-          // 开始调整大小
-          final handle = hitTarget.substring(7);
-          currentInteraction = 'resize';
-          hasMoved = true; // 判定为缩放操作
-          // 保存操作开始时的状态
-          _operationStartWidth = selectedBox.width;
-          _operationStartHeight = selectedBox.height;
-          _operationStartPosition = Offset(
-            selectedBox.position.dx,
-            selectedBox.position.dy,
-          );
-          if (selectedBox.type == ElementType.text) {
-            _operationStartFontSize = selectedBox.fontSize;
-            _operationStartFontSpace = selectedBox.fontSpace;
-          }
-          _startResize(selectedBox, handle, event.localPosition);
-          debugPrint('✅ 判定为缩放: $selectedId, 控制点: $handle');
-          return;
-        } else if (hitTarget == 'content') {
-          // 检查元素是否在画布内，如果不在画布内则不响应
-
-          if (!isCanvasl) {
-            debugPrint('⚠️ 元素 ${selectedBox.id} 不在画布内，不响应');
-            onSelect(null);
-            return;
-          }
-
-          // 待定状态：可能是拖动，也可能是点击取消激活
-          currentInteraction = 'pending_drag_or_tap';
-          isTapBox = true;
-          pendingClickBoxId = selectedId; // 保存可能要取消激活的元素ID
-          dragStartBoxPosition = selectedBox.position;
-          // 保存操作开始时的位置（用于历史记录）
-          _operationStartPosition = Offset(
-            selectedBox.position.dx,
-            selectedBox.position.dy,
-          );
-          // 初始化缩放中心点（外层容器包含边框）
-          if (selectedBox.fixedScaleCenter == null) {
-            final totalWidth = selectedBox.width;
-            final totalHeight = selectedBox.height;
-            selectedBox.fixedScaleCenter = Offset(
-              selectedBox.position.dx + totalWidth / 2,
-              selectedBox.position.dy + totalHeight / 2,
-            );
-            selectedBox.initialWidth = selectedBox.width;
-            selectedBox.initialHeight = selectedBox.height;
-            // 保存初始字体大小（仅文本类型）
-            if (selectedBox.type == ElementType.text) {
-              selectedBox.initialFontSize = selectedBox.fontSize;
-            }
-          }
-          debugPrint('✅ 待定状态: 可能拖动或点击取消激活 $selectedId');
-          return;
-        }
-      } else {
+        _startResize(selectedBox, handle, event.localPosition);
+        debugPrint('✅ 判定为缩放: $selectedId, 控制点: $handle');
+        return;
+      } else if (hitTarget == 'content') {
         // 待定状态：可能是拖动，也可能是点击取消激活
         currentInteraction = 'pending_drag_or_tap';
-        pendingClickBoxId = selectedId; // 保存可能要取消激活的元素ID
         dragStartBoxPosition = selectedBox.position;
+        // 保存操作开始时的位置（用于历史记录）
+        _operationStartPosition = Offset(
+          selectedBox.position.dx,
+          selectedBox.position.dy,
+        );
         // 初始化缩放中心点（外层容器包含边框）
         if (selectedBox.fixedScaleCenter == null) {
           final totalWidth = selectedBox.width;
@@ -187,36 +130,10 @@ class CanvasGestureManager {
           }
         }
       }
-      // 点击在选中元素外部，检查是否点击了其他元素
     } else {
-      // 检查所有元素（从后往前，优先检查上层元素）
-      for (int i = boxes.length - 1; i >= 0; i--) {
-        final box = boxes[i];
-        // 跳过已选中的元素（已经在上面处理过了）
-        if (box.id == selectedId) continue;
-
-        final hitTarget = MatrixUtilsXGesture.detectHitTarget(
-          event.localPosition,
-          box,
-        );
-        if (hitTarget == 'content') {
-          if (!isCanvasl) {
-            debugPrint('⚠️ 元素 ${box.id} 不在画布内，不激活');
-            continue;
-          }
-
-          // 点击了未选中的元素，立即激活它（不能拖动）
-          currentInteraction = 'activate';
-          pendingClickBoxId = box.id; // 保存要激活的元素ID
-          // 立即激活，不等待抬起事件
-          if (box.locked) {
-            return;
-          }
-          onSelect(box.id);
-          debugPrint('✅ 立即激活未选中元素: ${box.id}');
-          return;
-        }
-      }
+      // 待定状态：可能是拖动，也可能是点击取消激活
+      currentInteraction = 'pending_drag_or_tap';
+      dragStartBoxPosition = selectedBox.position;
     }
   }
 
@@ -266,13 +183,11 @@ class CanvasGestureManager {
     String selectedId,
   ) {
     pointers[event.pointer] = event.localPosition;
-
     if (pointers.length == 1) {
       return _handleSinglePointerMove(event, boxes, selectedId);
     } else if (pointers.length == 2 && currentInteraction == 'scale') {
       return _handleDoublePointerMove(boxes, selectedId);
     }
-
     return false;
   }
 
@@ -282,11 +197,6 @@ class CanvasGestureManager {
     List<CanvasElement> boxes,
     String selectedId,
   ) {
-    // 如果是激活操作，立即返回，不处理任何移动
-    if (currentInteraction == 'activate') {
-      return false;
-    }
-
     // 如果没有当前交互，则不处理
     if (currentInteraction == null) {
       return false;
@@ -312,10 +222,10 @@ class CanvasGestureManager {
     }
 
     // 获取要操作的元素（可能是选中的，也可能是待选中的）
-    final boxId = pendingClickBoxId ?? selectedId;
-    if (boxId.isEmpty) return false;
+    if (selectedId.isEmpty) return false;
 
-    final targetBox = boxes.firstWhere((box) => box.id == boxId);
+    // 元素被锁定后不能够操作
+    final targetBox = boxes.firstWhere((box) => box.id == selectedId);
     if (targetBox.locked) {
       return false;
     }
@@ -326,17 +236,13 @@ class CanvasGestureManager {
           final delta = event.localPosition - dragStartPosition!;
           targetBox.position = dragStartBoxPosition! + delta;
           // 如果还没有保存初始位置，现在保存（首次移动时）
-          if (_operationStartPosition == null) {
-            _operationStartPosition = dragStartBoxPosition;
-          }
-          // 移除频繁的调试打印，提升性能
+          _operationStartPosition ??= dragStartBoxPosition;
         } else {
           debugPrint(
             '⚠️ 拖动失败: dragStartPosition=$dragStartPosition, dragStartBoxPosition=$dragStartBoxPosition',
           );
         }
         break;
-
       case 'rotate':
         _updateRotation(targetBox, event.localPosition);
         // 移除频繁的调试打印，提升性能
@@ -346,7 +252,6 @@ class CanvasGestureManager {
         _updateResize(targetBox, event.localPosition);
         // 移除频繁的调试打印，提升性能
         break;
-
       default:
         return false;
     }
@@ -354,345 +259,37 @@ class CanvasGestureManager {
     return true;
   }
 
-  /// 处理双指移动
-  bool _handleDoublePointerMove(List<CanvasElement> boxes, String selectedId) {
-    if (selectedId.isEmpty) return false;
+  /// 更新旋转
+  void _updateRotation(CanvasElement box, Offset currentPosition) {
+    if (box.rotateLastPosition == null) return;
 
-    final currentScale = _computeScale();
-    final scale = (currentScale / lastScale).clamp(0.5, 2.0);
-
-    final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-    if (selectedBox.locked) {
-      return false;
-    }
-
-    selectedBox.scale *= scale;
-    selectedBox.scale = selectedBox.scale.clamp(0.1, 10.0);
-
-    lastScale = currentScale;
-    hasMoved = true;
-
-    if (selectedBox.fixedScaleCenter != null) {
-      // 对于文本类型，根据最小字体大小计算最小尺寸
-      double minWidth = 50.0;
-      double minHeight = 50.0;
-      if (selectedBox.type == ElementType.text) {
-        final minTextSize = _calculateMinTextSize(selectedBox);
-        minWidth = minTextSize.width;
-        minHeight = minTextSize.height;
-      }
-
-      final newWidth = (selectedBox.initialWidth * selectedBox.scale).clamp(
-        minWidth,
-        double.infinity,
-      );
-      final newHeight = (selectedBox.initialHeight * selectedBox.scale).clamp(
-        minHeight,
-        double.infinity,
-      );
-
-      // 计算新的外层容器总尺寸（包含边框）
-      final totalNewWidth = newWidth;
-      final totalNewHeight = newHeight;
-
-      // 使用包含边框的总尺寸来计算位置，确保缩放中心点正确
-      final newPosition = Offset(
-        selectedBox.fixedScaleCenter!.dx - totalNewWidth / 2,
-        selectedBox.fixedScaleCenter!.dy - totalNewHeight / 2,
-      );
-
-      selectedBox.position = newPosition;
-      selectedBox.width = newWidth;
-      selectedBox.height = newHeight;
-
-      // 如果是文本类型，同时缩放字体大小
-      if (selectedBox.type == ElementType.text) {
-        selectedBox.fontSize = (selectedBox.initialFontSize * selectedBox.scale)
-            .clamp(minFontSize, double.infinity);
-      }
-      // 移除频繁的调试打印，提升性能
-
-      debugPrint("=======$minWidth====$minHeight==");
-    }
-
-    return true;
-  }
-
-  /// 处理指针抬起事件
-  bool handlePointerUp(
-    PointerUpEvent event,
-    List<CanvasElement> boxes,
-    String selectedId,
-    Function(String?) onSelect,
-  ) {
-    pointers.remove(event.pointer);
-
-    if (pointers.isEmpty) {
-      return _handleAllPointersUp(event, boxes, selectedId, onSelect);
-    } else if (pointers.length == 1) {
-      lastScale = 1.0;
-      currentInteraction = null;
-      debugPrint('从双指切换到单指');
-    }
-
-    return false;
-  }
-
-  /// 处理所有指针抬起
-  bool _handleAllPointersUp(
-    PointerUpEvent event,
-    List<CanvasElement> boxes,
-    String selectedId,
-    Function(String?) onSelect,
-  ) {
-    // 如果是点击背景操作，执行取消选中
-    if (currentInteraction == 'drag' && !hasMoved) {
-      onSelect(null);
-      debugPrint('✅ 点击背景，取消激活');
-    }
-
-    // 如果是激活操作，已经在按下时激活了，这里不需要再处理 如果是待定状态（没有移动），判定为点击取消激活
-    if (currentInteraction == 'pending_drag_or_tap' && !hasMoved) {
-      if (pendingClickBoxId != null && pendingClickBoxId == selectedId) {
-        final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-        bool isCanvals = MatrixUtilsXGesture.isPointInCanvas(
-          event.localPosition,
-          canvasSize,
-        );
-
-        if (selectedBox.type == ElementType.text && isTapBox) {
-          onDoubleTap?.call(selectedId);
-        } else if (!isCanvals) {
-          onSelect(null);
-        } else {
-          onSelect(null);
-        }
-      }
-    }
-
-    // 清理状态
-    _cleanupInteraction(boxes, selectedId);
-
-    return false;
-  }
-
-  /// 处理指针取消事件
-  void handlePointerCancel(PointerCancelEvent event) {
-    pointers.remove(event.pointer);
-
-    if (pointers.isEmpty) {
-      reset();
-      debugPrint('指针事件取消，重置所有状态');
-    }
-  }
-
-  /// 清理交互状态
-  void _cleanupInteraction(List<CanvasElement> boxes, String selectedId) {
-    // 在清理状态前，记录命令（如果操作有实际变化）
-    if (selectedId.isNotEmpty && hasMoved && historyManager != null) {
-      try {
-        final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-        final currentPosition = Offset(
-          selectedBox.position.dx,
-          selectedBox.position.dy,
-        );
-
-        switch (currentInteraction) {
-          case 'drag':
-            if (_operationStartPosition != null &&
-                (_operationStartPosition!.dx != currentPosition.dx ||
-                    _operationStartPosition!.dy != currentPosition.dy)) {
-              historyManager!.executeCommand(
-                MoveElementCommand(
-                  boxes,
-                  selectedId,
-                  _operationStartPosition!,
-                  currentPosition,
-                ),
-              );
-            }
-            break;
-
-          case 'rotate':
-            if (_operationStartRotation != null &&
-                _operationStartRotation != selectedBox.rotation) {
-              historyManager!.executeCommand(
-                RotateElementCommand(
-                  boxes,
-                  selectedId,
-                  _operationStartRotation!,
-                  selectedBox.rotation,
-                ),
-              );
-            }
-            break;
-
-          case 'resize':
-            if (_operationStartWidth != null &&
-                _operationStartHeight != null &&
-                _operationStartPosition != null &&
-                (_operationStartWidth != selectedBox.width ||
-                    _operationStartHeight != selectedBox.height ||
-                    _operationStartPosition!.dx != currentPosition.dx ||
-                    _operationStartPosition!.dy != currentPosition.dy)) {
-              historyManager!.executeCommand(
-                ResizeElementCommand(
-                  boxes: boxes,
-                  elementId: selectedId,
-                  oldWidth: _operationStartWidth!,
-                  oldHeight: _operationStartHeight!,
-                  oldPosition: _operationStartPosition!,
-                  newWidth: selectedBox.width,
-                  newHeight: selectedBox.height,
-                  newPosition: currentPosition,
-                  oldFontSize: _operationStartFontSize,
-                  newFontSize: selectedBox.type == ElementType.text
-                      ? selectedBox.fontSize
-                      : null,
-                  oldFontSpace: _operationStartFontSpace,
-                  newFontSpace: selectedBox.type == ElementType.text
-                      ? selectedBox.fontSpace
-                      : null,
-                ),
-              );
-            }
-            break;
-
-          case 'scale':
-            if (_operationStartCumulativeScale != null &&
-                _operationStartWidth != null &&
-                _operationStartHeight != null &&
-                _operationStartPosition != null &&
-                (_operationStartCumulativeScale != selectedBox.scale ||
-                    _operationStartWidth != selectedBox.width ||
-                    _operationStartHeight != selectedBox.height ||
-                    _operationStartPosition!.dx != currentPosition.dx ||
-                    _operationStartPosition!.dy != currentPosition.dy)) {
-              historyManager!.executeCommand(
-                ScaleElementCommand(
-                  boxes: boxes,
-                  elementId: selectedId,
-                  oldCumulativeScale: _operationStartCumulativeScale!,
-                  newCumulativeScale: selectedBox.scale,
-                  oldWidth: _operationStartWidth!,
-                  oldHeight: _operationStartHeight!,
-                  oldPosition: _operationStartPosition!,
-                  newWidth: selectedBox.width,
-                  newHeight: selectedBox.height,
-                  newPosition: currentPosition,
-                  oldFontSize: _operationStartFontSize,
-                  newFontSize: selectedBox.type == ElementType.text
-                      ? selectedBox.fontSize
-                      : null,
-                ),
-              );
-            }
-            break;
-        }
-      } catch (e) {
-        debugPrint('记录命令时出错: $e');
-      }
-    }
-
-    if (currentInteraction == 'resize' && selectedId.isNotEmpty) {
-      final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-      selectedBox.resizingHandle = null;
-      selectedBox.resizeStartPosition = null;
-      selectedBox.resizeAnchorPoint = null;
-      debugPrint('调整大小结束');
-    }
-
-    if (currentInteraction == 'rotate' && selectedId.isNotEmpty) {
-      final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-      selectedBox.rotateLastPosition = null;
-      debugPrint('旋转结束');
-    }
-
-    reset();
-    debugPrint('指针抬起，重置状态');
-  }
-
-  /// 重置所有状态
-  void reset() {
-    currentInteraction = null;
-    hasMoved = false;
-    dragStartPosition = null;
-    dragStartBoxPosition = null;
-    pendingClickBoxId = null;
-    lastScale = 1.0;
-    // 清除操作开始时的状态快照
-    _operationStartPosition = null;
-    _operationStartRotation = null;
-    _operationStartWidth = null;
-    _operationStartHeight = null;
-    _operationStartCumulativeScale = null;
-    _operationStartFontSize = null;
-    _operationStartFontSpace = null;
-  }
-
-  /// 开始调整大小
-  void _startResize(CanvasElement box, String handle, Offset position) {
-    box.resizingHandle = handle;
-    box.resizeStartWidth = box.width;
-    box.resizeStartHeight = box.height;
-    box.resizeAspectRatio = box.width / box.height; // 保存宽高比
-    box.resizeStartPosition = position;
-    // 保存初始字体大小、行高、字间距（仅文本类型）
-    if (box.type == ElementType.text) {
-      box.resizeStartFontSize = box.fontSize;
-      box.resizeStartLineHeight = box.lineHeight;
-      box.resizeStartFontSpace = box.fontSpace;
-    }
-
-    // 计算外层容器总尺寸（包含边框）
-    final totalStartWidth = box.width;
-    final totalStartHeight = box.height;
-
-    Offset anchorPointLocal = Offset.zero;
-    switch (handle) {
-      case 'top-left':
-        // 锚点是右下角（相对于外层容器）
-        anchorPointLocal = Offset(totalStartWidth, totalStartHeight);
-        break;
-      case 'top':
-        // 锚点是下边中点
-        anchorPointLocal = Offset(totalStartWidth / 2, totalStartHeight);
-        break;
-      case 'top-right':
-        // 锚点是左下角
-        anchorPointLocal = Offset(0, totalStartHeight);
-        break;
-      case 'right':
-        // 锚点是左边中点
-        anchorPointLocal = Offset(0, totalStartHeight / 2);
-        break;
-      case 'bottom-right':
-        // 锚点是左上角
-        anchorPointLocal = Offset(0, 0);
-        break;
-      case 'bottom':
-        // 锚点是上边中点
-        anchorPointLocal = Offset(totalStartWidth / 2, 0);
-        break;
-      case 'bottom-left':
-        // 锚点是右上角
-        anchorPointLocal = Offset(totalStartWidth, 0);
-        break;
-      case 'left':
-        // 锚点是右边中点
-        anchorPointLocal = Offset(totalStartWidth, totalStartHeight / 2);
-        break;
-    }
-
-    final cos = math.cos(box.rotation);
-    final sin = math.sin(box.rotation);
-    final rotatedPoint = Offset(
-      anchorPointLocal.dx * cos - anchorPointLocal.dy * sin,
-      anchorPointLocal.dx * sin + anchorPointLocal.dy * cos,
+    // 计算容器中心（外层容器包含边框）
+    final totalWidth = box.width;
+    final totalHeight = box.height;
+    final globalContainerCenter = Offset(
+      box.position.dx + totalWidth / 2,
+      box.position.dy + totalHeight / 2,
     );
 
-    // 锚点是全局坐标（相对于画布）
-    box.resizeAnchorPoint = box.position + rotatedPoint;
+    final currentAngle = math.atan2(
+      currentPosition.dy - globalContainerCenter.dy,
+      currentPosition.dx - globalContainerCenter.dx,
+    );
+    final lastAngle = math.atan2(
+      box.rotateLastPosition!.dy - globalContainerCenter.dy,
+      box.rotateLastPosition!.dx - globalContainerCenter.dx,
+    );
+
+    double angleDelta = currentAngle - lastAngle;
+
+    if (angleDelta > math.pi) {
+      angleDelta -= 2 * math.pi;
+    } else if (angleDelta < -math.pi) {
+      angleDelta += 2 * math.pi;
+    }
+
+    box.rotation += angleDelta;
+    box.rotateLastPosition = currentPosition;
   }
 
   /// 更新调整大小
@@ -980,37 +577,316 @@ class CanvasGestureManager {
     box.position = box.resizeAnchorPoint! - rotatedNewPoint;
   }
 
-  /// 更新旋转
-  void _updateRotation(CanvasElement box, Offset currentPosition) {
-    if (box.rotateLastPosition == null) return;
+  /// 处理双指移动
+  bool _handleDoublePointerMove(List<CanvasElement> boxes, String selectedId) {
+    if (selectedId.isEmpty) return false;
 
-    // 计算容器中心（外层容器包含边框）
-    final totalWidth = box.width;
-    final totalHeight = box.height;
-    final globalContainerCenter = Offset(
-      box.position.dx + totalWidth / 2,
-      box.position.dy + totalHeight / 2,
-    );
+    final currentScale = _computeScale();
+    final scale = (currentScale / lastScale).clamp(0.5, 2.0);
 
-    final currentAngle = math.atan2(
-      currentPosition.dy - globalContainerCenter.dy,
-      currentPosition.dx - globalContainerCenter.dx,
-    );
-    final lastAngle = math.atan2(
-      box.rotateLastPosition!.dy - globalContainerCenter.dy,
-      box.rotateLastPosition!.dx - globalContainerCenter.dx,
-    );
-
-    double angleDelta = currentAngle - lastAngle;
-
-    if (angleDelta > math.pi) {
-      angleDelta -= 2 * math.pi;
-    } else if (angleDelta < -math.pi) {
-      angleDelta += 2 * math.pi;
+    final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+    if (selectedBox.locked) {
+      return false;
     }
 
-    box.rotation += angleDelta;
-    box.rotateLastPosition = currentPosition;
+    selectedBox.scale *= scale;
+    selectedBox.scale = selectedBox.scale.clamp(0.1, 10.0);
+
+    lastScale = currentScale;
+    hasMoved = true;
+
+    if (selectedBox.fixedScaleCenter != null) {
+      // 对于文本类型，根据最小字体大小计算最小尺寸
+      double minWidth = 50.0;
+      double minHeight = 50.0;
+      if (selectedBox.type == ElementType.text) {
+        final minTextSize = _calculateMinTextSize(selectedBox);
+        minWidth = minTextSize.width;
+        minHeight = minTextSize.height;
+      }
+
+      final newWidth = (selectedBox.initialWidth * selectedBox.scale).clamp(
+        minWidth,
+        double.infinity,
+      );
+      final newHeight = (selectedBox.initialHeight * selectedBox.scale).clamp(
+        minHeight,
+        double.infinity,
+      );
+
+      // 计算新的外层容器总尺寸（包含边框）
+      final totalNewWidth = newWidth;
+      final totalNewHeight = newHeight;
+
+      // 使用包含边框的总尺寸来计算位置，确保缩放中心点正确
+      final newPosition = Offset(
+        selectedBox.fixedScaleCenter!.dx - totalNewWidth / 2,
+        selectedBox.fixedScaleCenter!.dy - totalNewHeight / 2,
+      );
+
+      selectedBox.position = newPosition;
+      selectedBox.width = newWidth;
+      selectedBox.height = newHeight;
+
+      // 如果是文本类型，同时缩放字体大小
+      if (selectedBox.type == ElementType.text) {
+        selectedBox.fontSize = (selectedBox.initialFontSize * selectedBox.scale)
+            .clamp(minFontSize, double.infinity);
+      }
+      // 移除频繁的调试打印，提升性能
+    }
+
+    return true;
+  }
+
+  /// 处理指针抬起事件
+  bool handlePointerUp(
+    PointerUpEvent event,
+    List<CanvasElement> boxes,
+    String selectedId,
+    Function(String?) onSelect,
+  ) {
+    pointers.remove(event.pointer);
+
+    if (pointers.isEmpty) {
+      return _handleAllPointersUp(event, boxes, selectedId, onSelect);
+    } else if (pointers.length == 1) {
+      lastScale = 1.0;
+      currentInteraction = null;
+      debugPrint('从双指切换到单指');
+    }
+
+    return false;
+  }
+
+  /// 处理所有指针抬起
+  bool _handleAllPointersUp(
+    PointerUpEvent event,
+    List<CanvasElement> boxes,
+    String selectedId,
+    Function(String?) onSelect,
+  ) {
+    // 清理状态
+    _cleanupInteraction(boxes, selectedId);
+
+    return false;
+  }
+
+  /// 处理指针取消事件
+  void handlePointerCancel(PointerCancelEvent event) {
+    pointers.remove(event.pointer);
+    if (pointers.isEmpty) {
+      reset();
+      debugPrint('指针事件取消，重置所有状态');
+    }
+  }
+
+  /// 清理交互状态
+  void _cleanupInteraction(List<CanvasElement> boxes, String selectedId) {
+    // 在清理状态前，记录命令（如果操作有实际变化）
+    if (selectedId.isNotEmpty && hasMoved && historyManager != null) {
+      try {
+        final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+        final currentPosition = Offset(
+          selectedBox.position.dx,
+          selectedBox.position.dy,
+        );
+
+        switch (currentInteraction) {
+          case 'drag':
+            if (_operationStartPosition != null &&
+                (_operationStartPosition!.dx != currentPosition.dx ||
+                    _operationStartPosition!.dy != currentPosition.dy)) {
+              historyManager!.executeCommand(
+                MoveElementCommand(
+                  boxes,
+                  selectedId,
+                  _operationStartPosition!,
+                  currentPosition,
+                ),
+              );
+            }
+            break;
+
+          case 'rotate':
+            if (_operationStartRotation != null &&
+                _operationStartRotation != selectedBox.rotation) {
+              historyManager!.executeCommand(
+                RotateElementCommand(
+                  boxes,
+                  selectedId,
+                  _operationStartRotation!,
+                  selectedBox.rotation,
+                ),
+              );
+            }
+            break;
+
+          case 'resize':
+            if (_operationStartWidth != null &&
+                _operationStartHeight != null &&
+                _operationStartPosition != null &&
+                (_operationStartWidth != selectedBox.width ||
+                    _operationStartHeight != selectedBox.height ||
+                    _operationStartPosition!.dx != currentPosition.dx ||
+                    _operationStartPosition!.dy != currentPosition.dy)) {
+              historyManager!.executeCommand(
+                ResizeElementCommand(
+                  boxes: boxes,
+                  elementId: selectedId,
+                  oldWidth: _operationStartWidth!,
+                  oldHeight: _operationStartHeight!,
+                  oldPosition: _operationStartPosition!,
+                  newWidth: selectedBox.width,
+                  newHeight: selectedBox.height,
+                  newPosition: currentPosition,
+                  oldFontSize: _operationStartFontSize,
+                  newFontSize: selectedBox.type == ElementType.text
+                      ? selectedBox.fontSize
+                      : null,
+                  oldFontSpace: _operationStartFontSpace,
+                  newFontSpace: selectedBox.type == ElementType.text
+                      ? selectedBox.fontSpace
+                      : null,
+                ),
+              );
+            }
+            break;
+
+          case 'scale':
+            if (_operationStartCumulativeScale != null &&
+                _operationStartWidth != null &&
+                _operationStartHeight != null &&
+                _operationStartPosition != null &&
+                (_operationStartCumulativeScale != selectedBox.scale ||
+                    _operationStartWidth != selectedBox.width ||
+                    _operationStartHeight != selectedBox.height ||
+                    _operationStartPosition!.dx != currentPosition.dx ||
+                    _operationStartPosition!.dy != currentPosition.dy)) {
+              historyManager!.executeCommand(
+                ScaleElementCommand(
+                  boxes: boxes,
+                  elementId: selectedId,
+                  oldCumulativeScale: _operationStartCumulativeScale!,
+                  newCumulativeScale: selectedBox.scale,
+                  oldWidth: _operationStartWidth!,
+                  oldHeight: _operationStartHeight!,
+                  oldPosition: _operationStartPosition!,
+                  newWidth: selectedBox.width,
+                  newHeight: selectedBox.height,
+                  newPosition: currentPosition,
+                  oldFontSize: _operationStartFontSize,
+                  newFontSize: selectedBox.type == ElementType.text
+                      ? selectedBox.fontSize
+                      : null,
+                ),
+              );
+            }
+            break;
+        }
+      } catch (e) {
+        debugPrint('记录命令时出错: $e');
+      }
+    }
+
+    if (currentInteraction == 'resize' && selectedId.isNotEmpty) {
+      final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+      selectedBox.resizingHandle = null;
+      selectedBox.resizeStartPosition = null;
+      selectedBox.resizeAnchorPoint = null;
+      debugPrint('调整大小结束');
+    }
+
+    if (currentInteraction == 'rotate' && selectedId.isNotEmpty) {
+      final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+      selectedBox.rotateLastPosition = null;
+      debugPrint('旋转结束');
+    }
+
+    reset();
+    debugPrint('指针抬起，重置状态');
+  }
+
+  /// 重置所有状态
+  void reset() {
+    currentInteraction = null;
+    hasMoved = false;
+    dragStartPosition = null;
+    dragStartBoxPosition = null;
+    lastScale = 1.0;
+    // 清除操作开始时的状态快照
+    _operationStartPosition = null;
+    _operationStartRotation = null;
+    _operationStartWidth = null;
+    _operationStartHeight = null;
+    _operationStartCumulativeScale = null;
+    _operationStartFontSize = null;
+    _operationStartFontSpace = null;
+  }
+
+  /// 开始调整大小
+  void _startResize(CanvasElement box, String handle, Offset position) {
+    box.resizingHandle = handle;
+    box.resizeStartWidth = box.width;
+    box.resizeStartHeight = box.height;
+    box.resizeAspectRatio = box.width / box.height; // 保存宽高比
+    box.resizeStartPosition = position;
+    // 保存初始字体大小、行高、字间距（仅文本类型）
+    if (box.type == ElementType.text) {
+      box.resizeStartFontSize = box.fontSize;
+      box.resizeStartLineHeight = box.lineHeight;
+      box.resizeStartFontSpace = box.fontSpace;
+    }
+
+    // 计算外层容器总尺寸（包含边框）
+    final totalStartWidth = box.width;
+    final totalStartHeight = box.height;
+
+    Offset anchorPointLocal = Offset.zero;
+    switch (handle) {
+      case 'top-left':
+        // 锚点是右下角（相对于外层容器）
+        anchorPointLocal = Offset(totalStartWidth, totalStartHeight);
+        break;
+      case 'top':
+        // 锚点是下边中点
+        anchorPointLocal = Offset(totalStartWidth / 2, totalStartHeight);
+        break;
+      case 'top-right':
+        // 锚点是左下角
+        anchorPointLocal = Offset(0, totalStartHeight);
+        break;
+      case 'right':
+        // 锚点是左边中点
+        anchorPointLocal = Offset(0, totalStartHeight / 2);
+        break;
+      case 'bottom-right':
+        // 锚点是左上角
+        anchorPointLocal = Offset(0, 0);
+        break;
+      case 'bottom':
+        // 锚点是上边中点
+        anchorPointLocal = Offset(totalStartWidth / 2, 0);
+        break;
+      case 'bottom-left':
+        // 锚点是右上角
+        anchorPointLocal = Offset(totalStartWidth, 0);
+        break;
+      case 'left':
+        // 锚点是右边中点
+        anchorPointLocal = Offset(totalStartWidth, totalStartHeight / 2);
+        break;
+    }
+
+    final cos = math.cos(box.rotation);
+    final sin = math.sin(box.rotation);
+    final rotatedPoint = Offset(
+      anchorPointLocal.dx * cos - anchorPointLocal.dy * sin,
+      anchorPointLocal.dx * sin + anchorPointLocal.dy * cos,
+    );
+
+    // 锚点是全局坐标（相对于画布）
+    box.resizeAnchorPoint = box.position + rotatedPoint;
   }
 
   /// 计算两个指针之间的距离

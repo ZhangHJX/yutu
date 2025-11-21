@@ -287,6 +287,6 @@ extension CanvasStatusManagerMinx on CanvasStatusManager {
       ..scaleByVector3(Vector3(scale, scale, 1))
       ..translateByVector3(Vector3(offsetX, offsetY, 0));
 
-    onMatrixChanged?.call(matrix, scale, Offset(offsetX, offsetY));
+    onMatrixChanged?.call(matrix.clone(), scale, Offset(offsetX, offsetY));
   }
 }
