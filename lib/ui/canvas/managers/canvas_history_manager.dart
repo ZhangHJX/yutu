@@ -524,7 +524,7 @@ class UpdateShapePropertiesCommand implements CanvasCommand {
       element.borderColor = properties['borderColor'] as String;
     }
     if (properties.containsKey('borderWidth')) {
-      element.borderWidth = properties['borderWidth'] as double;
+      element.borderWidth = properties['borderWidth'] as int;
     }
     if (properties.containsKey('isShawOpen')) {
       element.isShawOpen = properties['isShawOpen'] as bool;

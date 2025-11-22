@@ -29,7 +29,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
 
   // 边框颜色
   late String _borderColor;
-  late double _borderWidth;
+  late int _borderWidth;
   final TextEditingController _borderColorController = TextEditingController();
   final TextEditingController _borderWidthController = TextEditingController();
   double _borderAlpha = 1.0;
@@ -487,16 +487,15 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
               ),
               alignment: Alignment.center,
               child: TextField(
-                controller: TextEditingController(
-                  text: _borderWidth.toString(),
-                ),
+                controller: _borderWidthController,
+                inputFormatters: [BorderWidthFormatter(100)],
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
                 onChanged: (value) {
                   final newValue = int.tryParse(value);
                   if (newValue != null) {
                     setState(() {
-                      _borderWidth = newValue.toDouble();
+                      _borderWidth = newValue.toInt();
                       _updateModel();
                     });
                   }

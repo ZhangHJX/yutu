@@ -46,7 +46,7 @@ class CanvasElementWidget extends StatelessWidget {
               color: data.fillColor.color,
               border: Border.all(
                 color: data.borderColor.color.withValues(alpha: data.fillAlpha),
-                width: data.borderWidth,
+                width: data.borderWidth.toDouble(),
               ),
               boxShadow: data.isShawOpen
                   ? [
@@ -73,7 +73,7 @@ class CanvasElementWidget extends StatelessWidget {
                 color: data.borderColor.color.withValues(
                   alpha: data.borderAlpha,
                 ),
-                width: data.borderWidth,
+                width: data.borderWidth.toDouble(),
               ),
               boxShadow: data.isShawOpen
                   ? [
@@ -104,7 +104,7 @@ class CanvasElementWidget extends StatelessWidget {
                   color: data.borderColor.color.withValues(
                     alpha: data.borderAlpha,
                   ),
-                  width: data.borderWidth,
+                  width: data.borderWidth.toDouble(),
                 ),
                 boxShadow: data.isShawOpen
                     ? [
@@ -148,7 +148,8 @@ class CanvasElementWidget extends StatelessWidget {
                   : [],
             ),
             textAlign: data.align,
-            strokeWidth: data.borderWidth, // 描边宽度，需要自己计算：fontSize * 0.18
+            strokeWidth: data.borderWidth
+                .toDouble(), // 描边宽度，需要自己计算：fontSize * 0.18
             strokeColor: data.borderColor.color.withValues(
               alpha: data.borderAlpha,
             ),

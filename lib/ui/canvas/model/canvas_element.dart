@@ -43,7 +43,7 @@ class CanvasElement {
 
   // 公共属性--边框相关
   String borderColor;
-  double borderWidth;
+  int borderWidth;
   double borderAlpha;
 
   // Pointer 相关属性
@@ -143,6 +143,7 @@ class CanvasElement {
     // position 为元素左上角；这里构造一个围绕元素中心的变换矩阵
     final cx = position.dx + width / 2;
     final cy = position.dy + height / 2;
+
     transform = Matrix4.identity()
       // 1) 平移到元素中心
       ..translateByVector3(Vector3(cx, cy, 0))
