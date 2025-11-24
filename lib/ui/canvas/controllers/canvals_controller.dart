@@ -95,7 +95,10 @@ class CanvalsController extends GetxController {
   }
 
   /// 标记需要添加新的图片元素
-  void addNewImage(String imagePath) {
+  void addNewImage(String imagePath, {Offset? targetCenter}) {
+    if (targetCenter != null) {
+      center = targetCenter;
+    }
     _imagePath.value = imagePath;
     _shouldAddImage.value = true;
   }

@@ -815,7 +815,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           final imagePath = _canvalsController.selectImageHelper.image;
           if (imagePath != null) {
             debugPrint('选择的图片路径: $imagePath');
-            _canvalsController.addNewImage(imagePath);
+            _canvalsController.addNewImage(
+              imagePath,
+              targetCenter: _getCanvasCenter(),
+            );
           }
         },
       );
