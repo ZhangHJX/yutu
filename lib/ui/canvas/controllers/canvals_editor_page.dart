@@ -476,37 +476,62 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                             constraints.maxHeight,
                           );
 
+                      debugPrint(
+                        "---哈哈哈哈--${_canvalsController.canvalsSize.width}--${_canvalsController.canvalsSize.height}--",
+                      );
+
+                      final logicSize = Size(
+                        _canvalsModel.width,
+                        _canvalsModel.height,
+                      );
+
                       final canvasContent = ClipRect(
-                        child: SizedBox(
-                          width: _canvalsController.canvalsSize.width,
-                          height: _canvalsController.canvalsSize.height,
-                          child: Container(
-                            key: _canvasContainerKey,
-                            decoration: BoxDecoration(
-                              color: _canvalsModel.fillColor.color.withValues(
-                                alpha: _canvalsModel.fillAlpha,
-                              ),
-                              border: Border.all(
-                                color: _canvalsModel.borderColor.color
-                                    .withValues(
-                                      alpha: _canvalsModel.borderWidth > 0
-                                          ? _canvalsModel.borderAlpha
-                                          : 0.0,
-                                    ),
-                                width: _canvalsModel.borderWidth,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              key: _canvasContainerKey,
+                              width: _canvalsController.canvalsSize.width,
+                              height: _canvalsController.canvalsSize.height,
+                              decoration: BoxDecoration(
+                                color: _canvalsModel.fillColor.color.withValues(
+                                  alpha: _canvalsModel.fillAlpha,
+                                ),
+                                border: Border.all(
+                                  color: _canvalsModel.borderColor.color
+                                      .withValues(
+                                        alpha: _canvalsModel.borderWidth > 0
+                                            ? _canvalsModel.borderAlpha
+                                            : 0.0,
+                                      ),
+                                  width: _canvalsModel.borderWidth,
+                                ),
                               ),
                             ),
-                            child: CanvasEditorWidget(
-                              key: _canvasKey,
-                              historyManager: _historyManager,
-                              onContentChanged: () {
-                                if (mounted) {
-                                  setState(() {});
-                                }
-                              },
-                              canvasMatrix: _canvalsModel.transform,
+                            Positioned.fill(
+                              child: OverflowBox(
+                                minWidth: 0,
+                                minHeight: 0,
+                                maxWidth: double.infinity,
+                                maxHeight: double.infinity,
+                                alignment: Alignment.topLeft,
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  child: CanvasEditorWidget(
+                                    key: _canvasKey,
+                                    historyManager: _historyManager,
+                                    onContentChanged: () {
+                                      if (mounted) {
+                                        setState(() {});
+                                      }
+                                    },
+                                    canvasMatrix: _canvalsModel.transform,
+                                    canvasSize: logicSize,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       );
 
@@ -812,7 +837,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     SmartDialog.show(
       builder: (context) => CanvalsShapeDialog(
         onShapeSelected: (type) {
-          _canvasKey.currentState?.addShape(type);
+          _canvasKey.currentState?.addShape(type, _getCanvasCenter());
           SmartDialog.dismiss();
         },
       ),
@@ -1008,6 +1033,13 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           });
         },
       ),
+    );
+  }
+
+  Offset _getCanvasCenter() {
+    return Offset(
+      _canvalsController.canvalsSize.width / 2,
+      _canvalsController.canvalsSize.height / 2,
     );
   }
 }

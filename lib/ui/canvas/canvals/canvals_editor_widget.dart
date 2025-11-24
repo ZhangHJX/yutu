@@ -15,12 +15,14 @@ class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
   final VoidCallback? onContentChanged;
   final Matrix4 canvasMatrix;
+  final Size canvasSize; // 画布逻辑尺寸（决定初始布局及居中位置）
 
   const CanvasEditorWidget({
     super.key,
     this.historyManager,
     this.onContentChanged,
     required this.canvasMatrix,
+    required this.canvasSize,
   });
 
   @override
@@ -143,7 +145,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     return Size(width, height);
   }
 
-  Future<void> addShape(ElementType type) async {
+  Future<void> addShape(ElementType type, Offset center) async {
     String shapeName = '';
     double boxWidth = 150.w;
     double boxHeight = 150.w;
@@ -165,13 +167,11 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
 
     final newId = _selectionController.generateId();
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    double canvasWidth = renderBox.size.width;
-    double canvasHeight = renderBox.size.height;
 
-    final centerX = (canvasWidth - boxWidth) / 2;
-    final centerY = (canvasHeight - boxHeight) / 2;
-    final Offset elementPos = Offset(centerX, centerY);
+    final elementPos = Offset(
+      center.dx - boxWidth / 2,
+      center.dy - boxHeight / 2,
+    );
 
     final newElement = CanvasElement(
       id: newId,
