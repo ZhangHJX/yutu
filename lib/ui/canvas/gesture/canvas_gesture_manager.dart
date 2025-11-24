@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/text_measure_util.dart';
 import '../history/canvas_history_manager.dart';
+import 'element_interaction_state.dart';
 import '../model/index.dart';
 import 'dart:math' as math;
 
@@ -18,7 +19,7 @@ class CanvasGestureManager {
 
   // 交互状态
   String?
-  currentInteraction; // 'drag', 'rotate', 'resize', 'scale', 'pending_drag_or_tap' 'activate'
+  currentInteraction; // 'drag', 'rotate', 'resize', 'scale', 'pending_drag_or_tap'
 
   double lastScale = 1.0;
 
@@ -990,23 +991,4 @@ class CanvasGestureManager {
       math.max(minBoxSize, minTextSize.height),
     );
   }
-}
-
-class ElementInteractionState {
-  Offset? fixedScaleCenter;
-  double initialWidth = 0;
-  double initialHeight = 0;
-  double initialFontSize = 0;
-
-  String? resizingHandle;
-  double resizeStartWidth = 0;
-  double resizeStartHeight = 0;
-  double resizeStartFontSize = 0;
-  double resizeStartLineHeight = 1.0;
-  double resizeStartFontSpace = 0.0;
-  double resizeAspectRatio = 1.0;
-  Offset? resizeStartPosition;
-  Offset? resizeAnchorPoint;
-
-  Offset? rotateLastPosition;
 }
