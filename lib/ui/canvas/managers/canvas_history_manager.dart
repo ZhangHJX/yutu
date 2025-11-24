@@ -169,7 +169,8 @@ class MoveElementCommand implements CanvasCommand {
   void execute() {
     final element = _findElement();
     if (element != null) {
-      element.position = newPosition;
+      element.x = oldPosition.dx;
+      element.y = oldPosition.dy;
     }
   }
 
@@ -177,7 +178,8 @@ class MoveElementCommand implements CanvasCommand {
   void undo() {
     final element = _findElement();
     if (element != null) {
-      element.position = oldPosition;
+      element.x = oldPosition.dx;
+      element.y = oldPosition.dy;
     }
   }
 
@@ -229,7 +231,8 @@ class ResizeElementCommand implements CanvasCommand {
     if (element != null) {
       element.width = newWidth;
       element.height = newHeight;
-      element.position = newPosition;
+      element.x = oldPosition.dx;
+      element.y = oldPosition.dy;
       if (newFontSize != null && element.type == ElementType.text) {
         element.fontSize = newFontSize!;
       }
@@ -245,7 +248,8 @@ class ResizeElementCommand implements CanvasCommand {
     if (element != null) {
       element.width = oldWidth;
       element.height = oldHeight;
-      element.position = oldPosition;
+      element.x = oldPosition.dx;
+      element.y = oldPosition.dy;
       if (oldFontSize != null && element.type == ElementType.text) {
         element.fontSize = oldFontSize!;
       }
@@ -346,7 +350,8 @@ class ScaleElementCommand implements CanvasCommand {
       // element.cumulativeScale = newCumulativeScale;
       element.width = newWidth;
       element.height = newHeight;
-      element.position = newPosition;
+      element.x = oldPosition.dx;
+      element.y = oldPosition.dy;
       if (newFontSize != null && element.type == ElementType.text) {
         element.fontSize = newFontSize!;
       }
@@ -360,7 +365,8 @@ class ScaleElementCommand implements CanvasCommand {
       // element.cumulativeScale = oldCumulativeScale;
       element.width = oldWidth;
       element.height = oldHeight;
-      element.position = oldPosition;
+      element.x = oldPosition.dx;
+      element.y = oldPosition.dy;
       if (oldFontSize != null && element.type == ElementType.text) {
         element.fontSize = oldFontSize!;
       }
@@ -473,7 +479,9 @@ class UpdateTextPropertiesCommand implements CanvasCommand {
       element.height = properties['height'] as double;
     }
     if (properties.containsKey('position')) {
-      element.position = properties['position'] as Offset;
+      Offset position = properties['position'];
+      element.x = position.dx;
+      element.y = position.dy;
     }
   }
 

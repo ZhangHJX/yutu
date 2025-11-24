@@ -4,6 +4,7 @@ import '../utils/gradient_border.dart';
 import '../../../app/routes/index.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../model/index.dart';
+import 'package:uuid/uuid.dart';
 
 class CreateCanvalsPage extends StatefulWidget {
   const CreateCanvalsPage({super.key});
@@ -118,6 +119,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
   }
 
   void _onCreateCanvas() {
+    final Uuid uuid = Uuid();
+
     if (_selectedTab == 0) {
       final itemModel = _aspectRatios[_selectedAspectRatio];
       final ratio = itemModel['ratio'];
@@ -133,14 +136,43 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
       double height = _selectedClarity == 0
           ? result["normalH"].toDouble()
           : result["hdH"].toDouble();
-      CanvasModel canvalsModel = CanvasModel(width: width, height: height);
+      CanvasModel canvalsModel = CanvasModel(
+        id: uuid.v4(),
+        x: 0,
+        y: 0,
+        scale: 1.0,
+        width: width,
+        height: height,
+        fillColor: '#FFFFFF',
+        fillAlpha: 1.0,
+        borderColor: '#BFBFBF',
+        borderWidth: 1.0,
+        borderAlpha: 1.0,
+        locked: true,
+        isSelected: false,
+      );
+
       canvalsModel.getMatrix4();
       _onCancel();
       Get.toNamed(AppRoutes.createCanvalsPage, arguments: canvalsModel);
     } else {
       double width = double.parse(_widthController.text);
       double height = double.parse(_heightController.text);
-      CanvasModel canvalsModel = CanvasModel(width: width, height: height);
+      CanvasModel canvalsModel = CanvasModel(
+        id: uuid.v4(),
+        x: 0,
+        y: 0,
+        scale: 1.0,
+        width: width,
+        height: height,
+        fillColor: '#FFFFFF',
+        fillAlpha: 1.0,
+        borderColor: '#BFBFBF',
+        borderWidth: 1.0,
+        borderAlpha: 1.0,
+        locked: true,
+        isSelected: false,
+      );
       canvalsModel.getMatrix4();
       _onCancel();
       Get.toNamed(AppRoutes.createCanvalsPage, arguments: canvalsModel);

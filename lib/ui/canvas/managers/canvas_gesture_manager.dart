@@ -22,6 +22,20 @@ class CanvasGestureManager {
 
   double lastScale = 1.0;
 
+  // 每个元素的交互状态缓存
+  final Map<String, ElementInteractionState> _interactionStates = {};
+
+  ElementInteractionState _stateForBox(CanvasElement box) {
+    return _interactionStates.putIfAbsent(
+      box.id,
+      () => ElementInteractionState(),
+    );
+  }
+
+  void clearInteractionState(String elementId) {
+    _interactionStates.remove(elementId);
+  }
+
   // 操作开始时的状态快照（用于历史记录）
   Offset? _operationStartPosition;
   double? _operationStartRotation;
@@ -88,6 +102,7 @@ class CanvasGestureManager {
         event.localPosition; // 使用 localPosition 而不是 position，保持一致性
 
     CanvasElement selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+    final state = _stateForBox(selectedBox);
     final hitTarget = MatrixUtilsXGesture.detectHitTarget(
       event.position,
       selectedBox,
@@ -104,7 +119,7 @@ class CanvasGestureManager {
         // 开始旋转
         currentInteraction = 'rotate';
         hasMoved = true; // 判定为旋转操作
-        selectedBox.rotateLastPosition = event.localPosition;
+        state.rotateLastPosition = event.localPosition;
         // 保存操作开始时的状态
         _operationStartRotation = selectedBox.rotation;
         debugPrint('✅ 判定为旋转: $selectedId');
@@ -117,10 +132,7 @@ class CanvasGestureManager {
         // 保存操作开始时的状态
         _operationStartWidth = selectedBox.width;
         _operationStartHeight = selectedBox.height;
-        _operationStartPosition = Offset(
-          selectedBox.position.dx,
-          selectedBox.position.dy,
-        );
+        _operationStartPosition = Offset(selectedBox.x, selectedBox.y);
         if (selectedBox.type == ElementType.text) {
           _operationStartFontSize = selectedBox.fontSize;
           _operationStartFontSpace = selectedBox.fontSpace;
@@ -133,23 +145,20 @@ class CanvasGestureManager {
         currentInteraction = 'pending_drag_or_tap';
         dragStartBoxPosition = selectedBox.position;
         // 保存操作开始时的位置（用于历史记录）
-        _operationStartPosition = Offset(
-          selectedBox.position.dx,
-          selectedBox.position.dy,
-        );
+        _operationStartPosition = Offset(selectedBox.x, selectedBox.y);
         // 初始化缩放中心点（外层容器包含边框）
-        if (selectedBox.fixedScaleCenter == null) {
+        if (state.fixedScaleCenter == null) {
           final totalWidth = selectedBox.width;
           final totalHeight = selectedBox.height;
-          selectedBox.fixedScaleCenter = Offset(
-            selectedBox.position.dx + totalWidth / 2,
-            selectedBox.position.dy + totalHeight / 2,
+          state.fixedScaleCenter = Offset(
+            selectedBox.x + totalWidth / 2,
+            selectedBox.y + totalHeight / 2,
           );
-          selectedBox.initialWidth = selectedBox.width;
-          selectedBox.initialHeight = selectedBox.height;
+          state.initialWidth = selectedBox.width;
+          state.initialHeight = selectedBox.height;
           // 保存初始字体大小（仅文本类型）
           if (selectedBox.type == ElementType.text) {
-            selectedBox.initialFontSize = selectedBox.fontSize;
+            state.initialFontSize = selectedBox.fontSize;
           }
         }
       }
@@ -164,6 +173,7 @@ class CanvasGestureManager {
   void _handleDoublePointerDown(List<CanvasElement> boxes, String selectedId) {
     if (selectedId.isEmpty) return;
     final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+    final state = _stateForBox(selectedBox);
 
     currentInteraction = 'scale';
     lastScale = _computeScale();
@@ -173,25 +183,22 @@ class CanvasGestureManager {
     // 始终重新计算缩放中心点（基于当前文本框的中心）
     final totalWidth = selectedBox.width;
     final totalHeight = selectedBox.height;
-    selectedBox.fixedScaleCenter = Offset(
-      selectedBox.position.dx + totalWidth / 2,
-      selectedBox.position.dy + totalHeight / 2,
+    state.fixedScaleCenter = Offset(
+      selectedBox.x + totalWidth / 2,
+      selectedBox.y + totalHeight / 2,
     );
-    selectedBox.initialWidth = selectedBox.width;
-    selectedBox.initialHeight = selectedBox.height;
+    state.initialWidth = selectedBox.width;
+    state.initialHeight = selectedBox.height;
     // 保存初始字体大小（仅文本类型）
     if (selectedBox.type == ElementType.text) {
-      selectedBox.initialFontSize = selectedBox.fontSize;
+      state.initialFontSize = selectedBox.fontSize;
     }
 
     // 保存操作开始时的状态
     _operationStartCumulativeScale = selectedBox.scale;
     _operationStartWidth = selectedBox.width;
     _operationStartHeight = selectedBox.height;
-    _operationStartPosition = Offset(
-      selectedBox.position.dx,
-      selectedBox.position.dy,
-    );
+    _operationStartPosition = Offset(selectedBox.x, selectedBox.y);
     if (selectedBox.type == ElementType.text) {
       _operationStartFontSize = selectedBox.fontSize;
     }
@@ -289,7 +296,10 @@ class CanvasGestureManager {
         // 严格检查拖动状态的有效性
         if (dragStartPosition != null && dragStartBoxPosition != null) {
           final delta = event.localPosition - dragStartPosition!;
-          targetBox.position = dragStartBoxPosition! + delta;
+          final position = dragStartBoxPosition! + delta;
+          targetBox.x = position.dx;
+          targetBox.y = position.dy;
+
           // 如果还没有保存初始位置，现在保存（首次移动时）
           _operationStartPosition ??= dragStartBoxPosition;
         } else {
@@ -320,14 +330,15 @@ class CanvasGestureManager {
 
   /// 更新旋转
   void _updateRotation(CanvasElement box, Offset currentPosition) {
-    if (box.rotateLastPosition == null) return;
+    final state = _stateForBox(box);
+    if (state.rotateLastPosition == null) return;
 
     // 计算容器中心（外层容器包含边框）
     final totalWidth = box.width;
     final totalHeight = box.height;
     final globalContainerCenter = Offset(
-      box.position.dx + totalWidth / 2,
-      box.position.dy + totalHeight / 2,
+      box.x + totalWidth / 2,
+      box.y + totalHeight / 2,
     );
 
     final currentAngle = math.atan2(
@@ -335,8 +346,8 @@ class CanvasGestureManager {
       currentPosition.dx - globalContainerCenter.dx,
     );
     final lastAngle = math.atan2(
-      box.rotateLastPosition!.dy - globalContainerCenter.dy,
-      box.rotateLastPosition!.dx - globalContainerCenter.dx,
+      state.rotateLastPosition!.dy - globalContainerCenter.dy,
+      state.rotateLastPosition!.dx - globalContainerCenter.dx,
     );
 
     double angleDelta = currentAngle - lastAngle;
@@ -348,24 +359,25 @@ class CanvasGestureManager {
     }
 
     box.rotation += angleDelta;
-    box.rotateLastPosition = currentPosition;
+    state.rotateLastPosition = currentPosition;
   }
 
   /// 更新调整大小
   void _updateResize(CanvasElement box, Offset currentPosition) {
-    if (box.resizingHandle == null ||
-        box.resizeStartPosition == null ||
-        box.resizeAnchorPoint == null) {
+    final state = _stateForBox(box);
+    if (state.resizingHandle == null ||
+        state.resizeStartPosition == null ||
+        state.resizeAnchorPoint == null) {
       return;
     }
 
-    final delta = currentPosition - box.resizeStartPosition!;
+    final delta = currentPosition - state.resizeStartPosition!;
 
     if (box.type == ElementType.line &&
-        (box.resizingHandle! == 'top-left' ||
-            box.resizingHandle! == 'top-right' ||
-            box.resizingHandle! == 'bottom-right' ||
-            box.resizingHandle! == 'bottom-left')) {
+        (state.resizingHandle! == 'top-left' ||
+            state.resizingHandle! == 'top-right' ||
+            state.resizingHandle! == 'bottom-right' ||
+            state.resizingHandle! == 'bottom-left')) {
       return;
     }
 
@@ -374,32 +386,30 @@ class CanvasGestureManager {
     final adjustedDx = delta.dx * cos - delta.dy * sin;
     final adjustedDy = delta.dx * sin + delta.dy * cos;
 
-    double newWidth = box.resizeStartWidth;
-    double newHeight = box.resizeStartHeight;
+    double newWidth = state.resizeStartWidth;
+    double newHeight = state.resizeStartHeight;
 
     // 文本类型特殊处理
     if (box.type == ElementType.text) {
-      // 计算最小文本尺寸
       final minTextSize = _calculateMinTextSize(box);
       final minWidth = minTextSize.width;
       final minHeight = minTextSize.height;
 
-      switch (box.resizingHandle!) {
+      switch (state.resizingHandle!) {
         case 'left':
         case 'right':
-          // 左右控制点：只改变宽度，高度根据文本自动计算
-          if (box.resizingHandle! == 'right') {
-            newWidth = (box.resizeStartWidth + adjustedDx).clamp(
+          if (state.resizingHandle! == 'right') {
+            newWidth = (state.resizeStartWidth + adjustedDx).clamp(
               minWidth,
               maxSize,
             );
           } else {
-            newWidth = (box.resizeStartWidth - adjustedDx).clamp(
+            newWidth = (state.resizeStartWidth - adjustedDx).clamp(
               minWidth,
               maxSize,
             );
           }
-          // 根据新宽度计算文本高度
+
           final textSize = TextMeasureUtil.measureTextWithWidth(
             text: box.text,
             fontSize: box.fontSize,
@@ -415,169 +425,134 @@ class CanvasGestureManager {
         case 'top-right':
         case 'bottom-left':
         case 'bottom-right':
-          // 角点：按比例缩放
-          final scaleX = box.resizingHandle!.contains('right')
-              ? (box.resizeStartWidth + adjustedDx) / box.resizeStartWidth
-              : (box.resizeStartWidth - adjustedDx) / box.resizeStartWidth;
-          final scaleY = box.resizingHandle!.contains('bottom')
-              ? (box.resizeStartHeight + adjustedDy) / box.resizeStartHeight
-              : (box.resizeStartHeight - adjustedDy) / box.resizeStartHeight;
+          final scaleX = state.resizingHandle!.contains('right')
+              ? (state.resizeStartWidth + adjustedDx) / state.resizeStartWidth
+              : (state.resizeStartWidth - adjustedDx) / state.resizeStartWidth;
+          final scaleY = state.resizingHandle!.contains('bottom')
+              ? (state.resizeStartHeight + adjustedDy) / state.resizeStartHeight
+              : (state.resizeStartHeight - adjustedDy) /
+                    state.resizeStartHeight;
           final scale = (scaleX + scaleY) / 2;
 
-          // 判断是否是多行文本（宽度小于单行所需宽度）
           final singleLineSize = TextMeasureUtil.measureText(
             text: box.text,
-            fontSize: box.resizeStartFontSize,
+            fontSize: state.resizeStartFontSize,
             fontFamily: box.fontFamily,
             fontWeight: box.fontWeight,
-            letterSpacing: box.resizeStartFontSpace,
-            lineHeight: box.resizeStartLineHeight,
+            letterSpacing: state.resizeStartFontSpace,
+            lineHeight: state.resizeStartLineHeight,
           );
-          final isMultiLine = box.resizeStartWidth < singleLineSize.width;
+          final isMultiLine = state.resizeStartWidth < singleLineSize.width;
 
           if (isMultiLine) {
-            // 多行文本：使用统一的scale同时缩放宽度、字体、行高、字间距，保持行数不变
-            // 宽度和字体应该继续缩小，直到字体达到最小值，不受minWidth限制
-            final scaledWidth = box.resizeStartWidth * scale;
-            final scaledFontSize = box.resizeStartFontSize * scale;
-            // 字间距（绝对值）也需要按比例缩放
-            final scaledFontSpace = box.resizeStartFontSpace * scale;
-            // 行高（相对于字体的倍数）保持不变，因为实际行高 = fontSize * lineHeight，已经随字体缩放了
+            final scaledWidth = state.resizeStartWidth * scale;
+            final scaledFontSize = state.resizeStartFontSize * scale;
+            final scaledFontSpace = state.resizeStartFontSpace * scale;
 
-            // 字体不能小于最小值
             final finalFontSize = math.max(scaledFontSize, minFontSize);
-            // 字间距不能小于0
             final finalFontSpace = math.max(scaledFontSpace, 0.0);
 
-            // 如果字体还能缩小，使用计算的宽度；如果字体已到最小值，按比例计算对应的宽度
             final finalWidth = (scaledFontSize >= minFontSize)
                 ? scaledWidth
-                : (box.resizeStartWidth *
-                      (minFontSize / box.resizeStartFontSize));
+                : (state.resizeStartWidth *
+                      (minFontSize / state.resizeStartFontSize));
 
-            // 使用最终的宽度、字体、字间距、行高重新计算文本高度
             final textSize = TextMeasureUtil.measureTextWithWidth(
               text: box.text,
               fontSize: finalFontSize,
               fontFamily: box.fontFamily,
               fontWeight: box.fontWeight,
               letterSpacing: finalFontSpace,
-              lineHeight: box.resizeStartLineHeight, // 行高倍数保持不变
+              lineHeight: state.resizeStartLineHeight,
               maxWidth: finalWidth,
             );
 
-            // 宽度和高度允许缩小到比minWidth/minHeight更小，直到字体达到最小值
             newWidth = math.max(finalWidth, 0.0).clamp(0.0, maxSize);
             newHeight = math.max(textSize.height, 0.0).clamp(0.0, maxSize);
             box.fontSize = finalFontSize.clamp(minFontSize, 200.0);
             box.fontSpace = finalFontSpace;
-            // lineHeight 保持不变，因为它是相对于字体的倍数
           } else {
-            // 单行文本：按比例缩放，保持宽高比
-            newWidth = (box.resizeStartWidth * scale).clamp(minWidth, maxSize);
-            newHeight = (newWidth / box.resizeAspectRatio).clamp(
-              minHeight,
-              maxSize,
-            );
-            newWidth = (newHeight * box.resizeAspectRatio).clamp(
+            newWidth = (state.resizeStartWidth * scale).clamp(
               minWidth,
               maxSize,
             );
-            // 使用最终的实际宽度变化比例来缩放字体大小
-            final actualScale = newWidth / box.resizeStartWidth;
-            box.fontSize = (box.resizeStartFontSize * actualScale).clamp(
+            newHeight = (newWidth / state.resizeAspectRatio).clamp(
+              minHeight,
+              maxSize,
+            );
+            newWidth = (newHeight * state.resizeAspectRatio).clamp(
+              minWidth,
+              maxSize,
+            );
+            final actualScale = newWidth / state.resizeStartWidth;
+            box.fontSize = (state.resizeStartFontSize * actualScale).clamp(
               minFontSize,
               200.0,
             );
           }
           break;
         default:
-          // top 和 bottom 控制点不处理（文本类型没有这些控制点）
           break;
       }
     } else {
-      // 非文本类型的原有逻辑
-      switch (box.resizingHandle!) {
+      switch (state.resizingHandle!) {
         case 'top-left':
-          // 角点：按比例缩放，使用对角线距离来计算缩放比例
           final scaleX =
-              (box.resizeStartWidth - adjustedDx) / box.resizeStartWidth;
+              (state.resizeStartWidth - adjustedDx) / state.resizeStartWidth;
           final scaleY =
-              (box.resizeStartHeight - adjustedDy) / box.resizeStartHeight;
-          final scale = (scaleX + scaleY) / 2; // 取平均值
-          newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
-          newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
-          // 重新调整宽度以确保高度在范围内
-          newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
+              (state.resizeStartHeight - adjustedDy) / state.resizeStartHeight;
+          final scale = (scaleX + scaleY) / 2;
+          newWidth = (state.resizeStartWidth * scale).clamp(50.0, maxSize);
+          newHeight = (newWidth / state.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (newHeight * state.resizeAspectRatio).clamp(50.0, maxSize);
           break;
         case 'top':
-          // 边中点：只改变高度
-          if (box.type == ElementType.line) {
-            newHeight = (box.resizeStartHeight - adjustedDy).clamp(
-              20.0,
-              maxSize,
-            );
-          } else {
-            newHeight = (box.resizeStartHeight - adjustedDy).clamp(
-              50.0,
-              maxSize,
-            );
-          }
+          newHeight = (state.resizeStartHeight - adjustedDy).clamp(
+            box.type == ElementType.line ? 20.0 : 50.0,
+            maxSize,
+          );
           break;
         case 'top-right':
-          // 角点：按比例缩放
           final scaleX =
-              (box.resizeStartWidth + adjustedDx) / box.resizeStartWidth;
+              (state.resizeStartWidth + adjustedDx) / state.resizeStartWidth;
           final scaleY =
-              (box.resizeStartHeight - adjustedDy) / box.resizeStartHeight;
+              (state.resizeStartHeight - adjustedDy) / state.resizeStartHeight;
           final scale = (scaleX + scaleY) / 2;
-          newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
-          newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
-          newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (state.resizeStartWidth * scale).clamp(50.0, maxSize);
+          newHeight = (newWidth / state.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (newHeight * state.resizeAspectRatio).clamp(50.0, maxSize);
           break;
         case 'right':
-          // 边中点：只改变宽度
-          newWidth = (box.resizeStartWidth + adjustedDx).clamp(50.0, maxSize);
+          newWidth = (state.resizeStartWidth + adjustedDx).clamp(50.0, maxSize);
           break;
         case 'bottom-right':
-          // 角点：按比例缩放
           final scaleX =
-              (box.resizeStartWidth + adjustedDx) / box.resizeStartWidth;
+              (state.resizeStartWidth + adjustedDx) / state.resizeStartWidth;
           final scaleY =
-              (box.resizeStartHeight + adjustedDy) / box.resizeStartHeight;
+              (state.resizeStartHeight + adjustedDy) / state.resizeStartHeight;
           final scale = (scaleX + scaleY) / 2;
-          newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
-          newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
-          newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (state.resizeStartWidth * scale).clamp(50.0, maxSize);
+          newHeight = (newWidth / state.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (newHeight * state.resizeAspectRatio).clamp(50.0, maxSize);
           break;
         case 'bottom':
-          // 边中点：只改变高度
-          if (box.type == ElementType.line) {
-            newHeight = (box.resizeStartHeight + adjustedDy).clamp(
-              20.0,
-              maxSize,
-            );
-          } else {
-            newHeight = (box.resizeStartHeight + adjustedDy).clamp(
-              50.0,
-              maxSize,
-            );
-          }
+          newHeight = (state.resizeStartHeight + adjustedDy).clamp(
+            box.type == ElementType.line ? 20.0 : 50.0,
+            maxSize,
+          );
           break;
         case 'bottom-left':
-          // 角点：按比例缩放
           final scaleX =
-              (box.resizeStartWidth - adjustedDx) / box.resizeStartWidth;
+              (state.resizeStartWidth - adjustedDx) / state.resizeStartWidth;
           final scaleY =
-              (box.resizeStartHeight + adjustedDy) / box.resizeStartHeight;
+              (state.resizeStartHeight + adjustedDy) / state.resizeStartHeight;
           final scale = (scaleX + scaleY) / 2;
-          newWidth = (box.resizeStartWidth * scale).clamp(50.0, maxSize);
-          newHeight = (newWidth / box.resizeAspectRatio).clamp(50.0, maxSize);
-          newWidth = (newHeight * box.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (state.resizeStartWidth * scale).clamp(50.0, maxSize);
+          newHeight = (newWidth / state.resizeAspectRatio).clamp(50.0, maxSize);
+          newWidth = (newHeight * state.resizeAspectRatio).clamp(50.0, maxSize);
           break;
         case 'left':
-          // 边中点：只改变宽度
-          newWidth = (box.resizeStartWidth - adjustedDx).clamp(50.0, maxSize);
+          newWidth = (state.resizeStartWidth - adjustedDx).clamp(50.0, maxSize);
           break;
       }
     }
@@ -585,42 +560,33 @@ class CanvasGestureManager {
     box.width = newWidth;
     box.height = newHeight;
 
-    // 计算新的外层容器总尺寸（包含边框）
     final totalNewWidth = box.width;
     final totalNewHeight = box.height;
 
     Offset newAnchorPointLocal = Offset.zero;
-    switch (box.resizingHandle!) {
+    switch (state.resizingHandle!) {
       case 'top-left':
-        // 新的右下角（相对于新的外层容器）
         newAnchorPointLocal = Offset(totalNewWidth, totalNewHeight);
         break;
       case 'top':
-        // 新的下边中点
         newAnchorPointLocal = Offset(totalNewWidth / 2, totalNewHeight);
         break;
       case 'top-right':
-        // 新的左下角
         newAnchorPointLocal = Offset(0, totalNewHeight);
         break;
       case 'right':
-        // 新的左边中点
         newAnchorPointLocal = Offset(0, totalNewHeight / 2);
         break;
       case 'bottom-right':
-        // 新的左上角
         newAnchorPointLocal = Offset(0, 0);
         break;
       case 'bottom':
-        // 新的上边中点
         newAnchorPointLocal = Offset(totalNewWidth / 2, 0);
         break;
       case 'bottom-left':
-        // 新的右上角
         newAnchorPointLocal = Offset(totalNewWidth, 0);
         break;
       case 'left':
-        // 新的右边中点
         newAnchorPointLocal = Offset(totalNewWidth, totalNewHeight / 2);
         break;
     }
@@ -632,8 +598,9 @@ class CanvasGestureManager {
       newAnchorPointLocal.dx * sinRot + newAnchorPointLocal.dy * cosRot,
     );
 
-    // 根据固定锚点和新的对角点位置，计算新的外层容器位置
-    box.position = box.resizeAnchorPoint! - rotatedNewPoint;
+    Offset position = state.resizeAnchorPoint! - rotatedNewPoint;
+    box.x = position.dx;
+    box.y = position.dy;
   }
 
   /// 处理双指移动
@@ -650,6 +617,7 @@ class CanvasGestureManager {
     final scale = (currentScale / lastScale).clamp(0.5, 2.0);
 
     final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+    final state = _stateForBox(selectedBox);
     if (selectedBox.locked) {
       return false;
     }
@@ -665,7 +633,7 @@ class CanvasGestureManager {
       _resetDragState();
     }
 
-    if (selectedBox.fixedScaleCenter != null) {
+    if (state.fixedScaleCenter != null) {
       // 对于文本类型，根据最小字体大小计算最小尺寸
       double minWidth = 50.0;
       double minHeight = 50.0;
@@ -675,11 +643,11 @@ class CanvasGestureManager {
         minHeight = minTextSize.height;
       }
 
-      final newWidth = (selectedBox.initialWidth * selectedBox.scale).clamp(
+      final newWidth = (state.initialWidth * selectedBox.scale).clamp(
         minWidth,
         double.infinity,
       );
-      final newHeight = (selectedBox.initialHeight * selectedBox.scale).clamp(
+      final newHeight = (state.initialHeight * selectedBox.scale).clamp(
         minHeight,
         double.infinity,
       );
@@ -690,17 +658,19 @@ class CanvasGestureManager {
 
       // 使用包含边框的总尺寸来计算位置，确保缩放中心点正确
       final newPosition = Offset(
-        selectedBox.fixedScaleCenter!.dx - totalNewWidth / 2,
-        selectedBox.fixedScaleCenter!.dy - totalNewHeight / 2,
+        state.fixedScaleCenter!.dx - totalNewWidth / 2,
+        state.fixedScaleCenter!.dy - totalNewHeight / 2,
       );
 
-      selectedBox.position = newPosition;
+      selectedBox.x = newPosition.dx;
+      selectedBox.y = newPosition.dy;
+
       selectedBox.width = newWidth;
       selectedBox.height = newHeight;
 
       // 如果是文本类型，同时缩放字体大小
       if (selectedBox.type == ElementType.text) {
-        selectedBox.fontSize = (selectedBox.initialFontSize * selectedBox.scale)
+        selectedBox.fontSize = (state.initialFontSize * selectedBox.scale)
             .clamp(minFontSize, double.infinity);
       }
       // 移除频繁的调试打印，提升性能
@@ -757,10 +727,7 @@ class CanvasGestureManager {
     if (selectedId.isNotEmpty && hasMoved && historyManager != null) {
       try {
         final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-        final currentPosition = Offset(
-          selectedBox.position.dx,
-          selectedBox.position.dy,
-        );
+        final currentPosition = Offset(selectedBox.x, selectedBox.y);
 
         switch (currentInteraction) {
           case 'drag':
@@ -861,15 +828,17 @@ class CanvasGestureManager {
 
     if (currentInteraction == 'resize' && selectedId.isNotEmpty) {
       final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-      selectedBox.resizingHandle = null;
-      selectedBox.resizeStartPosition = null;
-      selectedBox.resizeAnchorPoint = null;
+      final state = _stateForBox(selectedBox);
+      state.resizingHandle = null;
+      state.resizeStartPosition = null;
+      state.resizeAnchorPoint = null;
       debugPrint('调整大小结束');
     }
 
     if (currentInteraction == 'rotate' && selectedId.isNotEmpty) {
       final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-      selectedBox.rotateLastPosition = null;
+      final state = _stateForBox(selectedBox);
+      state.rotateLastPosition = null;
       debugPrint('旋转结束');
     }
 
@@ -901,16 +870,17 @@ class CanvasGestureManager {
 
   /// 开始调整大小
   void _startResize(CanvasElement box, String handle, Offset position) {
-    box.resizingHandle = handle;
-    box.resizeStartWidth = box.width;
-    box.resizeStartHeight = box.height;
-    box.resizeAspectRatio = box.width / box.height; // 保存宽高比
-    box.resizeStartPosition = position;
+    final state = _stateForBox(box);
+    state.resizingHandle = handle;
+    state.resizeStartWidth = box.width;
+    state.resizeStartHeight = box.height;
+    state.resizeAspectRatio = box.width / box.height; // 保存宽高比
+    state.resizeStartPosition = position;
     // 保存初始字体大小、行高、字间距（仅文本类型）
     if (box.type == ElementType.text) {
-      box.resizeStartFontSize = box.fontSize;
-      box.resizeStartLineHeight = box.lineHeight;
-      box.resizeStartFontSpace = box.fontSpace;
+      state.resizeStartFontSize = box.fontSize;
+      state.resizeStartLineHeight = box.lineHeight;
+      state.resizeStartFontSpace = box.fontSpace;
     }
 
     // 计算外层容器总尺寸（包含边框）
@@ -961,7 +931,7 @@ class CanvasGestureManager {
     );
 
     // 锚点是全局坐标（相对于画布）
-    box.resizeAnchorPoint = box.position + rotatedPoint;
+    state.resizeAnchorPoint = box.position + rotatedPoint;
   }
 
   /// 计算两个指针之间的距离
@@ -1020,4 +990,23 @@ class CanvasGestureManager {
       math.max(minBoxSize, minTextSize.height),
     );
   }
+}
+
+class ElementInteractionState {
+  Offset? fixedScaleCenter;
+  double initialWidth = 0;
+  double initialHeight = 0;
+  double initialFontSize = 0;
+
+  String? resizingHandle;
+  double resizeStartWidth = 0;
+  double resizeStartHeight = 0;
+  double resizeStartFontSize = 0;
+  double resizeStartLineHeight = 1.0;
+  double resizeStartFontSpace = 0.0;
+  double resizeAspectRatio = 1.0;
+  Offset? resizeStartPosition;
+  Offset? resizeAnchorPoint;
+
+  Offset? rotateLastPosition;
 }

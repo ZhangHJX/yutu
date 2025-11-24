@@ -1,15 +1,22 @@
+import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'package:vector_math/vector_math_64.dart' hide Colors;
+import 'package:vector_math/vector_math_64.dart';
+
+part 'canvas_element.g.dart';
 
 enum ElementType { image, rectangle, ellipse, line, text }
 
+@JsonSerializable(explicitToJson: true)
 class CanvasElement {
   String id;
   ElementType type;
-  Matrix4 transform;
+
+  @JsonKey(defaultValue: 0)
+  double x;
+  @JsonKey(defaultValue: 0)
+  double y;
   double width;
   double height;
-
   bool hidden; // 元素是否可见
   bool locked; // 元素是否被锁
   bool selected; // 是否被选中
@@ -26,10 +33,18 @@ class CanvasElement {
   String text;
   String fontFamily;
   double fontSize;
+  @JsonKey(
+    fromJson: CanvasElement._fontWeightFromJson,
+    toJson: CanvasElement._fontWeightToJson,
+  )
   FontWeight fontWeight;
+  @JsonKey(
+    fromJson: CanvasElement._textAlignFromJson,
+    toJson: CanvasElement._textAlignToJson,
+  )
+  TextAlign align;
   double lineHeight;
   double fontSpace;
-  TextAlign align;
   String textColor;
   double textAlpha;
 
@@ -46,36 +61,23 @@ class CanvasElement {
   int borderWidth;
   double borderAlpha;
 
-  // Pointer 相关属性
-  Offset position;
+  // 矩阵变换
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  Matrix4 transform = Matrix4.identity();
+
   double rotation; // 旋转角度
   double scale; // 放比例
-
-  Offset? fixedScaleCenter; // 固定的缩放中心点
-  double initialWidth; // 初始宽度（用于缩放计算）
-  double initialHeight; // 初始高度（用于缩放计算）
-  double initialFontSize; // 初始字体大小（用于缩放计算）
-
-  // 调整大小相关属性
-  String? resizingHandle; // 当前正在调整的控制点位置
-  double resizeStartWidth; // 调整大小开始时的宽度
-  double resizeStartHeight; // 调整大小开始时的高度
-  double resizeStartFontSize; // 调整大小开始时的字体大小
-  double resizeStartLineHeight; // 调整大小开始时的行高
-  double resizeStartFontSpace; // 调整大小开始时的字间距
-  double resizeAspectRatio; // 调整大小开始时的宽高比
-  Offset? resizeStartPosition; // 调整大小开始时的触摸位置
-  Offset? resizeAnchorPoint; // 调整大小时的锚点（对角点）
-
-  // 旋转相关属性
-  Offset? rotateLastPosition; // 旋转时的上一次触摸位置
 
   CanvasElement({
     this.id = '',
     required this.type,
-    required this.position,
+    required this.x,
+    required this.y,
     required this.width,
     required this.height,
+    this.hidden = false,
+    this.locked = false,
+    this.selected = false,
 
     this.imagePath = '',
     this.imageAlpha = 1.0,
@@ -105,44 +107,34 @@ class CanvasElement {
     this.borderAlpha = 1.0,
 
     // 可见性属性的默认值
-    this.hidden = false,
-    this.locked = false,
-    this.selected = false,
-    Matrix4? transform,
-
-    // Pointer 相关属性的默认值
     this.rotation = 0.0,
     this.scale = 1.0,
-    this.fixedScaleCenter,
-    double? initialWidth,
-    double? initialHeight,
+  });
 
-    // 调整大小相关属性的默认值
-    this.resizingHandle,
-    this.resizeStartWidth = 300.0,
-    this.resizeStartHeight = 200.0,
-    this.resizeStartFontSize = 14.0,
-    double? resizeStartLineHeight,
-    double? resizeStartFontSpace,
-    double? resizeAspectRatio,
-    this.resizeStartPosition,
-    this.resizeAnchorPoint,
+  // 自动生成的 JSON 解析
+  factory CanvasElement.fromJson(Map<String, dynamic> json) =>
+      _$CanvasElementFromJson(json);
 
-    // 旋转相关属性的默认值
-    this.rotateLastPosition,
-  }) : transform = transform ?? Matrix4.identity(),
-       initialWidth = initialWidth ?? width,
-       initialHeight = initialHeight ?? height,
-       initialFontSize = fontSize,
-       resizeStartLineHeight = resizeStartLineHeight ?? lineHeight,
-       resizeStartFontSpace = resizeStartFontSpace ?? fontSpace,
-       resizeAspectRatio = resizeAspectRatio ?? (width / height);
+  /// 自动生成的 JSON 输出
+  Map<String, dynamic> toJson() => _$CanvasElementToJson(this);
 
-  /// 用当前 position / rotation / scale 更新 Matrix4
+  // -----------------------
+  // 自定义序列化方法（关键）
+  // -----------------------
+  // FontWeight
+  static FontWeight _fontWeightFromJson(int value) => FontWeight.values[value];
+  static int _fontWeightToJson(FontWeight weight) =>
+      FontWeight.values.indexOf(weight);
+
+  // TextAlign
+  static TextAlign _textAlignFromJson(int value) => TextAlign.values[value];
+  static int _textAlignToJson(TextAlign align) =>
+      TextAlign.values.indexOf(align);
+
+  /// 用当前 position / rotation / scale 更新 Matrix4 position 为元素左上角；这里构造一个围绕元素中心的变换矩阵
   void updateMatrix4() {
-    // position 为元素左上角；这里构造一个围绕元素中心的变换矩阵
-    final cx = position.dx + width / 2;
-    final cy = position.dy + height / 2;
+    final cx = x + width / 2;
+    final cy = y + height / 2;
 
     transform = Matrix4.identity()
       // 1) 平移到元素中心
@@ -158,12 +150,13 @@ class CanvasElement {
   /// 元素本地坐标系下的矩形（以左上角为原点）
   Rect get localRect => Rect.fromLTWH(0, 0, width, height);
 
-  /// 元素本地坐标系下的四个顶点（以左上角为原点）
-  /// 顺序：TL, TR, BR, BL
+  /// 元素本地坐标系下的四个顶点（以左上角为原点） 顺序：TL, TR, BR, BL
   List<Offset> get localCorners => [
     const Offset(0, 0),
     Offset(width, 0),
     Offset(width, height),
     Offset(0, height),
   ];
+
+  Offset get position => Offset(x, y);
 }

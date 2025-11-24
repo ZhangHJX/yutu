@@ -176,7 +176,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     final newElement = CanvasElement(
       id: newId,
       text: shapeName,
-      position: elementPos,
+      x: elementPos.dx,
+      y: elementPos.dy,
       type: type,
       width: boxWidth,
       height: boxHeight,
@@ -238,12 +239,12 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     // 获取屏幕中心在画布坐标中的位置（考虑平移和缩放）
     final centerX = (canvasWidth - finalWidth) / 2;
     final centerY = (canvasHeight - finalHeight) / 2;
-    final Offset elementPos = Offset(centerX, centerY);
 
     final newElement = CanvasElement(
       id: newId,
       text: type == ElementType.text ? text : '',
-      position: elementPos,
+      x: centerX,
+      y: centerY,
       type: type,
       imagePath: type == ElementType.image ? imagePath : '',
       width: finalWidth,
@@ -301,6 +302,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       if (_selectionController.selectedId == id) {
         _selectionController.deselect();
       }
+      _gestureManager.clearInteractionState(id);
     });
 
     // 记录命令

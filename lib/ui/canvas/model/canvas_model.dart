@@ -1,44 +1,82 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'canvas_element.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'dart:math' as math;
 
+part 'canvas_model.g.dart';
+
+@JsonSerializable()
 class CanvasModel {
+  @JsonKey(defaultValue: '')
+  String id;
+
+  @JsonKey(defaultValue: 0.0)
+  double x;
+
+  @JsonKey(defaultValue: 0.0)
+  double y;
+
+  @JsonKey(defaultValue: 1.0)
   double scale;
-  Offset offset = Offset.zero;
-  Matrix4 transform = Matrix4.identity();
+
+  @JsonKey(defaultValue: 1080)
   double width;
+
+  @JsonKey(defaultValue: 1080)
   double height;
 
+  @JsonKey(defaultValue: '#FFFFFF')
   String fillColor;
+
+  @JsonKey(defaultValue: 1.0)
   double fillAlpha;
+
+  @JsonKey(defaultValue: '#BFBFBF')
   String borderColor;
+
+  @JsonKey(defaultValue: 0)
   double borderWidth;
+
+  @JsonKey(defaultValue: 1.0)
   double borderAlpha;
+
+  @JsonKey(defaultValue: true)
   bool locked;
+
+  @JsonKey(defaultValue: false)
   bool isSelected;
 
-  List<CanvasElement> elements = [];
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  Matrix4 transform = Matrix4.identity();
 
   CanvasModel({
-    this.width = 1200,
-    this.height = 1600,
-    this.fillColor = '#FFFFFF',
-    this.fillAlpha = 1.0,
-    this.borderColor = '#BFBFBF',
-    this.borderWidth = 0.0,
-    this.borderAlpha = 1.0,
-    this.locked = true,
-    this.isSelected = false,
-    this.scale = 1.0,
+    required this.id,
+    required this.x,
+    required this.y,
+    required this.scale,
+    required this.width,
+    required this.height,
+    required this.fillColor,
+    required this.fillAlpha,
+    required this.borderColor,
+    required this.borderWidth,
+    required this.borderAlpha,
+    required this.locked,
+    required this.isSelected,
   });
 
-  /// 根据视口偏移和缩放更新画布变换
-  /// 注意：这里是“设值”，不是在原有矩阵上叠加，否则每一帧都会累乘，导致拖动/缩放越来越失控。
+  // 自动生成的 JSON 解析
+  factory CanvasModel.fromJson(Map<String, dynamic> json) =>
+      _$CanvasModelFromJson(json);
+
+  /// 自动生成的 JSON 输出
+  Map<String, dynamic> toJson() => _$CanvasModelToJson(this);
+
+  /// 根据视口偏移和缩放更新画布变换；注意：这里是“设值”，不是在原有矩阵上叠加，否则每一帧都会累乘，导致拖动/缩放越来越失控
   void updateMatrix4(Matrix4 matrix, double scale, Offset offset) {
     transform = matrix;
-    this.offset = offset;
+    x = offset.dx;
+    y = offset.dy;
     this.scale = scale;
   }
 
@@ -66,7 +104,8 @@ class CanvasModel {
     final double offsetX = (containerWidth - displayWidth) / 2.0;
     final double offsetY = (containerHeight - displayHeight) / 2.0;
 
-    offset = Offset(offsetX, offsetY);
+    x = offsetX;
+    y = offsetY;
 
     transform = Matrix4.identity()
       ..scaleByVector3(Vector3(scale, scale, 1))
