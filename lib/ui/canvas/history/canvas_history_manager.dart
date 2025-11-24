@@ -169,8 +169,8 @@ class MoveElementCommand implements CanvasCommand {
   void execute() {
     final element = _findElement();
     if (element != null) {
-      element.x = oldPosition.dx;
-      element.y = oldPosition.dy;
+      element.x = newPosition.dx;
+      element.y = newPosition.dy;
     }
   }
 
@@ -231,8 +231,8 @@ class ResizeElementCommand implements CanvasCommand {
     if (element != null) {
       element.width = newWidth;
       element.height = newHeight;
-      element.x = oldPosition.dx;
-      element.y = oldPosition.dy;
+      element.x = newPosition.dx;
+      element.y = newPosition.dy;
       if (newFontSize != null && element.type == ElementType.text) {
         element.fontSize = newFontSize!;
       }
@@ -350,8 +350,8 @@ class ScaleElementCommand implements CanvasCommand {
       // element.cumulativeScale = newCumulativeScale;
       element.width = newWidth;
       element.height = newHeight;
-      element.x = oldPosition.dx;
-      element.y = oldPosition.dy;
+      element.x = newPosition.dx;
+      element.y = newPosition.dy;
       if (newFontSize != null && element.type == ElementType.text) {
         element.fontSize = newFontSize!;
       }

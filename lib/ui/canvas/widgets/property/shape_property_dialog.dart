@@ -36,8 +36,8 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
 
   // 阴影颜色
   late String _shadowColor;
-  late double _shadowOffsetX;
-  late double _shadowOffsetY;
+  late double _shadowX;
+  late double _shadowY;
   late double _shadowBlur;
   late bool _shadowEnabled; // 阴影启用状态
   final TextEditingController _shadowColorController = TextEditingController();
@@ -71,12 +71,12 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
     // 初始化阴影属性
     _shadowColor = data?.shawColor ?? '#D8D8D8';
     _shadowColorController.text = data?.shawColor ?? '#D8D8D8';
-    _shadowOffsetX = data?.shawX ?? 0.0;
-    _shadowOffsetY = data?.shawY ?? 0.0;
+    _shadowX = data?.shawX ?? 0.0;
+    _shadowY = data?.shawY ?? 0.0;
     _shadowBlur = data?.blurValue ?? 0.0;
     _shadowEnabled = data?.isShawOpen ?? false; // 初始化阴影启用状态
-    _shadowXController.text = _shadowOffsetX.toInt().toString();
-    _shadowYController.text = _shadowOffsetY.toInt().toString();
+    _shadowXController.text = _shadowX.toInt().toString();
+    _shadowYController.text = _shadowY.toInt().toString();
     _shadowBlurController.text = _shadowBlur.toInt().toString();
     _shawAlpha = data?.shawAlpha ?? 1.0;
   }
@@ -86,16 +86,20 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
     final data = widget.element;
     if (data != null) {
       data.fillColor = _fillColorController.text;
-      data.borderColor = _borderColorController.text;
+      data.borderColor = _borderColor;
       data.borderWidth = _borderWidth;
-      data.shawColor = _shadowColorController.text;
-      data.shawX = _shadowOffsetX;
-      data.shawY = _shadowOffsetY;
+      data.shawColor = _shadowColor;
+      data.shawX = _shadowX;
+      data.shawY = _shadowY;
       data.blurValue = _shadowBlur;
       data.isShawOpen = _shadowEnabled; // 更新阴影启用状态
       data.fillAlpha = _fillAlpha;
       data.borderAlpha = _borderAlpha;
       data.shawAlpha = _shawAlpha;
+
+      debugPrint(
+        "--_updateModel----$_shadowColor-$_shadowX--$_shadowY-$_shadowBlur--",
+      );
 
       if (data.type == ElementType.line) {
         data.height += _borderWidth * 2;
@@ -724,11 +728,12 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
                         onChanged: (value) {
-                          if (value.isNotEmpty) {
-                            final x = double.tryParse(value);
-                            if (x != null) {
+                          final newValue = double.tryParse(value);
+                          if (newValue != null) {
+                            setState(() {
+                              _shadowX = newValue;
                               _updateModel();
-                            }
+                            });
                           }
                         },
                         decoration: InputDecoration(
@@ -784,11 +789,12 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
                         onChanged: (value) {
-                          if (value.isNotEmpty) {
-                            final y = double.tryParse(value);
-                            if (y != null) {
+                          final newValue = double.tryParse(value);
+                          if (newValue != null) {
+                            setState(() {
+                              _shadowY = newValue;
                               _updateModel();
-                            }
+                            });
                           }
                         },
                         decoration: InputDecoration(
@@ -844,11 +850,12 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
                         onChanged: (value) {
-                          if (value.isNotEmpty) {
-                            final blur = double.tryParse(value);
-                            if (blur != null) {
+                          final newValue = double.tryParse(value);
+                          if (newValue != null) {
+                            setState(() {
+                              _shadowBlur = newValue;
                               _updateModel();
-                            }
+                            });
                           }
                         },
                         decoration: InputDecoration(

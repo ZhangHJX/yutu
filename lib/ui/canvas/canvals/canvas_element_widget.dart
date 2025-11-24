@@ -37,24 +37,31 @@ class CanvasElementWidget extends StatelessWidget {
           ),
         );
       case ElementType.rectangle:
+        debugPrint(
+          "--rectangle----${data.isShawOpen}-${data.shawColor}--${data.fillAlpha}-${data.fillAlpha}--",
+        );
         return Opacity(
           opacity: data.fillAlpha,
           child: Container(
             width: data.width,
             height: data.height,
             decoration: BoxDecoration(
-              color: data.fillColor.color,
+              color: data.fillColor.color.withValues(alpha: data.fillAlpha),
               border: Border.all(
-                color: data.borderColor.color.withValues(alpha: data.fillAlpha),
+                color: data.borderColor.color.withValues(
+                  alpha: data.borderAlpha,
+                ),
                 width: data.borderWidth.toDouble(),
               ),
               boxShadow: data.isShawOpen
                   ? [
                       BoxShadow(
-                        color: data.shawColor.color,
+                        color: data.shawColor.color.withValues(
+                          alpha: data.shawAlpha,
+                        ),
                         offset: Offset(data.shawX, data.shawY),
                         blurRadius: data.blurValue,
-                        spreadRadius: 0,
+                        // spreadRadius: 0,
                       ),
                     ]
                   : null,
