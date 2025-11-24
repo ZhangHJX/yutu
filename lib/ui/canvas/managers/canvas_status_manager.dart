@@ -39,7 +39,10 @@ class CanvasStatusManager {
   static const double minScale = 0.25;
   static const double maxScale = 3.0;
 
-  void handlePointerDown(PointerDownEvent e) {
+  void handlePointerDown(PointerDownEvent e, bool isLock) {
+    if (isLock) {
+      return;
+    }
     _pointers[e.pointer] = e.position;
 
     if (_pointers.length == 1) {
@@ -56,7 +59,10 @@ class CanvasStatusManager {
     }
   }
 
-  bool handlePointerMove(PointerMoveEvent e) {
+  bool handlePointerMove(PointerMoveEvent e, bool isLock) {
+    if (isLock) {
+      return false;
+    }
     _pointers[e.pointer] = e.position;
     bool changed = false;
 
@@ -80,7 +86,10 @@ class CanvasStatusManager {
     return changed;
   }
 
-  void handlePointerUp(PointerUpEvent e) {
+  void handlePointerUp(PointerUpEvent e, bool isLock) {
+    if (isLock) {
+      return;
+    }
     _pointers.remove(e.pointer);
 
     if (_pointers.isEmpty) {
@@ -92,13 +101,15 @@ class CanvasStatusManager {
     }
   }
 
-  void handlePointerCancel(PointerCancelEvent e) {
+  void handlePointerCancel(PointerCancelEvent e, bool isLock) {
+    if (isLock) {
+      return;
+    }
     _pointers.remove(e.pointer);
     if (_pointers.isEmpty) _reset();
   }
 
   // ====================== 私有方法 ======================
-
   bool _handlePan() {
     if (_panStartPos == null || _panStartMatrix == null) return false;
 

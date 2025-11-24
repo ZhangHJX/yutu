@@ -404,7 +404,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                     ),
                   );
                 } else {
-                  _canvasStatusManager.handlePointerDown(event);
+                  _canvasStatusManager.handlePointerDown(
+                    event,
+                    _canvalsModel.locked,
+                  );
                 }
               },
               onPointerMove: (event) {
@@ -421,7 +424,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                     ),
                   );
                 } else {
-                  _canvasStatusManager.handlePointerMove(event);
+                  _canvasStatusManager.handlePointerMove(
+                    event,
+                    _canvalsModel.locked,
+                  );
                 }
               },
               onPointerUp: (event) {
@@ -434,13 +440,19 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                     PointerUpEvent(position: localPos, pointer: event.pointer),
                   );
                 } else {
-                  _canvasStatusManager.handlePointerUp(event);
+                  _canvasStatusManager.handlePointerUp(
+                    event,
+                    _canvalsModel.locked,
+                  );
                 }
               },
               onPointerCancel: (event) {
                 if (_canvalsController.selectedId.isNotEmpty) {
                 } else {
-                  _canvasStatusManager.handlePointerCancel(event);
+                  _canvasStatusManager.handlePointerCancel(
+                    event,
+                    _canvalsModel.locked,
+                  );
                 }
               },
               child: GestureDetector(

@@ -40,7 +40,7 @@ class CanvasModel {
   @JsonKey(defaultValue: 1.0)
   double borderAlpha;
 
-  @JsonKey(defaultValue: true)
+  @JsonKey(defaultValue: false)
   bool locked;
 
   @JsonKey(defaultValue: false)

@@ -148,7 +148,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
         borderColor: '#BFBFBF',
         borderWidth: 1.0,
         borderAlpha: 1.0,
-        locked: true,
+        locked: false,
         isSelected: false,
       );
 
@@ -170,7 +170,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
         borderColor: '#BFBFBF',
         borderWidth: 1.0,
         borderAlpha: 1.0,
-        locked: true,
+        locked: false,
         isSelected: false,
       );
       canvalsModel.getMatrix4();
