@@ -4,7 +4,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../controllers/canvals_controller.dart';
 import 'canvas_element_widget.dart';
-import '../gesture/canvas_gesture_manager.dart';
+import '../gesture/element_gesture_manager.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../utils/text_measure_util.dart';
 import '../history/canvas_history_manager.dart';
@@ -31,7 +31,7 @@ class CanvasEditorWidget extends StatefulWidget {
 
 class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   late CanvalsController _selectionController;
-  final _gestureManager = CanvasGestureManager(); // 画布手势管理
+  final _gestureManager = ElementGestureManager(); // 画布手势管理
 
   CanvasHistoryManager? get historyManager => widget.historyManager; // 历史管理器
 

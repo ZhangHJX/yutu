@@ -6,7 +6,7 @@ import '../model/index.dart';
 import 'dart:math' as math;
 
 /// 画布手势管理器： 负责处理所有的手势交互逻辑
-class CanvasGestureManager {
+class ElementGestureManager {
   // 缩放相关
   final Map<int, Offset> pointers = {};
   // 历史管理器

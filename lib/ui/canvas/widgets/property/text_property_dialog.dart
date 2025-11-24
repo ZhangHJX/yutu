@@ -479,7 +479,6 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                   setState(() {
                     _showFontFamilyDropdown = !_showFontFamilyDropdown;
                     _showFontWeightDropdown = false; // 关闭字重下拉
-                    debugPrint("----哈哈哈哈---$_showFontFamilyDropdown---");
                   });
                 },
                 child: Container(
