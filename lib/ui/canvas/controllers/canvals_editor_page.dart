@@ -59,7 +59,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     _canvasStatusManager.onMatrixChanged = (matrix, scale, offset) {
       if (!mounted) return;
       setState(() {
-        // _canvalsModel.transform = matrix.clone();
         _canvalsModel.updateMatrix4(matrix, scale, offset);
       });
     };
@@ -487,10 +486,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                             constraints.maxWidth,
                             constraints.maxHeight,
                           );
-
-                      debugPrint(
-                        "---哈哈哈哈--${_canvalsController.canvalsSize.width}--${_canvalsController.canvalsSize.height}--",
-                      );
 
                       final logicSize = Size(
                         _canvalsModel.width,

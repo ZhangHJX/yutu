@@ -30,8 +30,8 @@ class CanvasControlWidget extends StatelessWidget {
           child: Image.asset(
             'assets/images/canvals/canvals_floating_icon.png',
             width: 69.w,
-            height: 28.25.w,
-            fit: BoxFit.fill,
+            height: 28.5.w,
+            fit: BoxFit.cover,
           ),
         ),
 

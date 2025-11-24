@@ -132,7 +132,6 @@ class CanvasElementWidget extends StatelessWidget {
           width: data.width,
           height: data.height,
           color: Colors.transparent,
-          alignment: Alignment.topLeft,
           child: CanvasTextWidget(
             text: data.text,
             textStyle: TextStyle(

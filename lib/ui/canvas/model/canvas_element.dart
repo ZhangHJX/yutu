@@ -91,7 +91,7 @@ class CanvasElement {
     this.fontWeight = FontWeight.w500,
     this.lineHeight = 1.0,
     this.fontSpace = 0,
-    this.align = TextAlign.center,
+    this.align = TextAlign.left,
     this.textColor = "#000000",
     this.textAlpha = 1.0,
 
