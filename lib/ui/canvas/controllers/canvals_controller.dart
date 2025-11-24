@@ -53,6 +53,8 @@ class CanvalsController extends GetxController {
   /// 获取图片路径
   String get imagePath => _imagePath.value;
 
+  Offset center = Offset.zero;
+
   /// 检查指定ID是否被选中
   bool isSelected(String id) => _selectedId.value == id;
 

@@ -4,10 +4,10 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../controllers/canvals_controller.dart';
 import 'canvas_element_widget.dart';
-import '../managers/canvas_gesture_manager.dart';
+import '../gesture/canvas_gesture_manager.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../utils/text_measure_util.dart';
-import '../managers/canvas_history_manager.dart';
+import '../history/canvas_history_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../model/index.dart';
 
@@ -119,6 +119,10 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     double width = imageSize.width;
     double height = imageSize.height;
 
+    debugPrint(
+      '_calculateFitSize 图片的尺寸是多少: $width === $height====$maxWidth====$maxHeight',
+    );
+
     // 如果图片太大，按比例缩小
     if (width > maxDisplayWidth || height > maxDisplayHeight) {
       final widthRatio = maxDisplayWidth / width;
@@ -128,6 +132,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       width = width * ratio;
       height = height * ratio;
     }
+
+    debugPrint('_calculateFitSize 获取到的尺寸是多少: $width === $height');
 
     // 设置最小尺寸（比如至少100像素）
     const minSize = 100.0;
@@ -197,13 +203,11 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     required ElementType type,
     String imagePath = '',
     String text = '',
+    required Offset center,
   }) async {
     final newId = _selectionController.generateId();
 
-    // 获取画布容器的实际尺寸
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    double canvasWidth = renderBox.size.width;
-    double canvasHeight = renderBox.size.height;
+    _selectionController.center = center;
 
     // 根据类型确定宽高
     double finalWidth = 200.w; // 默认宽度
@@ -216,9 +220,15 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       }
       final imageSize = await _getImageSize(imagePath);
       if (imageSize != null) {
-        final fitSize = _calculateFitSize(imageSize, canvasWidth, canvasHeight);
+        final fitSize = _calculateFitSize(
+          imageSize,
+          _selectionController.canvalsSize.width,
+          _selectionController.canvalsSize.height,
+        );
+
         finalWidth = fitSize.width;
         finalHeight = fitSize.height;
+
         debugPrint('图片原始尺寸: ${imageSize.width}x${imageSize.height}');
         debugPrint('适配后尺寸: $finalWidth x $finalHeight');
       }
@@ -237,8 +247,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
 
     // 获取屏幕中心在画布坐标中的位置（考虑平移和缩放）
-    final centerX = (canvasWidth - finalWidth) / 2;
-    final centerY = (canvasHeight - finalHeight) / 2;
+    final centerX = center.dx - finalWidth / 2;
+    final centerY = center.dy - finalHeight / 2;
 
     final newElement = CanvasElement(
       id: newId,
@@ -434,7 +444,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       // 监听添加标记
       if (_selectionController.shouldAdd) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          addBox(type: ElementType.text);
+          addBox(type: ElementType.text, center: _selectionController.center);
           _selectionController.clearAddFlag();
         });
       }
@@ -445,6 +455,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
           addBox(
             type: ElementType.image,
             imagePath: _selectionController.imagePath,
+            center: _selectionController.center,
             // width 和 height 不传，会根据图片自动计算
           );
           _selectionController.clearAddImageFlag();

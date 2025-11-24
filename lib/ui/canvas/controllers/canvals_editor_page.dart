@@ -16,8 +16,8 @@ import '../canvals/canvals_editor_widget.dart';
 import 'canvals_controller.dart';
 import '../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
-import '../managers/canvas_history_manager.dart';
-import '../managers/canvas_status_manager.dart';
+import '../history/canvas_history_manager.dart';
+import '../gesture/canvas_status_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../utils/index.dart';
 import '../model/index.dart';
@@ -876,7 +876,11 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           if (text.isEmpty) {
             return;
           }
-          _canvasKey.currentState?.addBox(type: ElementType.text, text: text);
+          _canvasKey.currentState?.addBox(
+            type: ElementType.text,
+            text: text,
+            center: _getCanvasCenter(),
+          );
           Navigator.pop(context); // 关闭对话框
         },
       ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/text_measure_util.dart';
-import 'canvas_history_manager.dart';
+import '../history/canvas_history_manager.dart';
 import '../model/index.dart';
 import 'dart:math' as math;
 
