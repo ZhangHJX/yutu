@@ -415,43 +415,20 @@ class ElementGestureManager {
 
     final totalNewWidth = box.width;
     final totalNewHeight = box.height;
-
-    Offset newAnchorPointLocal = Offset.zero;
-    switch (state.resizingHandle!) {
-      case 'top-left':
-        newAnchorPointLocal = Offset(totalNewWidth, totalNewHeight);
-        break;
-      case 'top':
-        newAnchorPointLocal = Offset(totalNewWidth / 2, totalNewHeight);
-        break;
-      case 'top-right':
-        newAnchorPointLocal = Offset(0, totalNewHeight);
-        break;
-      case 'right':
-        newAnchorPointLocal = Offset(0, totalNewHeight / 2);
-        break;
-      case 'bottom-right':
-        newAnchorPointLocal = Offset(0, 0);
-        break;
-      case 'bottom':
-        newAnchorPointLocal = Offset(totalNewWidth / 2, 0);
-        break;
-      case 'bottom-left':
-        newAnchorPointLocal = Offset(totalNewWidth, 0);
-        break;
-      case 'left':
-        newAnchorPointLocal = Offset(totalNewWidth, totalNewHeight / 2);
-        break;
-    }
-    final cosRot = math.cos(box.rotation);
-    final sinRot = math.sin(box.rotation);
-    final rotatedNewPoint = Offset(
-      newAnchorPointLocal.dx * cosRot - newAnchorPointLocal.dy * sinRot,
-      newAnchorPointLocal.dx * sinRot + newAnchorPointLocal.dy * cosRot,
+    final newAnchorPointLocal = _anchorLocalForHandle(
+      state.resizingHandle!,
+      totalNewWidth,
+      totalNewHeight,
     );
-    Offset position = state.resizeAnchorPoint! - rotatedNewPoint;
-    box.x = position.dx;
-    box.y = position.dy;
+    final newTopLeft = _topLeftFromAnchor(
+      anchorWorld: state.resizeAnchorPoint!,
+      width: totalNewWidth,
+      height: totalNewHeight,
+      rotation: box.rotation,
+      anchorLocal: newAnchorPointLocal,
+    );
+    box.x = newTopLeft.dx;
+    box.y = newTopLeft.dy;
   }
 
   /// 处理双指移动
@@ -691,51 +668,18 @@ class ElementGestureManager {
     final totalStartWidth = box.width;
     final totalStartHeight = box.height;
 
-    Offset anchorPointLocal = Offset.zero;
-    switch (handle) {
-      case 'top-left':
-        // 锚点是右下角（相对于外层容器）
-        anchorPointLocal = Offset(totalStartWidth, totalStartHeight);
-        break;
-      case 'top':
-        // 锚点是下边中点
-        anchorPointLocal = Offset(totalStartWidth / 2, totalStartHeight);
-        break;
-      case 'top-right':
-        // 锚点是左下角
-        anchorPointLocal = Offset(0, totalStartHeight);
-        break;
-      case 'right':
-        // 锚点是左边中点
-        anchorPointLocal = Offset(0, totalStartHeight / 2);
-        break;
-      case 'bottom-right':
-        // 锚点是左上角
-        anchorPointLocal = Offset(0, 0);
-        break;
-      case 'bottom':
-        // 锚点是上边中点
-        anchorPointLocal = Offset(totalStartWidth / 2, 0);
-        break;
-      case 'bottom-left':
-        // 锚点是右上角
-        anchorPointLocal = Offset(totalStartWidth, 0);
-        break;
-      case 'left':
-        // 锚点是右边中点
-        anchorPointLocal = Offset(totalStartWidth, totalStartHeight / 2);
-        break;
-    }
-
-    final cos = math.cos(box.rotation);
-    final sin = math.sin(box.rotation);
-    final rotatedPoint = Offset(
-      anchorPointLocal.dx * cos - anchorPointLocal.dy * sin,
-      anchorPointLocal.dx * sin + anchorPointLocal.dy * cos,
+    final anchorPointLocal = _anchorLocalForHandle(
+      handle,
+      totalStartWidth,
+      totalStartHeight,
     );
-
-    // 锚点是全局坐标（相对于画布）
-    state.resizeAnchorPoint = box.position + rotatedPoint;
+    state.resizeAnchorPoint = _localToWorld(
+      width: totalStartWidth,
+      height: totalStartHeight,
+      rotation: box.rotation,
+      topLeft: box.position,
+      localPoint: anchorPointLocal,
+    );
   }
 
   /// 计算两个指针之间的距离
@@ -746,5 +690,67 @@ class ElementGestureManager {
     final dx = positions[0].dx - positions[1].dx;
     final dy = positions[0].dy - positions[1].dy;
     return (dx * dx + dy * dy).abs();
+  }
+
+  Offset _anchorLocalForHandle(
+    String handle,
+    double width,
+    double height,
+  ) {
+    switch (handle) {
+      case 'top-left':
+        return Offset(width, height);
+      case 'top':
+        return Offset(width / 2, height);
+      case 'top-right':
+        return Offset(0, height);
+      case 'right':
+        return Offset(0, height / 2);
+      case 'bottom-right':
+        return Offset(0, 0);
+      case 'bottom':
+        return Offset(width / 2, 0);
+      case 'bottom-left':
+        return Offset(width, 0);
+      case 'left':
+      default:
+        return Offset(width, height / 2);
+    }
+  }
+
+  Offset _localToWorld({
+    required double width,
+    required double height,
+    required double rotation,
+    required Offset topLeft,
+    required Offset localPoint,
+  }) {
+    final center = Offset(width / 2, height / 2);
+    final translated = localPoint - center;
+    final cosRot = math.cos(rotation);
+    final sinRot = math.sin(rotation);
+    final rotated = Offset(
+      translated.dx * cosRot - translated.dy * sinRot,
+      translated.dx * sinRot + translated.dy * cosRot,
+    );
+    return topLeft + center + rotated;
+  }
+
+  Offset _topLeftFromAnchor({
+    required Offset anchorWorld,
+    required double width,
+    required double height,
+    required double rotation,
+    required Offset anchorLocal,
+  }) {
+    final center = Offset(width / 2, height / 2);
+    final translated = anchorLocal - center;
+    final cosRot = math.cos(rotation);
+    final sinRot = math.sin(rotation);
+    final rotated = Offset(
+      translated.dx * cosRot - translated.dy * sinRot,
+      translated.dx * sinRot + translated.dy * cosRot,
+    );
+    return anchorWorld - center - rotated;
   }
 }
