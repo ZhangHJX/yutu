@@ -40,8 +40,10 @@ extension _TextElementGestureHelper on ElementGestureManager {
           lineHeight: box.lineHeight,
           maxWidth: newWidth,
         );
-        newHeight =
-            textSize.height.clamp(minHeight, ElementGestureManager.maxSize);
+        newHeight = textSize.height.clamp(
+          minHeight,
+          ElementGestureManager.maxSize,
+        );
         break;
 
       case 'top-left':
@@ -53,8 +55,7 @@ extension _TextElementGestureHelper on ElementGestureManager {
             : (state.resizeStartWidth - adjustedDx) / state.resizeStartWidth;
         final scaleY = state.resizingHandle!.contains('bottom')
             ? (state.resizeStartHeight + adjustedDy) / state.resizeStartHeight
-            : (state.resizeStartHeight - adjustedDy) /
-                state.resizeStartHeight;
+            : (state.resizeStartHeight - adjustedDy) / state.resizeStartHeight;
         final scale = (scaleX + scaleY) / 2;
 
         final singleLineSize = TextMeasureUtil.measureText(
@@ -72,15 +73,18 @@ extension _TextElementGestureHelper on ElementGestureManager {
           final scaledFontSize = state.resizeStartFontSize * scale;
           final scaledFontSpace = state.resizeStartFontSpace * scale;
 
-          final finalFontSize =
-              math.max(scaledFontSize, ElementGestureManager.minFontSize);
+          final finalFontSize = math.max(
+            scaledFontSize,
+            ElementGestureManager.minFontSize,
+          );
           final finalFontSpace = math.max(scaledFontSpace, 0.0);
 
-          final finalWidth = (scaledFontSize >= ElementGestureManager.minFontSize)
+          final finalWidth =
+              (scaledFontSize >= ElementGestureManager.minFontSize)
               ? scaledWidth
               : (state.resizeStartWidth *
-                  (ElementGestureManager.minFontSize /
-                      state.resizeStartFontSize));
+                    (ElementGestureManager.minFontSize /
+                        state.resizeStartFontSize));
 
           final textSize = TextMeasureUtil.measureTextWithWidth(
             text: box.text,
@@ -92,12 +96,16 @@ extension _TextElementGestureHelper on ElementGestureManager {
             maxWidth: finalWidth,
           );
 
-          newWidth = math.max(finalWidth, 0.0)
+          newWidth = math
+              .max(finalWidth, 0.0)
               .clamp(0.0, ElementGestureManager.maxSize);
-          newHeight = math.max(textSize.height, 0.0)
+          newHeight = math
+              .max(textSize.height, 0.0)
               .clamp(0.0, ElementGestureManager.maxSize);
-          box.fontSize = finalFontSize
-              .clamp(ElementGestureManager.minFontSize, 200.0);
+          box.fontSize = finalFontSize.clamp(
+            ElementGestureManager.minFontSize,
+            200.0,
+          );
           box.fontSpace = finalFontSpace;
         } else {
           newWidth = (state.resizeStartWidth * scale).clamp(
@@ -127,10 +135,7 @@ extension _TextElementGestureHelper on ElementGestureManager {
   }
 
   /// 双指缩放文本元素
-  void _applyScaleForText(
-    CanvasElement box,
-    ElementInteractionState state,
-  ) {
+  void _applyScaleForText(CanvasElement box, ElementInteractionState state) {
     final minTextSize = _calculateMinTextSize(box);
     final minWidth = minTextSize.width;
     final minHeight = minTextSize.height;
@@ -160,8 +165,10 @@ extension _TextElementGestureHelper on ElementGestureManager {
     box.height = newHeight;
 
     // 同时缩放字体大小
-    box.fontSize = (state.initialFontSize * box.scale)
-        .clamp(ElementGestureManager.minFontSize, double.infinity);
+    box.fontSize = (state.initialFontSize * box.scale).clamp(
+      ElementGestureManager.minFontSize,
+      double.infinity,
+    );
   }
 
   /// 根据最小字体大小计算文本框的最小尺寸
@@ -216,5 +223,3 @@ extension _TextElementGestureHelper on ElementGestureManager {
     );
   }
 }
-
-

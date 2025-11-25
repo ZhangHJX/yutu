@@ -37,9 +37,6 @@ class CanvasElementWidget extends StatelessWidget {
           ),
         );
       case ElementType.rectangle:
-        debugPrint(
-          "--rectangle----${data.isShawOpen}-${data.shawColor}--${data.fillAlpha}-${data.fillAlpha}--",
-        );
         return Opacity(
           opacity: data.fillAlpha,
           child: Container(
@@ -132,6 +129,7 @@ class CanvasElementWidget extends StatelessWidget {
           width: data.width,
           height: data.height,
           color: Colors.transparent,
+          alignment: Alignment.topLeft,
           child: CanvasTextWidget(
             text: data.text,
             textStyle: TextStyle(
@@ -156,9 +154,9 @@ class CanvasElementWidget extends StatelessWidget {
             textAlign: data.align,
             strokeWidth: data.borderWidth
                 .toDouble(), // 描边宽度，需要自己计算：fontSize * 0.18
-            strokeColor: data.borderColor.color.withValues(
-              alpha: data.borderAlpha,
-            ),
+            strokeColor: data.borderWidth > 0
+                ? data.borderColor.color.withValues(alpha: data.borderAlpha)
+                : Colors.transparent,
             fillColor: data.textColor.color.withValues(alpha: data.textAlpha),
             maxLines: null,
           ),

@@ -605,7 +605,6 @@ class ElementGestureManager {
               );
             }
             break;
-
           default:
             break;
         }
