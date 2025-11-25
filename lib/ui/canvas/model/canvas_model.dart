@@ -1,11 +1,12 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart';
+import 'canvas_element.dart';
 import 'dart:math' as math;
 
 part 'canvas_model.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class CanvasModel {
   String id;
   double x;
@@ -28,6 +29,8 @@ class CanvasModel {
   @JsonKey(includeFromJson: false, includeToJson: false)
   Matrix4 transform = Matrix4.identity();
 
+  List<CanvasElement> elements;
+
   CanvasModel({
     required this.id,
     required this.width,
@@ -42,6 +45,7 @@ class CanvasModel {
     this.borderAlpha = 1.0,
     this.locked = false,
     this.isSelected = false,
+    this.elements = const [],
   });
 
   // 自动生成的 JSON 解析

@@ -174,7 +174,6 @@ class ElementGestureManager {
       canvasMatrix,
     );
 
-    debugPrint('✅ 哈哈哈哈哈哈哈---$hitTarget');
     if (hitTarget != null) {
       if (selectedBox.locked) {
         return;
@@ -508,7 +507,6 @@ class ElementGestureManager {
   ) {
     // 清理状态
     _cleanupInteraction(boxes, selectedId);
-
     return false;
   }
 
@@ -692,11 +690,7 @@ class ElementGestureManager {
     return (dx * dx + dy * dy).abs();
   }
 
-  Offset _anchorLocalForHandle(
-    String handle,
-    double width,
-    double height,
-  ) {
+  Offset _anchorLocalForHandle(String handle, double width, double height) {
     switch (handle) {
       case 'top-left':
         return Offset(width, height);
