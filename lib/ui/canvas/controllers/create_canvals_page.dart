@@ -138,18 +138,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
           : result["hdH"].toDouble();
       CanvasModel canvalsModel = CanvasModel(
         id: uuid.v4(),
-        x: 0,
-        y: 0,
-        scale: 1.0,
         width: width,
         height: height,
-        fillColor: '#FFFFFF',
-        fillAlpha: 1.0,
-        borderColor: '#BFBFBF',
-        borderWidth: 1.0,
-        borderAlpha: 1.0,
-        locked: false,
-        isSelected: false,
       );
 
       canvalsModel.getMatrix4();
@@ -160,18 +150,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
       double height = double.parse(_heightController.text);
       CanvasModel canvalsModel = CanvasModel(
         id: uuid.v4(),
-        x: 0,
-        y: 0,
-        scale: 1.0,
         width: width,
         height: height,
-        fillColor: '#FFFFFF',
-        fillAlpha: 1.0,
-        borderColor: '#BFBFBF',
-        borderWidth: 1.0,
-        borderAlpha: 1.0,
-        locked: false,
-        isSelected: false,
       );
       canvalsModel.getMatrix4();
       _onCancel();

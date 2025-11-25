@@ -7,16 +7,9 @@ part 'canvas_model.g.dart';
 
 @JsonSerializable()
 class CanvasModel {
-  @JsonKey(defaultValue: '')
   String id;
-
-  @JsonKey(defaultValue: 0.0)
   double x;
-
-  @JsonKey(defaultValue: 0.0)
   double y;
-
-  @JsonKey(defaultValue: 1.0)
   double scale;
 
   @JsonKey(defaultValue: 1080)
@@ -51,18 +44,18 @@ class CanvasModel {
 
   CanvasModel({
     required this.id,
-    required this.x,
-    required this.y,
-    required this.scale,
     required this.width,
     required this.height,
-    required this.fillColor,
-    required this.fillAlpha,
-    required this.borderColor,
-    required this.borderWidth,
-    required this.borderAlpha,
-    required this.locked,
-    required this.isSelected,
+    this.x = 0.0,
+    this.y = 0.0,
+    this.scale = 1.0,
+    this.fillColor = '#FFFFFF',
+    this.fillAlpha = 1.0,
+    this.borderColor = '#BFBFBF',
+    this.borderWidth = 1.0,
+    this.borderAlpha = 1.0,
+    this.locked = false,
+    this.isSelected = false,
   });
 
   // 自动生成的 JSON 解析
