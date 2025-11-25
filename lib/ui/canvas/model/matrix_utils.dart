@@ -57,7 +57,7 @@ class MatrixUtilsX {
 
 /// 手势相关的判断方法
 extension MatrixUtilsXGesture on MatrixUtilsX {
-  static String? detectHitElement(
+  static CanvasElement? detectHitElement(
     PointerEvent event,
     GlobalKey containerKey,
     List<CanvasElement> boxes,
@@ -83,7 +83,7 @@ extension MatrixUtilsXGesture on MatrixUtilsX {
         canvasMatrix,
       );
       if (hitTarget != null) {
-        return box.id;
+        return box;
       }
     }
     return null;

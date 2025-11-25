@@ -1395,6 +1395,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
           _buildGradientSlider(
             _lineHeight,
             (value) {
+              if (value <= 0.0001) return;
               setState(() {
                 _lineHeight = value;
                 _updateModel();

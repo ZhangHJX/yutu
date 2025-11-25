@@ -310,7 +310,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     // 更新上一次的属性快照（在 setState 之前更新，避免下次比较时出错）
     _lastPropertySnapshot = CanvasElementClone.clone(box);
 
-    debugPrint("---_refreshTextBoxAfterPropertyChange----");
     setState(() {
       if (needRecalculateSize) {
         // 先计算单行文本需要的宽度（不考虑宽度限制）
@@ -457,21 +456,23 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
               },
               child: GestureDetector(
                 onTap: () {
-                  final hitId = MatrixUtilsXGesture.detectHitElement(
+                  final element = MatrixUtilsXGesture.detectHitElement(
                     _canvalsController.currentPoint!,
                     _canvasContainerKey,
                     _canvasKey.currentState?.boxes ?? [],
                     _canvalsController.canvalsSize,
                     _canvalsModel.transform,
                   );
-                  if (hitId != null) {
-                    if (_canvalsController.isSelected(hitId)) {
-                      _canvasKey.currentState?.showTextInputDialog(hitId);
-                    } else {
-                      _canvalsController.toggleSelection(hitId);
-                    }
-                  } else {
+                  if (element == null || element.id.isEmpty) {
                     _canvalsController.deselect();
+                    return;
+                  }
+
+                  if (_canvalsController.isSelected(element.id) &&
+                      element.type == ElementType.text) {
+                    _canvasKey.currentState?.showTextInputDialog(element.id);
+                  } else {
+                    _canvalsController.toggleSelection(element.id);
                   }
                 },
                 child: Container(
@@ -490,7 +491,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                             constraints.maxWidth,
                             constraints.maxHeight,
                           );
-
                       final logicSize = Size(
                         _canvalsModel.width,
                         _canvalsModel.height,
