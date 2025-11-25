@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import '../utils/text_measure_util.dart';
 import '../history/canvas_history_manager.dart';
-import 'element_interaction_state.dart';
+import 'element_extension/element_interaction_state.dart';
 import '../model/index.dart';
 import 'dart:math' as math;
 
-part 'element_gesture_session.dart';
-part 'element_gesture_manager_image.dart';
-part 'element_gesture_manager_shape.dart';
-part 'element_gesture_manager_text.dart';
+part 'element_extension/element_gesture_session.dart';
+part 'element_extension/element_gesture_manager_image.dart';
+part 'element_extension/element_gesture_manager_shape.dart';
+part 'element_extension/element_gesture_manager_text.dart';
 
 /// 画布手势管理器： 负责处理所有的手势交互逻辑
 class ElementGestureManager {
