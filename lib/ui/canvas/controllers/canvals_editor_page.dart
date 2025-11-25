@@ -310,6 +310,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     // 更新上一次的属性快照（在 setState 之前更新，避免下次比较时出错）
     _lastPropertySnapshot = CanvasElementClone.clone(box);
 
+    debugPrint("---_refreshTextBoxAfterPropertyChange----");
     setState(() {
       if (needRecalculateSize) {
         // 先计算单行文本需要的宽度（不考虑宽度限制）
@@ -463,9 +464,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                     _canvalsController.canvalsSize,
                     _canvalsModel.transform,
                   );
-
                   if (hitId != null) {
-                    _canvalsController.toggleSelection(hitId);
+                    if (_canvalsController.isSelected(hitId)) {
+                      _canvasKey.currentState?.showTextInputDialog(hitId);
+                    } else {
+                      _canvalsController.toggleSelection(hitId);
+                    }
                   } else {
                     _canvalsController.deselect();
                   }

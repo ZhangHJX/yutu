@@ -1,4 +1,4 @@
-part of 'element_gesture_manager.dart';
+part of '../element_gesture_manager.dart';
 
 /// 第一类：图片元素相关手势逻辑
 extension _ImageElementGestureHelper on ElementGestureManager {

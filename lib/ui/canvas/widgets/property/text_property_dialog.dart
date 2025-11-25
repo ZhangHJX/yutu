@@ -47,28 +47,23 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
   // 对齐
   TextAlign _textAlign = TextAlign.left;
 
-  // 填充颜色
+  // 边框颜色
   String _borderColor = '#FFA500';
-  final TextEditingController _borderColorController = TextEditingController(
-    text: '#FFA500',
-  );
+  final TextEditingController _borderColorController = TextEditingController();
+  final TextEditingController _borderWidthController = TextEditingController();
   int _borderWidth = 1;
   double _borderAlpha = 1;
 
   // 阴影
   String _shadowColor = '#A020F0';
-  final TextEditingController _shadowColorController = TextEditingController(
-    text: '#A020F0',
-  );
-  final TextEditingController _shadowXController = TextEditingController(
-    text: '0',
-  );
-  final TextEditingController _shadowYController = TextEditingController(
-    text: '0',
-  );
-  final TextEditingController _shadowBlurController = TextEditingController(
-    text: '0',
-  );
+  double _shadowX = 0.0;
+  double _shadowY = 0.0;
+  double _shadowBlur = 0.0;
+
+  final TextEditingController _shadowColorController = TextEditingController();
+  final TextEditingController _shadowXController = TextEditingController();
+  final TextEditingController _shadowYController = TextEditingController();
+  final TextEditingController _shadowBlurController = TextEditingController();
   bool _shadowEnabled = false;
   double _shawAlpha = 1;
 
@@ -127,7 +122,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     _fontWeight = _fontWeightToString(data.fontWeight);
 
     // 初始化文字颜色
-    _textColor = data.textColor ?? '#000000';
+    _textColor = data.textColor;
     _textColorController.text = _textColor;
     _textAlpha = data.textAlpha;
 
@@ -139,18 +134,23 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     _textAlign = data.align ?? TextAlign.left;
 
     // 初始化描边（对应fillColor2）
-    _borderColor = data.borderColor ?? '#FFA500';
+    _borderColor = data.borderColor;
     _borderColorController.text = _borderColor;
-    _borderWidth = data.borderWidth?.toInt() ?? 1;
+    _borderWidth = data.borderWidth?.toInt();
+    _borderWidthController.text = _borderWidth.toInt().toString();
     _borderAlpha = data.borderAlpha;
+
+    _shadowX = data?.shawX ?? 0;
+    _shadowY = data?.shawY ?? 0;
+    _shadowBlur = data?.blurValue ?? 0;
 
     // 初始化阴影
     _shadowEnabled = data.isShawOpen ?? false;
     _shadowColor = data.shawColor ?? '#A020F0';
     _shadowColorController.text = _shadowColor;
-    _shadowXController.text = data.shawX?.toString() ?? '0';
-    _shadowYController.text = data.shawY?.toString() ?? '0';
-    _shadowBlurController.text = data.blurValue?.toString() ?? '0';
+    _shadowXController.text = _shadowX.toInt().toString();
+    _shadowYController.text = _shadowY.toInt().toString();
+    _shadowBlurController.text = _shadowBlur.toInt().toString();
     _shawAlpha = data.shawAlpha;
   }
 
@@ -197,6 +197,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     _fontSizeController.dispose();
     _textColorController.dispose();
     _borderColorController.dispose();
+    _borderWidthController.dispose();
     _shadowColorController.dispose();
     _shadowXController.dispose();
     _shadowYController.dispose();
@@ -221,8 +222,6 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
 
   /// 更新数据模型
   void _updateModel() {
-    if (widget.element == null) return;
-
     final data = widget.element;
 
     // 更新字体和字号
@@ -245,7 +244,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
 
     // 更新描边
     data.borderColor = _borderColor;
-    data.borderWidth = _borderWidth.toDouble();
+    data.borderWidth = _borderWidth;
     data.borderAlpha = _borderAlpha;
 
     // 更新阴影
@@ -257,6 +256,9 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     data.shawAlpha = _shawAlpha;
 
     // 通知外部属性已更新，触发实时刷新
+
+    debugPrint("---onPropertyChanged----");
+
     widget.onPropertyChanged?.call();
   }
 
@@ -833,7 +835,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                 width: 50.w,
                 height: 38.w,
                 decoration: BoxDecoration(
-                  color: _textColor.color,
+                  color: _borderColor.color,
                   borderRadius: BorderRadius.circular(12.w),
                   border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
                 ),
@@ -935,9 +937,8 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
               ),
               alignment: Alignment.center,
               child: TextField(
-                controller: TextEditingController(
-                  text: _borderWidth.toString(),
-                ),
+                controller: _borderWidthController,
+                inputFormatters: [BorderWidthFormatter(100)],
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
                 onChanged: (value) {

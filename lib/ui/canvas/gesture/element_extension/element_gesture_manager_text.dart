@@ -1,4 +1,4 @@
-part of 'element_gesture_manager.dart';
+part of '../element_gesture_manager.dart';
 
 /// 第三类：文本元素相关手势逻辑
 extension _TextElementGestureHelper on ElementGestureManager {

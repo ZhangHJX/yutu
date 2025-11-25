@@ -1,4 +1,4 @@
-part of 'element_gesture_manager.dart';
+part of '../element_gesture_manager.dart';
 
 /// 第二类：形状元素（矩形、椭圆、线段）相关手势逻辑
 extension _ShapeElementGestureHelper on ElementGestureManager {

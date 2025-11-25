@@ -1,4 +1,4 @@
-part of 'element_gesture_manager.dart';
+part of '../element_gesture_manager.dart';
 
 /// Interaction modes supported by the gesture manager.
 enum _InteractionMode { idle, pendingDragOrTap, drag, rotate, resize, scale }

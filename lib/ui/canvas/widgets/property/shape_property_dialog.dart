@@ -71,8 +71,8 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
     // 初始化阴影属性
     _shadowColor = data?.shawColor ?? '#D8D8D8';
     _shadowColorController.text = data?.shawColor ?? '#D8D8D8';
-    _shadowX = data?.shawX ?? 0.0;
-    _shadowY = data?.shawY ?? 0.0;
+    _shadowX = data?.shawX ?? 0;
+    _shadowY = data?.shawY ?? 0;
     _shadowBlur = data?.blurValue ?? 0.0;
     _shadowEnabled = data?.isShawOpen ?? false; // 初始化阴影启用状态
     _shadowXController.text = _shadowX.toInt().toString();
