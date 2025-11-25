@@ -14,29 +14,15 @@ class CanvasModel {
 
   @JsonKey(defaultValue: 1080)
   double width;
-
   @JsonKey(defaultValue: 1080)
   double height;
 
-  @JsonKey(defaultValue: '#FFFFFF')
   String fillColor;
-
-  @JsonKey(defaultValue: 1.0)
   double fillAlpha;
-
-  @JsonKey(defaultValue: '#BFBFBF')
   String borderColor;
-
-  @JsonKey(defaultValue: 0)
   double borderWidth;
-
-  @JsonKey(defaultValue: 1.0)
   double borderAlpha;
-
-  @JsonKey(defaultValue: false)
   bool locked;
-
-  @JsonKey(defaultValue: false)
   bool isSelected;
 
   @JsonKey(includeFromJson: false, includeToJson: false)
