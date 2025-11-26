@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:voicetemplate/stores/global.dart';
 import '../home/page.dart';
-import '../mine/page.dart';
+import '../mine/mine_main_page.dart';
 
 class MainLogic extends GetxController {
   final globalLogic = Get.put(GlobalLogic(), permanent: true);
