@@ -27,7 +27,6 @@ dependencies:
   app_settings: ^6.1.1
   device_info_plus: ^12.2.0
   json_annotation: ^4.9.0
-  wechat_assets_picker: ^10.0.0
 
 
 dev_dependencies:

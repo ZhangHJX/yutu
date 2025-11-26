@@ -496,57 +496,53 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                         _canvalsModel.height,
                       );
 
-                      final canvasContent = Screenshot(
-                        controller: _screenshotController,
-                        child: ClipRect(
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Container(
-                                key: _canvasContainerKey,
-                                width: _canvalsController.canvalsSize.width,
-                                height: _canvalsController.canvalsSize.height,
-                                decoration: BoxDecoration(
-                                  color: _canvalsModel.fillColor.color
+                      final canvasContent = ClipRect(
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              key: _canvasContainerKey,
+                              width: _canvalsController.canvalsSize.width,
+                              height: _canvalsController.canvalsSize.height,
+                              decoration: BoxDecoration(
+                                color: _canvalsModel.fillColor.color.withValues(
+                                  alpha: _canvalsModel.fillAlpha,
+                                ),
+                                border: Border.all(
+                                  color: _canvalsModel.borderColor.color
                                       .withValues(
-                                        alpha: _canvalsModel.fillAlpha,
+                                        alpha: _canvalsModel.borderWidth > 0
+                                            ? _canvalsModel.borderAlpha
+                                            : 0.0,
                                       ),
-                                  border: Border.all(
-                                    color: _canvalsModel.borderColor.color
-                                        .withValues(
-                                          alpha: _canvalsModel.borderWidth > 0
-                                              ? _canvalsModel.borderAlpha
-                                              : 0.0,
-                                        ),
-                                    width: _canvalsModel.borderWidth,
-                                  ),
+                                  width: _canvalsModel.borderWidth,
                                 ),
                               ),
-                              Positioned.fill(
-                                child: OverflowBox(
-                                  minWidth: 0,
-                                  minHeight: 0,
-                                  maxWidth: double.infinity,
-                                  maxHeight: double.infinity,
+                            ),
+                            Positioned.fill(
+                              child: OverflowBox(
+                                minWidth: 0,
+                                minHeight: 0,
+                                maxWidth: double.infinity,
+                                maxHeight: double.infinity,
+                                alignment: Alignment.topLeft,
+                                child: Align(
                                   alignment: Alignment.topLeft,
-                                  child: Align(
-                                    alignment: Alignment.topLeft,
-                                    child: CanvasEditorWidget(
-                                      key: _canvasKey,
-                                      historyManager: _historyManager,
-                                      onContentChanged: () {
-                                        if (mounted) {
-                                          setState(() {});
-                                        }
-                                      },
-                                      canvasMatrix: _canvalsModel.transform,
-                                      canvasSize: logicSize,
-                                    ),
+                                  child: CanvasEditorWidget(
+                                    key: _canvasKey,
+                                    historyManager: _historyManager,
+                                    onContentChanged: () {
+                                      if (mounted) {
+                                        setState(() {});
+                                      }
+                                    },
+                                    canvasMatrix: _canvalsModel.transform,
+                                    canvasSize: logicSize,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       );
 
@@ -769,57 +765,32 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
 
   /// 替换图片
   void _replaceImage() {
-    if (_activeElement != null && _activeElement!.type == ElementType.image) {
-      debugPrint('替换图片');
-      _canvalsController.selectImageHelper.onlyChooseImages(
-        context: context,
-        onSuccess: () {
-          final imagePath = _canvalsController.selectImageHelper.image;
-          if (imagePath != null) {
-            debugPrint('选择的图片路径: $imagePath');
-            // 直接更新当前激活元素的图片路径
-            setState(() {
-              _activeElement!.imagePath = imagePath;
-            });
-          }
-        },
-      );
-    } else if (_activeElement != null &&
-        _activeElement!.type == ElementType.text) {
-      // 如果激活的是文本框，也支持替换文本框内的图片
-      debugPrint('替换文本框内的图片');
-      _canvalsController.selectImageHelper.onlyChooseImages(
-        context: context,
-        onSuccess: () {
-          final imagePath = _canvalsController.selectImageHelper.image;
-          if (imagePath != null) {
-            debugPrint('选择的图片路径: $imagePath');
-            // 更新文本框的图片路径
-            setState(() {
-              _activeElement!.imagePath = imagePath;
-            });
-          }
-        },
-      );
-    }
+    SelectSourceTools.chooseImages(
+      context: context,
+      onSuccess: (AssetEntity assetEntity) {
+        final imagePath = assetEntity.relativePath;
+        if (imagePath != null) {
+          debugPrint('选择的图片路径: $imagePath');
+          setState(() {
+            _activeElement!.imagePath = imagePath;
+          });
+        }
+      },
+    );
   }
 
   // 增加图片
   void _addImageDialog() async {
     _toggleLayerDialog(false);
     final res = await PermissionUtil.requestPhotoAlbumPermission();
-    if (res) {
-      _canvalsController.selectImageHelper.onlyChooseImages(
+    if (res && mounted) {
+      SelectSourceTools.chooseImages(
         context: context,
-        onSuccess: () {
-          final imagePath = _canvalsController.selectImageHelper.image;
-          if (imagePath != null) {
-            debugPrint('选择的图片路径: $imagePath');
-            _canvalsController.addNewImage(
-              imagePath,
-              targetCenter: _getCanvasCenter(),
-            );
-          }
+        onSuccess: (AssetEntity assetEntity) {
+          _canvalsController.addNewImage(
+            assetEntity,
+            targetCenter: _getCanvasCenter(),
+          );
         },
       );
     } else {

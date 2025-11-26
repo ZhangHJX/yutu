@@ -1,15 +1,13 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import '../utils/handle_select_images.dart';
+import '../utils/index.dart';
 
 /// 全局选择状态管理控制器
 /// 负责管理当前选中的文本框ID，确保只有一个文本框处于选中状态
 class CanvalsController extends GetxController {
   PointerEvent? currentPoint; // 画布点击
   Size canvalsSize = Size.zero; //画布大小
-
-  final selectImageHelper = SelectImageHelper(maxCount: 1);
 
   //激活卡片
   final RxBool _showToolbar = false.obs;
@@ -30,7 +28,6 @@ class CanvalsController extends GetxController {
 
   // 添加图片标记
   final RxBool _shouldAddImage = false.obs;
-  final RxString _imagePath = ''.obs;
 
   // UUID生成器
   final Uuid _uuid = const Uuid();
@@ -49,9 +46,7 @@ class CanvalsController extends GetxController {
 
   /// 获取添加图片标记
   bool get shouldAddImage => _shouldAddImage.value;
-
-  /// 获取图片路径
-  String get imagePath => _imagePath.value;
+  Rxn<AssetEntity> selectedAsset = Rxn<AssetEntity>();
 
   Offset center = Offset.zero;
 
@@ -94,15 +89,6 @@ class CanvalsController extends GetxController {
     _shouldAdd.value = true;
   }
 
-  /// 标记需要添加新的图片元素
-  void addNewImage(String imagePath, {Offset? targetCenter}) {
-    if (targetCenter != null) {
-      center = targetCenter;
-    }
-    _imagePath.value = imagePath;
-    _shouldAddImage.value = true;
-  }
-
   /// 清除添加标记
   void clearAddFlag() {
     _shouldAdd.value = false;
@@ -111,11 +97,20 @@ class CanvalsController extends GetxController {
   /// 清除添加图片标记
   void clearAddImageFlag() {
     _shouldAddImage.value = false;
-    _imagePath.value = '';
+    selectedAsset.value = null;
   }
 
   /// 清除删除标记
   void clearDeleteFlag() {
     _shouldDelete.value = false;
+  }
+
+  /// 标记需要添加新的图片元素
+  void addNewImage(AssetEntity assetEntity, {Offset? targetCenter}) {
+    if (targetCenter != null) {
+      center = targetCenter;
+    }
+    selectedAsset.value = assetEntity;
+    _shouldAddImage.value = true;
   }
 }

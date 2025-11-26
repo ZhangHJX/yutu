@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'dart:ui' as ui;
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../controllers/canvals_controller.dart';
@@ -10,6 +8,7 @@ import '../utils/text_measure_util.dart';
 import '../history/canvas_history_manager.dart';
 import '../utils/edit_box_data_clone.dart';
 import '../model/index.dart';
+import '../utils/index.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
@@ -85,27 +84,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
   }
 
-  /// 获取图片的实际尺寸
-  Future<Size?> _getImageSize(String imagePath) async {
-    try {
-      File imageFile = File(imagePath);
-      if (!await imageFile.exists()) {
-        debugPrint('图片文件不存在: $imagePath');
-        return null;
-      }
-
-      final bytes = await imageFile.readAsBytes();
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-
-      return Size(image.width.toDouble(), image.height.toDouble());
-    } catch (e) {
-      debugPrint('获取图片尺寸失败: $e');
-      return null;
-    }
-  }
-
   /// 计算适合画布的图片尺寸
   /// [imageSize] 图片原始尺寸
   /// [maxWidth] 画布最大宽度
@@ -172,15 +150,13 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       boxHeight = 20.w;
     }
 
-    final newId = _selectionController.generateId();
-
     final elementPos = Offset(
       center.dx - boxWidth / 2,
       center.dy - boxHeight / 2,
     );
 
     final newElement = CanvasElement(
-      id: newId,
+      id: _selectionController.generateId(),
       text: shapeName,
       x: elementPos.dx,
       y: elementPos.dy,
@@ -196,42 +172,53 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     if (historyManager != null) {
       historyManager!.executeCommand(AddElementCommand(boxes, newElement));
     }
-    _selectionController.select(newId);
+    _selectionController.select(_selectionController.generateId());
   }
 
   Future<void> addBox({
     required ElementType type,
-    String imagePath = '',
-    String text = '',
     required Offset center,
+    AssetEntity? assetEntity,
+    String text = '',
   }) async {
-    final newId = _selectionController.generateId();
-
     _selectionController.center = center;
 
     // 根据类型确定宽高
     double finalWidth = 200.w; // 默认宽度
     double finalHeight = 200.w; // 默认高度
+    String imagePath = '';
 
     // 如果是图片类型，根据图片实际尺寸计算
-    if (type == ElementType.image) {
-      if (imagePath.isEmpty) {
-        return;
+    if (type == ElementType.image && assetEntity != null) {
+      final f = await assetEntity.file;
+      if (f != null) {
+        imagePath = f.path;
       }
-      final imageSize = await _getImageSize(imagePath);
-      if (imageSize != null) {
-        final fitSize = _calculateFitSize(
-          imageSize,
-          _selectionController.canvalsSize.width,
-          _selectionController.canvalsSize.height,
-        );
 
-        finalWidth = fitSize.width;
-        finalHeight = fitSize.height;
+      final fitSize = _calculateFitSize(
+        Size(assetEntity.width.toDouble(), assetEntity.height.toDouble()),
+        _selectionController.canvalsSize.width,
+        _selectionController.canvalsSize.height,
+      );
+      finalWidth = fitSize.width;
+      finalHeight = fitSize.height;
 
-        debugPrint('图片原始尺寸: ${imageSize.width}x${imageSize.height}');
-        debugPrint('适配后尺寸: $finalWidth x $finalHeight');
-      }
+      // final widthRato = assetEntity.width.toDouble() / widget.canvasSize.width;
+      // final heightRato =
+      //     assetEntity.height.toDouble() / widget.canvasSize.height;
+
+      // debugPrint(
+      //   "---画布的尺寸--${widget.canvasSize.width}---${widget.canvasSize.height}",
+      // );
+
+      // debugPrint(
+      //   "---图片的尺寸--${assetEntity.width.toDouble()}---${assetEntity.height.toDouble()}",
+      // );
+
+      // finalWidth = _selectionController.canvalsSize.width * widthRato;
+      // finalHeight = _selectionController.canvalsSize.height * heightRato;
+
+      // debugPrint('适配后尺寸: $finalWidth x $finalHeight');
     } else {
       // 文本类型，使用默认字体属性计算尺寸
       Size textSize = TextMeasureUtil.measureText(
@@ -251,12 +238,12 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     final centerY = center.dy - finalHeight / 2;
 
     final newElement = CanvasElement(
-      id: newId,
+      id: _selectionController.generateId(),
       text: type == ElementType.text ? text : '',
       x: centerX,
       y: centerY,
       type: type,
-      imagePath: type == ElementType.image ? imagePath : '',
+      imagePath: imagePath,
       width: finalWidth,
       height: finalHeight,
     );
@@ -271,14 +258,14 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
 
     // 自动选中新添加的元素
-    _selectionController.select(newId);
+    _selectionController.select(_selectionController.generateId());
   }
 
   void setActive(String? id) {
     debugPrint('设置激活状态: $id');
     if (id != null && id.isNotEmpty) {
       // 如果点击的是当前已激活的文本框，则取消激活
-      if (_selectionController.selectedId == id) {
+      if (_selectionController.generateId() == id) {
         _selectionController.deselect();
         debugPrint('取消激活状态: $id');
         _selectionController.updateToolBar(false);
@@ -309,7 +296,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
     setState(() {
       boxes.removeWhere((b) => b.id == id);
-      if (_selectionController.selectedId == id) {
+      if (_selectionController.generateId() == id) {
         _selectionController.deselect();
       }
       _gestureManager.clearInteractionState(id);
@@ -398,7 +385,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     _gestureManager.handlePointerDown(
       event,
       boxes,
-      _selectionController.selectedId,
+      _selectionController.generateId(),
     );
   }
 
@@ -408,7 +395,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     if (_gestureManager.handlePointerMove(
       event,
       boxes,
-      _selectionController.selectedId,
+      _selectionController.generateId(),
     )) {
       setState(() {});
     }
@@ -420,7 +407,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     _gestureManager.handlePointerUp(
       event,
       boxes,
-      _selectionController.selectedId,
+      _selectionController.generateId(),
     );
   }
 
@@ -451,14 +438,16 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
       // 监听添加图片标记
       if (_selectionController.shouldAddImage) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          addBox(
-            type: ElementType.image,
-            imagePath: _selectionController.imagePath,
-            center: _selectionController.center,
-            // width 和 height 不传，会根据图片自动计算
-          );
-          _selectionController.clearAddImageFlag();
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (_selectionController.selectedAsset.value != null) {
+            addBox(
+              type: ElementType.image,
+              assetEntity: _selectionController.selectedAsset.value,
+              center: _selectionController.center,
+              // width 和 height 不传，会根据图片自动计算
+            );
+            _selectionController.clearAddImageFlag();
+          }
         });
       }
 
