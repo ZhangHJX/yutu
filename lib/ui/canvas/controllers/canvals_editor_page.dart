@@ -546,12 +546,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                         ),
                       );
 
-                      final transformedCanvas = Transform(
-                        transform: _canvalsModel.transform,
-                        alignment: Alignment.topLeft,
-                        child: canvasContent,
-                      );
-
                       final boxes = _canvasKey.currentState?.boxesList ?? [];
 
                       return Center(
@@ -561,7 +555,14 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                           child: Stack(
                             clipBehavior: Clip.none,
                             children: [
-                              transformedCanvas,
+                              Screenshot(
+                                controller: _screenshotController,
+                                child: Transform(
+                                  transform: _canvalsModel.transform,
+                                  alignment: Alignment.topLeft,
+                                  child: canvasContent,
+                                ),
+                              ),
                               Obx(
                                 () => TransformCanvas(
                                   elements: boxes,

@@ -35,9 +35,6 @@ class CanvalsController extends GetxController {
   /// 获取当前选中的ID
   String get selectedId => _selectedId.value;
 
-  /// 获取当前选中ID的响应式流
-  RxString get selectedIdStream => _selectedId;
-
   /// 获取删除标记
   bool get shouldDelete => _shouldDelete.value;
 

@@ -150,13 +150,15 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       boxHeight = 20.w;
     }
 
+    final newId = _selectionController.generateId();
+
     final elementPos = Offset(
       center.dx - boxWidth / 2,
       center.dy - boxHeight / 2,
     );
 
     final newElement = CanvasElement(
-      id: _selectionController.generateId(),
+      id: newId,
       text: shapeName,
       x: elementPos.dx,
       y: elementPos.dy,
@@ -172,7 +174,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     if (historyManager != null) {
       historyManager!.executeCommand(AddElementCommand(boxes, newElement));
     }
-    _selectionController.select(_selectionController.generateId());
+    _selectionController.select(newId);
   }
 
   Future<void> addBox({
@@ -181,6 +183,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     AssetEntity? assetEntity,
     String text = '',
   }) async {
+    final newId = _selectionController.generateId();
+
     _selectionController.center = center;
 
     // 根据类型确定宽高
@@ -237,8 +241,10 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     final centerX = center.dx - finalWidth / 2;
     final centerY = center.dy - finalHeight / 2;
 
+    debugPrint('获取的Box尺寸: $newId ');
+
     final newElement = CanvasElement(
-      id: _selectionController.generateId(),
+      id: newId,
       text: type == ElementType.text ? text : '',
       x: centerX,
       y: centerY,
@@ -258,14 +264,14 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
 
     // 自动选中新添加的元素
-    _selectionController.select(_selectionController.generateId());
+    _selectionController.select(newId);
   }
 
   void setActive(String? id) {
     debugPrint('设置激活状态: $id');
     if (id != null && id.isNotEmpty) {
       // 如果点击的是当前已激活的文本框，则取消激活
-      if (_selectionController.generateId() == id) {
+      if (_selectionController.selectedId == id) {
         _selectionController.deselect();
         debugPrint('取消激活状态: $id');
         _selectionController.updateToolBar(false);
@@ -296,7 +302,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
     setState(() {
       boxes.removeWhere((b) => b.id == id);
-      if (_selectionController.generateId() == id) {
+      if (_selectionController.selectedId == id) {
         _selectionController.deselect();
       }
       _gestureManager.clearInteractionState(id);
@@ -382,10 +388,13 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
   void handlePointerDown(PointerDownEvent event) {
     _gestureManager.updateCanvasMatrix(widget.canvasMatrix);
+
+    debugPrint('_selectionController---${_selectionController.selectedId}--');
+
     _gestureManager.handlePointerDown(
       event,
       boxes,
-      _selectionController.generateId(),
+      _selectionController.selectedId,
     );
   }
 
@@ -395,7 +404,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     if (_gestureManager.handlePointerMove(
       event,
       boxes,
-      _selectionController.generateId(),
+      _selectionController.selectedId,
     )) {
       setState(() {});
     }
@@ -407,7 +416,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     _gestureManager.handlePointerUp(
       event,
       boxes,
-      _selectionController.generateId(),
+      _selectionController.selectedId,
     );
   }
 

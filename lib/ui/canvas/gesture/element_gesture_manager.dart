@@ -166,7 +166,13 @@ class ElementGestureManager {
     // 重置拖动状态并设置新的起始位置
     _session.dragStartPointer = event.localPosition;
 
-    CanvasElement selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+    debugPrint('_handleSinglePointerDown $selectedId---');
+
+    CanvasElement selectedBox = boxes.firstWhere((box) {
+      debugPrint('selectedBox ${box.id}---');
+      return box.id == selectedId;
+    });
+
     final state = _stateForBox(selectedBox);
     final hitTarget = MatrixUtilsXGesture.detectHitTarget(
       event.position,
