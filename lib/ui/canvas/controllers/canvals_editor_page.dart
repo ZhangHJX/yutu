@@ -35,6 +35,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   final CanvasHistoryManager _historyManager = CanvasHistoryManager();
 
   late CanvasModel _canvalsModel;
+  bool _canvasInitialized = false;
   final GlobalKey<CanvasEditorWidgetState> _canvasKey =
       GlobalKey<CanvasEditorWidgetState>();
 
@@ -142,7 +143,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
         'height': current.height,
       };
 
-      final boxes = _canvasKey.currentState?.boxesList ?? [];
+      final boxes = _canvalsController.elements;
       _historyManager.executeCommand(
         UpdateShapePropertiesCommand(
           boxes: boxes,
@@ -233,7 +234,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
         old.position.dy != current.position.dy;
 
     if (hasChanged) {
-      final boxes = _canvasKey.currentState?.boxesList ?? [];
+      final boxes = _canvalsController.elements;
 
       // 重新计算位置（因为尺寸变化可能导致位置变化）
       final oldPosition = old.position;
@@ -366,7 +367,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     final selectedId = _canvalsController.selectedId;
     if (selectedId.isEmpty) return null;
 
-    final layers = _canvasKey.currentState?.layers ?? [];
+    final layers = _canvalsController.elements;
     try {
       return layers.firstWhere((layer) => layer.id == selectedId);
     } catch (e) {
@@ -378,6 +379,11 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   Widget build(BuildContext context) {
     _canvalsModel = Get.arguments as CanvasModel;
     _canvasStatusManager.matrix = _canvalsModel.transform;
+    if (!_canvasInitialized ||
+        _canvalsController.canvasModel?.id != _canvalsModel.id) {
+      _canvalsController.initializeCanvas(_canvalsModel);
+      _canvasInitialized = true;
+    }
 
     return Scaffold(
       resizeToAvoidBottomInset: false, // 防止键盘弹出时底部工具栏上移
@@ -459,7 +465,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                   final element = MatrixUtilsXGesture.detectHitElement(
                     _canvalsController.currentPoint!,
                     _canvasContainerKey,
-                    _canvasKey.currentState?.boxes ?? [],
+                    _canvalsController.elements,
                     _canvalsController.canvalsSize,
                     _canvalsModel.transform,
                   );
@@ -538,7 +544,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                         ),
                       );
 
-                      final boxes = _canvasKey.currentState?.boxesList ?? [];
+                      final boxes = _canvalsController.elements;
                       return Center(
                         child: SizedBox(
                           width: constraints.maxWidth,
@@ -727,7 +733,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
         old.imagePath != current.imagePath;
 
     if (hasChanged) {
-      final boxes = _canvasKey.currentState?.boxesList ?? [];
+      final boxes = _canvalsController.elements;
       _historyManager.executeCommand(
         UpdateImagePropertiesCommand(
           boxes: boxes,
@@ -951,7 +957,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       bottom: 72.w + ScreenTools.bottomBarHeight, // 底部工具栏高度 + 10像素间距
       child: CanvalsLayerDialog(
         canvasModel: _canvalsModel,
-        layers: _canvasKey.currentState?.layers ?? [],
+        layers: _canvalsController.elements,
         onLayerTap: (layerId) {
           // 选中元素时，确保画布未选中
           setState(() {
@@ -974,14 +980,14 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           });
         },
         onLayerToggleVisibility: (layerId) {
-          final layers = _canvasKey.currentState?.layers ?? [];
+          final layers = _canvalsController.elements;
           final layer = layers.firstWhere((l) => l.id == layerId);
           final oldVisible = layer.hidden;
           setState(() {
             layer.hidden = !layer.hidden;
           });
           // 记录命令
-          final boxes = _canvasKey.currentState?.boxesList ?? [];
+          final boxes = _canvalsController.elements;
           _historyManager.executeCommand(
             ToggleVisibilityCommand(
               boxes: boxes,
@@ -992,7 +998,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           );
         },
         onLayerLock: (layerId) {
-          final layers = _canvasKey.currentState?.layers ?? [];
+          final layers = _canvalsController.elements;
           final layer = layers.firstWhere((l) => l.id == layerId);
           setState(() {
             layer.locked = !layer.locked;

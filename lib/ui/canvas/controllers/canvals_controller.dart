@@ -1,13 +1,65 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../model/index.dart';
 import '../utils/index.dart';
 
 /// 全局选择状态管理控制器
-/// 负责管理当前选中的文本框ID，确保只有一个文本框处于选中状态
+/// 负责管理当前选中的文本框ID、画布模型以及元素列表
 class CanvalsController extends GetxController {
   PointerEvent? currentPoint; // 画布点击
   Size canvalsSize = Size.zero; //画布大小
+
+  final Rxn<CanvasModel> _canvasModel = Rxn<CanvasModel>();
+  CanvasModel? get canvasModel => _canvasModel.value;
+
+  final RxList<CanvasElement> elements = <CanvasElement>[].obs;
+
+  void initializeCanvas(CanvasModel model) {
+    final mutableModel = model;
+    elements.assignAll(mutableModel.elements);
+    mutableModel.elements = elements;
+    _canvasModel.value = mutableModel;
+  }
+
+  CanvasModel? buildSnapshot() {
+    final source = _canvasModel.value;
+    if (source == null) return null;
+    return CanvasModel(
+      id: source.id,
+      width: source.width,
+      height: source.height,
+      x: source.x,
+      y: source.y,
+      scale: source.scale,
+      fillColor: source.fillColor,
+      fillAlpha: source.fillAlpha,
+      locked: source.locked,
+      isSelected: source.isSelected,
+      elements: elements.toList(),
+    );
+  }
+
+  void addElement(CanvasElement element) {
+    elements.add(element);
+  }
+
+  void removeElement(String id) {
+    elements.removeWhere((element) => element.id == id);
+  }
+
+  void reorderElements(int oldIndex, int newIndex) {
+    if (oldIndex < 0 ||
+        oldIndex >= elements.length ||
+        newIndex < 0 ||
+        newIndex >= elements.length) {
+      return;
+    }
+    final element = elements.removeAt(oldIndex);
+    elements.insert(newIndex, element);
+  }
+
+  void refreshElements() => elements.refresh();
 
   //激活卡片
   final RxBool _showToolbar = false.obs;

@@ -34,9 +34,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
   CanvasHistoryManager? get historyManager => widget.historyManager; // 历史管理器
 
-  final List<CanvasElement> boxes = []; // 画布元素的数组
-  List<CanvasElement> get boxesList => boxes; // 暴露 boxes 列表供外部访问（用于历史记录）
-  List<CanvasElement> get layers => List.from(boxes); // 获取图层列表（按显示顺序，最上面的在最后）
+  RxList<CanvasElement> get boxes => _selectionController.elements;
+  List<CanvasElement> get layers => List.from(boxes);
   @override
   void setState(VoidCallback fn) {
     if (!mounted) return;
@@ -47,7 +46,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   @override
   void initState() {
     super.initState();
-    _selectionController = Get.put(CanvalsController());
+    _selectionController = Get.find<CanvalsController>();
     _gestureManager.historyManager = historyManager; // 设置历史管理器到手势管理器
   }
 
