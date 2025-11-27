@@ -118,12 +118,14 @@ class _TextInputDialogState extends State<TextInputDialog>
           ),
         );
       },
-      child: _isExpanded ? _buildExpandedView() : _buildCollapsedView(),
+      child: _isExpanded
+          ? _buildExpandedView(context)
+          : _buildCollapsedView(context),
     );
   }
 
   // 折叠状态的视图
-  Widget _buildCollapsedView() {
+  Widget _buildCollapsedView(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
@@ -209,7 +211,7 @@ class _TextInputDialogState extends State<TextInputDialog>
   }
 
   // 展开状态的视图（全屏）
-  Widget _buildExpandedView() {
+  Widget _buildExpandedView(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       key: ValueKey('expanded'),

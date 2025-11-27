@@ -5,6 +5,7 @@ export 'package:flutter_screenutil/flutter_screenutil.dart';
 export 'package:get/get.dart' hide FormData, Response, MultipartFile;
 export 'package:get/get_navigation/src/router_report.dart';
 export 'package:path_provider/path_provider.dart';
+export 'package:path/path.dart';
 export 'package:permission_handler/permission_handler.dart';
 export 'package:pull_to_refresh/pull_to_refresh.dart';
 export 'package:get_storage/get_storage.dart';

@@ -603,9 +603,13 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
               onLayerTap: () {
                 _toggleLayerDialog(true);
               },
-              onAddImage: _addImageDialog,
+              onAddImage: () {
+                _addImageDialog(context);
+              },
               onAddShape: _showShapeDialog,
-              onAddText: _showTextInputDialog,
+              onAddText: () {
+                _showTextInputDialog(context);
+              },
               onSave: _showSaveTemplateDialog,
               onExport: _captureAndSave,
             ),
@@ -691,7 +695,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       builder: (context) => ImagePropertyDialog(
         element: _activeElement,
         replaceImage: () {
-          _replaceImage();
+          _replaceImage(context);
         },
         onValueChanged: () {
           setState(() {}); // 触发界面重绘
@@ -760,7 +764,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   }
 
   /// 替换图片
-  void _replaceImage() {
+  void _replaceImage(BuildContext context) {
     SelectSourceTools.chooseImages(
       context: context,
       onSuccess: (AssetEntity assetEntity) {
@@ -776,7 +780,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   }
 
   // 增加图片
-  void _addImageDialog() async {
+  void _addImageDialog(BuildContext context) async {
     _toggleLayerDialog(false);
     final res = await PermissionUtil.requestPhotoAlbumPermission();
     if (res && mounted) {
@@ -834,7 +838,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   }
 
   /// 显示文本输入对话框
-  void _showTextInputDialog() {
+  void _showTextInputDialog(BuildContext context) {
     _toggleLayerDialog(false);
     showModalBottomSheet(
       context: context,

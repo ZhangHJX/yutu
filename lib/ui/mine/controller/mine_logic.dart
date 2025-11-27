@@ -17,7 +17,7 @@ const List<String> _mockDesignImages = [
   'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=400&q=80',
 ];
 
-class MineController extends GetxController {
+class MineLogic extends GetxController {
   final userInfo = UserModel().obs;
   final isLogin = true.obs;
 
@@ -47,11 +47,12 @@ class MineController extends GetxController {
 
   void onTapMyDesign() => _showComingSoon('我的设计');
 
-  void onTapMyDraft() => _showComingSoon('我的草稿');
-
+  /// 常用工具事件
+  void onTapMyDraft() =>
+      Get.toNamed(AppRoutes.appResourcePage, arguments: "draft");
   void onTapMyFavorite() => _showComingSoon('我的收藏');
-
-  void onTapMyAssets() => _showComingSoon('我的素材');
+  void onTapMyResource() =>
+      Get.toNamed(AppRoutes.appResourcePage, arguments: "resource");
 
   void onTapService() => _showComingSoon('我的客服');
 

@@ -1,30 +1,11 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'app_resource_logic.dart';
 
-import '../../utils/app_info/app_info_utils.dart';
+class AppResourcePage extends StatelessWidget {
+  AppResourcePage({super.key});
 
-class AppInfoPage extends StatefulWidget {
-  const AppInfoPage({super.key});
-
-  @override
-  State<AppInfoPage> createState() => _AppInfoPageState();
-}
-
-class _AppInfoPageState extends State<AppInfoPage> {
-  String _version = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadVersion();
-  }
-
-  Future<void> _loadVersion() async {
-    final version = await AppInfoUtils.getAppVersion();
-    setState(() {
-      _version = version;
-    });
-  }
+  final logic = Get.put(AppResourceLogic());
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +18,8 @@ class _AppInfoPageState extends State<AppInfoPage> {
             child: Column(
               children: [
                 CAppBar(
-                  title: const Text(
-                    '软件信息',
+                  title: Text(
+                    logic.type == "draft" ? "我的草稿" : "我的素材",
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   backgroundColor: Colors.transparent,
@@ -94,7 +75,7 @@ class _AppInfoPageState extends State<AppInfoPage> {
                       ),
                       Spacer(),
                       Text(
-                        "v$_version",
+                        "v",
                         style: TextStyle(
                           fontSize: 14.w,
                           color: "#1677FF".color,

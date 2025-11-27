@@ -52,6 +52,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
   void _openColorPicker({
     required Color initialColor,
     required ValueChanged<Color> onColorSelected,
+    required BuildContext context,
   }) async {
     final selectedColor = await showColorPickerDialog(
       context,
@@ -157,7 +158,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
                   child: Column(
                     children: [
                       // 填充区域
-                      _buildFillSection(),
+                      _buildFillSection(context),
                       SizedBox(height: 9.w),
                       _buildFillAlphaSection(),
                     ],
@@ -171,7 +172,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
     );
   }
 
-  Widget _buildFillSection() {
+  Widget _buildFillSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -202,6 +203,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
                       _updateModel();
                     });
                   },
+                  context: context,
                 );
               },
               child: Container(

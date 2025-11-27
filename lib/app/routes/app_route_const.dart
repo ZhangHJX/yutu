@@ -19,6 +19,7 @@ class AppRoutes {
 
   /// 我的模块页面
   static const appInfoPage = '/app_info_page';
+  static const appResourcePage = '/app_resource_page';
 
   /// 404
   static const notFound = '/404';

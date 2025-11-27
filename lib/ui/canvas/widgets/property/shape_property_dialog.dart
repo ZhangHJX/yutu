@@ -125,6 +125,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
   void _openColorPicker({
     required Color initialColor,
     required ValueChanged<Color> onColorSelected,
+    required BuildContext context,
   }) async {
     final selectedColor = await showColorPickerDialog(
       context,
@@ -219,13 +220,13 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                   child: Column(
                     children: [
                       // 填充 描边
-                      _buildFillBorderSection(),
+                      _buildFillBorderSection(context),
                       SizedBox(height: 2.w),
                       //透明度
                       _buildFillAndBorderAlaphSection(),
                       SizedBox(height: 7.w),
                       // 阴影
-                      _buildShadowSection(),
+                      _buildShadowSection(context),
 
                       SizedBox(height: 21.w),
                       _buildShawAlaphSection(),
@@ -281,7 +282,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
     );
   }
 
-  Widget _buildFillBorderSection() {
+  Widget _buildFillBorderSection(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -299,6 +300,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                       _updateModel();
                     });
                   },
+                  context: context,
                 );
               },
               child: Container(
@@ -383,6 +385,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                       _updateModel();
                     });
                   },
+                  context: context,
                 );
               },
               child: Container(
@@ -576,7 +579,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
     );
   }
 
-  Widget _buildShadowSection() {
+  Widget _buildShadowSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -642,6 +645,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                       _updateModel();
                     });
                   },
+                  context: context,
                 );
               },
               child: Container(

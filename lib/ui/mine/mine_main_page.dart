@@ -1,13 +1,13 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
-import './controller/mine_controller.dart';
+import 'controller/mine_logic.dart';
 import 'model/mine_tools_model.dart';
 
 class MinePage extends StatelessWidget {
   MinePage({super.key});
 
-  final logic = Get.put(MineController());
+  final logic = Get.put(MineLogic());
 
   @override
   Widget build(BuildContext context) {
@@ -361,7 +361,7 @@ class MinePage extends StatelessWidget {
       MineToolsModel(
         icon: "assets/images/mine/mine_tools_sucai.png",
         title: '我的素材',
-        onTap: logic.onTapMyAssets,
+        onTap: logic.onTapMyResource,
       ),
 
       MineToolsModel(

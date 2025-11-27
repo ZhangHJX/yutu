@@ -209,6 +209,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
   void _openColorPicker({
     required Color initialColor,
     required ValueChanged<Color> onColorSelected,
+    required BuildContext context,
   }) async {
     final selectedColor = await showColorPickerDialog(
       context,
@@ -296,7 +297,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                       child: AnimatedBuilder(
                         animation: _tabController,
                         builder: (context, child) {
-                          return _buildCurrentTabContent();
+                          return _buildCurrentTabContent(context);
                         },
                       ),
                     ),
@@ -347,12 +348,12 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
   }
 
   // ⭐ 新增方法：根据当前索引返回对应的内容
-  Widget _buildCurrentTabContent() {
+  Widget _buildCurrentTabContent(BuildContext context) {
     switch (_tabController.index) {
       case 0:
         return SingleChildScrollView(child: _buildTextPropertyTab());
       case 1:
-        return SingleChildScrollView(child: _buildFillTab());
+        return SingleChildScrollView(child: _buildFillTab(context));
       case 2:
         return SingleChildScrollView(child: _buildSpacingAlignmentTab());
       default:
@@ -702,7 +703,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
   }
 
   // 效果标签页
-  Widget _buildFillTab() {
+  Widget _buildFillTab(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 15.w),
       child: Column(
@@ -710,13 +711,13 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
         children: [
           SizedBox(height: 21.w),
           // 填充 描边
-          _buildFillBorderSection(),
+          _buildFillBorderSection(context),
           SizedBox(height: 2.w),
           //透明度
           _buildFillAndBorderAlaphSection(),
           SizedBox(height: 7.w),
           // 阴影
-          _buildShadowSection(),
+          _buildShadowSection(context),
 
           SizedBox(height: 21.w),
           _buildShawAlaphSection(),
@@ -727,7 +728,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     );
   }
 
-  Widget _buildFillBorderSection() {
+  Widget _buildFillBorderSection(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -745,6 +746,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                       _updateModel();
                     });
                   },
+                  context: context,
                 );
               },
               child: Container(
@@ -829,6 +831,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                       _updateModel();
                     });
                   },
+                  context: context,
                 );
               },
               child: Container(
@@ -1022,7 +1025,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     );
   }
 
-  Widget _buildShadowSection() {
+  Widget _buildShadowSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1088,6 +1091,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                       _updateModel();
                     });
                   },
+                  context: context,
                 );
               },
               child: Container(
