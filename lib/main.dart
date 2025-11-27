@@ -10,3 +10,4 @@ void main() async {
 
   runApp(const AppStartScope());
 }
+// 多语言适配  https://blog.csdn.net/zz00008888/article/details/145241603
