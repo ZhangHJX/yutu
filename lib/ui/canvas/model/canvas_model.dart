@@ -20,9 +20,6 @@ class CanvasModel {
 
   String fillColor;
   double fillAlpha;
-  String borderColor;
-  double borderWidth;
-  double borderAlpha;
   bool locked;
   bool isSelected;
 
@@ -40,9 +37,6 @@ class CanvasModel {
     this.scale = 1.0,
     this.fillColor = '#FFFFFF',
     this.fillAlpha = 1.0,
-    this.borderColor = '#BFBFBF',
-    this.borderWidth = 1.0,
-    this.borderAlpha = 1.0,
     this.locked = false,
     this.isSelected = false,
     this.elements = const [],

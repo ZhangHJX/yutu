@@ -87,9 +87,9 @@ class CAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: IconButton(
             padding: EdgeInsets.only(right: zeroLeadingPadding ? 0 : 5.w),
             icon: Image.asset(
-              'assets/images/mall/ic_black_back.png',
-              width: 40.w,
-              height: 44.w,
+              'assets/images/global/ic_black_back.png',
+              width: 20.w,
+              height: 20.w,
               color: leadingIconColor ?? color,
             ),
             onPressed: () {

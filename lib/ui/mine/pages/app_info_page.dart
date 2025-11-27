@@ -46,7 +46,11 @@ class _AppInfoPageState extends State<AppInfoPage> {
                 SizedBox(height: 33.w),
 
                 /// 图标
-                Image.asset('assets/app_logo.png', width: 94, height: 94),
+                Image.asset(
+                  "assets/images/global/app_info_logo.png",
+                  width: 80.w,
+                  height: 80.81.w,
+                ),
 
                 SizedBox(height: 25.w),
 

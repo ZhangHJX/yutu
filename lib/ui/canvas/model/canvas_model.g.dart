@@ -15,9 +15,6 @@ CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
   height: (json['height'] as num?)?.toDouble() ?? 1080,
   fillColor: json['fillColor'] as String? ?? '#FFFFFF',
   fillAlpha: (json['fillAlpha'] as num?)?.toDouble() ?? 1.0,
-  borderColor: json['borderColor'] as String? ?? '#BFBFBF',
-  borderWidth: (json['borderWidth'] as num?)?.toDouble() ?? 0,
-  borderAlpha: (json['borderAlpha'] as num?)?.toDouble() ?? 1.0,
   locked: json['locked'] as bool? ?? true,
   isSelected: json['isSelected'] as bool? ?? false,
 );
@@ -32,9 +29,6 @@ Map<String, dynamic> _$CanvasModelToJson(CanvasModel instance) =>
       'height': instance.height,
       'fillColor': instance.fillColor,
       'fillAlpha': instance.fillAlpha,
-      'borderColor': instance.borderColor,
-      'borderWidth': instance.borderWidth,
-      'borderAlpha': instance.borderAlpha,
       'locked': instance.locked,
       'isSelected': instance.isSelected,
     };

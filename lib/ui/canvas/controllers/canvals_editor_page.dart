@@ -496,58 +496,49 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                         _canvalsModel.height,
                       );
 
-                      final canvasContent = ClipRect(
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              key: _canvasContainerKey,
-                              width: _canvalsController.canvalsSize.width,
-                              height: _canvalsController.canvalsSize.height,
-                              decoration: BoxDecoration(
+                      final canvasContent = Screenshot(
+                        controller: _screenshotController,
+                        child: ClipRect(
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                key: _canvasContainerKey,
+                                width: _canvalsController.canvalsSize.width,
+                                height: _canvalsController.canvalsSize.height,
                                 color: _canvalsModel.fillColor.color.withValues(
                                   alpha: _canvalsModel.fillAlpha,
                                 ),
-                                border: Border.all(
-                                  color: _canvalsModel.borderColor.color
-                                      .withValues(
-                                        alpha: _canvalsModel.borderWidth > 0
-                                            ? _canvalsModel.borderAlpha
-                                            : 0.0,
-                                      ),
-                                  width: _canvalsModel.borderWidth,
-                                ),
                               ),
-                            ),
-                            Positioned.fill(
-                              child: OverflowBox(
-                                minWidth: 0,
-                                minHeight: 0,
-                                maxWidth: double.infinity,
-                                maxHeight: double.infinity,
-                                alignment: Alignment.topLeft,
-                                child: Align(
+                              Positioned.fill(
+                                child: OverflowBox(
+                                  minWidth: 0,
+                                  minHeight: 0,
+                                  maxWidth: double.infinity,
+                                  maxHeight: double.infinity,
                                   alignment: Alignment.topLeft,
-                                  child: CanvasEditorWidget(
-                                    key: _canvasKey,
-                                    historyManager: _historyManager,
-                                    onContentChanged: () {
-                                      if (mounted) {
-                                        setState(() {});
-                                      }
-                                    },
-                                    canvasMatrix: _canvalsModel.transform,
-                                    canvasSize: logicSize,
+                                  child: Align(
+                                    alignment: Alignment.topLeft,
+                                    child: CanvasEditorWidget(
+                                      key: _canvasKey,
+                                      historyManager: _historyManager,
+                                      onContentChanged: () {
+                                        if (mounted) {
+                                          setState(() {});
+                                        }
+                                      },
+                                      canvasMatrix: _canvalsModel.transform,
+                                      canvasSize: logicSize,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
 
                       final boxes = _canvasKey.currentState?.boxesList ?? [];
-
                       return Center(
                         child: SizedBox(
                           width: constraints.maxWidth,
@@ -555,14 +546,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                           child: Stack(
                             clipBehavior: Clip.none,
                             children: [
-                              Screenshot(
-                                controller: _screenshotController,
-                                child: Transform(
-                                  transform: _canvalsModel.transform,
-                                  alignment: Alignment.topLeft,
-                                  child: canvasContent,
-                                ),
+                              Transform(
+                                transform: _canvalsModel.transform,
+                                alignment: Alignment.topLeft,
+                                child: canvasContent,
                               ),
+
                               Obx(
                                 () => TransformCanvas(
                                   elements: boxes,

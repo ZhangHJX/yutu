@@ -27,15 +27,6 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
       TextEditingController(text: '#FFFFFF');
   double _fillAlpha = 1;
 
-  // 边框相关属性
-  String _borderColor = '#BFBFBF';
-  double _borderWidth = 1;
-  double _borderAlpha = 1;
-  final TextEditingController _canvalsBorderColorController =
-      TextEditingController();
-  final TextEditingController _canvalsBorderWidthController =
-      TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -49,17 +40,10 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
 
     _fillColor = props.fillColor;
     _fillAlpha = props.fillAlpha;
-    _borderColor = props.borderColor;
-    _borderWidth = props.borderWidth;
-    _borderAlpha = props.borderAlpha;
-
-    _canvalsBorderColorController.text = _fillColor;
-    _canvalsBorderWidthController.text = _borderWidth.toInt().toString();
   }
 
   @override
   void dispose() {
-    _canvalsBorderColorController.dispose();
     _canvalsFillColorController.dispose();
     super.dispose();
   }
@@ -85,9 +69,6 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
     final props = widget.canvasModel!;
     props.fillColor = _fillColor;
     props.fillAlpha = _fillAlpha;
-    props.borderColor = _borderColor;
-    props.borderWidth = _borderWidth;
-    props.borderAlpha = _borderAlpha;
     widget.onPropertyChanged?.call();
   }
 
@@ -100,7 +81,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
         builder: (context, isKeyboardVisible) {
           return Container(
             width: ScreenTools.screenWidth,
-            height: ScreenTools.bottomBarHeight + 349.w,
+            height: ScreenTools.bottomBarHeight + 235.w,
             margin: EdgeInsets.only(
               bottom: ScreenTools.getKeyboardHeight(context, isKeyboardVisible),
             ),
@@ -179,11 +160,6 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
                       _buildFillSection(),
                       SizedBox(height: 9.w),
                       _buildFillAlphaSection(),
-                      SizedBox(height: 17.w),
-                      // 边框区域
-                      _buildBorderSection(),
-                      SizedBox(height: 6.w),
-                      _buildShawAlphaSection(),
                     ],
                   ),
                 ),
@@ -299,168 +275,6 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
       onChanged: (value) {
         setState(() {
           _fillAlpha = value;
-          _updateModel();
-        });
-      },
-    );
-  }
-
-  Widget _buildBorderSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 标题
-        Text(
-          '边框',
-          style: TextStyle(
-            fontSize: 13.w,
-            color: "#ff3E3E3E".color.withValues(alpha: 0.6),
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-
-        SizedBox(height: 6.w),
-
-        // 颜色预览、输入框、图标和宽度
-        Row(
-          children: [
-            // 颜色预览框
-            GestureDetector(
-              onTap: () {
-                _openColorPicker(
-                  initialColor: _borderColor.color,
-                  onColorSelected: (color) {
-                    setState(() {
-                      _borderColor = color.string;
-                      _canvalsBorderColorController.text = color.string;
-                      _updateModel();
-                    });
-                  },
-                );
-              },
-              child: Container(
-                width: 84.w,
-                height: 38.w,
-                decoration: BoxDecoration(
-                  color: _borderColor.color,
-                  borderRadius: BorderRadius.circular(12.w),
-                  border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
-                ),
-              ),
-            ),
-
-            SizedBox(width: 10.w),
-
-            // 颜色输入框
-            Container(
-              width: 84.w,
-              height: 38.w,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.w),
-                border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-              ),
-              alignment: Alignment.center,
-              child: TextField(
-                controller: _canvalsBorderColorController,
-                textAlign: TextAlign.center,
-                inputFormatters: [HexColorFormatter()],
-                onChanged: (value) {
-                  if (value.isNotEmpty && value.length == 7) {
-                    setState(() {
-                      _borderColor = value;
-                      _updateModel();
-                    });
-                  }
-                },
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 5.w,
-                    vertical: 15.w,
-                  ),
-                ),
-                style: TextStyle(
-                  fontSize: 14.w,
-                  color: "#242424".color,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-
-            SizedBox(width: 19.w),
-
-            // 边框图标
-            Image.asset(
-              'assets/images/canvals/canvals_border_icon.png',
-              width: 26.w,
-              height: 26.w,
-              fit: BoxFit.cover,
-            ),
-
-            SizedBox(width: 16.w),
-
-            // 边框宽度输入框
-            Container(
-              width: 48.w,
-              height: 38.w,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18.w),
-                border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-              ),
-              alignment: Alignment.center,
-              child: TextField(
-                controller: _canvalsBorderWidthController,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                onChanged: (value) {
-                  final width = double.tryParse(value);
-                  if (width != null) {
-                    setState(() {
-                      _borderWidth = width;
-                      _updateModel();
-                    });
-                  }
-                },
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 5.w,
-                    vertical: 15.w,
-                  ),
-                ),
-                style: TextStyle(
-                  fontSize: 14.w,
-                  fontWeight: FontWeight.w600,
-                  color: "#ff242424".color,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildShawAlphaSection() {
-    return SliderInputField(
-      title: '边框透明度',
-      value: _borderAlpha,
-      minValue: 0.0,
-      maxValue: 1.0,
-      trackHeight: 8.w,
-      thumbSize: 16.w,
-      formatter: (value) => '${(value * 100).toInt()}%',
-      parser: (text) =>
-          double.tryParse(text.replaceAll('%', '')) ?? 0.0 / 100.0,
-      onChanged: (value) {
-        setState(() {
-          _borderAlpha = value;
           _updateModel();
         });
       },
