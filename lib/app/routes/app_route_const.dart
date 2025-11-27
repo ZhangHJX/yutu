@@ -17,8 +17,9 @@ class AppRoutes {
   /// 画布页面
   static const createCanvalsPage = '/create_canvals_page';
 
+  /// 我的模块页面
+  static const appInfoPage = '/app_info_page';
+
   /// 404
   static const notFound = '/404';
-
-
 }

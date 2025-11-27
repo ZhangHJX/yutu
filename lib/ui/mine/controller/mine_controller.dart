@@ -1,7 +1,8 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
-import '../model/mine_info_model.dart';
+import '../model/user_model.dart';
+import '../../../app/routes/index.dart';
 
 const _mockAvatar =
     'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80';
@@ -17,29 +18,18 @@ const List<String> _mockDesignImages = [
 ];
 
 class MineController extends GetxController {
-  final state = MineInfoModel();
-  final isLogin = false.obs;
+  final userInfo = UserModel().obs;
+  final isLogin = true.obs;
 
   @override
   void onInit() {
     super.onInit();
-    _mockInit();
-  }
-
-  void _mockInit() {
-    isLogin.value = false;
-    state
-      ..isLogin = false
-      ..avatar = ''
-      ..nickname = ''
-      ..workCount = 0
-      ..designImages = [..._mockDesignImages];
   }
 
   /// 模拟登录
   void login() {
     isLogin.value = true;
-    state
+    userInfo.value
       ..isLogin = true
       ..avatar = _mockAvatar
       ..nickname = '设计达人'
@@ -49,9 +39,10 @@ class MineController extends GetxController {
 
   /// 退出登录
   void logout() {
-    _mockInit();
+    userInfo.value = UserModel();
   }
 
+  /// 我的主页面点击事件
   void onTapMyServices() => _showComingSoon('我的客服');
 
   void onTapMyDesign() => _showComingSoon('我的设计');
@@ -64,7 +55,7 @@ class MineController extends GetxController {
 
   void onTapService() => _showComingSoon('我的客服');
 
-  void onTapSoftwareInfo() => _showComingSoon('软件信息');
+  void goToAppInfo() => Get.toNamed(AppRoutes.appInfoPage);
 
   void _showComingSoon(String title) {
     Get.snackbar(

@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 
 @JsonSerializable(explicitToJson: true)
-class MineInfoModel {
+class UserModel {
   /// 是否已登录
   bool isLogin;
   String avatar;
@@ -9,7 +9,7 @@ class MineInfoModel {
   int workCount;
   List<String> designImages;
 
-  MineInfoModel({
+  UserModel({
     this.avatar = '',
     this.nickname = '',
     this.isLogin = false,

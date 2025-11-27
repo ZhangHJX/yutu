@@ -6,6 +6,9 @@ import 'package:voicetemplate/ui/splash/page.dart';
 import 'package:voicetemplate/ui/main/page.dart';
 import 'package:voicetemplate/ui/canvas/controllers/canvals_editor_page.dart';
 
+/// 我的模块
+import 'package:voicetemplate/ui/mine/pages/app_info_page.dart';
+
 final List<GetPage> getPages = [
   /// 启动页
   GetPage(name: AppRoutes.splash, page: SplashPage.new),
@@ -22,6 +25,9 @@ final List<GetPage> getPages = [
 
   // 画布页面
   GetPage(name: AppRoutes.createCanvalsPage, page: CanvasEditorPage.new),
+
+  //我的模块
+  GetPage(name: AppRoutes.appInfoPage, page: AppInfoPage.new),
 ];
 
 final unknownRoute = GetPage(name: AppRoutes.notFound, page: NotFoundPage.new);

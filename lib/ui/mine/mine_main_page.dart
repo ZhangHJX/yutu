@@ -2,7 +2,6 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
 import './controller/mine_controller.dart';
-import 'model/mine_info_model.dart';
 import 'model/mine_tools_model.dart';
 
 class MinePage extends StatelessWidget {
@@ -18,27 +17,30 @@ class MinePage extends StatelessWidget {
         children: [
           _buildHeaderBackground(),
           SafeArea(
-            child: Column(
-              children: [
-                _buildHeaderBar(),
-                _buildMineInfoContent(),
-                if (logic.isLogin.value) _buildLoggedInContent(),
-                if (logic.isLogin.value) _buildToolsCard(),
-                _buildSoftwareInfoCard(),
-                if (logic.isLogin.value) _buildLoginOutCard(),
-                Spacer(),
-                Text(
-                  '语音厅设计助手 V1.0\n让设计更简单',
-                  style: TextStyle(
-                    fontSize: 11.w,
-                    color: "#9E9E9E".color,
-                    fontWeight: FontWeight.w500,
+            child: Obx(() {
+              return Column(
+                children: [
+                  _buildHeaderBar(),
+                  _buildMineInfoContent(),
+                  if (logic.isLogin.value) _buildLoggedInContent(),
+                  if (logic.isLogin.value) _buildToolsCard(),
+                  _buildSoftwareInfoCard(),
+                  if (logic.isLogin.value) _buildLoginOutCard(),
+
+                  Spacer(),
+                  Text(
+                    '语音厅设计助手 V1.0\n让设计更简单',
+                    style: TextStyle(
+                      fontSize: 11.w,
+                      color: "#9E9E9E".color,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 51.w),
-              ],
-            ),
+                  SizedBox(height: 51.w),
+                ],
+              );
+            }),
           ),
         ],
       ),
@@ -95,7 +97,7 @@ class MinePage extends StatelessWidget {
 
   /// 个人信息
   Widget _buildMineInfoContent() {
-    final user = logic.state;
+    final user = logic.userInfo.value;
     return Padding(
       padding: EdgeInsets.only(left: 22.w, top: 9.w, right: 20.w),
       child: Row(
@@ -211,7 +213,7 @@ class MinePage extends StatelessWidget {
   }
 
   Widget _buildDesignBlock() {
-    final user = logic.state;
+    final user = logic.userInfo.value;
     final designs = user.designImages;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -426,7 +428,7 @@ class MinePage extends StatelessWidget {
   /// 软件信息卡片（登录前后通用）
   Widget _buildSoftwareInfoCard() {
     return GestureDetector(
-      onTap: logic.onTapSoftwareInfo,
+      onTap: logic.goToAppInfo,
       child: Container(
         height: 46.w,
         margin: EdgeInsets.only(
@@ -465,7 +467,7 @@ class MinePage extends StatelessWidget {
   /// 软件信息卡片（登录前后通用）
   Widget _buildLoginOutCard() {
     return GestureDetector(
-      onTap: logic.onTapSoftwareInfo,
+      onTap: logic.logout,
       child: Container(
         height: 46.w,
         width: ScreenTools.screenWidth,

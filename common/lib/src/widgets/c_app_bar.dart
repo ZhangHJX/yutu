@@ -106,17 +106,24 @@ class CAppBar extends StatelessWidget implements PreferredSizeWidget {
       }
     }
 
-    final finalTextStyle = Theme.of(
-      context,
-    ).appBarTheme.titleTextStyle?.merge(titleTextStyle).merge(TextStyle(color: color));
+    final finalTextStyle = Theme.of(context).appBarTheme.titleTextStyle
+        ?.merge(titleTextStyle)
+        .merge(TextStyle(color: color));
 
     return AppBar(
-      title: title ?? (titleText != null ? Text(titleText!, style: finalTextStyle) : null),
+      title:
+          title ??
+          (titleText != null ? Text(titleText!, style: finalTextStyle) : null),
       centerTitle: centerTitle,
       backgroundColor: backgroundColor,
       leading: appendLeading == null
           ? leadingWidget
-          : Row(children: [if (leadingWidget != null) leadingWidget, appendLeading!]),
+          : Row(
+              children: [
+                if (leadingWidget != null) leadingWidget,
+                appendLeading!,
+              ],
+            ),
       automaticallyImplyLeading: false,
       actions: actions,
       elevation: elevation,
