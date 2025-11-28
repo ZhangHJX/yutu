@@ -32,7 +32,6 @@ class ResourceBottomBar extends StatelessWidget {
                   title: "温馨提示",
                   subTitle:
                       '确定要删除选中的${controller.type == "draft" ? "草稿" : "素材"}吗？',
-                  sureTitle: "确定",
                   sureAction: controller.deleteSelected,
                 ),
                 alignment: Alignment.center,

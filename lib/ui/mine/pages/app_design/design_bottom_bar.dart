@@ -31,7 +31,6 @@ class DesignBottomBar extends StatelessWidget {
                 builder: (context) => ConfirmPopWidget(
                   title: '温馨提示',
                   subTitle: '确定要删除选中的设计吗？',
-                  sureTitle: "确定",
                   sureAction: controller.deleteSelected,
                 ),
                 alignment: Alignment.center,

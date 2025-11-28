@@ -24,6 +24,8 @@ import '../utils/index.dart';
 import '../model/index.dart';
 import '../canvals/transform_canvas.dart';
 
+part './editor_extension/canvals_editor_page_dialog.dart';
+
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
   @override

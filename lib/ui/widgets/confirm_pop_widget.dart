@@ -5,14 +5,16 @@ class ConfirmPopWidget extends StatelessWidget {
   final String title;
   final String subTitle;
   final String sureTitle;
+  final String cancelTitle;
   final VoidCallback? sureAction;
 
   const ConfirmPopWidget({
     super.key,
     required this.title,
     required this.subTitle,
-    required this.sureTitle,
     required this.sureAction,
+    this.sureTitle = "确定",
+    this.cancelTitle = "取消",
   });
 
   @override
