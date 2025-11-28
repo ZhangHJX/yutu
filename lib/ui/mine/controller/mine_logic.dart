@@ -45,8 +45,10 @@ class MineLogic extends GetxController {
 
   /// 我的主页面点击事件
   void onTapMyServices() => isLogin.value = !isLogin.value;
+  void onTapPersonInfo() => Get.toNamed(AppRoutes.personInfo);
 
-  void onTapMyDesign() => Get.toNamed(AppRoutes.designPage);
+  void onTapMyDesign() =>
+      Get.toNamed(AppRoutes.designPage, arguments: userInfo.value);
 
   /// 常用工具事件
   void onTapMyDraft() =>

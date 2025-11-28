@@ -121,8 +121,8 @@ class MinePage extends StatelessWidget {
                     child: ClipOval(
                       child: user.avatar.isEmpty
                           ? Container(
-                              width: 56,
-                              height: 56,
+                              width: 56.w,
+                              height: 56.w,
                               color: const Color(0xFFF2F3F7),
                               child: const Icon(Icons.person_outline, size: 32),
                             )
@@ -183,9 +183,7 @@ class MinePage extends StatelessWidget {
 
           CButton.icon(
             size: 32.w,
-            onPressed: () {
-              debugPrint("----哈哈哈哈-----");
-            },
+            onPressed: logic.onTapPersonInfo,
             child: Image.asset(
               "assets/images/mine/mine_info_go.png",
               fit: BoxFit.cover,
