@@ -909,7 +909,14 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       }
     } else {
       SmartDialog.show(
-        builder: (context) => PermissionHandlerWidget(),
+        builder: (context) => ConfirmPopWidget(
+          title: "提示",
+          subTitle: "保存图片到相册，需要开启相册权限",
+          sureTitle: "同意",
+          sureAction: () {
+            AppSettings.openAppSettings(type: AppSettingsType.settings);
+          },
+        ),
         alignment: Alignment.center,
         animationType: SmartAnimationType.centerFade_otherSlide,
         animationTime: Duration(milliseconds: 250),
