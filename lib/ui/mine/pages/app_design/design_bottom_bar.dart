@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'design_logic.dart';
-import '../widgets/design_pop_widget.dart';
+import 'package:voicetemplate/ui/widgets/confirm_pop_widget.dart';
 
 class DesignBottomBar extends StatelessWidget {
   final AppDesiginLogic controller;
@@ -28,8 +28,12 @@ class DesignBottomBar extends StatelessWidget {
           GestureDetector(
             onTap: () {
               SmartDialog.show(
-                builder: (context) =>
-                    DesignPopWidget(sureAction: controller.deleteSelected),
+                builder: (context) => ConfirmPopWidget(
+                  title: '温馨提示',
+                  subTitle: '确定要删除选中的设计吗？',
+                  sureTitle: "确定",
+                  sureAction: controller.deleteSelected,
+                ),
                 alignment: Alignment.center,
                 animationType: SmartAnimationType.centerFade_otherSlide,
                 animationTime: Duration(milliseconds: 250),

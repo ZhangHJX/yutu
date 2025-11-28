@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'resource_logic.dart';
-import '../widgets/resource_pop_widget.dart';
+import 'package:voicetemplate/ui/widgets/confirm_pop_widget.dart';
 
 class ResourceBottomBar extends StatelessWidget {
   final AppResourceLogic controller;
@@ -28,8 +28,11 @@ class ResourceBottomBar extends StatelessWidget {
           GestureDetector(
             onTap: () {
               SmartDialog.show(
-                builder: (context) => ResourcePopWidget(
-                  type: controller.type,
+                builder: (context) => ConfirmPopWidget(
+                  title: "温馨提示",
+                  subTitle:
+                      '确定要删除选中的${controller.type == "draft" ? "草稿" : "素材"}吗？',
+                  sureTitle: "确定",
                   sureAction: controller.deleteSelected,
                 ),
                 alignment: Alignment.center,

@@ -1,5 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:voicetemplate/ui/widgets/confirm_pop_widget.dart';
 import '../widgets/canvas_app_bar_widget.dart';
 import '../widgets/canvas_bottom_bar_widget.dart';
 import '../widgets/canvas_control_widget.dart';
@@ -795,7 +796,14 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       );
     } else {
       SmartDialog.show(
-        builder: (context) => PermissionHandlerWidget(),
+        builder: (context) => ConfirmPopWidget(
+          title: '提示',
+          subTitle: '打开相册以上传图片到编辑器\n中进行进一步编辑',
+          sureTitle: "同意",
+          sureAction: () {
+            AppSettings.openAppSettings(type: AppSettingsType.settings);
+          },
+        ),
         alignment: Alignment.center,
         animationType: SmartAnimationType.centerFade_otherSlide,
         animationTime: Duration(milliseconds: 250),

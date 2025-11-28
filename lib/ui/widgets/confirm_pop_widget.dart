@@ -1,13 +1,17 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
-class ResourcePopWidget extends StatelessWidget {
-  final String type;
+class ConfirmPopWidget extends StatelessWidget {
+  final String title;
+  final String subTitle;
+  final String sureTitle;
   final VoidCallback? sureAction;
 
-  const ResourcePopWidget({
+  const ConfirmPopWidget({
     super.key,
-    required this.type,
+    required this.title,
+    required this.subTitle,
+    required this.sureTitle,
     required this.sureAction,
   });
 
@@ -25,7 +29,7 @@ class ResourcePopWidget extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(top: 24.w),
             child: Text(
-              '温馨提示',
+              title,
               style: TextStyle(
                 fontSize: 18.w,
                 color: "#232535".color,
@@ -37,7 +41,7 @@ class ResourcePopWidget extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(top: 46.w),
             child: Text(
-              '确定要删除选中的${type == "draft" ? "草稿" : "素材"}吗？',
+              subTitle,
               style: TextStyle(
                 fontSize: 16.w,
                 color: "#434343".color,
@@ -95,7 +99,7 @@ class ResourcePopWidget extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      '同意',
+                      sureTitle,
                       style: TextStyle(
                         fontSize: 16.w,
                         color: "#FFFFFF".color,

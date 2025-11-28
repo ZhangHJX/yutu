@@ -77,17 +77,42 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                 ),
                 child: Column(
                   children: [
-                    // 标题
-                    Container(
-                      padding: EdgeInsets.only(top: 19.w, bottom: 20.w),
-                      child: Text(
-                        '保存模版',
-                        style: TextStyle(
-                          fontSize: 18.w,
-                          fontWeight: FontWeight.w500,
-                          color: "#FF262626".color,
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // 中间标题
+                        Center(
+                          child: Container(
+                            padding: EdgeInsets.only(top: 19.w, bottom: 20.w),
+                            child: Text(
+                              '保存模版',
+                              style: TextStyle(
+                                fontSize: 18.w,
+                                fontWeight: FontWeight.w500,
+                                color: "#FF262626".color,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+
+                        // 右侧“保存为草稿”
+                        Positioned(
+                          right: 16.w,
+                          child: GestureDetector(
+                            onTap: () {
+                              debugPrint("我要打算出来了一切啊啊啊");
+                            },
+                            child: Text(
+                              '保存为草稿',
+                              style: TextStyle(
+                                fontSize: 13.w,
+                                color: "#6C64FF".color, // 你设计稿的紫色
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                     // 可滚动的内容区域
