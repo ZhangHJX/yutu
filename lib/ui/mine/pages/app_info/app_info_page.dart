@@ -1,6 +1,8 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/app_status_bar.dart';
+
 import '../../../utils/app_info/app_info_utils.dart';
 
 class AppInfoPage extends StatefulWidget {
@@ -32,7 +34,7 @@ class _AppInfoPageState extends State<AppInfoPage> {
       backgroundColor: "#F5F5F5".color,
       body: Stack(
         children: [
-          _buildHeaderBackground(),
+          AppStatusBar(),
           SafeArea(
             child: Column(
               children: [
@@ -141,20 +143,6 @@ class _AppInfoPageState extends State<AppInfoPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  /// 顶部渐变背景
-  Widget _buildHeaderBackground() {
-    return Container(
-      height: 146.w,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFB1D5FF), Color(0xFFF5F6FA)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
       ),
     );
   }

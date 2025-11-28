@@ -40,19 +40,20 @@ class MineLogic extends GetxController {
   /// 退出登录
   void logout() {
     userInfo.value = UserModel();
+    isLogin.value = false;
   }
 
   /// 我的主页面点击事件
-  void onTapMyServices() => _showComingSoon('我的客服');
+  void onTapMyServices() => isLogin.value = !isLogin.value;
 
   void onTapMyDesign() => _showComingSoon('我的设计');
 
   /// 常用工具事件
   void onTapMyDraft() =>
-      Get.toNamed(AppRoutes.appResourcePage, arguments: "draft");
+      Get.toNamed(AppRoutes.resourcePage, arguments: "draft");
   void onTapMyFavorite() => _showComingSoon('我的收藏');
   void onTapMyResource() =>
-      Get.toNamed(AppRoutes.appResourcePage, arguments: "resource");
+      Get.toNamed(AppRoutes.resourcePage, arguments: "resource");
 
   void onTapService() => _showComingSoon('我的客服');
 

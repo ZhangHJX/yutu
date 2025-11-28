@@ -60,7 +60,9 @@ class CButton extends StatelessWidget {
     bool? useDefaultGradient,
     bool ghost = false,
   }) {
-    final Color primaryColor = context != null ? Theme.of(context).primaryColor : Colors.blue;
+    final Color primaryColor = context != null
+        ? Theme.of(context).primaryColor
+        : Colors.blue;
 
     return CButton(
       key: key,
@@ -209,7 +211,11 @@ class CButton extends StatelessWidget {
 
     final Widget? textWidget = text is String
         ? ghost
-              ? CGradientText(text, style: finalTextStyle, gradient: effectiveGradient)
+              ? CGradientText(
+                  text,
+                  style: finalTextStyle,
+                  gradient: effectiveGradient,
+                )
               : Text(text, style: finalTextStyle, textAlign: TextAlign.center)
         : text is Widget
         ? text
@@ -246,9 +252,11 @@ class CButton extends StatelessWidget {
       );
     } else {
       final bool isIconFirst =
-          iconPosition == CIconPosition.left || iconPosition == CIconPosition.top;
+          iconPosition == CIconPosition.left ||
+          iconPosition == CIconPosition.top;
       final bool isHorizontal =
-          iconPosition == CIconPosition.left || iconPosition == CIconPosition.right;
+          iconPosition == CIconPosition.left ||
+          iconPosition == CIconPosition.right;
       final firstWidget = isIconFirst ? iconWidget : textWidget;
       final secondWidget = isIconFirst ? textWidget : iconWidget;
 
@@ -259,7 +267,10 @@ class CButton extends StatelessWidget {
         crossAxisAlignment: crossAxisAlignment,
         children: [
           firstWidget,
-          SizedBox(width: isHorizontal ? spacing : 0, height: isHorizontal ? 0 : spacing),
+          SizedBox(
+            width: isHorizontal ? spacing : 0,
+            height: isHorizontal ? 0 : spacing,
+          ),
           secondWidget,
         ],
       );
@@ -279,8 +290,15 @@ class CButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(borderRadius),
             ),
         child: CustomPaint(
-          painter: CGradientBorderPainter(gradient: effectiveGradient, borderRadius: borderRadius),
-          child: Container(padding: padding, alignment: Alignment.center, child: content),
+          painter: CGradientBorderPainter(
+            gradient: effectiveGradient,
+            borderRadius: borderRadius,
+          ),
+          child: Container(
+            padding: padding,
+            alignment: Alignment.center,
+            child: content,
+          ),
         ),
       );
     } else {
@@ -288,7 +306,9 @@ class CButton extends StatelessWidget {
         width: width,
         height: height,
         padding: padding,
-        decoration: decoration?.copyWith(gradient: gradient) ?? fallbackDecoration(shadows()),
+        decoration:
+            decoration?.copyWith(gradient: gradient) ??
+            fallbackDecoration(shadows()),
         child: content,
       );
     }
@@ -304,7 +324,11 @@ class CButton extends StatelessWidget {
       padding: margin,
       child: onPressed == null
           ? buttonChild
-          : GestureDetector(behavior: behavior, onTap: onPressed, child: buttonChild),
+          : GestureDetector(
+              behavior: behavior,
+              onTap: onPressed,
+              child: buttonChild,
+            ),
     );
   }
 
@@ -338,7 +362,9 @@ class CButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(borderRadius),
       border:
           border ??
-          (borderColor != null ? Border.all(color: borderColor!, width: borderWidth ?? 1.0) : null),
+          (borderColor != null
+              ? Border.all(color: borderColor!, width: borderWidth ?? 1.0)
+              : null),
       boxShadow: shadows,
     );
     return fallbackDecoration;
