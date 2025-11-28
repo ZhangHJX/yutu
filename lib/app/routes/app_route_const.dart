@@ -9,7 +9,7 @@ class AppRoutes {
   static const main = '/main';
 
   // 创建设计
-  static const designPage = '/create_design_page';
+  static const canvalsDesign = '/canvals_design_page';
 
   /// 登录页
   static const login = '/login';
@@ -20,6 +20,7 @@ class AppRoutes {
   /// 我的模块页面
   static const appInfoPage = '/app_info_page';
   static const resourcePage = '/resource_page';
+  static const designPage = '/design_page';
 
   /// 404
   static const notFound = '/404';

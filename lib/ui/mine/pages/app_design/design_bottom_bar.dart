@@ -1,11 +1,11 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'resource_logic.dart';
-import '../widgets/resource_pop_widget.dart';
+import 'design_logic.dart';
+import '../widgets/design_pop_widget.dart';
 
-class ResourceBottomBar extends StatelessWidget {
-  final AppResourceLogic controller;
-  const ResourceBottomBar({super.key, required this.controller});
+class DesignBottomBar extends StatelessWidget {
+  final AppDesiginLogic controller;
+  const DesignBottomBar({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +28,8 @@ class ResourceBottomBar extends StatelessWidget {
           GestureDetector(
             onTap: () {
               SmartDialog.show(
-                builder: (context) => ResourcePopWidget(
-                  type: controller.type,
-                  sureAction: controller.deleteSelected,
-                ),
+                builder: (context) =>
+                    DesignPopWidget(sureAction: controller.deleteSelected),
                 alignment: Alignment.center,
                 animationType: SmartAnimationType.centerFade_otherSlide,
                 animationTime: Duration(milliseconds: 250),

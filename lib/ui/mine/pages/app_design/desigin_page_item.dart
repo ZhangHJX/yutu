@@ -1,21 +1,19 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'resource_model.dart';
+import 'desigin_model.dart';
 
-class ResoucePageItem extends StatelessWidget {
-  final ResourceModel item;
+class DesiginPageItem extends StatelessWidget {
+  final DesiginModel item;
   final bool isSelected;
   final bool showCheck;
   final VoidCallback onTap;
-  final String type;
 
-  const ResoucePageItem({
+  const DesiginPageItem({
     super.key,
     required this.item,
     required this.isSelected,
     required this.showCheck,
     required this.onTap,
-    required this.type,
   });
 
   @override
@@ -41,7 +39,7 @@ class ResoucePageItem extends StatelessWidget {
               right: 0,
               child: Container(
                 height: 59.w,
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.w),
+                padding: EdgeInsets.only(left: 14.w, right: 14.w, top: 8.w),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12.w),
@@ -77,22 +75,46 @@ class ResoucePageItem extends StatelessWidget {
 
                     SizedBox(height: 4.w),
 
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 7.w,
-                        // vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: "#DCEDFE".color,
-                        borderRadius: BorderRadius.circular(8.w),
-                      ),
-                      child: Text(
-                        type == "draft" ? "草稿" : "素材",
-                        style: TextStyle(
-                          fontSize: 12.w,
-                          color: "#007BFE".color,
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 7.w),
+                          decoration: BoxDecoration(
+                            color: "#DCEDFE".color,
+                            borderRadius: BorderRadius.circular(8.w),
+                          ),
+                          child: Text(
+                            "设计",
+                            style: TextStyle(
+                              fontSize: 12.w,
+                              color: "#007BFE".color,
+                            ),
+                          ),
                         ),
-                      ),
+
+                        Spacer(),
+
+                        CButton(
+                          height: 22.w,
+                          textColor: Colors.white,
+                          text: Text(
+                            '${item.likeCount}',
+                            style: TextStyle(
+                              fontSize: 12.w,
+                              color: "#A7AFBD".color,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          spacing: 4.w,
+                          icon: Image.asset(
+                            "assets/images/mine/app_design_like.png",
+                            width: 13.w,
+                            height: 10.w,
+                            fit: BoxFit.fill,
+                          ),
+                          onPressed: () {},
+                        ),
+                      ],
                     ),
                   ],
                 ),

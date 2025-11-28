@@ -7,13 +7,17 @@ class UserModel {
   String avatar;
   String nickname;
   int workCount;
+  String phone;
+  String signature;
   List<String> designImages;
 
   UserModel({
+    this.isLogin = false,
     this.avatar = '',
     this.nickname = '',
-    this.isLogin = false,
     this.workCount = 0,
+    this.phone = '',
+    this.signature = '',
     this.designImages = const [],
   });
 }

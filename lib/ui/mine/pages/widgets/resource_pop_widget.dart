@@ -1,11 +1,11 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
-class WarningPopWidget extends StatelessWidget {
+class ResourcePopWidget extends StatelessWidget {
   final String type;
   final VoidCallback? sureAction;
 
-  const WarningPopWidget({
+  const ResourcePopWidget({
     super.key,
     required this.type,
     required this.sureAction,
