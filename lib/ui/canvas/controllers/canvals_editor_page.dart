@@ -1,6 +1,5 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'package:voicetemplate/ui/widgets/confirm_pop_widget.dart';
 import '../widgets/canvas_app_bar_widget.dart';
 import '../widgets/canvas_bottom_bar_widget.dart';
 import '../widgets/canvas_control_widget.dart';
@@ -19,11 +18,12 @@ import '../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
 import '../history/canvas_history_manager.dart';
 import '../gesture/canvas_status_manager.dart';
-import '../utils/edit_box_data_clone.dart';
+import '../history/edit_box_data_clone.dart';
 import '../utils/index.dart';
 import '../model/index.dart';
 import '../canvals/transform_canvas.dart';
 
+import '../gesture/canvas_pointer_wrapper.dart';
 part './editor_extension/canvals_editor_page_dialog.dart';
 
 class CanvasEditorPage extends StatefulWidget {
@@ -37,15 +37,9 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   final ScreenshotController _screenshotController = ScreenshotController();
   final CanvasHistoryManager _historyManager = CanvasHistoryManager();
 
-  late CanvasModel _canvalsModel;
-  bool _canvasInitialized = false;
   final GlobalKey<CanvasEditorWidgetState> _canvasKey =
       GlobalKey<CanvasEditorWidgetState>();
-
-  final GlobalKey _layerButtonKey = GlobalKey();
-  final GlobalKey _containerKey = GlobalKey(); // 用于获取 Container 的 RenderBox
-  final GlobalKey _canvasContainerKey =
-      GlobalKey(); // 用于获取画布 Container 的 RenderBox
+  final GlobalKey _canvasContainerKey = GlobalKey();
   bool _showLayerDialog = false; // 添加图层弹框显示状态
   double? _savedTextWidth; // 保存打开文本属性对话框时的宽度
 
@@ -63,9 +57,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     _canvasStatusManager.onMatrixChanged = (matrix, scale, offset) {
       if (!mounted) return;
       setState(() {
-        _canvalsModel.updateMatrix4(matrix, scale, offset);
+        _canvalsController.canvasModel.updateMatrix4(matrix, scale, offset);
       });
     };
+    _canvasStatusManager.matrix = _canvalsController.canvasModel.transform;
   }
 
   /// 显示形状属性弹框
@@ -380,14 +375,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    _canvalsModel = Get.arguments as CanvasModel;
-    _canvasStatusManager.matrix = _canvalsModel.transform;
-    if (!_canvasInitialized ||
-        _canvalsController.canvasModel?.id != _canvalsModel.id) {
-      _canvalsController.initializeCanvas(_canvalsModel);
-      _canvasInitialized = true;
-    }
-
     return Scaffold(
       resizeToAvoidBottomInset: false, // 防止键盘弹出时底部工具栏上移
       backgroundColor: cfff6f2fb,
@@ -396,194 +383,103 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           Positioned(
             left: 0,
             top: ScreenTools.statusBarHeight + 51.w,
-            child: Listener(
-              onPointerDown: (event) {
-                _canvalsController.currentPoint = event;
+            child: CanvasPointerWrapper(
+              canvalsController: _canvalsController,
+              canvasStatusManager: _canvasStatusManager,
+              canvasKey: _canvasKey,
+              canvasContainerKey: _canvasContainerKey,
+              child: Container(
+                width: ScreenTools.screenWidth,
+                height:
+                    ScreenTools.screenHeight -
+                    ScreenTools.statusBarHeight -
+                    ScreenTools.bottomBarHeight -
+                    117.w,
+                color: cfff6f2fb,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    _canvalsController.getCanvalsSize(
+                      constraints.maxWidth,
+                      constraints.maxHeight,
+                    );
 
-                if (_canvalsController.selectedId.isNotEmpty) {
-                  final localPos = MatrixUtilsX.canvasLocal(
-                    event.position,
-                    _canvasContainerKey,
-                  );
-                  _canvasKey.currentState?.handlePointerDown(
-                    PointerDownEvent(
-                      position: localPos,
-                      pointer: event.pointer,
-                    ),
-                  );
-                } else {
-                  _canvasStatusManager.handlePointerDown(
-                    event,
-                    _canvalsModel.locked,
-                  );
-                }
-              },
-              onPointerMove: (event) {
-                if (_canvalsController.selectedId.isNotEmpty) {
-                  final localPos = MatrixUtilsX.canvasLocal(
-                    event.position,
-                    _canvasContainerKey,
-                  );
-                  _canvasKey.currentState?.handlePointerMove(
-                    PointerMoveEvent(
-                      position: localPos,
-                      pointer: event.pointer,
-                      delta: event.delta,
-                    ),
-                  );
-                } else {
-                  _canvasStatusManager.handlePointerMove(
-                    event,
-                    _canvalsModel.locked,
-                  );
-                }
-              },
-              onPointerUp: (event) {
-                final localPos = MatrixUtilsX.canvasLocal(
-                  event.position,
-                  _canvasContainerKey,
-                );
-                if (_canvalsController.selectedId.isNotEmpty) {
-                  _canvasKey.currentState?.handlePointerUp(
-                    PointerUpEvent(position: localPos, pointer: event.pointer),
-                  );
-                } else {
-                  _canvasStatusManager.handlePointerUp(
-                    event,
-                    _canvalsModel.locked,
-                  );
-                }
-              },
-              onPointerCancel: (event) {
-                if (_canvalsController.selectedId.isNotEmpty) {
-                  final localPos = MatrixUtilsX.canvasLocal(
-                    event.position,
-                    _canvasContainerKey,
-                  );
-                  _canvasKey.currentState?.handlePointerCancel(
-                    PointerCancelEvent(
-                      position: localPos,
-                      pointer: event.pointer,
-                    ),
-                  );
-                } else {
-                  _canvasStatusManager.handlePointerCancel(
-                    event,
-                    _canvalsModel.locked,
-                  );
-                }
-              },
-              child: GestureDetector(
-                onTap: () {
-                  final element = MatrixUtilsXGesture.detectHitElement(
-                    _canvalsController.currentPoint!,
-                    _canvasContainerKey,
-                    _canvalsController.elements,
-                    _canvalsController.canvalsSize,
-                    _canvalsModel.transform,
-                  );
-                  if (element == null || element.id.isEmpty) {
-                    _canvalsController.deselect();
-                    return;
-                  }
-
-                  if (_canvalsController.isSelected(element.id) &&
-                      element.type == ElementType.text) {
-                    _canvasKey.currentState?.showTextInputDialog(element.id);
-                  } else {
-                    _canvalsController.toggleSelection(element.id);
-                  }
-                },
-                child: Container(
-                  key: _containerKey,
-                  width: ScreenTools.screenWidth,
-                  height:
-                      ScreenTools.screenHeight -
-                      ScreenTools.statusBarHeight -
-                      ScreenTools.bottomBarHeight -
-                      117.w,
-                  color: cfff6f2fb,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      _canvalsController.canvalsSize = _canvalsModel
-                          .getCanvalsSize(
-                            constraints.maxWidth,
-                            constraints.maxHeight,
-                          );
-                      final logicSize = Size(
-                        _canvalsModel.width,
-                        _canvalsModel.height,
-                      );
-
-                      final canvasContent = Screenshot(
-                        controller: _screenshotController,
-                        child: ClipRect(
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Container(
-                                key: _canvasContainerKey,
-                                width: _canvalsController.canvalsSize.width,
-                                height: _canvalsController.canvalsSize.height,
-                                color: _canvalsModel.fillColor.color.withValues(
-                                  alpha: _canvalsModel.fillAlpha,
-                                ),
-                              ),
-                              Positioned.fill(
-                                child: OverflowBox(
-                                  minWidth: 0,
-                                  minHeight: 0,
-                                  maxWidth: double.infinity,
-                                  maxHeight: double.infinity,
+                    final canvasContent = Screenshot(
+                      controller: _screenshotController,
+                      child: ClipRect(
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              key: _canvasContainerKey,
+                              width: _canvalsController.canvalsWidth,
+                              height: _canvalsController.canvalsHeight,
+                              color: _canvalsController
+                                  .canvasModel
+                                  .fillColor
+                                  .color
+                                  .withValues(
+                                    alpha: _canvalsController
+                                        .canvasModel
+                                        .fillAlpha,
+                                  ),
+                            ),
+                            Positioned.fill(
+                              child: OverflowBox(
+                                minWidth: 0,
+                                minHeight: 0,
+                                maxWidth: double.infinity,
+                                maxHeight: double.infinity,
+                                alignment: Alignment.topLeft,
+                                child: Align(
                                   alignment: Alignment.topLeft,
-                                  child: Align(
-                                    alignment: Alignment.topLeft,
-                                    child: CanvasEditorWidget(
-                                      key: _canvasKey,
-                                      historyManager: _historyManager,
-                                      onContentChanged: () {
-                                        if (mounted) {
-                                          setState(() {});
-                                        }
-                                      },
-                                      canvasMatrix: _canvalsModel.transform,
-                                      canvasSize: logicSize,
-                                    ),
+                                  child: CanvasEditorWidget(
+                                    key: _canvasKey,
+                                    historyManager: _historyManager,
+                                    onContentChanged: () {
+                                      if (mounted) {
+                                        setState(() {});
+                                      }
+                                    },
+                                    canvasMatrix: _canvalsController
+                                        .canvasModel
+                                        .transform,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      );
+                      ),
+                    );
 
-                      final boxes = _canvalsController.elements;
-                      return Center(
-                        child: SizedBox(
-                          width: constraints.maxWidth,
-                          height: constraints.maxHeight,
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Transform(
-                                transform: _canvalsModel.transform,
-                                alignment: Alignment.topLeft,
-                                child: canvasContent,
-                              ),
+                    final boxes = _canvalsController.elements;
+                    return Center(
+                      child: SizedBox(
+                        width: constraints.maxWidth,
+                        height: constraints.maxHeight,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Transform(
+                              transform:
+                                  _canvalsController.canvasModel.transform,
+                              alignment: Alignment.topLeft,
+                              child: canvasContent,
+                            ),
 
-                              Obx(
-                                () => TransformCanvas(
-                                  elements: boxes,
-                                  selectedId: _canvalsController.selectedId,
-                                  canvasMatrix: _canvalsModel.transform,
-                                ),
+                            Obx(
+                              () => TransformCanvas(
+                                elements: boxes,
+                                selectedId: _canvalsController.selectedId,
+                                canvasMatrix:
+                                    _canvalsController.canvasModel.transform,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -604,15 +500,11 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
             ),
           ),
 
-          // 缩放控制浮框（当缩放比例不是100%时显示，固定在顶部居中位置）
-          if ((_canvalsModel.scale - 1.0).abs() > 0.01) _buildScaleOverlay(),
-
           // 底部tabBar
           Positioned(
             left: 0,
             bottom: 0,
             child: CanvasBottomBar(
-              layerButtonKey: _layerButtonKey,
               onLayerTap: () {
                 _toggleLayerDialog(true);
               },
@@ -628,6 +520,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
             ),
           ),
 
+          // 缩放控制浮框（当缩放比例不是100%时显示，固定在顶部居中位置）
+          if ((_canvalsController.canvasModel.scale - 1.0).abs() > 0.01)
+            _buildScaleOverlay(),
+
           // 元素属性工具栏
           Obx(
             () => Positioned(
@@ -635,12 +531,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
               bottom: 66.w + ScreenTools.bottomBarHeight,
               child: ElementAttributeToolbar(
                 activeElement: _activeElement,
-                isCanvasSelected: _canvalsModel.isSelected,
+                isCanvasSelected: _canvalsController.canvasModel.isSelected,
                 onClose: () {
                   _canvalsController.select('');
-                  if (_canvalsModel.isSelected) {
+                  if (_canvalsController.canvasModel.isSelected) {
                     setState(() {
-                      _canvalsModel.isSelected = false;
+                      _canvalsController.canvasModel.isSelected = false;
                     });
                   }
                 },
@@ -676,7 +572,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     // 获取画布图层
     SmartDialog.show(
       builder: (context) => CanvalsPropertyDialog(
-        canvasModel: _canvalsModel,
+        canvasModel: _canvalsController.canvasModel,
         onPropertyChanged: () {
           setState(() {}); // 触发界面重绘
         },
@@ -964,16 +860,26 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       top: ScreenTools.statusBarHeight + 51.w,
       child: Center(
         child: CanvasControlWidget(
-          scale: _canvalsModel.scale,
+          scale: _canvalsController.canvasModel.scale,
           onFitScreen: () {
-            _canvasStatusManager.resetMatrix(_canvalsModel); // 适应屏幕：重置画布变换
+            _canvasStatusManager.resetMatrix(
+              _canvalsController.canvasModel,
+            ); // 适应屏幕：重置画布变换
           },
           onZoomIn: () {
-            _canvasStatusManager.zoomIn(_canvalsController.canvalsSize); // 放大画布
+            _canvasStatusManager.zoomIn(
+              Size(
+                _canvalsController.canvalsWidth,
+                _canvalsController.canvalsHeight,
+              ),
+            ); // 放大画布
           },
           onZoomOut: () {
             _canvasStatusManager.zoomOut(
-              _canvalsController.canvalsSize,
+              Size(
+                _canvalsController.canvalsWidth,
+                _canvalsController.canvalsHeight,
+              ),
             ); // 缩小画布
           },
         ),
@@ -987,12 +893,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       left: 16.w,
       bottom: 72.w + ScreenTools.bottomBarHeight, // 底部工具栏高度 + 10像素间距
       child: CanvalsLayerDialog(
-        canvasModel: _canvalsModel,
+        canvasModel: _canvalsController.canvasModel,
         layers: _canvalsController.elements,
         onLayerTap: (layerId) {
           // 选中元素时，确保画布未选中
           setState(() {
-            _canvalsModel.isSelected = false;
+            _canvalsController.canvasModel.isSelected = false;
           });
 
           // 切换元素选中状态
@@ -1037,14 +943,15 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
         },
         onCanvalsActivie: () {
           setState(() {
-            _canvalsModel.isSelected = true;
+            _canvalsController.canvasModel.isSelected = true;
             _canvalsController.deselect();
           });
         },
         onCanvalsLock: () {
           setState(() {
-            _canvalsModel.locked = !_canvalsModel.locked;
-            if (_canvalsModel.locked) {
+            _canvalsController.canvasModel.locked =
+                !_canvalsController.canvasModel.locked;
+            if (_canvalsController.canvasModel.locked) {
               _canvalsController.deselect();
             }
           });
@@ -1055,8 +962,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
 
   Offset _getCanvasCenter() {
     return Offset(
-      _canvalsController.canvalsSize.width / 2,
-      _canvalsController.canvalsSize.height / 2,
+      _canvalsController.canvalsWidth / 2,
+      _canvalsController.canvalsHeight / 2,
     );
   }
 }

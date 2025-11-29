@@ -3,28 +3,26 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../model/index.dart';
 import '../utils/index.dart';
+import 'dart:math' as math;
 
-/// 全局选择状态管理控制器
-/// 负责管理当前选中的文本框ID、画布模型以及元素列表
+/// 全局选择状态管理控制器： 负责管理当前选中的文本框ID、画布模型以及元素列表
 class CanvalsController extends GetxController {
-  PointerEvent? currentPoint; // 画布点击
-  Size canvalsSize = Size.zero; //画布大小
+  // 画布模型
+  final canvasModel = (Get.arguments is CanvasModel
+      ? Get.arguments as CanvasModel
+      : CanvasModel());
 
-  final Rxn<CanvasModel> _canvasModel = Rxn<CanvasModel>();
-  CanvasModel? get canvasModel => _canvasModel.value;
+  PointerEvent? currentPoint; // 画布点击
 
   final RxList<CanvasElement> elements = <CanvasElement>[].obs;
 
   void initializeCanvas(CanvasModel model) {
-    final mutableModel = model;
-    elements.assignAll(mutableModel.elements);
-    mutableModel.elements = elements;
-    _canvasModel.value = mutableModel;
+    elements.assignAll(model.elements);
+    model.elements = elements;
   }
 
   CanvasModel? buildSnapshot() {
-    final source = _canvasModel.value;
-    if (source == null) return null;
+    final source = canvasModel;
     return CanvasModel(
       id: source.id,
       width: source.width,
@@ -161,5 +159,16 @@ class CanvalsController extends GetxController {
     }
     selectedAsset.value = assetEntity;
     _shouldAddImage.value = true;
+  }
+
+  /// 画布尺寸转换工具类
+  double canvalsWidth = 0.0;
+  double canvalsHeight = 0.0;
+  void getCanvalsSize(double availableWidth, double availableHeight) {
+    final scaleW = availableWidth / canvasModel.width;
+    final scaleH = availableHeight / canvasModel.height;
+    final double minScale = math.min(scaleW, scaleH);
+    canvalsWidth = canvasModel.width * minScale;
+    canvalsHeight = canvasModel.height * minScale;
   }
 }

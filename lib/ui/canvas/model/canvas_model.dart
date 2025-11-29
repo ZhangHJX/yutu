@@ -12,12 +12,8 @@ class CanvasModel {
   double x;
   double y;
   double scale;
-
-  @JsonKey(defaultValue: 1080)
   double width;
-  @JsonKey(defaultValue: 1080)
   double height;
-
   String fillColor;
   double fillAlpha;
   bool locked;
@@ -29,9 +25,9 @@ class CanvasModel {
   List<CanvasElement> elements;
 
   CanvasModel({
-    required this.id,
-    required this.width,
-    required this.height,
+    this.id = '',
+    this.width = 1080,
+    this.height = 1080,
     this.x = 0.0,
     this.y = 0.0,
     this.scale = 1.0,
@@ -55,14 +51,6 @@ class CanvasModel {
     x = offset.dx;
     y = offset.dy;
     this.scale = scale;
-  }
-
-  /// 画布尺寸转换工具类
-  Size getCanvalsSize(double availableWidth, double availableHeight) {
-    final scaleW = availableWidth / width;
-    final scaleH = availableHeight / height;
-    final double minScale = math.min(scaleW, scaleH);
-    return Size(width * minScale, height * minScale);
   }
 
   void getMatrix4() {

@@ -1,7 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart';
-import './canvas_element.dart';
 import '../model/index.dart';
 
 class MatrixUtilsX {

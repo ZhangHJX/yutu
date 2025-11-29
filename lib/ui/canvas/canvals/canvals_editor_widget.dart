@@ -6,7 +6,7 @@ import '../gesture/element_gesture_manager.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../utils/text_measure_util.dart';
 import '../history/canvas_history_manager.dart';
-import '../utils/edit_box_data_clone.dart';
+import '../history/edit_box_data_clone.dart';
 import '../model/index.dart';
 import '../utils/index.dart';
 
@@ -14,14 +14,12 @@ class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
   final VoidCallback? onContentChanged;
   final Matrix4 canvasMatrix;
-  final Size canvasSize; // 画布逻辑尺寸（决定初始布局及居中位置）
 
   const CanvasEditorWidget({
     super.key,
     this.historyManager,
     this.onContentChanged,
     required this.canvasMatrix,
-    required this.canvasSize,
   });
 
   @override
@@ -200,28 +198,11 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
       final fitSize = _calculateFitSize(
         Size(assetEntity.width.toDouble(), assetEntity.height.toDouble()),
-        _selectionController.canvalsSize.width,
-        _selectionController.canvalsSize.height,
+        _selectionController.canvalsWidth,
+        _selectionController.canvalsHeight,
       );
       finalWidth = fitSize.width;
       finalHeight = fitSize.height;
-
-      // final widthRato = assetEntity.width.toDouble() / widget.canvasSize.width;
-      // final heightRato =
-      //     assetEntity.height.toDouble() / widget.canvasSize.height;
-
-      // debugPrint(
-      //   "---画布的尺寸--${widget.canvasSize.width}---${widget.canvasSize.height}",
-      // );
-
-      // debugPrint(
-      //   "---图片的尺寸--${assetEntity.width.toDouble()}---${assetEntity.height.toDouble()}",
-      // );
-
-      // finalWidth = _selectionController.canvalsSize.width * widthRato;
-      // finalHeight = _selectionController.canvalsSize.height * heightRato;
-
-      // debugPrint('适配后尺寸: $finalWidth x $finalHeight');
     } else {
       // 文本类型，使用默认字体属性计算尺寸
       Size textSize = TextMeasureUtil.measureText(

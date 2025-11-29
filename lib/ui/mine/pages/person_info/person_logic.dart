@@ -6,7 +6,6 @@ import '../../controller/mine_logic.dart';
 class PersonLogic extends GetxController {
   final globalLogic = Get.find<MineLogic>();
 
-  // 获取到参数
   final userModel = Get.arguments is UserModel
       ? Get.arguments as UserModel
       : UserModel();
@@ -16,10 +15,12 @@ class PersonLogic extends GetxController {
   var nickname = "".obs;
   var phone = "".obs;
   var signature = "".obs;
+  final phoneBound = false.obs;
 
   /// 输入控制器
   final nicknameCtrl = TextEditingController();
   final signatureCtrl = TextEditingController();
+  final phoneCtrl = TextEditingController();
 
   @override
   void onInit() {
@@ -33,13 +34,18 @@ class PersonLogic extends GetxController {
     // final data = await repository.fetchProfile();
     // loading.value = false;
 
-    avatar.value = "";
-    nickname.value = "zhangmj";
-    phone.value = "15669993907";
-    signature.value = "你是世界上最好的人";
+    final profile = userModel;
+    avatar.value = profile.avatar.isNotEmpty ? profile.avatar : "";
+    nickname.value = profile.nickname.isNotEmpty ? profile.nickname : "zhangmj";
+    phone.value = profile.phone.isNotEmpty ? profile.phone : "15669993907";
+    signature.value = profile.signature.isNotEmpty
+        ? profile.signature
+        : "你是世界上最好的人";
 
     nicknameCtrl.text = nickname.value;
     signatureCtrl.text = signature.value;
+    phoneCtrl.text = phone.value;
+    phoneBound.value = phone.value.isNotEmpty;
   }
 
   /// 上传头像
@@ -52,18 +58,29 @@ class PersonLogic extends GetxController {
   }
 
   /// 保存资料
+  @override
+  void onClose() {
+    nicknameCtrl.dispose();
+    signatureCtrl.dispose();
+    phoneCtrl.dispose();
+    super.onClose();
+  }
+
   Future<void> save() async {
     if (nicknameCtrl.text.trim().isEmpty) {
       Get.snackbar("提示", "请输入昵称");
       return;
     }
 
-    final userModel = UserModel(
+    final updatedProfile = UserModel(
       avatar: avatar.value,
       nickname: nicknameCtrl.text.trim(),
-      phone: phone.value,
+      phone: phoneCtrl.text.trim().isNotEmpty
+          ? phoneCtrl.text.trim()
+          : phone.value,
       signature: signatureCtrl.text.trim(),
     );
+    globalLogic.userInfo.value = updatedProfile;
 
     // final success = await repository.updateProfile(profile);
     // if (success) {
