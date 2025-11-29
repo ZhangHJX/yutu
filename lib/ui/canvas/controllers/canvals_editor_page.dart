@@ -456,6 +456,16 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
               },
               onPointerCancel: (event) {
                 if (_canvalsController.selectedId.isNotEmpty) {
+                  final localPos = MatrixUtilsX.canvasLocal(
+                    event.position,
+                    _canvasContainerKey,
+                  );
+                  _canvasKey.currentState?.handlePointerCancel(
+                    PointerCancelEvent(
+                      position: localPos,
+                      pointer: event.pointer,
+                    ),
+                  );
                 } else {
                   _canvasStatusManager.handlePointerCancel(
                     event,
