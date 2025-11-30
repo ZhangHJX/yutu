@@ -394,6 +394,7 @@ class ElementGestureManager {
     }
     final delta = currentPosition - state.resizeStartPosition!;
 
+    // 把位移转换到【元素本地坐标系】（去掉旋转影响）
     final cos = math.cos(-box.rotation);
     final sin = math.sin(-box.rotation);
     final adjustedDx = delta.dx * cos - delta.dy * sin;
@@ -420,17 +421,27 @@ class ElementGestureManager {
 
     final totalNewWidth = box.width;
     final totalNewHeight = box.height;
-    final newAnchorPointLocal = _anchorLocalForHandle(
-      state.resizingHandle!,
-      totalNewWidth,
-      totalNewHeight,
-    );
+
+    final newAnchorPointLocal = box.type == ElementType.text
+        ? _anchorLocalForTextHandle(
+            state.resizingHandle!,
+            totalNewWidth,
+            totalNewHeight,
+          )
+        : _anchorLocalForHandle(
+            state.resizingHandle!,
+            totalNewWidth,
+            totalNewHeight,
+          );
+
+    // 根据"世界锚点 + 新宽高 + 新局部锚点 + 旋转 + 缩放"反推新的 topLeft
     final newTopLeft = _topLeftFromAnchor(
       anchorWorld: state.resizeAnchorPoint!,
       width: totalNewWidth,
       height: totalNewHeight,
       rotation: box.rotation,
       anchorLocal: newAnchorPointLocal,
+      scale: box.scale,
     );
     box.x = newTopLeft.dx;
     box.y = newTopLeft.dy;
@@ -658,7 +669,9 @@ class ElementGestureManager {
     state.resizingHandle = handle;
     state.resizeStartWidth = box.width;
     state.resizeStartHeight = box.height;
-    state.resizeAspectRatio = box.width / box.height; // 保存宽高比
+    state.resizeAspectRatio = box.height == 0
+        ? 1.0
+        : box.width / box.height; // 保存宽高比
     state.resizeStartPosition = position;
     // 保存初始字体大小、行高、字间距（仅文本类型）
     if (box.type == ElementType.text) {
@@ -671,17 +684,17 @@ class ElementGestureManager {
     final totalStartWidth = box.width;
     final totalStartHeight = box.height;
 
-    final anchorPointLocal = _anchorLocalForHandle(
-      handle,
-      totalStartWidth,
-      totalStartHeight,
-    );
+    final anchorPointLocal = box.type == ElementType.text
+        ? _anchorLocalForTextHandle(handle, totalStartWidth, totalStartHeight)
+        : _anchorLocalForHandle(handle, totalStartWidth, totalStartHeight);
+
     state.resizeAnchorPoint = _localToWorld(
       width: totalStartWidth,
       height: totalStartHeight,
       rotation: box.rotation,
       topLeft: box.position,
       localPoint: anchorPointLocal,
+      scale: box.scale,
     );
   }
 
@@ -723,16 +736,32 @@ class ElementGestureManager {
     required double rotation,
     required Offset topLeft,
     required Offset localPoint,
+    double scale = 1.0,
   }) {
+    // 计算元素中心在世界坐标系中的位置
+    final cx = topLeft.dx + width / 2;
+    final cy = topLeft.dy + height / 2;
+    
+    // 将本地坐标转换为相对于元素中心的坐标
     final center = Offset(width / 2, height / 2);
-    final translated = localPoint - center;
+    final relativeToCenter = localPoint - center;
+    
+    // 应用缩放
+    final scaled = Offset(
+      relativeToCenter.dx * scale,
+      relativeToCenter.dy * scale,
+    );
+    
+    // 应用旋转
     final cosRot = math.cos(rotation);
     final sinRot = math.sin(rotation);
     final rotated = Offset(
-      translated.dx * cosRot - translated.dy * sinRot,
-      translated.dx * sinRot + translated.dy * cosRot,
+      scaled.dx * cosRot - scaled.dy * sinRot,
+      scaled.dx * sinRot + scaled.dy * cosRot,
     );
-    return topLeft + center + rotated;
+    
+    // 加上中心位置得到世界坐标
+    return Offset(cx, cy) + rotated;
   }
 
   Offset _topLeftFromAnchor({
@@ -741,15 +770,35 @@ class ElementGestureManager {
     required double height,
     required double rotation,
     required Offset anchorLocal,
+    double scale = 1.0,
   }) {
+    // 计算锚点在本地坐标系中相对于元素中心的偏移
     final center = Offset(width / 2, height / 2);
-    final translated = anchorLocal - center;
+    final relativeToCenter = anchorLocal - center;
+    
+    // 应用缩放
+    final scaled = Offset(
+      relativeToCenter.dx * scale,
+      relativeToCenter.dy * scale,
+    );
+    
+    // 应用旋转
     final cosRot = math.cos(rotation);
     final sinRot = math.sin(rotation);
     final rotated = Offset(
-      translated.dx * cosRot - translated.dy * sinRot,
-      translated.dx * sinRot + translated.dy * cosRot,
+      scaled.dx * cosRot - scaled.dy * sinRot,
+      scaled.dx * sinRot + scaled.dy * cosRot,
     );
-    return anchorWorld - center - rotated;
+    
+    // 计算元素中心在世界坐标系中的位置
+    // anchorWorld = centerWorld + rotated
+    // 所以 centerWorld = anchorWorld - rotated
+    final centerWorld = anchorWorld - rotated;
+    
+    // 从中心位置计算 topLeft
+    return Offset(
+      centerWorld.dx - width / 2,
+      centerWorld.dy - height / 2,
+    );
   }
 }

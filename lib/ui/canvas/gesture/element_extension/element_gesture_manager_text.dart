@@ -222,4 +222,21 @@ extension _TextElementGestureHelper on ElementGestureManager {
       math.max(ElementGestureManager.minBoxSize, minTextSize.height),
     );
   }
+
+  /// 文本元素专用锚点：
+  /// - 左右边拖动时，希望“上边框不动”，所以锚点放在对侧【上角】
+  /// - 其它 handle 沿用通用逻辑（对角 / 对边中点）
+  Offset _anchorLocalForTextHandle(String handle, double width, double height) {
+    switch (handle) {
+      case 'left':
+        // 拖左边：右上角锚定（上边 & 右边固定）
+        return Offset(width, 0);
+      case 'right':
+        // 拖右边：左上角锚定（上边 & 左边固定）
+        return const Offset(0, 0);
+      default:
+        // 角点 / 上下边：继续按原来的规则（对角 / 中点）
+        return _anchorLocalForHandle(handle, width, height);
+    }
+  }
 }
