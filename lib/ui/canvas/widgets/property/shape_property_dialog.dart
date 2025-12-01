@@ -8,7 +8,7 @@ import '../../model/index.dart';
 class ShapePropertyDialog extends StatefulWidget {
   final CanvasElement? element;
   final VoidCallback? onDeleteShape;
-  final Function(CanvasElement)? onPropertiesChanged;
+  final Function(bool notify)? onPropertiesChanged;
 
   const ShapePropertyDialog({
     super.key,
@@ -82,7 +82,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
   }
 
   /// 更新模型数据
-  void _updateModel() {
+  void _updateModel({bool notify = true}) {
     final data = widget.element;
     if (data != null) {
       data.fillColor = _fillColorController.text;
@@ -97,15 +97,10 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
       data.borderAlpha = _borderAlpha;
       data.shawAlpha = _shawAlpha;
 
-      debugPrint(
-        "--_updateModel----$_shadowColor-$_shadowX--$_shadowY-$_shadowBlur--",
-      );
-
       if (data.type == ElementType.line) {
         data.height += _borderWidth * 2;
       }
-
-      widget.onPropertiesChanged?.call(data);
+      widget.onPropertiesChanged?.call(notify);
     }
   }
 
@@ -227,9 +222,8 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                       SizedBox(height: 7.w),
                       // 阴影
                       _buildShadowSection(context),
-
-                      SizedBox(height: 21.w),
-                      _buildShawAlaphSection(),
+                      if (_shadowEnabled) SizedBox(height: 21.w),
+                      if (_shadowEnabled) _buildShawAlaphSection(),
                     ],
                   ),
                 ),
@@ -551,8 +545,13 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
           onChanged: (value) {
             setState(() {
               _fillAlpha = value;
-              _updateModel();
+              // 滑动过程中只更新模型，不记录命令
+              _updateModel(notify: false);
             });
+          },
+          onChangeEnd: (value) {
+            // 滑动结束时记录命令
+            _updateModel(notify: true);
           },
         ),
 
@@ -571,8 +570,13 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
           onChanged: (value) {
             setState(() {
               _borderAlpha = value;
-              _updateModel();
+              // 滑动过程中只更新模型，不记录命令
+              _updateModel(notify: false);
             });
+          },
+          onChangeEnd: (value) {
+            // 滑动结束时记录命令
+            _updateModel(notify: true);
           },
         ),
       ],
@@ -628,124 +632,221 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
           ],
         ),
 
-        SizedBox(height: 6.w),
+        if (_shadowEnabled) SizedBox(height: 6.w),
 
         // 颜色预览、输入框、X、Y
-        Row(
-          children: [
-            // 颜色预览框
-            GestureDetector(
-              onTap: () {
-                _openColorPicker(
-                  initialColor: _shadowColor.color,
-                  onColorSelected: (color) {
-                    setState(() {
-                      _shadowColor = color.string;
-                      _shadowColorController.text = color.string;
-                      _updateModel();
-                    });
-                  },
-                  context: context,
-                );
-              },
-              child: Container(
-                width: 50.w,
+        if (_shadowEnabled)
+          Row(
+            children: [
+              // 颜色预览框
+              GestureDetector(
+                onTap: () {
+                  _openColorPicker(
+                    initialColor: _shadowColor.color,
+                    onColorSelected: (color) {
+                      setState(() {
+                        _shadowColor = color.string;
+                        _shadowColorController.text = color.string;
+                        _updateModel();
+                      });
+                    },
+                    context: context,
+                  );
+                },
+                child: Container(
+                  width: 50.w,
+                  height: 38.w,
+                  decoration: BoxDecoration(
+                    color: _shadowColor.color,
+                    borderRadius: BorderRadius.circular(12.w),
+                    border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
+                  ),
+                ),
+              ),
+
+              SizedBox(width: 2.w),
+
+              // 颜色输入框
+              Container(
+                width: 70.w,
                 height: 38.w,
                 decoration: BoxDecoration(
-                  color: _shadowColor.color,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12.w),
-                  border: Border.all(color: "#ffE6E6E6 ".color, width: 1.w),
+                  border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
+                ),
+                alignment: Alignment.center,
+                child: TextField(
+                  controller: _shadowColorController,
+                  textAlign: TextAlign.center,
+                  inputFormatters: [HexColorFormatter()],
+                  onChanged: (value) {
+                    if (value.isNotEmpty && value.length == 7) {
+                      setState(() {
+                        _shadowColor = value;
+                        _updateModel();
+                      });
+                    }
+                  },
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 15.w),
+                  ),
+                  style: TextStyle(
+                    fontSize: 11.w,
+                    fontWeight: FontWeight.w600,
+                    color: "#ff242424".color,
+                  ),
                 ),
               ),
-            ),
 
-            SizedBox(width: 2.w),
+              SizedBox(width: 5.w),
 
-            // 颜色输入框
-            Container(
-              width: 70.w,
-              height: 38.w,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.w),
-                border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-              ),
-              alignment: Alignment.center,
-              child: TextField(
-                controller: _shadowColorController,
-                textAlign: TextAlign.center,
-                inputFormatters: [HexColorFormatter()],
-                onChanged: (value) {
-                  if (value.isNotEmpty && value.length == 7) {
-                    setState(() {
-                      _shadowColor = value;
-                      _updateModel();
-                    });
-                  }
-                },
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 15.w),
+              // X 偏移输入框
+              Container(
+                width: 67.w,
+                height: 38.w,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
                 ),
-                style: TextStyle(
-                  fontSize: 11.w,
-                  fontWeight: FontWeight.w600,
-                  color: "#ff242424".color,
-                ),
-              ),
-            ),
-
-            SizedBox(width: 5.w),
-
-            // X 偏移输入框
-            Container(
-              width: 67.w,
-              height: 38.w,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.w),
-                border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-              ),
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(left: 10.w),
-                    child: Text(
-                      'X',
-                      style: TextStyle(
-                        fontSize: 14.w,
-                        fontWeight: FontWeight.w600,
-                        color: "#ff242424".color,
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: 10.w),
+                      child: Text(
+                        'X',
+                        style: TextStyle(
+                          fontSize: 14.w,
+                          fontWeight: FontWeight.w600,
+                          color: "#ff242424".color,
+                        ),
                       ),
                     ),
-                  ),
 
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(right: 5.w),
-                      child: TextField(
-                        controller: _shadowXController,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        onChanged: (value) {
-                          final newValue = double.tryParse(value);
-                          if (newValue != null) {
-                            setState(() {
-                              _shadowX = newValue;
-                              _updateModel();
-                            });
-                          }
-                        },
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 15.w),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 5.w),
+                        child: TextField(
+                          controller: _shadowXController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          onChanged: (value) {
+                            final newValue = double.tryParse(value);
+                            if (newValue != null) {
+                              setState(() {
+                                _shadowX = newValue;
+                                _updateModel();
+                              });
+                            }
+                          },
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: 15.w,
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 12.w,
+                            fontWeight: FontWeight.w600,
+                            color: "#ff242424".color,
+                          ),
                         ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(width: 4.w),
+
+              // Y 偏移输入框
+              Container(
+                width: 67.w,
+                height: 38.w,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: 10.w),
+                      child: Text(
+                        'Y',
+                        style: TextStyle(
+                          fontSize: 14.w,
+                          fontWeight: FontWeight.w600,
+                          color: "#ff242424".color,
+                        ),
+                      ),
+                    ),
+
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 5.w),
+                        child: TextField(
+                          controller: _shadowYController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          onChanged: (value) {
+                            final newValue = double.tryParse(value);
+                            if (newValue != null) {
+                              setState(() {
+                                _shadowY = newValue;
+                                _updateModel();
+                              });
+                            }
+                          },
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: 15.w,
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 12.w,
+                            fontWeight: FontWeight.w600,
+                            color: "#ff242424".color,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(width: 4.w),
+
+              // 模糊输入框
+              Container(
+                width: 72.w,
+                height: 38.w,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: 12.w),
+                      child: Text(
+                        '模糊',
                         style: TextStyle(
                           fontSize: 12.w,
                           fontWeight: FontWeight.w600,
@@ -753,134 +854,44 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
 
-            SizedBox(width: 4.w),
-
-            // Y 偏移输入框
-            Container(
-              width: 67.w,
-              height: 38.w,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.w),
-                border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-              ),
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(left: 10.w),
-                    child: Text(
-                      'Y',
-                      style: TextStyle(
-                        fontSize: 14.w,
-                        fontWeight: FontWeight.w600,
-                        color: "#ff242424".color,
-                      ),
-                    ),
-                  ),
-
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(right: 5.w),
-                      child: TextField(
-                        controller: _shadowYController,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        onChanged: (value) {
-                          final newValue = double.tryParse(value);
-                          if (newValue != null) {
-                            setState(() {
-                              _shadowY = newValue;
-                              _updateModel();
-                            });
-                          }
-                        },
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 15.w),
-                        ),
-                        style: TextStyle(
-                          fontSize: 12.w,
-                          fontWeight: FontWeight.w600,
-                          color: "#ff242424".color,
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 5.w),
+                        child: TextField(
+                          controller: _shadowBlurController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          onChanged: (value) {
+                            final newValue = double.tryParse(value);
+                            if (newValue != null) {
+                              setState(() {
+                                _shadowBlur = newValue;
+                                _updateModel();
+                              });
+                            }
+                          },
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: 15.w,
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 12.w,
+                            fontWeight: FontWeight.w500,
+                            color: "#ff242424".color,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-
-            SizedBox(width: 4.w),
-
-            // 模糊输入框
-            Container(
-              width: 72.w,
-              height: 38.w,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.w),
-                border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-              ),
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(left: 12.w),
-                    child: Text(
-                      '模糊',
-                      style: TextStyle(
-                        fontSize: 12.w,
-                        fontWeight: FontWeight.w600,
-                        color: "#ff242424".color,
-                      ),
-                    ),
-                  ),
-
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 5.w),
-                      child: TextField(
-                        controller: _shadowBlurController,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        onChanged: (value) {
-                          final newValue = double.tryParse(value);
-                          if (newValue != null) {
-                            setState(() {
-                              _shadowBlur = newValue;
-                              _updateModel();
-                            });
-                          }
-                        },
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 15.w),
-                        ),
-                        style: TextStyle(
-                          fontSize: 12.w,
-                          fontWeight: FontWeight.w500,
-                          color: "#ff242424".color,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+            ],
+          ),
       ],
     );
   }
@@ -899,8 +910,13 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
       onChanged: (value) {
         setState(() {
           _shawAlpha = value;
-          _updateModel();
+          // 滑动过程中只更新模型，不记录命令
+          _updateModel(notify: false);
         });
+      },
+      onChangeEnd: (value) {
+        // 滑动结束时记录命令
+        _updateModel(notify: true);
       },
     );
   }

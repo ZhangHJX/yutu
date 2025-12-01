@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:common/common.dart';
 import '../model/index.dart';
+import 'matrix_utils.dart';
+
 import 'dart:math' as math;
 
 /// 画布状态管理器：处理平移和缩放手势

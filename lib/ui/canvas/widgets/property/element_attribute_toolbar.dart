@@ -104,7 +104,7 @@ class _ElementAttributeToolbarState extends State<ElementAttributeToolbar> {
     } else if (elementType == ElementType.image) {
       return '图片属性';
     } else {
-      return '图层属性';
+      return '画布属性';
     }
   }
 }

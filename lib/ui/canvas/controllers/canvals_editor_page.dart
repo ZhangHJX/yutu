@@ -16,9 +16,8 @@ import '../canvals/canvals_editor_widget.dart';
 import 'canvals_controller.dart';
 import '../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
-import '../history/canvas_history_manager.dart';
+import '../history/index.dart';
 import '../gesture/canvas_status_manager.dart';
-import '../history/edit_box_data_clone.dart';
 import '../utils/index.dart';
 import '../model/index.dart';
 import '../canvals/transform_canvas.dart';
@@ -43,10 +42,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   bool _showLayerDialog = false; // 添加图层弹框显示状态
   double? _savedTextWidth; // 保存打开文本属性对话框时的宽度
 
-  // 用于保存对话框打开时的属性快照（用于历史记录）
-  CanvasElement? _propertyDialogSnapshot;
-  // 用于保存上一次的属性值（用于判断是否需要重新计算尺寸）
+  // 用于保存上一次的元素属性值（用于判断是否需要记录命令）
+  CanvasElement? _lastElementProperties;
+  // 用于保存上一次的属性值（用于判断是否需要重新计算尺寸，仅用于文本）
   CanvasElement? _lastPropertySnapshot;
+  // 用于保存上一次的画布属性值（用于判断是否需要记录命令）
+  Map<String, dynamic>? _lastCanvasProperties;
   // 画布手势管理器
   final _canvasStatusManager = CanvasStatusManager();
 
@@ -61,14 +62,26 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       });
     };
     _canvasStatusManager.matrix = _canvalsController.canvasModel.transform;
+    // 设置撤销/重做时的回调：取消元素选中状态
+    _historyManager.onUndoRedo = () {
+      _canvalsController.deselect();
+    };
+
+    // 初始化上一次的画布属性值
+    final canvasModel = _canvalsController.canvasModel;
+    _lastCanvasProperties = {
+      'fillColor': canvasModel.fillColor,
+      'fillAlpha': canvasModel.fillAlpha,
+      'locked': canvasModel.locked,
+    };
   }
 
   /// 显示形状属性弹框
   void _showShapePropertyDialog() {
     if (_activeElement == null) return;
 
-    // 保存属性快照
-    _propertyDialogSnapshot = CanvasElementClone.clone(_activeElement!);
+    // 初始化上一次的属性值
+    _lastElementProperties = CanvasElementClone.clone(_activeElement!);
 
     SmartDialog.show(
       builder: (context) => ShapePropertyDialog(
@@ -76,9 +89,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
         onDeleteShape: () {
           _deleteShape();
         },
-        onPropertiesChanged: (updatedData) {
-          // 属性已经直接更新到 CanvasElement 对象，画布会自动响应
-          setState(() {}); // 触发界面重绘
+        onPropertiesChanged: (update) {
+          setState(() {});
+          // 每次属性改变时立即记录命令
+          if (update) {
+            _recordShapePropertyChange();
+          }
         },
       ),
       alignment: Alignment.bottomCenter,
@@ -87,7 +103,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       maskColor: Colors.black.withValues(alpha: 0.4),
       maskWidget: GestureDetector(
         onTap: () {
-          _recordShapePropertyChange();
           SmartDialog.dismiss();
         },
         child: Container(color: Colors.transparent),
@@ -97,62 +112,152 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     );
   }
 
-  /// 记录形状属性变化
+  /// 记录形状属性变化（每次属性改变时立即调用）
+  /// 每个属性变更都单独记录一个命令，确保撤销时按照操作顺序进行
   void _recordShapePropertyChange() {
-    if (_activeElement == null || _propertyDialogSnapshot == null) return;
+    if (_activeElement == null || _lastElementProperties == null) return;
 
     final current = _activeElement!;
-    final old = _propertyDialogSnapshot!;
+    final old = _lastElementProperties!;
+    final boxes = _canvalsController.elements;
 
-    // 检查是否有实际变化
-    final hasChanged =
-        old.fillColor != current.fillColor ||
-        old.borderColor != current.borderColor ||
-        old.borderWidth != current.borderWidth ||
-        old.isShawOpen != current.isShawOpen ||
-        old.shawColor != current.shawColor ||
-        old.shawX != current.shawX ||
-        old.shawY != current.shawY ||
-        old.blurValue != current.blurValue ||
-        old.height != current.height;
+    // 检测每个单独变化的属性，为每个属性创建一个单独的命令
+    // 按照检测顺序记录，确保撤销时按照相反顺序进行
 
-    if (hasChanged) {
-      final oldProperties = {
-        'fillColor': old.fillColor,
-        'borderColor': old.borderColor,
-        'borderWidth': old.borderWidth,
-        'isShawOpen': old.isShawOpen,
-        'shawColor': old.shawColor,
-        'shawX': old.shawX,
-        'shawY': old.shawY,
-        'blurValue': old.blurValue,
-        'height': old.height,
-      };
-
-      final newProperties = {
-        'fillColor': current.fillColor,
-        'borderColor': current.borderColor,
-        'borderWidth': current.borderWidth,
-        'isShawOpen': current.isShawOpen,
-        'shawColor': current.shawColor,
-        'shawX': current.shawX,
-        'shawY': current.shawY,
-        'blurValue': current.blurValue,
-        'height': current.height,
-      };
-
-      final boxes = _canvalsController.elements;
+    if (old.fillColor != current.fillColor) {
       _historyManager.executeCommand(
         UpdateShapePropertiesCommand(
           boxes: boxes,
           elementId: current.id,
-          oldProperties: oldProperties,
-          newProperties: newProperties,
+          oldProperties: {'fillColor': old.fillColor},
+          newProperties: {'fillColor': current.fillColor},
         ),
       );
     }
 
-    _propertyDialogSnapshot = null;
+    if (old.fillAlpha != current.fillAlpha) {
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'fillAlpha': old.fillAlpha},
+          newProperties: {'fillAlpha': current.fillAlpha},
+        ),
+      );
+    }
+
+    if (old.borderColor != current.borderColor) {
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'borderColor': old.borderColor},
+          newProperties: {'borderColor': current.borderColor},
+        ),
+      );
+    }
+
+    if (old.borderAlpha != current.borderAlpha) {
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'borderAlpha': old.borderAlpha},
+          newProperties: {'borderAlpha': current.borderAlpha},
+        ),
+      );
+    }
+
+    if (old.borderWidth != current.borderWidth) {
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'borderWidth': old.borderWidth},
+          newProperties: {'borderWidth': current.borderWidth},
+        ),
+      );
+    }
+
+    if (old.isShawOpen != current.isShawOpen) {
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'isShawOpen': old.isShawOpen},
+          newProperties: {'isShawOpen': current.isShawOpen},
+        ),
+      );
+    }
+
+    if (old.shawColor != current.shawColor) {
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'shawColor': old.shawColor},
+          newProperties: {'shawColor': current.shawColor},
+        ),
+      );
+    }
+
+    if (old.shawAlpha != current.shawAlpha) {
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'shawAlpha': old.shawAlpha},
+          newProperties: {'shawAlpha': current.shawAlpha},
+        ),
+      );
+    }
+
+    if (old.shawX != current.shawX) {
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'shawX': old.shawX},
+          newProperties: {'shawX': current.shawX},
+        ),
+      );
+    }
+
+    if (old.shawY != current.shawY) {
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'shawY': old.shawY},
+          newProperties: {'shawY': current.shawY},
+        ),
+      );
+    }
+
+    if (old.blurValue != current.blurValue) {
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'blurValue': old.blurValue},
+          newProperties: {'blurValue': current.blurValue},
+        ),
+      );
+    }
+
+    if (old.height != current.height) {
+      _historyManager.executeCommand(
+        UpdateShapePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'height': old.height},
+          newProperties: {'height': current.height},
+        ),
+      );
+    }
+
+    // 更新上一次的属性值
+    _lastElementProperties = CanvasElementClone.clone(current);
   }
 
   /// 删除形状
@@ -174,8 +279,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     // 保存打开对话框时的宽度，用于判断是否是多行状态
     _savedTextWidth = activeElement.width;
 
-    // 保存属性快照
-    _propertyDialogSnapshot = CanvasElementClone.clone(activeElement);
+    // 初始化上一次的属性值
+    _lastElementProperties = CanvasElementClone.clone(activeElement);
 
     // 保存上一次的属性值（用于判断是否需要重新计算尺寸）
     _lastPropertySnapshot = CanvasElementClone.clone(activeElement);
@@ -186,9 +291,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
         onDeleteText: () {
           _deleteText();
         },
-        onPropertyChanged: () {
+        onPropertyChanged: (update) {
           // 属性实时更新时的回调，立即刷新UI和重新计算尺寸
           _refreshTextBoxAfterPropertyChange();
+          if (update) {
+            _recordTextPropertyChange();
+          }
         },
       ),
       alignment: Alignment.bottomCenter,
@@ -197,7 +305,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       maskColor: Colors.black.withValues(alpha: 0.4),
       maskWidget: GestureDetector(
         onTap: () {
-          _recordTextPropertyChange();
           SmartDialog.dismiss();
         },
         child: Container(color: Colors.transparent),
@@ -207,75 +314,233 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     );
   }
 
-  /// 记录文本属性变化
+  /// 记录文本属性变化（每次属性改变时立即调用）
+  /// 每个属性变更都单独记录一个命令，确保撤销时按照操作顺序进行
   void _recordTextPropertyChange() {
     if (_activeElement == null ||
         _activeElement!.type != ElementType.text ||
-        _propertyDialogSnapshot == null)
+        _lastElementProperties == null) {
       return;
+    }
 
     final current = _activeElement!;
-    final old = _propertyDialogSnapshot!;
+    final old = _lastElementProperties!;
+    final boxes = _canvalsController.elements;
 
-    // 检查是否有实际变化
-    final hasChanged =
-        old.fontSize != current.fontSize ||
-        old.fontFamily != current.fontFamily ||
-        old.fontWeight != current.fontWeight ||
-        old.textColor != current.textColor ||
-        old.lineHeight != current.lineHeight ||
-        old.fontSpace != current.fontSpace ||
-        old.align != current.align ||
-        old.width != current.width ||
-        old.height != current.height ||
-        old.position.dx != current.position.dx ||
-        old.position.dy != current.position.dy;
+    // 检测每个单独变化的属性，为每个属性创建一个单独的命令
+    // 按照检测顺序记录，确保撤销时按照相反顺序进行
 
-    if (hasChanged) {
-      final boxes = _canvalsController.elements;
-
-      // 重新计算位置（因为尺寸变化可能导致位置变化）
-      final oldPosition = old.position;
-      final newPosition = current.position;
-
-      final oldProperties = {
-        'fontSize': old.fontSize,
-        'fontFamily': old.fontFamily,
-        'fontWeight': old.fontWeight,
-        'textColor': old.textColor,
-        'lineHeight': old.lineHeight,
-        'fontSpace': old.fontSpace,
-        'align': old.align,
-        'width': old.width,
-        'height': old.height,
-        'position': oldPosition,
-      };
-
-      final newProperties = {
-        'fontSize': current.fontSize,
-        'fontFamily': current.fontFamily,
-        'fontWeight': current.fontWeight,
-        'textColor': current.textColor,
-        'lineHeight': current.lineHeight,
-        'fontSpace': current.fontSpace,
-        'align': current.align,
-        'width': current.width,
-        'height': current.height,
-        'position': newPosition,
-      };
-
+    if (old.fontSize != current.fontSize) {
       _historyManager.executeCommand(
         UpdateTextPropertiesCommand(
           boxes: boxes,
           elementId: current.id,
-          oldProperties: oldProperties,
-          newProperties: newProperties,
+          oldProperties: {'fontSize': old.fontSize},
+          newProperties: {'fontSize': current.fontSize},
         ),
       );
     }
 
-    _propertyDialogSnapshot = null;
-    _lastPropertySnapshot = null;
+    if (old.fontFamily != current.fontFamily) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'fontFamily': old.fontFamily},
+          newProperties: {'fontFamily': current.fontFamily},
+        ),
+      );
+    }
+
+    if (old.fontWeight != current.fontWeight) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'fontWeight': old.fontWeight},
+          newProperties: {'fontWeight': current.fontWeight},
+        ),
+      );
+    }
+
+    if (old.textColor != current.textColor) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'textColor': old.textColor},
+          newProperties: {'textColor': current.textColor},
+        ),
+      );
+    }
+
+    if (old.textAlpha != current.textAlpha) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'textAlpha': old.textAlpha},
+          newProperties: {'textAlpha': current.textAlpha},
+        ),
+      );
+    }
+
+    if (old.lineHeight != current.lineHeight) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'lineHeight': old.lineHeight},
+          newProperties: {'lineHeight': current.lineHeight},
+        ),
+      );
+    }
+
+    if (old.fontSpace != current.fontSpace) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'fontSpace': old.fontSpace},
+          newProperties: {'fontSpace': current.fontSpace},
+        ),
+      );
+    }
+
+    if (old.align != current.align) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'align': old.align},
+          newProperties: {'align': current.align},
+        ),
+      );
+    }
+
+    if (old.width != current.width) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'width': old.width},
+          newProperties: {'width': current.width},
+        ),
+      );
+    }
+
+    if (old.height != current.height) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'height': old.height},
+          newProperties: {'height': current.height},
+        ),
+      );
+    }
+
+    if (old.borderColor != current.borderColor) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'borderColor': old.borderColor},
+          newProperties: {'borderColor': current.borderColor},
+        ),
+      );
+    }
+
+    if (old.borderAlpha != current.borderAlpha) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'borderAlpha': old.borderAlpha},
+          newProperties: {'borderAlpha': current.borderAlpha},
+        ),
+      );
+    }
+
+    if (old.borderWidth != current.borderWidth) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'borderWidth': old.borderWidth},
+          newProperties: {'borderWidth': current.borderWidth},
+        ),
+      );
+    }
+
+    if (old.isShawOpen != current.isShawOpen) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'isShawOpen': old.isShawOpen},
+          newProperties: {'isShawOpen': current.isShawOpen},
+        ),
+      );
+    }
+
+    if (old.shawColor != current.shawColor) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'shawColor': old.shawColor},
+          newProperties: {'shawColor': current.shawColor},
+        ),
+      );
+    }
+
+    if (old.shawAlpha != current.shawAlpha) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'shawAlpha': old.shawAlpha},
+          newProperties: {'shawAlpha': current.shawAlpha},
+        ),
+      );
+    }
+
+    if (old.shawX != current.shawX) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'shawX': old.shawX},
+          newProperties: {'shawX': current.shawX},
+        ),
+      );
+    }
+
+    if (old.shawY != current.shawY) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'shawY': old.shawY},
+          newProperties: {'shawY': current.shawY},
+        ),
+      );
+    }
+
+    if (old.blurValue != current.blurValue) {
+      _historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'blurValue': old.blurValue},
+          newProperties: {'blurValue': current.blurValue},
+        ),
+      );
+    }
+
+    // 更新上一次的属性值
+    _lastElementProperties = CanvasElementClone.clone(current);
   }
 
   /// 刷新文本框，重新计算尺寸（当属性变化时）
@@ -542,7 +807,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
                 },
                 onCollapse: (text) {
                   _toggleLayerDialog(false);
-                  if (text == "图层属性") {
+                  if (text == "画布属性") {
                     _showCanvalsPropertyDialog();
                   } else {
                     // 根据元素类型显示不同的属性弹框
@@ -569,27 +834,73 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
   }
 
   void _showCanvalsPropertyDialog() {
+    final canvasModel = _canvalsController.canvasModel;
+
     // 获取画布图层
     SmartDialog.show(
       builder: (context) => CanvalsPropertyDialog(
-        canvasModel: _canvalsController.canvasModel,
-        onPropertyChanged: () {
-          setState(() {}); // 触发界面重绘
+        canvasModel: canvasModel,
+        onPropertyChanged: (update) {
+          setState(() {});
+          // 每次属性改变时立即记录命令
+          if (update) {
+            _recordCanvasPropertyChange();
+          }
         },
       ),
       alignment: Alignment.bottomCenter,
       animationType: SmartAnimationType.centerFade_otherSlide,
       animationTime: Duration(milliseconds: 250),
       maskColor: Colors.black.withValues(alpha: 0.4),
-      maskWidget: GestureDetector(
-        onTap: () {
-          SmartDialog.dismiss();
-        },
-        child: Container(color: Colors.transparent),
-      ),
+      // maskWidget: GestureDetector(
+      //   onTap: () {
+      //     _recordCanvasPropertyChange();
+      //     SmartDialog.dismiss();
+      //   },
+      //   child: Container(color: Colors.transparent),
+      // ),
       useAnimation: true,
       usePenetrate: false,
     );
+  }
+
+  /// 记录画布属性变化（每次属性改变时立即调用）
+  /// 每个属性变更都单独记录一个命令，确保撤销时按照操作顺序进行
+  void _recordCanvasPropertyChange() {
+    if (_lastCanvasProperties == null) return;
+
+    final canvasModel = _canvalsController.canvasModel;
+    final last = _lastCanvasProperties!;
+
+    // 检测每个单独变化的属性，为每个属性创建一个单独的命令
+    // 按照检测顺序记录，确保撤销时按照相反顺序进行
+
+    if (last['fillColor'] != canvasModel.fillColor) {
+      _historyManager.executeCommand(
+        UpdateCanvasPropertiesCommand(
+          canvasModel: canvasModel,
+          oldProperties: {'fillColor': last['fillColor']},
+          newProperties: {'fillColor': canvasModel.fillColor},
+        ),
+      );
+    }
+
+    if (last['fillAlpha'] != canvasModel.fillAlpha) {
+      _historyManager.executeCommand(
+        UpdateCanvasPropertiesCommand(
+          canvasModel: canvasModel,
+          oldProperties: {'fillAlpha': last['fillAlpha']},
+          newProperties: {'fillAlpha': canvasModel.fillAlpha},
+        ),
+      );
+    }
+
+    // 更新上一次的属性值（保持所有属性的同步）
+    _lastCanvasProperties = {
+      'fillColor': canvasModel.fillColor,
+      'fillAlpha': canvasModel.fillAlpha,
+      'locked': canvasModel.locked, // 同步当前锁定状态
+    };
   }
 
   /// 显示图片属性弹框
@@ -597,8 +908,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     if (_activeElement == null || _activeElement!.type != ElementType.image) {
       return;
     }
-    // 保存属性快照
-    _propertyDialogSnapshot = CanvasElementClone.clone(_activeElement!);
+    // 初始化上一次的属性值
+    _lastElementProperties = CanvasElementClone.clone(_activeElement!);
 
     SmartDialog.show(
       builder: (context) => ImagePropertyDialog(
@@ -606,8 +917,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
         replaceImage: () {
           _replaceImage(context);
         },
-        onValueChanged: () {
+        onValueChanged: (update) {
           setState(() {}); // 触发界面重绘
+          // 每次属性改变时立即记录命令
+          if (update) {
+            _recordImagePropertyChange();
+          }
         },
         onDeleteImage: () {
           _deleteImage();
@@ -619,7 +934,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
       maskColor: Colors.black.withValues(alpha: 0.4),
       maskWidget: GestureDetector(
         onTap: () {
-          _recordImagePropertyChange();
           SmartDialog.dismiss();
         },
         child: Container(color: Colors.transparent),
@@ -629,39 +943,86 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
     );
   }
 
-  /// 记录图片属性变化
+  /// 记录图片属性变化（每次属性改变时立即调用）
+  /// 每个属性变更都单独记录一个命令，确保撤销时按照操作顺序进行
   void _recordImagePropertyChange() {
     if (_activeElement == null ||
         _activeElement!.type != ElementType.image ||
-        _propertyDialogSnapshot == null)
+        _lastElementProperties == null) {
       return;
+    }
 
     final current = _activeElement!;
-    final old = _propertyDialogSnapshot!;
+    final old = _lastElementProperties!;
+    final boxes = _canvalsController.elements;
 
-    // 检查是否有实际变化
-    final hasChanged =
-        old.width != current.width ||
-        old.height != current.height ||
-        old.imagePath != current.imagePath;
+    // 检测每个单独变化的属性，为每个属性创建一个单独的命令
+    // 按照检测顺序记录，确保撤销时按照相反顺序进行
 
-    if (hasChanged) {
-      final boxes = _canvalsController.elements;
+    if (old.width != current.width) {
       _historyManager.executeCommand(
         UpdateImagePropertiesCommand(
           boxes: boxes,
           elementId: current.id,
           oldWidth: old.width,
-          oldHeight: old.height,
-          oldImagePath: old.imagePath,
+          oldHeight: null,
+          oldImagePath: null,
           newWidth: current.width,
+          newHeight: null,
+          newImagePath: null,
+        ),
+      );
+    }
+
+    if (old.height != current.height) {
+      _historyManager.executeCommand(
+        UpdateImagePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldWidth: null,
+          oldHeight: old.height,
+          oldImagePath: null,
+          newWidth: null,
           newHeight: current.height,
+          newImagePath: null,
+        ),
+      );
+    }
+
+    if (old.imagePath != current.imagePath) {
+      _historyManager.executeCommand(
+        UpdateImagePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldWidth: null,
+          oldHeight: null,
+          oldImagePath: old.imagePath,
+          newWidth: null,
+          newHeight: null,
           newImagePath: current.imagePath,
         ),
       );
     }
 
-    _propertyDialogSnapshot = null;
+    if (old.imageAlpha != current.imageAlpha) {
+      _historyManager.executeCommand(
+        UpdateImagePropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldWidth: null,
+          oldHeight: null,
+          oldImagePath: null,
+          newWidth: null,
+          newHeight: null,
+          newImagePath: null,
+          oldImageAlpha: old.imageAlpha,
+          newImageAlpha: current.imageAlpha,
+        ),
+      );
+    }
+
+    // 更新上一次的属性值
+    _lastElementProperties = CanvasElementClone.clone(current);
   }
 
   /// 删除图片
@@ -948,13 +1309,30 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage> {
           });
         },
         onCanvalsLock: () {
+          final canvasModel = _canvalsController.canvasModel;
+          final oldLocked = canvasModel.locked;
+          final newLocked = !oldLocked;
+
           setState(() {
-            _canvalsController.canvasModel.locked =
-                !_canvalsController.canvasModel.locked;
-            if (_canvalsController.canvasModel.locked) {
+            canvasModel.locked = newLocked;
+            if (canvasModel.locked) {
               _canvalsController.deselect();
             }
           });
+
+          // 立即记录锁定状态变更到历史
+          _historyManager.executeCommand(
+            UpdateCanvasPropertiesCommand(
+              canvasModel: canvasModel,
+              oldProperties: {'locked': oldLocked},
+              newProperties: {'locked': newLocked},
+            ),
+          );
+
+          // 更新上一次的属性值
+          if (_lastCanvasProperties != null) {
+            _lastCanvasProperties!['locked'] = newLocked;
+          }
         },
       ),
     );

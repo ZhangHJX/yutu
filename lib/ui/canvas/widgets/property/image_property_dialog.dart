@@ -6,7 +6,7 @@ import '../../model/index.dart';
 
 class ImagePropertyDialog extends StatefulWidget {
   final CanvasElement? element;
-  final VoidCallback? onValueChanged;
+  final Function(bool notify)? onValueChanged;
   final VoidCallback? onDeleteImage;
   final VoidCallback? replaceImage;
 
@@ -45,12 +45,12 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
     _imageAlpha = widget.element?.imageAlpha ?? 1.0;
   }
 
-  void _updateModel() {
+  void _updateModel({bool notify = true}) {
     widget.element?.width = _imageWidth ?? 0.0;
     widget.element?.height = _imageHeight ?? 0.0;
     widget.element?.imageAlpha = _imageAlpha;
     widget.element?.imagePath = _imagePath ?? "";
-    widget.onValueChanged?.call();
+    widget.onValueChanged?.call(notify);
   }
 
   @override
@@ -294,8 +294,13 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
                       onChanged: (value) {
                         setState(() {
                           _imageAlpha = value;
-                          _updateModel();
+                          // 滑动过程中只更新模型，不记录命令
+                          _updateModel(notify: false);
                         });
+                      },
+                      onChangeEnd: (value) {
+                        // 滑动结束时记录命令
+                        _updateModel(notify: true);
                       },
                     ),
                   ),

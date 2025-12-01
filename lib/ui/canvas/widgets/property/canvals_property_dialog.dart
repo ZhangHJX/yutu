@@ -7,7 +7,7 @@ import '../../model/index.dart';
 
 class CanvalsPropertyDialog extends StatefulWidget {
   final CanvasModel? canvasModel;
-  final VoidCallback? onPropertyChanged; // 属性改变时的回调
+  final Function(bool notify)? onPropertyChanged; // 属性改变时的回调
 
   const CanvalsPropertyDialog({
     super.key,
@@ -65,12 +65,12 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
   }
 
   /// 更新数据模型
-  void _updateModel() {
+  void _updateModel({bool notify = true}) {
     if (widget.canvasModel == null) return;
     final props = widget.canvasModel!;
     props.fillColor = _fillColor;
     props.fillAlpha = _fillAlpha;
-    widget.onPropertyChanged?.call();
+    widget.onPropertyChanged?.call(notify);
   }
 
   @override
@@ -277,8 +277,13 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
       onChanged: (value) {
         setState(() {
           _fillAlpha = value;
-          _updateModel();
+          // 滑动过程中只更新模型，不记录命令
+          _updateModel(notify: false);
         });
+      },
+      onChangeEnd: (value) {
+        // 滑动结束时记录命令
+        _updateModel(notify: true);
       },
     );
   }

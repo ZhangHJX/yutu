@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'canvas_custom_listener.dart';
-import '../model/index.dart';
 import '../controllers/canvals_controller.dart';
 import 'canvas_status_manager.dart';
+import 'matrix_utils.dart';
+import '../model/index.dart';
 
 class CanvasPointerWrapper extends StatelessWidget {
   final Widget child;

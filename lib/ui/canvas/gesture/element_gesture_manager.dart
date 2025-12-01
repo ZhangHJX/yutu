@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../utils/text_measure_util.dart';
-import '../history/canvas_history_manager.dart';
+import '../history/index.dart';
 import 'element_extension/element_interaction_state.dart';
 import '../model/index.dart';
 import 'dart:math' as math;
+import 'matrix_utils.dart';
 
 part 'element_extension/element_gesture_session.dart';
 part 'element_extension/element_gesture_manager_image.dart';
@@ -741,17 +742,17 @@ class ElementGestureManager {
     // 计算元素中心在世界坐标系中的位置
     final cx = topLeft.dx + width / 2;
     final cy = topLeft.dy + height / 2;
-    
+
     // 将本地坐标转换为相对于元素中心的坐标
     final center = Offset(width / 2, height / 2);
     final relativeToCenter = localPoint - center;
-    
+
     // 应用缩放
     final scaled = Offset(
       relativeToCenter.dx * scale,
       relativeToCenter.dy * scale,
     );
-    
+
     // 应用旋转
     final cosRot = math.cos(rotation);
     final sinRot = math.sin(rotation);
@@ -759,7 +760,7 @@ class ElementGestureManager {
       scaled.dx * cosRot - scaled.dy * sinRot,
       scaled.dx * sinRot + scaled.dy * cosRot,
     );
-    
+
     // 加上中心位置得到世界坐标
     return Offset(cx, cy) + rotated;
   }
@@ -775,13 +776,13 @@ class ElementGestureManager {
     // 计算锚点在本地坐标系中相对于元素中心的偏移
     final center = Offset(width / 2, height / 2);
     final relativeToCenter = anchorLocal - center;
-    
+
     // 应用缩放
     final scaled = Offset(
       relativeToCenter.dx * scale,
       relativeToCenter.dy * scale,
     );
-    
+
     // 应用旋转
     final cosRot = math.cos(rotation);
     final sinRot = math.sin(rotation);
@@ -789,16 +790,13 @@ class ElementGestureManager {
       scaled.dx * cosRot - scaled.dy * sinRot,
       scaled.dx * sinRot + scaled.dy * cosRot,
     );
-    
+
     // 计算元素中心在世界坐标系中的位置
     // anchorWorld = centerWorld + rotated
     // 所以 centerWorld = anchorWorld - rotated
     final centerWorld = anchorWorld - rotated;
-    
+
     // 从中心位置计算 topLeft
-    return Offset(
-      centerWorld.dx - width / 2,
-      centerWorld.dy - height / 2,
-    );
+    return Offset(centerWorld.dx - width / 2, centerWorld.dy - height / 2);
   }
 }

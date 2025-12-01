@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../model/index.dart';
 import '../utils/index.dart';
+import '../history/clone_tools/canvas_model_clone.dart';
 import 'dart:math' as math;
 
 /// 全局选择状态管理控制器： 负责管理当前选中的文本框ID、画布模型以及元素列表
@@ -22,20 +23,11 @@ class CanvalsController extends GetxController {
   }
 
   CanvasModel? buildSnapshot() {
-    final source = canvasModel;
-    return CanvasModel(
-      id: source.id,
-      width: source.width,
-      height: source.height,
-      x: source.x,
-      y: source.y,
-      scale: source.scale,
-      fillColor: source.fillColor,
-      fillAlpha: source.fillAlpha,
-      locked: source.locked,
-      isSelected: source.isSelected,
-      elements: elements.toList(),
-    );
+    // 使用 JSON 序列化方式克隆画布模型
+    final cloned = CanvasModelClone.clone(canvasModel);
+    // 更新元素列表（因为 elements 是响应式列表，需要单独处理）
+    cloned.elements = elements.toList();
+    return cloned;
   }
 
   void addElement(CanvasElement element) {

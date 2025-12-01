@@ -14,8 +14,11 @@ class SliderInputField extends StatefulWidget {
   /// 当前值
   final double value;
 
-  /// 值改变回调
+  /// 值改变回调（滑动过程中持续触发）
   final ValueChanged<double>? onChanged;
+
+  /// 滑动结束回调（滑动结束时触发一次，用于记录历史）
+  final ValueChanged<double>? onChangeEnd;
 
   /// 最小值
   final double minValue;
@@ -63,6 +66,7 @@ class SliderInputField extends StatefulWidget {
     required this.title,
     required this.value,
     this.onChanged,
+    this.onChangeEnd,
     this.minValue = 0.0,
     this.maxValue = 1.0,
     this.inputWidth,
@@ -249,6 +253,9 @@ class _SliderInputFieldState extends State<SliderInputField> {
           onChanged: (value) {
             widget.onChanged?.call(value);
             _updateControllerText();
+          },
+          onChangeEnd: (value) {
+            widget.onChangeEnd?.call(value);
           },
         ),
       ],

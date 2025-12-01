@@ -6,8 +6,11 @@ class SliderBasedProgressBar extends StatelessWidget {
   /// 进度值，范围 0.0 到 1.0
   final double value;
 
-  /// 进度改变回调
+  /// 进度改变回调（滑动过程中持续触发）
   final ValueChanged<double>? onChanged;
+
+  /// 滑动结束回调（滑动结束时触发一次）
+  final ValueChanged<double>? onChangeEnd;
 
   /// 进度条高度
   final double trackHeight;
@@ -25,6 +28,7 @@ class SliderBasedProgressBar extends StatelessWidget {
     super.key,
     required this.value,
     this.onChanged,
+    this.onChangeEnd,
     this.trackHeight = 8.0,
     this.thumbSize = 20.0,
     this.maxValue = 1.0,
@@ -70,6 +74,7 @@ class SliderBasedProgressBar extends StatelessWidget {
         min: minValue,
         max: maxValue,
         onChanged: onChanged,
+        onChangeEnd: onChangeEnd,
       ),
     );
   }

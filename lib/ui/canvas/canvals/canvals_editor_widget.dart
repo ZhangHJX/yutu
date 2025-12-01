@@ -5,8 +5,7 @@ import 'canvas_element_widget.dart';
 import '../gesture/element_gesture_manager.dart';
 import '../widgets/dialog/text_input_dialog.dart';
 import '../utils/text_measure_util.dart';
-import '../history/canvas_history_manager.dart';
-import '../history/edit_box_data_clone.dart';
+import '../history/index.dart';
 import '../model/index.dart';
 import '../utils/index.dart';
 
@@ -465,9 +464,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   /// 撤销操作
   void undo() {
     historyManager?.undo();
-    if (boxes.isEmpty) {
-      return;
-    }
     setState(() {});
   }
 
