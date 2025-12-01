@@ -1,4 +1,14 @@
 import 'package:common/common.dart';
+import 'user_model.dart';
+
+/// 登录方式
+enum LoginMode {
+  /// 验证码登录
+  sms,
+
+  /// 账号密码登录
+  password,
+}
 
 // import '../app/app_route.dart';
 // import '../models/list_item.dart';
@@ -10,7 +20,10 @@ class GlobalLogic extends GetxController {
   final tabIndex = 0.obs;
 
   final accessToken = ''.obs;
-  // final userInfo = UserModel().obs;
+  final userInfo = UserModel().obs;
+
+  // /// 用户是否登录
+  bool get isLogin => accessToken.value.isNotEmpty;
 
   /// 客服类型, 2为微信, 其他为应用内客服
   // final serviceType = '2'.obs;
@@ -18,8 +31,62 @@ class GlobalLogic extends GetxController {
   // /// 是否设置了支付密码
   // bool get isSetPassword => userInfo.value.isSetPassword == 1;
 
-  // /// 用户是否登录
-  // bool get isLogin => accessToken.value.isNotEmpty;
+  /// ---------------- 登录相关状态（使用 GetX 全局管理） ----------------
+
+  /// 当前登录方式
+  final loginMode = LoginMode.sms.obs;
+
+  /// 是否同意协议
+  final agreementChecked = false.obs;
+
+  /// 密码是否可见
+  final passwordVisible = false.obs;
+
+  /// 是否为验证码登录
+  bool get isSmsLogin => loginMode.value == LoginMode.sms;
+
+  /// 切换登录方式
+  void toggleLoginMode() {
+    loginMode.value = loginMode.value == LoginMode.sms
+        ? LoginMode.password
+        : LoginMode.sms;
+    // 切换模式时重置密码可见
+    passwordVisible.value = false;
+  }
+
+  /// 切换协议勾选
+  void toggleAgreement() {
+    agreementChecked.value = !agreementChecked.value;
+  }
+
+  /// 切换密码可见性
+  void togglePasswordVisible() {
+    passwordVisible.value = !passwordVisible.value;
+  }
+
+  /// 校验手机号：简单 11 位数字校验
+  bool isPhoneValid(String phone) {
+    final text = phone.trim();
+    return RegExp(r'^1\\d{10}\$').hasMatch(text);
+  }
+
+  /// 校验第二个输入框内容
+  bool isSecondValid(String text) {
+    final value = text.trim();
+    if (isSmsLogin) {
+      // 验证码 4-6 位数字
+      return RegExp(r'^\\d{4,6}\$').hasMatch(value);
+    }
+    // 密码 6-20 位
+    return value.length >= 6 && value.length <= 20;
+  }
+
+  /// 是否可以点击登录按钮
+  bool canLogin(String phone, String secondInput) {
+    return isPhoneValid(phone) &&
+        isSecondValid(secondInput) &&
+        agreementChecked.value;
+  }
 
   // /// 用户头像
   // String? get wechatAvatar => userInfo.value.wechatAvatar;

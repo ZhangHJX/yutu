@@ -22,6 +22,7 @@ class AppRoutes {
   static const resourcePage = '/resource_page';
   static const designPage = '/design_page';
   static const personInfo = '/person_info_page';
+  static const appLogin = '/app_login';
 
   /// 404
   static const notFound = '/404';

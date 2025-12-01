@@ -1,8 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-
-import 'controller/mine_logic.dart';
-import 'model/mine_tools_model.dart';
+import 'mine_logic.dart';
 
 class MinePage extends StatelessWidget {
   MinePage({super.key});
@@ -97,7 +95,7 @@ class MinePage extends StatelessWidget {
 
   /// 个人信息
   Widget _buildMineInfoContent() {
-    final user = logic.userInfo.value;
+    final user = logic.global.userInfo.value;
     return Padding(
       padding: EdgeInsets.only(left: 22.w, top: 9.w, right: 20.w),
       child: Row(
@@ -211,7 +209,7 @@ class MinePage extends StatelessWidget {
   }
 
   Widget _buildDesignBlock() {
-    final user = logic.userInfo.value;
+    final user = logic.global.userInfo.value;
     final designs = user.designImages;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -487,4 +485,12 @@ class MinePage extends StatelessWidget {
       ),
     );
   }
+}
+
+class MineToolsModel {
+  String icon; // 图标（可以是 asset 路径）
+  String title; // 标题
+  VoidCallback? onTap; // 点击事件 ✅
+
+  MineToolsModel({this.icon = '', this.title = '', this.onTap});
 }

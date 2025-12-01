@@ -79,6 +79,9 @@ flutter:
     - assets/images/canvals/
     - assets/images/mine/
     - assets/images/global/
+    - assets/images/login/
+
+    
     
 
   # An image asset can refer to one or more resolution-specific "variants", see

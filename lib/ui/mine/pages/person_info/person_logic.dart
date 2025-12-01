@@ -1,10 +1,10 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../model/user_model.dart';
-import '../../controller/mine_logic.dart';
+import '../../../../stores/user_model.dart';
+import 'package:voicetemplate/stores/global.dart';
 
 class PersonLogic extends GetxController {
-  final globalLogic = Get.find<MineLogic>();
+  final global = Get.find<GlobalLogic>();
 
   final userModel = Get.arguments is UserModel
       ? Get.arguments as UserModel
@@ -80,7 +80,7 @@ class PersonLogic extends GetxController {
           : phone.value,
       signature: signatureCtrl.text.trim(),
     );
-    globalLogic.userInfo.value = updatedProfile;
+    global.userInfo.value = updatedProfile;
 
     // final success = await repository.updateProfile(profile);
     // if (success) {

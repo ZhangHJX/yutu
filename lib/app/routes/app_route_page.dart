@@ -3,18 +3,25 @@ import 'app_route_const.dart';
 
 import 'package:voicetemplate/ui/not_found_page.dart';
 import 'package:voicetemplate/ui/splash/page.dart';
-import 'package:voicetemplate/ui/main/page.dart';
+import 'package:voicetemplate/app/main/page.dart';
 import 'package:voicetemplate/ui/canvas/controllers/canvals_editor_page.dart';
+import 'package:voicetemplate/ui/login/login_page.dart';
 
 /// 我的模块
 import 'package:voicetemplate/ui/mine/pages/app_info/app_info_page.dart';
 import 'package:voicetemplate/ui/mine/pages/resource/resource_page.dart';
 import 'package:voicetemplate/ui/mine/pages/app_design/app_design_page.dart';
-import 'package:voicetemplate/ui/mine/pages/person_info/person_info_page.dart';
 
 final List<GetPage> getPages = [
   /// 启动页
   GetPage(name: AppRoutes.splash, page: SplashPage.new),
+
+  /// 登录页
+  GetPage(
+    name: AppRoutes.appLogin,
+    page: LoginPage.new,
+    transition: Transition.downToUp,
+  ),
 
   /// TabBar
   GetPage(
@@ -33,7 +40,6 @@ final List<GetPage> getPages = [
   GetPage(name: AppRoutes.appInfoPage, page: AppInfoPage.new),
   GetPage(name: AppRoutes.resourcePage, page: AppResourcePage.new),
   GetPage(name: AppRoutes.designPage, page: AppDesignPage.new),
-  GetPage(name: AppRoutes.personInfo, page: PersonInfoPage.new),
 ];
 
 final unknownRoute = GetPage(name: AppRoutes.notFound, page: NotFoundPage.new);
