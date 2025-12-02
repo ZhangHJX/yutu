@@ -5,14 +5,18 @@ class ConfirmPopWidget extends StatelessWidget {
   final String title;
   final String subTitle;
   final String sureTitle;
+  final Widget? subTitleWidget;
   final String cancelTitle;
   final VoidCallback? sureAction;
+  final VoidCallback? cancelAction;
 
   const ConfirmPopWidget({
     super.key,
     required this.title,
-    required this.subTitle,
+    this.subTitle = '',
+    this.subTitleWidget,
     required this.sureAction,
+    this.cancelAction,
     this.sureTitle = "确定",
     this.cancelTitle = "取消",
   });
@@ -42,15 +46,7 @@ class ConfirmPopWidget extends StatelessWidget {
 
           Padding(
             padding: EdgeInsets.only(top: 46.w),
-            child: Text(
-              subTitle,
-              style: TextStyle(
-                fontSize: 16.w,
-                color: "#434343".color,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
+            child: _buildSubTitle(),
           ),
 
           Spacer(),
@@ -60,7 +56,10 @@ class ConfirmPopWidget extends StatelessWidget {
             children: [
               SizedBox(width: 20.w),
               GestureDetector(
-                onTap: () => SmartDialog.dismiss(),
+                onTap: () {
+                  cancelAction?.call();
+                  SmartDialog.dismiss();
+                },
                 child: Container(
                   width: 114.w,
                   height: 40.w,
@@ -117,6 +116,22 @@ class ConfirmPopWidget extends StatelessWidget {
           SizedBox(height: 26.w),
         ],
       ),
+    );
+  }
+
+  /// 根据传入类型构建副标题
+  Widget _buildSubTitle() {
+    if (subTitleWidget != null) {
+      return subTitleWidget!;
+    }
+    return Text(
+      subTitle,
+      style: TextStyle(
+        fontSize: 16.w,
+        color: "#434343".color,
+        fontWeight: FontWeight.w500,
+      ),
+      textAlign: TextAlign.center,
     );
   }
 }

@@ -252,6 +252,52 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
     );
   }
 
+  /// 显示是否保存为草稿
+  void showIsSaveDraftDialog() {
+    final textWidget = RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        style: TextStyle(
+          fontSize: 16.w,
+          color: "#434343".color,
+          fontWeight: FontWeight.w500,
+        ),
+        children: [
+          TextSpan(text: '是否将编辑内容存到'),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: DiagonalGradientText(
+              text: '草稿？',
+              style: TextStyle(fontSize: 16.w, fontWeight: FontWeight.w500),
+              colors: ["#8556FF".color, "#3691FF".color],
+            ),
+          ),
+
+          TextSpan(text: '直接\n退出会丢失所有编辑信息'),
+        ],
+      ),
+    );
+
+    SmartDialog.show(
+      builder: (context) => ConfirmPopWidget(
+        title: "保存为草稿",
+        subTitleWidget: textWidget,
+        cancelTitle: "直接退出",
+        sureTitle: "保存为草稿",
+        cancelAction: () => Get.back(),
+        sureAction: () {},
+      ),
+      alignment: Alignment.center,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: "#000000".color.withValues(alpha: 0.5),
+      clickMaskDismiss: true,
+      useAnimation: true,
+      usePenetrate: false,
+    );
+  }
+
   // ====================== 抽象方法 ======================
 
   /// 删除形状

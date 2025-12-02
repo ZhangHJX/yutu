@@ -445,11 +445,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
     }
   }
 
-  /// 返回操作
-  void _handleBack() {
-    Get.back();
-  }
-
   /// 构建缩放控制浮框（当缩放比例不是100%时显示）
   Widget _buildScaleOverlay() {
     return Positioned(
@@ -578,5 +573,14 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
       _canvalsController.canvalsWidth / 2,
       _canvalsController.canvalsHeight / 2,
     );
+  }
+
+  /// 返回操作
+  void _handleBack() {
+    if (_canvalsController.elements.isNotEmpty) {
+      showIsSaveDraftDialog();
+      return;
+    }
+    Get.back();
   }
 }
