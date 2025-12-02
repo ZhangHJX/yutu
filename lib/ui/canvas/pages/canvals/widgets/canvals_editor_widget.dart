@@ -463,6 +463,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
   /// 撤销操作
   void undo() {
+    historyManager?.undo();
     setState(() {});
   }
 
