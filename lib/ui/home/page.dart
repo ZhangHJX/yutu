@@ -1,10 +1,11 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'widgets/search_bar_widget.dart';
+import 'home_logic.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-  // final logic = Get.put(HomeLogic());
+  HomePage({super.key});
+  final logic = Get.put(HomeLogic());
 
   @override
   Widget build(BuildContext context) {

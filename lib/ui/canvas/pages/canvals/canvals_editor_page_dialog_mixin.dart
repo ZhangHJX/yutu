@@ -267,13 +267,12 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
           WidgetSpan(
             alignment: PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic,
-            child: DiagonalGradientText(
-              text: '草稿？',
+            child: GradientText(
+              '草稿？',
               style: TextStyle(fontSize: 16.w, fontWeight: FontWeight.w500),
               colors: ["#8556FF".color, "#3691FF".color],
             ),
           ),
-
           TextSpan(text: '直接\n退出会丢失所有编辑信息'),
         ],
       ),
