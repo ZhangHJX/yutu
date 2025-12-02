@@ -8,7 +8,7 @@ class CanvasHistoryManager {
   final List<CanvasCommand> _redoStack = [];
 
   /// 最大历史记录数量
-  static const int maxHistorySize = 100;
+  static const int maxHistorySize = 20;
 
   // 响应式状态变量
   final RxBool _canUndo = false.obs;
@@ -69,6 +69,12 @@ class CanvasHistoryManager {
     final command = _undoStack.removeLast();
     command.undo();
     _redoStack.add(command);
+
+    // 限制重做栈历史记录数量
+    if (_redoStack.length > maxHistorySize) {
+      _redoStack.removeAt(0);
+    }
+
     _updateState();
   }
 
@@ -85,6 +91,12 @@ class CanvasHistoryManager {
     final command = _redoStack.removeLast();
     command.execute();
     _undoStack.add(command);
+
+    // 再次限制撤销栈历史记录数量（重做同样可能导致超出）
+    if (_undoStack.length > maxHistorySize) {
+      _undoStack.removeAt(0);
+    }
+
     _updateState();
   }
 
