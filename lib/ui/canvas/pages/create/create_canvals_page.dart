@@ -1,9 +1,9 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../utils/gradient_border.dart';
-import '../../../app/routes/index.dart';
+import '../../utils/gradient_border.dart';
+import '../../../../app/routes/index.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-import '../model/index.dart';
+import '../../model/index.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateCanvalsPage extends StatefulWidget {

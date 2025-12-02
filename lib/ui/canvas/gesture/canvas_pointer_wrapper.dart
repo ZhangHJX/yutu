@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'canvas_custom_listener.dart';
-import '../controllers/canvals_controller.dart';
+import '../pages/canvals/canvals_controller.dart';
 import 'canvas_status_manager.dart';
 import 'matrix_utils.dart';
 import '../model/index.dart';

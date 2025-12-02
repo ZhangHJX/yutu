@@ -4,7 +4,7 @@ import 'app_route_const.dart';
 import 'package:voicetemplate/ui/not_found_page.dart';
 import 'package:voicetemplate/ui/splash/page.dart';
 import 'package:voicetemplate/app/main/page.dart';
-import 'package:voicetemplate/ui/canvas/controllers/canvals_editor_page.dart';
+import 'package:voicetemplate/ui/canvas/pages/canvals/canvals_editor_page.dart';
 import 'package:voicetemplate/ui/login/login_page.dart';
 import 'package:voicetemplate/ui/login/forget/forget_page.dart';
 

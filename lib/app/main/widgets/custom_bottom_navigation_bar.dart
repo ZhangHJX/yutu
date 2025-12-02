@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../logic.dart';
 import 'custom_tab_bar.dart';
-import 'package:voicetemplate/ui/canvas/controllers/create_canvals_page.dart';
+import 'package:voicetemplate/ui/canvas/pages/create/create_canvals_page.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   const CustomBottomNavigationBar({super.key});

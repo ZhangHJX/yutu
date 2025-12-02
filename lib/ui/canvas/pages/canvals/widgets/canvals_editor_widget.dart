@@ -1,13 +1,13 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../controllers/canvals_controller.dart';
+import '../canvals_controller.dart';
 import 'canvas_element_widget.dart';
-import '../gesture/element_gesture_manager.dart';
-import '../widgets/dialog/text_input_dialog.dart';
-import '../utils/text_measure_util.dart';
-import '../history/index.dart';
-import '../model/index.dart';
-import '../utils/index.dart';
+import '../../../gesture/element_gesture_manager.dart';
+import '../../../widgets/dialog/text_input_dialog.dart';
+import '../../../utils/text_measure_util.dart';
+import '../../../history/index.dart';
+import '../../../model/index.dart';
+import '../../../utils/index.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;

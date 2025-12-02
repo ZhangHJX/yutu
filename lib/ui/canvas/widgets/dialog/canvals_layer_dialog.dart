@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../controllers/canvals_controller.dart';
+import '../../pages/canvals/canvals_controller.dart';
 import '../../utils/gradient_border.dart';
 import '../../model/index.dart';
 import 'dart:io';

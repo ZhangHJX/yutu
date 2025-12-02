@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'canvas_text_widget.dart';
-import '../model/index.dart';
+import '../../../model/index.dart';
 import 'dart:io';
 
 class CanvasElementWidget extends StatelessWidget {
