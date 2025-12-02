@@ -6,6 +6,7 @@ import 'package:voicetemplate/ui/splash/page.dart';
 import 'package:voicetemplate/app/main/page.dart';
 import 'package:voicetemplate/ui/canvas/controllers/canvals_editor_page.dart';
 import 'package:voicetemplate/ui/login/login_page.dart';
+import 'package:voicetemplate/ui/login/forget/forget_page.dart';
 
 /// 我的模块
 import 'package:voicetemplate/ui/mine/pages/app_info/app_info_page.dart';
@@ -22,6 +23,7 @@ final List<GetPage> getPages = [
     page: LoginPage.new,
     transition: Transition.downToUp,
   ),
+  GetPage(name: AppRoutes.forget, page: ForgetPage.new),
 
   /// TabBar
   GetPage(

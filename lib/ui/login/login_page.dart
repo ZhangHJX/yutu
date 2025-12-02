@@ -1,6 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../app/routes/index.dart';
 import 'logic.dart';
 
 class LoginPage extends StatelessWidget {
@@ -66,7 +67,7 @@ class LoginPage extends StatelessWidget {
                       _buildPhoneField(),
                       SizedBox(height: 14.w),
                       _buildSecondField(),
-                      SizedBox(height: 10.h),
+                      SizedBox(height: 10.w),
 
                       Padding(
                         padding: EdgeInsets.only(right: 20.w),
@@ -93,32 +94,35 @@ class LoginPage extends StatelessWidget {
                       SizedBox(height: 15.w),
 
                       Obx(
-                        () => Container(
-                          height: 48.w,
-                          padding: EdgeInsets.symmetric(horizontal: 29.w),
-                          decoration: BoxDecoration(
-                            color: logic.canLogin
-                                ? Colors.transparent
-                                : "#64A2FF".color,
-                            image: logic.canLogin
-                                ? const DecorationImage(
-                                    image: AssetImage(
-                                      'assets/images/login/login_btn_bg.png',
-                                    ),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
-                            borderRadius: BorderRadius.circular(24.w),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '登录',
-                              style: TextStyle(
-                                fontSize: 16.w,
-                                fontWeight: FontWeight.w500,
-                                color: logic.canLogin
-                                    ? "#FFFFFF".color
-                                    : "#1C004C".color.withValues(alpha: 0.5),
+                        () => GestureDetector(
+                          onTap: logic.canLogin ? _onLogin : null,
+                          child: Container(
+                            height: 48.w,
+                            padding: EdgeInsets.symmetric(horizontal: 29.w),
+                            decoration: BoxDecoration(
+                              color: logic.canLogin
+                                  ? Colors.transparent
+                                  : "#64A2FF".color,
+                              image: logic.canLogin
+                                  ? const DecorationImage(
+                                      image: AssetImage(
+                                        'assets/images/login/login_btn_bg.png',
+                                      ),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                              borderRadius: BorderRadius.circular(24.w),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '登录',
+                                style: TextStyle(
+                                  fontSize: 16.w,
+                                  fontWeight: FontWeight.w500,
+                                  color: logic.canLogin
+                                      ? "#FFFFFF".color
+                                      : "#1C004C".color.withValues(alpha: 0.5),
+                                ),
                               ),
                             ),
                           ),
@@ -133,9 +137,8 @@ class LoginPage extends StatelessWidget {
                                   SizedBox(height: 12.w),
                                   Center(
                                     child: GestureDetector(
-                                      onTap: () {
-                                        // TODO: 忘记密码逻辑
-                                      },
+                                      onTap: () =>
+                                          Get.toNamed(AppRoutes.forget),
                                       child: Text(
                                         '忘记密码？',
                                         style: TextStyle(

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'design_logic.dart';
 import 'design_bottom_bar.dart';
 import 'desigin_page_item.dart';
-import '../widgets/app_status_bar.dart';
+import '../../../widgets/app_status_bar.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class AppDesignPage extends StatelessWidget {

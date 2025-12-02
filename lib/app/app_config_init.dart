@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'routes/index.dart';
-import 'package:voicetemplate/stores/global.dart';
 
 class AppConfigInit extends StatelessWidget {
   const AppConfigInit({super.key});
