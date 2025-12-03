@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import '../model/index.dart';
 import '../pages/canvals/canvals_controller.dart';
+import '../../utils/file/canvals_file_manager.dart';
 
 /// 草稿管理类
 /// - 负责自动保存和加载画布草稿（全局单例，整个应用只有一份草稿）
@@ -144,6 +145,9 @@ class DraftManager {
 
       await draftFile.delete();
       debugPrint('DraftManager: 草稿已删除: $draftPath');
+
+      CanvalsFileManager.deleteAllImagesInCavals();
+
       return true;
     } catch (e, stackTrace) {
       debugPrint('DraftManager: 删除草稿失败: $e\n$stackTrace');

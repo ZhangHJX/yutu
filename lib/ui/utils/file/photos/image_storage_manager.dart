@@ -27,7 +27,6 @@ class ImageStorageManager {
   // 只从相册获取数据
   static void chooseImages({
     required BuildContext context,
-    required String canvalsID,
     required void Function(String imagePath, double width, double height)
     onSuccess,
   }) async {
@@ -36,7 +35,7 @@ class ImageStorageManager {
         context,
       );
       if (result != null) {
-        final targetPath = await CanvalsFileManager.getImagePath(canvalsID);
+        final targetPath = await CanvalsFileManager.getImagePath();
         final processResult = await ImageStorageManager.checkFileSize(
           result.last,
           targetPath,

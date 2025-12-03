@@ -17,8 +17,8 @@ class CanvalsFileManager {
   ];
 
   /// 生成图片路径
-  static Future<String> getImagePath(String canvalsID) async {
-    final Directory imageDirectory = await getImagesDirectory(canvalsID);
+  static Future<String> getImagePath() async {
+    final Directory imageDirectory = await getImagesDirectory();
     final int timestampMillis = DateTime.now().millisecondsSinceEpoch;
     final String fileName = '$timestampMillis.jpg';
     final imagePath = p.join(imageDirectory.path, fileName);
@@ -26,15 +26,14 @@ class CanvalsFileManager {
   }
 
   // 已有：获取 cavals/images 目录
-  static Future<Directory> getImagesDirectory(String canvalsID) async {
+  static Future<Directory> getImagesDirectory() async {
     final Directory documentsDirectory =
         await getApplicationDocumentsDirectory();
     final String imagesDirectoryPath = p.join(
       documentsDirectory.path,
       'cavals',
-      canvalsID,
+      'images',
     );
-
     final Directory imagesDirectory = Directory(imagesDirectoryPath);
 
     if (await imagesDirectory.exists()) {
@@ -65,8 +64,8 @@ class CanvalsFileManager {
 
   /// 新增：删除 cavals/images 目录下的所有图片文件
   /// 返回实际删除的文件数量
-  static Future<int> deleteAllImagesInCavals(String canvalsID) async {
-    final Directory imagesDirectory = await getImagesDirectory(canvalsID);
+  static Future<int> deleteAllImagesInCavals() async {
+    final Directory imagesDirectory = await getImagesDirectory();
 
     final bool dirExists = await imagesDirectory.exists();
     if (!dirExists) {

@@ -28,9 +28,9 @@ class CanvasElementWidget extends StatelessWidget {
     switch (data.type) {
       case ElementType.image:
         return Opacity(
-          opacity: data.imageAlpha,
+          opacity: data.fileAlpha,
           child: Image.file(
-            File(data.imagePath),
+            File(data.fileName),
             width: data.width,
             height: data.height,
             fit: BoxFit.cover,

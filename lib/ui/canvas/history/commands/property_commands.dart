@@ -269,8 +269,8 @@ class UpdateImagePropertiesCommand implements CanvasCommand {
     if (element != null && element.type == ElementType.image) {
       if (newWidth != null) element.width = newWidth!;
       if (newHeight != null) element.height = newHeight!;
-      if (newImagePath != null) element.imagePath = newImagePath!;
-      if (newImageAlpha != null) element.imageAlpha = newImageAlpha!;
+      if (newImagePath != null) element.fileName = newImagePath!;
+      if (newImageAlpha != null) element.fileAlpha = newImageAlpha!;
     }
   }
 
@@ -280,8 +280,8 @@ class UpdateImagePropertiesCommand implements CanvasCommand {
     if (element != null && element.type == ElementType.image) {
       if (oldWidth != null) element.width = oldWidth!;
       if (oldHeight != null) element.height = oldHeight!;
-      if (oldImagePath != null) element.imagePath = oldImagePath!;
-      if (oldImageAlpha != null) element.imageAlpha = oldImageAlpha!;
+      if (oldImagePath != null) element.fileName = oldImagePath!;
+      if (oldImageAlpha != null) element.fileAlpha = oldImageAlpha!;
     }
   }
 

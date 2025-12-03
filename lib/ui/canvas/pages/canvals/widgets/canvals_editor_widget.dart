@@ -219,7 +219,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       x: centerX,
       y: centerY,
       type: type,
-      imagePath: imagePath,
+      fileName: imagePath,
       width: finalWidth,
       height: finalHeight,
     );

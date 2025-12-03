@@ -22,8 +22,8 @@ class CanvasElement {
   bool selected; // 是否被选中
 
   // 图片相关属性
-  String imagePath;
-  double imageAlpha;
+  String fileName;
+  double fileAlpha;
 
   // 形状相关属性
   String fillColor;
@@ -79,8 +79,8 @@ class CanvasElement {
     this.locked = false,
     this.selected = false,
 
-    this.imagePath = '',
-    this.imageAlpha = 1.0,
+    this.fileName = '',
+    this.fileAlpha = 1.0,
 
     this.fillAlpha = 1.0,
     this.fillColor = '#D8D8D8',

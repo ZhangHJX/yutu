@@ -550,22 +550,22 @@ mixin CanvasEditorUndoRedoMixin<T extends StatefulWidget> on State<T> {
       );
     }
 
-    if (old.imagePath != current.imagePath) {
+    if (old.fileName != current.fileName) {
       historyManager.executeCommand(
         UpdateImagePropertiesCommand(
           boxes: boxes,
           elementId: current.id,
           oldWidth: null,
           oldHeight: null,
-          oldImagePath: old.imagePath,
+          oldImagePath: old.fileName,
           newWidth: null,
           newHeight: null,
-          newImagePath: current.imagePath,
+          newImagePath: current.fileName,
         ),
       );
     }
 
-    if (old.imageAlpha != current.imageAlpha) {
+    if (old.fileAlpha != current.fileAlpha) {
       historyManager.executeCommand(
         UpdateImagePropertiesCommand(
           boxes: boxes,
@@ -576,8 +576,8 @@ mixin CanvasEditorUndoRedoMixin<T extends StatefulWidget> on State<T> {
           newWidth: null,
           newHeight: null,
           newImagePath: null,
-          oldImageAlpha: old.imageAlpha,
-          newImageAlpha: current.imageAlpha,
+          oldImageAlpha: old.fileAlpha,
+          newImageAlpha: current.fileAlpha,
         ),
       );
     }

@@ -198,10 +198,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                       constraints.maxHeight,
                     );
 
-                    debugPrint(
-                      "---你好好啊哈---${_canvalsController.canvasModel.fillColor}--------------",
-                    );
-
                     final canvasContent = Screenshot(
                       controller: _screenshotController,
                       child: ClipRect(
@@ -373,7 +369,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   @override
   void deleteImage() {
     if (activeElement != null) {
-      CanvalsFileManager.deleteFileByPath(activeElement!.imagePath);
+      CanvalsFileManager.deleteFileByPath(activeElement!.fileName);
       _canvasKey.currentState?.deleteBox(activeElement!.id);
       SmartDialog.dismiss();
     }
@@ -391,11 +387,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
     }
     ImageStorageManager.chooseImages(
       context: context,
-      canvalsID: _canvalsController.canvasModel.id,
       onSuccess: (String imagePath, double width, double height) {
-        CanvalsFileManager.deleteFileByPath(activeElement!.imagePath);
+        CanvalsFileManager.deleteFileByPath(activeElement!.fileName);
         setState(() {
-          activeElement!.imagePath = imagePath;
+          activeElement!.fileName = imagePath;
         });
       },
     );
@@ -421,7 +416,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
     }
     ImageStorageManager.chooseImages(
       context: context,
-      canvalsID: _canvalsController.canvasModel.id,
       onSuccess: (String imagePath, double width, double height) {
         _canvalsController.addNewImage(
           imagePath,

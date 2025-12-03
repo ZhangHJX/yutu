@@ -466,7 +466,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
 
     switch (layer.type) {
       case ElementType.image:
-        content = Image.file(File(layer.imagePath), fit: BoxFit.cover);
+        content = Image.file(File(layer.fileName), fit: BoxFit.cover);
         break;
       case ElementType.rectangle:
         content = Center(
