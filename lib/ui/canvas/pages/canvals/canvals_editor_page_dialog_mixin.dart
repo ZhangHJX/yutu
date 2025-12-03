@@ -6,6 +6,7 @@ import '../../model/index.dart';
 import '../../utils/index.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
 import '../../../utils/file/canvals_file_manager.dart';
+import '../../draft/index.dart';
 
 /// Dialog 管理功能 Mixin
 ///
@@ -43,6 +44,8 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
           if (update) {
             recordShapePropertyChange();
           }
+          // 通知草稿管理器元素属性已变更
+          DraftManager().notifyElementPropertyChanged();
         },
       ),
       alignment: Alignment.bottomCenter,
@@ -88,6 +91,8 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
           if (update) {
             recordTextPropertyChange();
           }
+          // 通知草稿管理器元素属性已变更
+          DraftManager().notifyElementPropertyChanged();
         },
       ),
       alignment: Alignment.bottomCenter,
@@ -118,6 +123,8 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
           if (update) {
             recordCanvasPropertyChange();
           }
+          // 通知草稿管理器画布属性已变更
+          DraftManager().notifyCanvasPropertyChanged();
         },
       ),
       alignment: Alignment.bottomCenter,
@@ -149,6 +156,8 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
           if (update) {
             recordImagePropertyChange();
           }
+          // 通知草稿管理器元素属性已变更
+          DraftManager().notifyElementPropertyChanged();
         },
         onDeleteImage: () {
           deleteImage();
@@ -288,7 +297,7 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
         cancelTitle: "直接退出",
         sureTitle: "保存为草稿",
         cancelAction: () {
-          CanvalsFileManager.deleteAllImagesInCavals(canvasModel.id);
+          DraftManager().deleteDraft();
           Get.back();
         },
         sureAction: () {},

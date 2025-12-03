@@ -13,6 +13,7 @@ import 'widgets/transform_canvas.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
 import 'canvals_editor_page_dialog_mixin.dart';
 import '../../../utils/file/canvals_file_manager.dart';
+import '../../draft/index.dart';
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -59,6 +60,16 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
 
     // 初始化画布属性快照
     initCanvasProperties();
+
+    // 启动草稿自动保存
+    DraftManager().startAutoSave(_canvalsController);
+  }
+
+  @override
+  void dispose() {
+    // 停止自动保存并保存最后一次
+    DraftManager().stopAutoSave();
+    super.dispose();
   }
 
   /// 删除形状
@@ -220,6 +231,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                                     onContentChanged: () {
                                       if (mounted) {
                                         setState(() {});
+                                        // 通知草稿管理器内容已变更
+                                        DraftManager().notifyElementsChanged();
                                       }
                                     },
                                     canvasMatrix: _canvalsController

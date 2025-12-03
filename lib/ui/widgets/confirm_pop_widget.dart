@@ -69,7 +69,7 @@ class ConfirmPopWidget extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      '取消',
+                      cancelTitle,
                       style: TextStyle(
                         fontSize: 16.w,
                         color: "#222325".color.withValues(alpha: 0.5),

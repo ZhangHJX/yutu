@@ -16,11 +16,6 @@ class CanvalsController extends GetxController {
 
   final RxList<CanvasElement> elements = <CanvasElement>[].obs;
 
-  void initializeCanvas(CanvasModel model) {
-    elements.assignAll(model.elements);
-    model.elements = elements;
-  }
-
   CanvasModel? buildSnapshot() {
     // 使用 JSON 序列化方式克隆画布模型
     final cloned = CanvasModelClone.clone(canvasModel);

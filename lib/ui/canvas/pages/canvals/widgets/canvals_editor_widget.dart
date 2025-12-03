@@ -7,7 +7,7 @@ import '../../../widgets/dialog/text_input_dialog.dart';
 import '../../../utils/text_measure_util.dart';
 import '../../../history/index.dart';
 import '../../../model/index.dart';
-import '../../../utils/index.dart';
+import '../../../draft/index.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
   final CanvasHistoryManager? historyManager;
@@ -78,6 +78,9 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         ),
       );
     }
+
+    // 通知草稿管理器元素顺序已变更
+    DraftManager().notifyElementsChanged();
   }
 
   /// 计算适合画布的图片尺寸
@@ -232,6 +235,9 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
     // 自动选中新添加的元素
     _selectionController.select(newId);
+
+    // 通知草稿管理器元素已添加
+    DraftManager().notifyElementsChanged();
   }
 
   void setActive(String? id) {
@@ -281,6 +287,9 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         DeleteElementCommand(boxes, clonedElement),
       );
     }
+
+    // 通知草稿管理器元素已删除
+    DraftManager().notifyElementsChanged();
   }
 
   /// 显示文本输
