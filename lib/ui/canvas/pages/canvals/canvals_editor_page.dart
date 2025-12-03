@@ -12,6 +12,7 @@ import '../../model/index.dart';
 import 'widgets/transform_canvas.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
 import 'canvals_editor_page_dialog_mixin.dart';
+import '../../../utils/file/canvals_file_manager.dart';
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -328,7 +329,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                   } else {
                     // 根据元素类型显示不同的属性弹框
                     if (activeElement?.type == ElementType.image) {
-                      showImagePropertyDialog();
+                      showImagePropertyDialog(context);
                     } else if (activeElement?.type == ElementType.rectangle ||
                         activeElement?.type == ElementType.ellipse ||
                         activeElement?.type == ElementType.line) {
@@ -353,6 +354,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   @override
   void deleteImage() {
     if (activeElement != null) {
+      CanvalsFileManager.deleteFileByPath(activeElement!.imagePath);
       _canvasKey.currentState?.deleteBox(activeElement!.id);
       SmartDialog.dismiss();
     }
@@ -360,17 +362,22 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
 
   /// 替换图片
   @override
-  void replaceImage(BuildContext context) {
-    SelectSourceTools.chooseImages(
+  void replaceImage(BuildContext context) async {
+    final res = await PermissionUtil.requestPhotoAlbumPermission();
+    if (!res) {
+      return;
+    }
+    if (!context.mounted) {
+      return;
+    }
+    ImageStorageManager.chooseImages(
       context: context,
-      onSuccess: (AssetEntity assetEntity) {
-        final imagePath = assetEntity.relativePath;
-        if (imagePath != null) {
-          debugPrint('选择的图片路径: $imagePath');
-          setState(() {
-            activeElement!.imagePath = imagePath;
-          });
-        }
+      canvalsID: _canvalsController.canvasModel.id,
+      onSuccess: (String imagePath, double width, double height) {
+        CanvalsFileManager.deleteFileByPath(activeElement!.imagePath);
+        setState(() {
+          activeElement!.imagePath = imagePath;
+        });
       },
     );
   }
@@ -379,17 +386,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   void _addImageDialog(BuildContext context) async {
     toggleLayerDialog(false);
     final res = await PermissionUtil.requestPhotoAlbumPermission();
-    if (res && mounted) {
-      SelectSourceTools.chooseImages(
-        context: context,
-        onSuccess: (AssetEntity assetEntity) {
-          _canvalsController.addNewImage(
-            assetEntity,
-            targetCenter: getCanvasCenter(),
-          );
-        },
-      );
-    } else {
+    if (!res) {
       showPermissionDialog(
         title: '提示',
         subTitle: '打开相册以上传图片到编辑器\n中进行进一步编辑',
@@ -398,7 +395,23 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
           AppSettings.openAppSettings(type: AppSettingsType.settings);
         },
       );
+      return;
     }
+    if (!context.mounted) {
+      return;
+    }
+    ImageStorageManager.chooseImages(
+      context: context,
+      canvalsID: _canvalsController.canvasModel.id,
+      onSuccess: (String imagePath, double width, double height) {
+        _canvalsController.addNewImage(
+          imagePath,
+          width,
+          height,
+          targetCenter: getCanvasCenter(),
+        );
+      },
+    );
   }
 
   /// 显示图层弹框

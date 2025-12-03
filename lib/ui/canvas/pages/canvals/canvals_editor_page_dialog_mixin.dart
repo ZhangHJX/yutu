@@ -5,6 +5,7 @@ import '../../history/clone_tools/edit_box_data_clone.dart';
 import '../../model/index.dart';
 import '../../utils/index.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
+import '../../../utils/file/canvals_file_manager.dart';
 
 /// Dialog 管理功能 Mixin
 ///
@@ -129,7 +130,7 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
   }
 
   /// 显示图片属性弹框
-  void showImagePropertyDialog() {
+  void showImagePropertyDialog(BuildContext currentContext) {
     if (activeElement == null || activeElement!.type != ElementType.image) {
       return;
     }
@@ -140,7 +141,7 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
       builder: (context) => ImagePropertyDialog(
         element: activeElement,
         replaceImage: () {
-          replaceImage(context);
+          replaceImage(currentContext);
         },
         onValueChanged: (update) {
           setState(() {}); // 触发界面重绘
@@ -254,6 +255,8 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
 
   /// 显示是否保存为草稿
   void showIsSaveDraftDialog() {
+    final canvasModel = canvalsController.canvasModel;
+
     final textWidget = RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
@@ -284,7 +287,10 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
         subTitleWidget: textWidget,
         cancelTitle: "直接退出",
         sureTitle: "保存为草稿",
-        cancelAction: () => Get.back(),
+        cancelAction: () {
+          CanvalsFileManager.deleteAllImagesInCavals(canvasModel.id);
+          Get.back();
+        },
         sureAction: () {},
       ),
       alignment: Alignment.center,

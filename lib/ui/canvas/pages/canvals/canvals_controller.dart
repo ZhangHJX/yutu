@@ -2,7 +2,6 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../model/index.dart';
-import '../../utils/index.dart';
 import '../../history/clone_tools/canvas_model_clone.dart';
 import 'dart:math' as math;
 
@@ -68,9 +67,6 @@ class CanvalsController extends GetxController {
   // 添加标记
   final RxBool _shouldAdd = false.obs;
 
-  // 添加图片标记
-  final RxBool _shouldAddImage = false.obs;
-
   // UUID生成器
   final Uuid _uuid = const Uuid();
 
@@ -83,9 +79,15 @@ class CanvalsController extends GetxController {
   /// 获取添加标记
   bool get shouldAdd => _shouldAdd.value;
 
-  /// 获取添加图片标记
+  // 图片相关操作
+  final RxBool _shouldAddImage = false.obs;
   bool get shouldAddImage => _shouldAddImage.value;
-  Rxn<AssetEntity> selectedAsset = Rxn<AssetEntity>();
+
+  final RxString _imagePath = ''.obs;
+  String get imagePath => _imagePath.value;
+
+  double imageWidth = 0.0;
+  double imageHeight = 0.0;
 
   Offset center = Offset.zero;
 
@@ -136,7 +138,9 @@ class CanvalsController extends GetxController {
   /// 清除添加图片标记
   void clearAddImageFlag() {
     _shouldAddImage.value = false;
-    selectedAsset.value = null;
+    _imagePath.value = '';
+    imageWidth = 0.0;
+    imageHeight = 0.0;
   }
 
   /// 清除删除标记
@@ -145,11 +149,18 @@ class CanvalsController extends GetxController {
   }
 
   /// 标记需要添加新的图片元素
-  void addNewImage(AssetEntity assetEntity, {Offset? targetCenter}) {
+  void addNewImage(
+    String imagePath,
+    double width,
+    double height, {
+    Offset? targetCenter,
+  }) {
     if (targetCenter != null) {
       center = targetCenter;
     }
-    selectedAsset.value = assetEntity;
+    imageWidth = width;
+    imageHeight = height;
+    _imagePath.value = imagePath;
     _shouldAddImage.value = true;
   }
 

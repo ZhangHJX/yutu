@@ -93,10 +93,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     double width = imageSize.width;
     double height = imageSize.height;
 
-    debugPrint(
-      '_calculateFitSize 图片的尺寸是多少: $width === $height====$maxWidth====$maxHeight',
-    );
-
     // 如果图片太大，按比例缩小
     if (width > maxDisplayWidth || height > maxDisplayHeight) {
       final widthRatio = maxDisplayWidth / width;
@@ -176,8 +172,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   Future<void> addBox({
     required ElementType type,
     required Offset center,
-    AssetEntity? assetEntity,
     String text = '',
+    String imagePath = '',
   }) async {
     final newId = _selectionController.generateId();
 
@@ -186,17 +182,11 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     // 根据类型确定宽高
     double finalWidth = 200.w; // 默认宽度
     double finalHeight = 200.w; // 默认高度
-    String imagePath = '';
 
     // 如果是图片类型，根据图片实际尺寸计算
-    if (type == ElementType.image && assetEntity != null) {
-      final f = await assetEntity.file;
-      if (f != null) {
-        imagePath = f.path;
-      }
-
+    if (type == ElementType.image) {
       final fitSize = _calculateFitSize(
-        Size(assetEntity.width.toDouble(), assetEntity.height.toDouble()),
+        Size(_selectionController.imageWidth, _selectionController.imageHeight),
         _selectionController.canvalsWidth,
         _selectionController.canvalsHeight,
       );
@@ -219,8 +209,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     // 获取屏幕中心在画布坐标中的位置（考虑平移和缩放）
     final centerX = center.dx - finalWidth / 2;
     final centerY = center.dy - finalHeight / 2;
-
-    debugPrint('获取的Box尺寸: $newId ');
 
     final newElement = CanvasElement(
       id: newId,
@@ -427,15 +415,12 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       // 监听添加图片标记
       if (_selectionController.shouldAddImage) {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
-          if (_selectionController.selectedAsset.value != null) {
-            addBox(
-              type: ElementType.image,
-              assetEntity: _selectionController.selectedAsset.value,
-              center: _selectionController.center,
-              // width 和 height 不传，会根据图片自动计算
-            );
-            _selectionController.clearAddImageFlag();
-          }
+          addBox(
+            type: ElementType.image,
+            center: _selectionController.center,
+            imagePath: _selectionController.imagePath,
+          );
+          _selectionController.clearAddImageFlag();
         });
       }
 
