@@ -93,8 +93,8 @@ class CanvalsController extends GetxController {
   final RxBool _shouldAddImage = false.obs;
   bool get shouldAddImage => _shouldAddImage.value;
 
-  final RxString _imagePath = ''.obs;
-  String get imagePath => _imagePath.value;
+  final RxString _fileName = ''.obs;
+  String get fileName => _fileName.value;
 
   double imageWidth = 0.0;
   double imageHeight = 0.0;
@@ -148,7 +148,7 @@ class CanvalsController extends GetxController {
   /// 清除添加图片标记
   void clearAddImageFlag() {
     _shouldAddImage.value = false;
-    _imagePath.value = '';
+    _fileName.value = '';
     imageWidth = 0.0;
     imageHeight = 0.0;
   }
@@ -160,7 +160,7 @@ class CanvalsController extends GetxController {
 
   /// 标记需要添加新的图片元素
   void addNewImage(
-    String imagePath,
+    String fileName,
     double width,
     double height, {
     Offset? targetCenter,
@@ -170,7 +170,7 @@ class CanvalsController extends GetxController {
     }
     imageWidth = width;
     imageHeight = height;
-    _imagePath.value = imagePath;
+    _fileName.value = fileName;
     _shouldAddImage.value = true;
   }
 

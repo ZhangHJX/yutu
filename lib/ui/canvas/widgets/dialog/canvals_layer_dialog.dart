@@ -4,6 +4,7 @@ import '../../pages/canvals/canvals_controller.dart';
 import '../../utils/gradient_border.dart';
 import '../../model/index.dart';
 import 'dart:io';
+import '../../../utils/file/canvals_file_manager.dart';
 
 class CanvalsLayerDialog extends StatefulWidget {
   final CanvasModel canvasModel;
@@ -466,7 +467,12 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
 
     switch (layer.type) {
       case ElementType.image:
-        content = Image.file(File(layer.fileName), fit: BoxFit.cover);
+        content = Image.file(
+          File(
+            CanvalsFileManager.getImageFullPathByFileName(layer.fileName),
+          ),
+          fit: BoxFit.cover,
+        );
         break;
       case ElementType.rectangle:
         content = Center(

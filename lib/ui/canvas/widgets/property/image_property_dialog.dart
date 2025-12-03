@@ -49,7 +49,9 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
     widget.element?.width = _imageWidth ?? 0.0;
     widget.element?.height = _imageHeight ?? 0.0;
     widget.element?.fileAlpha = _imageAlpha;
-    widget.element?.fileName = _imagePath ?? "";
+    if (_imagePath != null && _imagePath!.isNotEmpty) {
+      widget.element?.fileName = basename(_imagePath!);
+    }
     widget.onValueChanged?.call(notify);
   }
 

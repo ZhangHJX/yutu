@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/index.dart';
 import '../canvas/draft/index.dart';
 import '../../app/routes/index.dart';
+import '../utils/file/canvals_file_manager.dart';
 
 class HomeLogic extends GetxController {
   @override
@@ -14,6 +15,9 @@ class HomeLogic extends GetxController {
   void showDraftDialog() async {
     final isHave = await DraftManager().hasDraft();
     if (isHave) {
+      // 预初始化图片目录，确保后续可以通过文件名快速构造完整路径
+      await CanvalsFileManager.getImagesDirectory();
+
       SmartDialog.show(
         builder: (context) => ConfirmPopWidget(
           title: "继续编辑",

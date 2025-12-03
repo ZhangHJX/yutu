@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'canvas_text_widget.dart';
 import '../../../model/index.dart';
 import 'dart:io';
+import '../../../../utils/file/canvals_file_manager.dart';
 
 class CanvasElementWidget extends StatelessWidget {
   final CanvasElement data;
@@ -30,7 +31,9 @@ class CanvasElementWidget extends StatelessWidget {
         return Opacity(
           opacity: data.fileAlpha,
           child: Image.file(
-            File(data.fileName),
+            File(
+              CanvalsFileManager.getImageFullPathByFileName(data.fileName),
+            ),
             width: data.width,
             height: data.height,
             fit: BoxFit.cover,

@@ -7,6 +7,7 @@ import 'dart:io';
 /// - 初始化应用目录
 /// - 获取常用路径（文档目录、缓存目录）
 class CanvalsFileManager {
+  static String? _imagesDirPath;
   static const List<String> _imageExtensions = <String>[
     '.jpg',
     '.jpeg',
@@ -36,12 +37,23 @@ class CanvalsFileManager {
     );
     final Directory imagesDirectory = Directory(imagesDirectoryPath);
 
-    if (await imagesDirectory.exists()) {
-      return imagesDirectory;
+    if (!await imagesDirectory.exists()) {
+      await imagesDirectory.create(recursive: true);
     }
 
-    await imagesDirectory.create(recursive: true);
+    _imagesDirPath = imagesDirectory.path;
     return imagesDirectory;
+  }
+
+  /// 获取当前图片目录的绝对路径（如果尚未初始化，会返回 null）
+  static String? get imagesDirPath => _imagesDirPath;
+
+  /// 根据文件名构造完整路径（需要先通过 [getImagesDirectory] 初始化）
+  static String getImageFullPathByFileName(String fileName) {
+    if (_imagesDirPath == null) {
+      throw StateError('Images directory not initialized');
+    }
+    return p.join(_imagesDirPath!, fileName);
   }
 
   /// 已有：根据完整路径删除单个文件

@@ -3,18 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import '../canvals_file_manager.dart';
+import 'package:path/path.dart' as p;
 import 'dart:io';
 import 'dart:ui' as ui;
 
 /// 图片处理结果
 class ImageProcessResult {
-  final String? imagePath;
+  final String? fileName;
   final double width;
   final double height;
   final bool success;
 
   ImageProcessResult({
-    this.imagePath,
+    this.fileName,
     required this.width,
     required this.height,
     required this.success,
@@ -27,7 +28,7 @@ class ImageStorageManager {
   // 只从相册获取数据
   static void chooseImages({
     required BuildContext context,
-    required void Function(String imagePath, double width, double height)
+    required void Function(String fileName, double width, double height)
     onSuccess,
   }) async {
     try {
@@ -40,9 +41,9 @@ class ImageStorageManager {
           result.last,
           targetPath,
         );
-        if (processResult.success && processResult.imagePath != null) {
+        if (processResult.success && processResult.fileName != null) {
           onSuccess(
-            processResult.imagePath!,
+            processResult.fileName!,
             processResult.width,
             processResult.height,
           );
@@ -140,12 +141,19 @@ class ImageStorageManager {
     final double width = size?.width ?? asset.width.toDouble();
     final double height = size?.height ?? asset.height.toDouble();
 
+    final fileName = await handleFileName(finalFile);
     return ImageProcessResult(
-      imagePath: finalFile.path,
+      fileName: fileName,
       width: width,
       height: height,
       success: true,
     );
+  }
+
+  static Future<String> handleFileName(File finalFile) async {
+    final String fullPath = finalFile.path;
+    final String fileName = p.basename(fullPath); // 例如 1764750207110.jpg
+    return fileName;
   }
 
   // 工具：计算是否超过限制

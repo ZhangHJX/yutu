@@ -369,7 +369,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   @override
   void deleteImage() {
     if (activeElement != null) {
-      CanvalsFileManager.deleteFileByPath(activeElement!.fileName);
+      final fullPath = CanvalsFileManager.getImageFullPathByFileName(
+        activeElement!.fileName,
+      );
+      CanvalsFileManager.deleteFileByPath(fullPath);
       _canvasKey.currentState?.deleteBox(activeElement!.id);
       SmartDialog.dismiss();
     }
@@ -387,10 +390,13 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
     }
     ImageStorageManager.chooseImages(
       context: context,
-      onSuccess: (String imagePath, double width, double height) {
-        CanvalsFileManager.deleteFileByPath(activeElement!.fileName);
+      onSuccess: (String fileName, double width, double height) {
+        final oldPath = CanvalsFileManager.getImageFullPathByFileName(
+          activeElement!.fileName,
+        );
+        CanvalsFileManager.deleteFileByPath(oldPath);
         setState(() {
-          activeElement!.fileName = imagePath;
+          activeElement!.fileName = basename(fileName);
         });
       },
     );
@@ -416,9 +422,9 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
     }
     ImageStorageManager.chooseImages(
       context: context,
-      onSuccess: (String imagePath, double width, double height) {
+      onSuccess: (String fileName, double width, double height) {
         _canvalsController.addNewImage(
-          imagePath,
+          fileName,
           width,
           height,
           targetCenter: getCanvasCenter(),
