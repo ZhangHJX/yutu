@@ -144,7 +144,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
 
       canvalsModel.getMatrix4();
       _onCancel();
-      Get.toNamed(AppRoutes.createCanvalsPage, arguments: canvalsModel);
+      Get.toNamed(AppRoutes.canvalsPage, arguments: canvalsModel);
     } else {
       double width = double.parse(_widthController.text);
       double height = double.parse(_heightController.text);
@@ -155,7 +155,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
       );
       canvalsModel.getMatrix4();
       _onCancel();
-      Get.toNamed(AppRoutes.createCanvalsPage, arguments: canvalsModel);
+      Get.toNamed(AppRoutes.canvalsPage, arguments: canvalsModel);
     }
   }
 

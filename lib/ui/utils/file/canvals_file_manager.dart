@@ -21,7 +21,8 @@ class CanvalsFileManager {
     final Directory imageDirectory = await getImagesDirectory(canvalsID);
     final int timestampMillis = DateTime.now().millisecondsSinceEpoch;
     final String fileName = '$timestampMillis.jpg';
-    return p.join(imageDirectory.path, fileName);
+    final imagePath = p.join(imageDirectory.path, fileName);
+    return imagePath;
   }
 
   // 已有：获取 cavals/images 目录

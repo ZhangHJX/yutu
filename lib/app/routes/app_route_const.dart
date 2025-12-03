@@ -15,7 +15,7 @@ class AppRoutes {
   static const login = '/login';
 
   /// 画布页面
-  static const createCanvalsPage = '/create_canvals_page';
+  static const canvalsPage = '/canvals_page';
 
   /// 我的模块页面
   static const appInfoPage = '/app_info_page';

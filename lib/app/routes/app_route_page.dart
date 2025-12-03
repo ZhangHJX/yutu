@@ -36,7 +36,7 @@ final List<GetPage> getPages = [
   // GetPage(name: AppRoutes.designPage, page: CreateDesignPage.new, transition: Transition.downToUp),
 
   // 画布页面
-  GetPage(name: AppRoutes.createCanvalsPage, page: CanvasEditorPage.new),
+  GetPage(name: AppRoutes.canvalsPage, page: CanvasEditorPage.new),
 
   //我的模块
   GetPage(name: AppRoutes.appInfoPage, page: AppInfoPage.new),

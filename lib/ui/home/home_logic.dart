@@ -2,6 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../widgets/index.dart';
 import '../canvas/draft/index.dart';
+import '../../app/routes/index.dart';
 
 class HomeLogic extends GetxController {
   @override
@@ -20,7 +21,22 @@ class HomeLogic extends GetxController {
           cancelAction: () {
             DraftManager().deleteDraft();
           },
-          sureAction: () {},
+          sureAction: () {
+            // 异步加载草稿并跳转到画布页面
+            () async {
+              final draft = await DraftManager().loadDraft();
+              if (draft == null) {
+                SmartDialog.dismiss();
+                return;
+              }
+
+              // 根据当前屏幕重新计算画布矩阵
+              draft.getMatrix4();
+
+              SmartDialog.dismiss();
+              Get.toNamed(AppRoutes.canvalsPage, arguments: draft);
+            }();
+          },
         ),
         alignment: Alignment.center,
         animationType: SmartAnimationType.centerFade_otherSlide,

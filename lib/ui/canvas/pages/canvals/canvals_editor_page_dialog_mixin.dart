@@ -5,7 +5,6 @@ import '../../history/clone_tools/edit_box_data_clone.dart';
 import '../../model/index.dart';
 import '../../utils/index.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
-import '../../../utils/file/canvals_file_manager.dart';
 import '../../draft/index.dart';
 
 /// Dialog 管理功能 Mixin
@@ -264,8 +263,6 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
 
   /// 显示是否保存为草稿
   void showIsSaveDraftDialog() {
-    final canvasModel = canvalsController.canvasModel;
-
     final textWidget = RichText(
       textAlign: TextAlign.center,
       text: TextSpan(

@@ -16,6 +16,21 @@ class CanvalsController extends GetxController {
 
   final RxList<CanvasElement> elements = <CanvasElement>[].obs;
 
+  @override
+  void onInit() {
+    super.onInit();
+    // 如果画布模型中已经包含元素（例如从草稿恢复），将其同步到响应式列表
+    if (canvasModel.elements.isNotEmpty) {
+      elements.assignAll(canvasModel.elements);
+      canvasModel.elements = elements;
+    } else {
+      // 确保模型中的元素列表引用响应式列表，便于后续保存快照
+      canvasModel.elements = elements;
+    }
+
+    debugPrint("--走过的路线---onInit---");
+  }
+
   CanvasModel? buildSnapshot() {
     // 使用 JSON 序列化方式克隆画布模型
     final cloned = CanvasModelClone.clone(canvasModel);

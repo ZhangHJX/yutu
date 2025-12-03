@@ -63,6 +63,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
 
     // 启动草稿自动保存
     DraftManager().startAutoSave(_canvalsController);
+
+    debugPrint("--画布页面的初始化---initState---");
   }
 
   @override
@@ -194,6 +196,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                     _canvalsController.getCanvalsSize(
                       constraints.maxWidth,
                       constraints.maxHeight,
+                    );
+
+                    debugPrint(
+                      "---你好好啊哈---${_canvalsController.canvasModel.fillColor}--------------",
                     );
 
                     final canvasContent = Screenshot(
