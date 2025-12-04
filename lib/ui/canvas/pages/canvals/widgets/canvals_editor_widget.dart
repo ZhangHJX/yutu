@@ -4,6 +4,7 @@ import '../canvals_controller.dart';
 import 'canvas_element_widget.dart';
 import '../../../gesture/element_gesture_manager.dart';
 import '../../../widgets/dialog/text_input_dialog.dart';
+import '../../../widgets/snap_lines_painter.dart';
 import '../../../utils/text_measure_util.dart';
 import '../../../history/index.dart';
 import '../../../model/index.dart';
@@ -450,6 +451,16 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
               .map(
                 (box) => CanvasElementWidget(key: ValueKey(box.id), data: box),
               ),
+
+          // 吸附参考线（最上层）
+          if (_gestureManager.currentSnapLines.isNotEmpty)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: SnapLinesPainter(
+                  snapLines: _gestureManager.currentSnapLines,
+                ),
+              ),
+            ),
         ],
       );
     });

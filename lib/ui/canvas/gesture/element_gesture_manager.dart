@@ -4,7 +4,7 @@ import '../history/index.dart';
 import 'element_extension/element_interaction_state.dart';
 import '../model/index.dart';
 import 'dart:math' as math;
-import 'matrix_utils.dart';
+import 'element_snap_helper.dart';
 
 part 'element_extension/element_gesture_session.dart';
 part 'element_extension/element_gesture_manager_image.dart';
@@ -16,6 +16,12 @@ class ElementGestureManager {
   final _GestureSession _session = _GestureSession();
   CanvasHistoryManager? historyManager;
   static const double dragStartThreshold = 5.0; // 开始拖动的距离阈值
+  
+  // 吸附相关状态
+  List<SnapLine> _currentSnapLines = [];
+  
+  /// 获取当前的吸附参考线（用于UI绘制）
+  List<SnapLine> get currentSnapLines => _currentSnapLines;
 
   // 每个元素的交互状态缓存
   final Map<String, ElementInteractionState> _interactionStates = {};
@@ -327,8 +333,20 @@ class ElementGestureManager {
             _session.dragStartElementPosition != null) {
           final delta = event.localPosition - _session.dragStartPointer!;
           final position = _session.dragStartElementPosition! + delta;
-          targetBox.x = position.dx;
-          targetBox.y = position.dy;
+          
+          // 检测吸附
+          final snapResult = ElementSnapHelper.checkSnap(
+            targetBox,
+            position,
+            boxes,
+          );
+          
+          // 更新吸附参考线
+          _currentSnapLines = snapResult.snapLines;
+          
+          // 应用吸附后的位置
+          targetBox.x = snapResult.position.dx;
+          targetBox.y = snapResult.position.dy;
         } else {
           debugPrint(
             '⚠️ 拖动失败: dragStartPointer=${_session.dragStartPointer}, dragStartElementPosition=${_session.dragStartElementPosition}，重置状态',
@@ -655,6 +673,7 @@ class ElementGestureManager {
   void _resetDragState() {
     _session.dragStartPointer = null;
     _session.dragStartElementPosition = null;
+    _currentSnapLines = [];
   }
 
   /// 重置所有状态
@@ -662,6 +681,7 @@ class ElementGestureManager {
     _resetDragState();
     _session.resetPointers();
     _session.reset();
+    _currentSnapLines = [];
   }
 
   /// 开始调整大小
