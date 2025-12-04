@@ -79,15 +79,15 @@ class MinePage extends StatelessWidget {
 
           const Spacer(),
 
-          GestureDetector(
-            onTap: logic.onTapMyServices,
-            child: Image.asset(
-              "assets/images/mine/mine_top_services.png",
-              width: 22.w,
-              height: 22.w,
-              fit: BoxFit.cover,
-            ),
-          ),
+          // GestureDetector(
+          //   onTap: logic.onTapMyServices,
+          //   child: Image.asset(
+          //     "assets/images/mine/mine_top_services.png",
+          //     width: 22.w,
+          //     height: 22.w,
+          //     fit: BoxFit.cover,
+          //   ),
+          // ),
         ],
       ),
     );
@@ -116,39 +116,49 @@ class MinePage extends StatelessWidget {
                 Center(
                   child: Padding(
                     padding: EdgeInsets.all(4.w),
-                    child: ClipOval(
-                      child: user.avatar.isEmpty
-                          ? Container(
-                              width: 56.w,
-                              height: 56.w,
-                              color: const Color(0xFFF2F3F7),
-                              child: const Icon(Icons.person_outline, size: 32),
-                            )
-                          :
-                            // : Image.network(
-                            //     user.avatar,
-                            //     width: 56,
-                            //     height: 56,
-                            //     fit: BoxFit.cover,
-                            //   ),
-                            Image.asset(
-                              "assets/images/mine/mine_info_editor.png",
-                              fit: BoxFit.cover,
-                            ),
+                    child: GestureDetector(
+                      onTap: logic.onTapPersonInfo,
+                      child: ClipOval(
+                        child: user.avatar.isEmpty
+                            ? Container(
+                                width: 56.w,
+                                height: 56.w,
+                                color: const Color(0xFFF2F3F7),
+                                child: const Icon(
+                                  Icons.person_outline,
+                                  size: 32,
+                                ),
+                              )
+                            :
+                              // : Image.network(
+                              //     user.avatar,
+                              //     width: 56,
+                              //     height: 56,
+                              //     fit: BoxFit.cover,
+                              //   ),
+                              Image.asset(
+                                "assets/images/mine/mine_info_editor.png",
+                                fit: BoxFit.cover,
+                              ),
+                      ),
                     ),
                   ),
                 ),
 
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Image.asset(
-                    "assets/images/mine/mine_info_editor.png",
-                    width: 18.w,
-                    height: 18.w,
-                    fit: BoxFit.cover,
+                if (logic.isLogin.value)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: logic.onTapPersonInfo,
+                      child: Image.asset(
+                        "assets/images/mine/mine_info_editor.png",
+                        width: 18.w,
+                        height: 18.w,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -176,15 +186,6 @@ class MinePage extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          ),
-
-          CButton.icon(
-            size: 32.w,
-            onPressed: logic.onTapPersonInfo,
-            child: Image.asset(
-              "assets/images/mine/mine_info_go.png",
-              fit: BoxFit.cover,
             ),
           ),
         ],

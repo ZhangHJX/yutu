@@ -14,102 +14,103 @@ class PersonInfoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
+      backgroundColor: "#F5F5F5".color,
       resizeToAvoidBottomInset: false,
-      body: KeyboardVisibilityBuilder(
-        builder: (context, isKeyboardVisible) {
-          final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
-          final buttonBottom = isKeyboardVisible
-              ? keyboardInset + 12.w
-              : ScreenTools.bottomBarHeight + 12.w;
-          final scrollBottomPadding = buttonBottom + 56.w;
-
-          return Stack(
-            children: [
-              AppStatusBar(),
-              Column(
-                children: [
-                  CAppBar(
-                    title: const Text(
-                      '个人资料',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    backgroundColor: Colors.transparent,
-                  ),
-
-                  SizedBox(height: 12.w),
-
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.only(
-                        left: 13.w,
-                        right: 13.w,
-                        bottom: scrollBottomPadding,
+      body: KeyboardDismissOnTap(
+        child: KeyboardVisibilityBuilder(
+          builder: (context, isKeyboardVisible) {
+            final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
+            final buttonBottom = isKeyboardVisible
+                ? keyboardInset + 12.w
+                : ScreenTools.bottomBarHeight + 12.w;
+            final scrollBottomPadding = buttonBottom + 56.w;
+            return Stack(
+              children: [
+                AppStatusBar(),
+                Column(
+                  children: [
+                    CAppBar(
+                      title: const Text(
+                        '个人资料',
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          /// 头像
-                          PersonInfoAvatar(logic: logic),
+                      backgroundColor: Colors.transparent,
+                    ),
 
-                          SizedBox(height: 30.w),
+                    SizedBox(height: 12.w),
 
-                          ProfileInput(
-                            label: "昵称",
-                            controller: logic.nicknameCtrl,
-                            hint: "输入昵称",
-                            maxLength: 15,
-                          ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.only(
+                          left: 13.w,
+                          right: 13.w,
+                          bottom: scrollBottomPadding,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            /// 头像
+                            PersonInfoAvatar(logic: logic),
 
-                          const SizedBox(height: 20),
+                            SizedBox(height: 30.w),
 
-                          Obx(
-                            () => ProfileInput(
-                              label: "手机号",
-                              controller: logic.phoneCtrl,
-                              readOnly: logic.phoneBound.value,
-                              hint: logic.phoneBound.value
-                                  ? logic.phone.value
-                                  : "输入手机号",
-                              suffix: logic.phoneBound.value
-                                  ? const Text(
-                                      "(已绑定)",
-                                      style: TextStyle(
-                                        color: Color(0xFF4A8DFF),
-                                      ),
-                                    )
-                                  : null,
+                            ProfileInput(
+                              label: "昵称",
+                              controller: logic.nicknameCtrl,
+                              hint: "输入昵称",
+                              maxLength: 15,
                             ),
-                          ),
 
-                          const SizedBox(height: 20),
+                            const SizedBox(height: 20),
 
-                          ProfileInput(
-                            label: "个性签名",
-                            controller: logic.signatureCtrl,
-                            maxLines: 5,
-                            maxLength: 30,
-                            showCounter: true,
-                            hint: "输入你的签名吧~",
-                          ),
+                            Obx(
+                              () => ProfileInput(
+                                label: "手机号",
+                                controller: logic.phoneCtrl,
+                                readOnly: logic.phoneBound.value,
+                                hint: logic.phoneBound.value
+                                    ? logic.phone.value
+                                    : "输入手机号",
+                                suffix: logic.phoneBound.value
+                                    ? const Text(
+                                        "(已绑定)",
+                                        style: TextStyle(
+                                          color: Color(0xFF4A8DFF),
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ),
 
-                          SizedBox(height: 12.w),
-                        ],
+                            const SizedBox(height: 20),
+
+                            ProfileInput(
+                              label: "个性签名",
+                              controller: logic.signatureCtrl,
+                              maxLines: 5,
+                              maxLength: 30,
+                              showCounter: true,
+                              hint: "输入你的签名吧~",
+                            ),
+
+                            SizedBox(height: 12.w),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
 
-              Positioned(
-                left: 13.w,
-                right: 13.w,
-                bottom: buttonBottom,
-                child: _buildSaveButton(logic),
-              ),
-            ],
-          );
-        },
+                Positioned(
+                  left: 13.w,
+                  right: 13.w,
+                  bottom: buttonBottom,
+                  child: _buildSaveButton(logic),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

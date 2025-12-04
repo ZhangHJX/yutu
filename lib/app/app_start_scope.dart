@@ -31,7 +31,6 @@ class AppStartScope extends HookWidget {
 
         await dotenv.load(fileName: 'env/.env', mergeWith: dstMap);
 
-
         final cost = DateTime.now().millisecondsSinceEpoch - timeRecord.value;
         debugPrint('App启动耗时:$cost ms');
         final waitTime = minStartDurationMs - cost;
