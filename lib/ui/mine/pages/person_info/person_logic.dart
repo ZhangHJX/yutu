@@ -1,5 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import '../../../../stores/user_model.dart';
 import 'package:voicetemplate/stores/global.dart';
 
@@ -55,15 +56,6 @@ class PersonLogic extends GetxController {
     // if (img != null) {
     //   avatar.value = img.path; // 本地路径
     // }
-  }
-
-  /// 保存资料
-  @override
-  void onClose() {
-    nicknameCtrl.dispose();
-    signatureCtrl.dispose();
-    phoneCtrl.dispose();
-    super.onClose();
   }
 
   Future<void> save() async {

@@ -52,7 +52,7 @@ class PersonInfoPage extends StatelessWidget {
                             /// 头像
                             PersonInfoAvatar(logic: logic),
 
-                            SizedBox(height: 30.w),
+                            SizedBox(height: 24.w),
 
                             ProfileInput(
                               label: "昵称",
@@ -61,7 +61,7 @@ class PersonInfoPage extends StatelessWidget {
                               maxLength: 15,
                             ),
 
-                            const SizedBox(height: 20),
+                            SizedBox(height: 16.w),
 
                             Obx(
                               () => ProfileInput(
@@ -71,18 +71,10 @@ class PersonInfoPage extends StatelessWidget {
                                 hint: logic.phoneBound.value
                                     ? logic.phone.value
                                     : "输入手机号",
-                                suffix: logic.phoneBound.value
-                                    ? const Text(
-                                        "(已绑定)",
-                                        style: TextStyle(
-                                          color: Color(0xFF4A8DFF),
-                                        ),
-                                      )
-                                    : null,
                               ),
                             ),
 
-                            const SizedBox(height: 20),
+                            SizedBox(height: 16.w),
 
                             ProfileInput(
                               label: "个性签名",
@@ -92,8 +84,16 @@ class PersonInfoPage extends StatelessWidget {
                               showCounter: true,
                               hint: "输入你的签名吧~",
                             ),
-
-                            SizedBox(height: 12.w),
+                            SizedBox(height: 33.w),
+                            Text(
+                              '提示：修改的头像、呢称和个性签名将提交审核，审核\n通过后自动生效。请勿上传违规内容。',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 11.w,
+                                color: "#9E9E9E".color,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ],
                         ),
                       ),
