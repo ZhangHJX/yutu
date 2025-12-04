@@ -15,7 +15,8 @@ class PersonInfoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: "#F5F5F5".color,
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
+      bottomNavigationBar: SafeArea(top: false, child: _buildSaveButton(logic)),
       body: KeyboardDismissOnTap(
         child: KeyboardVisibilityBuilder(
           builder: (context, isKeyboardVisible) {
@@ -23,7 +24,7 @@ class PersonInfoPage extends StatelessWidget {
             final buttonBottom = isKeyboardVisible
                 ? keyboardInset + 12.w
                 : ScreenTools.bottomBarHeight + 12.w;
-            final scrollBottomPadding = buttonBottom + 56.w;
+            final scrollBottomPadding = buttonBottom + 100.w;
             return Stack(
               children: [
                 AppStatusBar(),
@@ -101,12 +102,12 @@ class PersonInfoPage extends StatelessWidget {
                   ],
                 ),
 
-                Positioned(
-                  left: 13.w,
-                  right: 13.w,
-                  bottom: buttonBottom,
-                  child: _buildSaveButton(logic),
-                ),
+                // Positioned(
+                //   left: 13.w,
+                //   right: 13.w,
+                //   bottom: buttonBottom,
+                //   child: _buildSaveButton(logic),
+                // ),
               ],
             );
           },
@@ -119,8 +120,8 @@ class PersonInfoPage extends StatelessWidget {
     return GestureDetector(
       onTap: logic.save,
       child: Container(
-        height: 48,
-        width: double.infinity,
+        margin: EdgeInsets.symmetric(horizontal: 29.w),
+        height: 48.w,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF766BFE), Color(0xFF29A3FF)],
@@ -128,9 +129,9 @@ class PersonInfoPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
         ),
         alignment: Alignment.center,
-        child: const Text(
+        child: Text(
           "保存修改",
-          style: TextStyle(color: Colors.white, fontSize: 16),
+          style: TextStyle(color: Colors.white, fontSize: 16.w),
         ),
       ),
     );
