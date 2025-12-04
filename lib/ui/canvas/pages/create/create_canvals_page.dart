@@ -120,7 +120,6 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
 
   void _onCreateCanvas() {
     final Uuid uuid = Uuid();
-
     if (_selectedTab == 0) {
       final itemModel = _aspectRatios[_selectedAspectRatio];
       final ratio = itemModel['ratio'];
@@ -146,6 +145,14 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
       _onCancel();
       Get.toNamed(AppRoutes.canvalsPage, arguments: canvalsModel);
     } else {
+      if (_widthController.text.isEmpty) {
+        showToast("请输入宽度值");
+        return;
+      }
+      if (_heightController.text.isEmpty) {
+        showToast("请输入高度值");
+        return;
+      }
       double width = double.parse(_widthController.text);
       double height = double.parse(_heightController.text);
       CanvasModel canvalsModel = CanvasModel(
@@ -669,7 +676,9 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
 
           Expanded(
             child: GestureDetector(
-              onTap: _onCreateCanvas,
+              onTap: () {
+                _onCreateCanvas();
+              },
               child: Image.asset(
                 'assets/images/canvals/canvals_sure_icon.png',
                 width: 153.w,
