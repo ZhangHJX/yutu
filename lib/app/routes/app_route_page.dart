@@ -7,6 +7,7 @@ import 'package:voicetemplate/app/main/page.dart';
 import 'package:voicetemplate/ui/canvas/pages/canvals/canvals_editor_page.dart';
 import 'package:voicetemplate/ui/login/login_page.dart';
 import 'package:voicetemplate/ui/login/forget/forget_page.dart';
+import 'package:voicetemplate/ui/login/set/set_page.dart';
 
 /// 我的模块
 import 'package:voicetemplate/ui/mine/pages/app_info/app_info_page.dart';
@@ -42,6 +43,7 @@ final List<GetPage> getPages = [
   GetPage(name: AppRoutes.appInfoPage, page: AppInfoPage.new),
   GetPage(name: AppRoutes.resourcePage, page: AppResourcePage.new),
   GetPage(name: AppRoutes.designPage, page: AppDesignPage.new),
+  GetPage(name: AppRoutes.set, page: SetPage.new),
 ];
 
 final unknownRoute = GetPage(name: AppRoutes.notFound, page: NotFoundPage.new);
