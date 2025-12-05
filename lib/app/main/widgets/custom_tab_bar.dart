@@ -73,16 +73,7 @@ class CustomTabBarWithCenter extends StatelessWidget {
 
     return Container(
       height: height,
-      decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(25),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      color: Colors.white,
       child: Stack(
         clipBehavior: Clip.none,
         children: [

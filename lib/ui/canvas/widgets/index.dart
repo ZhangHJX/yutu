@@ -3,7 +3,7 @@ export 'canvas_bottom_bar_widget.dart';
 export 'canvas_control_widget.dart';
 export 'snap_lines_painter.dart';
 export 'dialog/canvals_layer_dialog.dart';
-export 'dialog/canvals_save_dialog.dart';
+export 'dialog/save/canvals_save_dialog.dart';
 export 'property/element_attribute_toolbar.dart';
 export 'property/canvals_property_dialog.dart';
 export 'property/image_property_dialog.dart';

@@ -468,9 +468,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
     switch (layer.type) {
       case ElementType.image:
         content = Image.file(
-          File(
-            CanvalsFileManager.getImageFullPathByFileName(layer.fileName),
-          ),
+          File(CanvalsFileManager.getImageFullPathByFileName(layer.fileName)),
           fit: BoxFit.cover,
         );
         break;
