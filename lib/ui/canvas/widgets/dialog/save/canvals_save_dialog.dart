@@ -126,6 +126,80 @@ class CanvalsSaveTemplateDialog extends StatelessWidget {
                           ),
                         ),
                       ),
+
+                      // 下拉列表 - 浮动在弹框上方
+                      Obx(() {
+                        return logic.showScenarioDropdown.value
+                            ? Positioned(
+                                left: 16.w,
+                                right: 16.w,
+                                top: 250.w, // 应用场景输入框下方位置
+                                child: Material(
+                                  elevation: 8.w,
+                                  borderRadius: BorderRadius.circular(12.w),
+                                  child: Container(
+                                    color: Colors.white,
+
+                                    constraints: BoxConstraints(
+                                      maxHeight: 200.w, // 限制最大高度
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8.w),
+                                      border: Border.all(
+                                        color: Colors.grey.shade300,
+                                      ),
+                                    ),
+                                    child: SingleChildScrollView(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: logic.scenarios.map((
+                                          scenario,
+                                        ) {
+                                          return GestureDetector(
+                                            onTap: () {
+                                              logic.selectScenario(scenario);
+                                            },
+                                            child: Container(
+                                              width: double.infinity,
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 12.w,
+                                                vertical: 12.w,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    logic
+                                                            .selectedScenario
+                                                            .value ==
+                                                        scenario
+                                                    ? "#DCEDFE".color
+                                                    : Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(8.w),
+                                              ),
+                                              child: Text(
+                                                scenario,
+                                                style: TextStyle(
+                                                  fontSize: 14.w,
+                                                  color:
+                                                      logic
+                                                              .selectedScenario
+                                                              .value ==
+                                                          scenario
+                                                      ? "#3C7BFF".color
+                                                      : "#727272".color,
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : const SizedBox.shrink();
+                      }),
                     ],
                   ),
                 ),
@@ -201,88 +275,37 @@ class CanvalsSaveTemplateDialog extends StatelessWidget {
 
         SizedBox(height: 2.w),
 
-        Builder(
-          builder: (context) {
-            return Obx(
-              () => DropdownButton2<String>(
-                key: logic.scenarioDropdownKey,
-                isExpanded: true,
-                value: logic.selectedScenario.value,
-                items: logic.scenarios
-                    .map(
-                      (String item) => DropdownMenuItem<String>(
-                        value: item,
-                        child: Text(
-                          item,
-                          style: TextStyle(
-                            fontSize: 14.w,
-                            color: "#FF242424".color,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (String? value) {
-                  if (value != null) {
-                    logic.selectScenario(value);
-                  }
-                },
-                buttonStyleData: ButtonStyleData(
-                  height: 50.w,
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18.w),
-                    border: Border.all(color: "#FFE6E6E6".color, width: 1.w),
+        GestureDetector(
+          onTap: logic.toggleScenarioDropdown,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18.w),
+              border: Border.all(color: "#FFE6E6E6".color, width: 1.w),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 13.w),
+            margin: EdgeInsets.only(right: 8.w),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  logic.selectedScenario.value,
+                  style: TextStyle(
+                    fontSize: 14.w,
+                    color: "#FF242424".color,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                iconStyleData: IconStyleData(
-                  icon: Icon(
-                    logic.showScenarioDropdown.value
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    size: 20.w,
-                    color: "#ff111111 ".color,
-                  ),
+                Icon(
+                  logic.showScenarioDropdown.value
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  size: 20.w,
+                  color: "#ff111111 ".color,
                 ),
-                dropdownStyleData: DropdownStyleData(
-                  maxHeight: 200.w,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.w),
-                    color: Colors.white,
-                    border: Border.all(color: Colors.grey.shade300),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8.w,
-                        offset: Offset(0, 2.w),
-                      ),
-                    ],
-                  ),
-                  offset: Offset(0, 4.w),
-                  useRootNavigator: true,
-                  scrollbarTheme: ScrollbarThemeData(
-                    radius: Radius.circular(8.w),
-                    thickness: MaterialStateProperty.all<double>(6),
-                    thumbVisibility: MaterialStateProperty.all<bool>(true),
-                  ),
-                ),
-                menuItemStyleData: MenuItemStyleData(
-                  height: 48.w,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 12.w,
-                  ),
-                ),
-                onMenuStateChange: (isOpen) {
-                  logic.showScenarioDropdown.value = isOpen;
-                },
-              ),
-            );
-          },
+              ],
+            ),
+          ),
         ),
       ],
     );
