@@ -2,12 +2,9 @@ import 'package:common/common.dart';
 
 /// 仅负责 GetStorage 相关 API 的封装
 class GetStorageService {
-  static const _boxName = 'app_storage';
-  late final GetStorage _box;
+  GetStorageService(this._box);
 
-  static Future<void> init() async {
-    await GetStorage.init(_boxName);
-  }
+  final GetStorage _box;
 
   /// 读取一个值
   /// [defaultValue] 可选：如果没有该 key，返回默认值。

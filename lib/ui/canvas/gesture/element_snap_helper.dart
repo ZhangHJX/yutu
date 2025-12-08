@@ -4,6 +4,9 @@ import 'dart:math' as math;
 
 /// 元素吸附辅助类：检测元素移动时与其他元素边缘的吸附
 class ElementSnapHelper {
+  /// 是否启用元素吸附功能
+  static bool enabled = false;
+
   /// 吸附阈值（像素距离）
   static const double snapThreshold = 5.0;
 
@@ -87,6 +90,15 @@ class ElementSnapHelper {
     List<CanvasElement> allElements, {
     Size? canvasSize,
   }) {
+    // 如果吸附功能未启用，直接返回原始位置
+    if (!enabled) {
+      return SnapResult(
+        position: targetPosition,
+        snapLines: [],
+        hasSnap: false,
+      );
+    }
+
     // 计算移动元素旋转后的AABB（轴对齐包围盒）
     final movingBounds = _getRotatedAABB(movingElement, targetPosition);
 

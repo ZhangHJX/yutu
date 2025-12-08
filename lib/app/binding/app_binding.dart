@@ -1,19 +1,17 @@
 import 'package:common/common.dart';
 import '../../core/index.dart';
 
+// Binding 只负责 new 对象 + Get.put
 class AppBinding extends Bindings {
   @override
   void dependencies() {
-    Get.put<GetStorageService>(GetStorageService(), permanent: true); // 单例
-
-    // 这里只放“全局单例”的依赖
-    // initCore();
+    Get.put<GetStorageService>(
+      GetStorageService(GetStorage('app_storage')),
+      permanent: true,
+    );
   }
 
-  static Future<void> initServices() async {
-    await GetStorageService.init(); // 这里处理需要 async 的初始化（本地存储等）
-  }
-
+  /// 这里只放“全局单例”的依赖
   // static void initCore() {
   //   // ApiClient 单例
   //   Get.put<ApiClient>(ApiClient(), permanent: true);
