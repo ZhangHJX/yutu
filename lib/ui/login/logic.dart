@@ -1,8 +1,11 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:voicetemplate/stores/login_response.dart';
+import 'package:voicetemplate/stores/user_model.dart';
 import '../../stores/global.dart';
 import '../../app/routes/index.dart';
 import 'dart:async';
+import './model/code_model.dart';
 
 class LoginLogic extends GetxController {
   /// 全局应用
@@ -99,8 +102,9 @@ class LoginLogic extends GetxController {
       final result = await http.post(
         '/authPassword/login',
         data: {'mobile': phone, 'code': code},
+        isNake: true,
       );
-      debugPrint('=========== xxxxxxxxx error: $result');
+      debugPrint('=========== xxxxxxxxx result: $result');
 
       // globalLogic.accessToken.value = result.data?.accessToken ?? '';
       // globalLogic.fetchUserInfo();
@@ -114,16 +118,14 @@ class LoginLogic extends GetxController {
   // 处理验证码登录
   Future<void> handleCodeLogin(String phone, String code) async {
     try {
-      final result = await http.post(
-        '/authSms/login',
+      final result = await http.post<LoginResponse>(
+        '/loginSms/login',
         data: {'mobile': phone, 'code': code},
+        converter: LoginResponse.fromJson,
       );
-      debugPrint('=========== xxxxxxxxx error: $result');
-
-      // globalLogic.accessToken.value = result.data?.accessToken ?? '';
+      globalLogic.accessToken.value = result.data?.token ?? '';
       // globalLogic.fetchUserInfo();
-
-      // 返回上一个页面
+      debugPrint('accessToken===========: ${result.data?.token}');
     } catch (e) {
       debugPrint('=========== xxxxxxxxx error: $e');
     }
@@ -133,18 +135,14 @@ class LoginLogic extends GetxController {
   Future<void> getVerificationCode(String phone) async {
     isCountingDown.value = true;
     countDown.value = 60;
-
     try {
-      final res = await http.post(
-        "/authSms/send",
+      await http.post<CodeModel>(
+        "/loginSms/send",
         data: {"mobile": phone},
-        withToken: false,
+        converter: CodeModel.fromJson,
+        showErrorToast: false,
       );
-
-      debugPrint("----哈哈哈哈哈哈---$res-----");
-
       showToast('验证码发送成功');
-
       Timer.periodic(Duration(seconds: 1), (timer) {
         if (countDown.value > 0) {
           countDown.value--;

@@ -4,6 +4,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class ForgetLogic extends GetxController {
+  ///页面是否来自登陆页
+  final isFromLogin = (Get.arguments is bool ? Get.arguments : false).obs;
+
   // 输入内容
   final phone = ''.obs;
   final code = ''.obs;

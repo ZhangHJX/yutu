@@ -6,8 +6,7 @@ import 'package:voicetemplate/ui/splash/page.dart';
 import 'package:voicetemplate/app/main/page.dart';
 import 'package:voicetemplate/ui/canvas/pages/canvals/canvals_editor_page.dart';
 import 'package:voicetemplate/ui/login/login_page.dart';
-import 'package:voicetemplate/ui/login/forget/forget_page.dart';
-import 'package:voicetemplate/ui/login/set/set_page.dart';
+import 'package:voicetemplate/ui/login/password/password_page.dart';
 
 /// 我的模块
 import 'package:voicetemplate/ui/mine/pages/person_info/person_info_page.dart';
@@ -26,7 +25,7 @@ final List<GetPage> getPages = [
     page: LoginPage.new,
     transition: Transition.downToUp,
   ),
-  GetPage(name: AppRoutes.forget, page: ForgetPage.new),
+  GetPage(name: AppRoutes.password, page: PasswordPage.new),
 
   /// TabBar
   GetPage(
@@ -47,7 +46,6 @@ final List<GetPage> getPages = [
 
   GetPage(name: AppRoutes.resourcePage, page: AppResourcePage.new),
   GetPage(name: AppRoutes.designPage, page: AppDesignPage.new),
-  GetPage(name: AppRoutes.set, page: SetPage.new),
 
   GetPage(name: AppRoutes.web, page: WebPage.new),
 ];

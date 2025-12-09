@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import '../../widgets/app_status_bar.dart';
 import 'logic.dart';
 
-class ForgetPage extends StatelessWidget {
+class PasswordPage extends StatelessWidget {
   final ForgetLogic logic = Get.put(ForgetLogic());
 
-  ForgetPage({super.key});
+  PasswordPage({super.key});
 
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();

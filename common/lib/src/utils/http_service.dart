@@ -39,7 +39,9 @@ class HttpService {
           }
 
           if (kDebugMode) {
-            print('👶👶👶----请求方式: ${options.method} ${options.path}');
+            print(
+              '👶👶👶----请求方式: ${options.path} ${options.method} ${options.path}',
+            );
             print('👧👧👧请求头: ${options.headers}');
             if (options.data != null) {
               print('👩👩👩请求参数: ${options.data}');
@@ -140,6 +142,7 @@ class HttpService {
         onSendProgress: onSendProgress,
         onReceiveProgress: onReceiveProgress,
       );
+
       if (isNake) {
         return BaseModel.fromJson(
           {'code': 200, 'message': 'Success!', 'data': response.data},
@@ -147,6 +150,7 @@ class HttpService {
           showErrorToast ?? autoShowErrorToast,
         );
       }
+
       return BaseModel.fromJson(
         response.data,
         converter ?? (j) => j as T,

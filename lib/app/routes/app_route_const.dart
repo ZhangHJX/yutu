@@ -23,8 +23,7 @@ class AppRoutes {
   static const designPage = '/design_page';
   static const personInfo = '/person_info_page';
   static const appLogin = '/app_login';
-  static const forget = '/forget_password';
-  static const set = '/set_password';
+  static const forget = '/get_password';
 
   static const web = '/web';
 

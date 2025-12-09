@@ -143,8 +143,10 @@ class LoginPage extends StatelessWidget {
                                     SizedBox(height: 12.w),
                                     Center(
                                       child: GestureDetector(
-                                        onTap: () =>
-                                            Get.toNamed(AppRoutes.forget),
+                                        onTap: () => Get.toNamed(
+                                          AppRoutes.password,
+                                          arguments: true,
+                                        ),
                                         child: Text(
                                           '忘记密码？',
                                           style: TextStyle(
