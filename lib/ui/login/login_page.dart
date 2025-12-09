@@ -1,6 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../../app/routes/index.dart';
 import 'logic.dart';
 
@@ -23,147 +24,153 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 1. 背景图片
-          Image.asset(
-            'assets/images/login/app_login_bg.png',
-            fit: BoxFit.cover,
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(left: 20.w, top: 12.w),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: GestureDetector(
-                      onTap: () => Get.back(),
-                      child: SizedBox(
-                        width: 30.w,
-                        height: 30.w,
-                        child: Center(
-                          child: Image.asset(
-                            'assets/images/login/login_back_icon.png',
-                            width: 26.w,
-                            height: 26.w,
+    return KeyboardDismissOnTap(
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 1. 背景图片
+            Image.asset(
+              'assets/images/login/app_login_bg.png',
+              fit: BoxFit.cover,
+            ),
+            SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(left: 20.w, top: 12.w),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: () => Get.back(),
+                        child: SizedBox(
+                          width: 30.w,
+                          height: 30.w,
+                          child: Center(
+                            child: Image.asset(
+                              'assets/images/login/login_back_icon.png',
+                              width: 26.w,
+                              height: 26.w,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
 
-                SizedBox(height: 280.w),
-                // 2. 输入区域
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 29.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildPhoneField(),
-                      SizedBox(height: 14.w),
-                      _buildSecondField(),
-                      SizedBox(height: 10.w),
+                  SizedBox(height: 280.w),
+                  // 2. 输入区域
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 29.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildPhoneField(),
+                        SizedBox(height: 14.w),
+                        _buildSecondField(),
+                        SizedBox(height: 10.w),
 
-                      Padding(
-                        padding: EdgeInsets.only(right: 20.w),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Obx(
-                            () => GestureDetector(
-                              onTap: () => logic.onTogglePasswordLogin(
-                                _codeController,
-                                _passwordController,
-                              ),
-                              child: Text(
-                                logic.isPasswordLogin.value ? '验证码登录' : '密码登录',
-                                style: TextStyle(
-                                  fontSize: 12.w,
-                                  color: "#A7A7A7".color,
+                        Padding(
+                          padding: EdgeInsets.only(right: 20.w),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Obx(
+                              () => GestureDetector(
+                                onTap: () => logic.onTogglePasswordLogin(
+                                  _codeController,
+                                  _passwordController,
+                                ),
+                                child: Text(
+                                  logic.isPasswordLogin.value
+                                      ? '验证码登录'
+                                      : '密码登录',
+                                  style: TextStyle(
+                                    fontSize: 12.w,
+                                    color: "#A7A7A7".color,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
 
-                      SizedBox(height: 15.w),
+                        SizedBox(height: 15.w),
 
-                      Obx(
-                        () => GestureDetector(
-                          onTap: logic.canLogin ? _onLogin : null,
-                          child: Container(
-                            height: 48.w,
-                            padding: EdgeInsets.symmetric(horizontal: 29.w),
-                            decoration: BoxDecoration(
-                              color: logic.canLogin
-                                  ? Colors.transparent
-                                  : "#64A2FF".color,
-                              image: logic.canLogin
-                                  ? const DecorationImage(
-                                      image: AssetImage(
-                                        'assets/images/login/login_btn_bg.png',
-                                      ),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                              borderRadius: BorderRadius.circular(24.w),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '登录',
-                                style: TextStyle(
-                                  fontSize: 16.w,
-                                  fontWeight: FontWeight.w500,
-                                  color: logic.canLogin
-                                      ? "#FFFFFF".color
-                                      : "#1C004C".color.withValues(alpha: 0.5),
+                        Obx(
+                          () => GestureDetector(
+                            onTap: logic.canLogin.value ? _onLogin : null,
+                            child: Container(
+                              height: 48.w,
+                              padding: EdgeInsets.symmetric(horizontal: 29.w),
+                              decoration: BoxDecoration(
+                                color: logic.canLogin.value
+                                    ? Colors.transparent
+                                    : "#64A2FF".color,
+                                image: logic.canLogin.value
+                                    ? const DecorationImage(
+                                        image: AssetImage(
+                                          'assets/images/login/login_btn_bg.png',
+                                        ),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                                borderRadius: BorderRadius.circular(24.w),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '登录',
+                                  style: TextStyle(
+                                    fontSize: 16.w,
+                                    fontWeight: FontWeight.w500,
+                                    color: logic.canLogin.value
+                                        ? "#FFFFFF".color
+                                        : "#1C004C".color.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
 
-                      // 8. 忘记密码（仅密码登录时）
-                      Obx(
-                        () => logic.isPasswordLogin.value
-                            ? Column(
-                                children: [
-                                  SizedBox(height: 12.w),
-                                  Center(
-                                    child: GestureDetector(
-                                      onTap: () =>
-                                          Get.toNamed(AppRoutes.forget),
-                                      child: Text(
-                                        '忘记密码？',
-                                        style: TextStyle(
-                                          fontSize: 12.w,
-                                          color: "#64A2FF".color,
-                                          fontWeight: FontWeight.w500,
+                        // 8. 忘记密码（仅密码登录时）
+                        Obx(
+                          () => logic.isPasswordLogin.value
+                              ? Column(
+                                  children: [
+                                    SizedBox(height: 12.w),
+                                    Center(
+                                      child: GestureDetector(
+                                        onTap: () =>
+                                            Get.toNamed(AppRoutes.forget),
+                                        child: Text(
+                                          '忘记密码？',
+                                          style: TextStyle(
+                                            fontSize: 12.w,
+                                            color: "#64A2FF".color,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ],
+                                  ],
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                Spacer(),
-                //  协议勾选区域
-                _buildAgreementArea(),
-              ],
+                  Spacer(),
+                  //  协议勾选区域
+                  _buildAgreementArea(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -352,8 +359,8 @@ class LoginPage extends StatelessWidget {
                   child: Center(
                     child: Image.asset(
                       logic.isAgreement.value
-                          ? 'assets/images/login/login_agree_no.png'
-                          : 'assets/images/login/login_agree.png',
+                          ? 'assets/images/login/login_agree.png'
+                          : 'assets/images/login/login_agree_no.png',
                       width: 12.w,
                       height: 12.w,
                       fit: BoxFit.cover,

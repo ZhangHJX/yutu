@@ -38,9 +38,11 @@ class PersonLogic extends GetxController {
     avatar.value = profile.avatar.isNotEmpty ? profile.avatar : "";
     nickname.value = profile.nickname.isNotEmpty ? profile.nickname : "zhangmj";
     phone.value = profile.phone.isNotEmpty ? profile.phone : "15669993907";
-    signature.value = profile.signature.isNotEmpty
-        ? profile.signature
-        : "你是世界上最好的人";
+    signature.value = "你是世界上最好的人";
+
+    // profile.signature.isNotEmpty
+    //         ? profile.signature
+    //         :
 
     nicknameCtrl.text = nickname.value;
     signatureCtrl.text = signature.value;
@@ -69,7 +71,7 @@ class PersonLogic extends GetxController {
       phone: phoneCtrl.text.trim().isNotEmpty
           ? phoneCtrl.text.trim()
           : phone.value,
-      signature: signatureCtrl.text.trim(),
+      // signature: signatureCtrl.text.trim(),
     );
     global.userInfo.value = updatedProfile;
 

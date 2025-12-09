@@ -1,6 +1,8 @@
 import 'package:common/common.dart';
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+
 class ForgetLogic extends GetxController {
   // 输入内容
   final phone = ''.obs;
@@ -27,39 +29,43 @@ class ForgetLogic extends GetxController {
       showToast("请输入手机号");
       return;
     }
-    getVerificationCode(phone.value);
+    getVerificationCode();
   }
 
   // 获取验证码
-  Future<void> getVerificationCode(String phone) async {
+  Future<void> getVerificationCode() async {
+    final res = await http.post("/authSms/send", data: {"mobile": phone.value});
+
+    debugPrint("----哈哈哈哈哈哈---$res-----");
+
     showLoading('正在发送验证码...');
 
-    isCountingDown.value = true;
-    countDown.value = 60;
+    // isCountingDown.value = true;
+    // countDown.value = 60;
 
-    try {
-      // final model = await http.get(
-      //   '/ds-app/member/sendLoginPassCode',
-      //   query: {'phone': phone},
-      //   converter: primitiveConverter<String>(),
-      // );
+    // try {
+    //   // final model = await http.get(
+    //   //   '/ds-app/member/sendLoginPassCode',
+    //   //   query: {'phone': phone},
+    //   //   converter: primitiveConverter<String>(),
+    //   // );
 
-      showToast('验证码发送成功');
+    //   showToast('验证码发送成功');
 
-      Timer.periodic(Duration(seconds: 1), (timer) {
-        if (countDown.value > 0) {
-          countDown.value--;
-        } else {
-          timer.cancel();
-          isCountingDown.value = false;
-        }
-      });
-    } catch (e) {
-      showToast('验证码发送失败');
-      isCountingDown.value = false;
-    } finally {
-      SmartDialog.dismiss();
-    }
+    //   Timer.periodic(Duration(seconds: 1), (timer) {
+    //     if (countDown.value > 0) {
+    //       countDown.value--;
+    //     } else {
+    //       timer.cancel();
+    //       isCountingDown.value = false;
+    //     }
+    //   });
+    // } catch (e) {
+    //   showToast('验证码发送失败');
+    //   isCountingDown.value = false;
+    // } finally {
+    //   SmartDialog.dismiss();
+    // }
   }
 
   Future<void> changePassWord() async {

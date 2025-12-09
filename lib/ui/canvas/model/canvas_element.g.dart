@@ -10,8 +10,8 @@ CanvasElement _$CanvasElementFromJson(Map<String, dynamic> json) =>
     CanvasElement(
       id: json['id'] as String? ?? '',
       type: $enumDecode(_$ElementTypeEnumMap, json['type']),
-      x: (json['x'] as num).toDouble(),
-      y: (json['y'] as num).toDouble(),
+      x: (json['x'] as num?)?.toDouble() ?? 0,
+      y: (json['y'] as num?)?.toDouble() ?? 0,
       width: (json['width'] as num).toDouble(),
       height: (json['height'] as num).toDouble(),
       hidden: json['hidden'] as bool? ?? false,
@@ -32,7 +32,7 @@ CanvasElement _$CanvasElementFromJson(Map<String, dynamic> json) =>
       lineHeight: (json['lineHeight'] as num?)?.toDouble() ?? 1.0,
       fontSpace: (json['fontSpace'] as num?)?.toDouble() ?? 0,
       align: json['align'] == null
-          ? TextAlign.center
+          ? TextAlign.left
           : CanvasElement._textAlignFromJson((json['align'] as num).toInt()),
       textColor: json['textColor'] as String? ?? "#000000",
       textAlpha: (json['textAlpha'] as num?)?.toDouble() ?? 1.0,

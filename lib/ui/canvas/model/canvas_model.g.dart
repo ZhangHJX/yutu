@@ -6,24 +6,23 @@ part of 'canvas_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) =>
-    CanvasModel(
-      id: json['id'] as String? ?? '',
-      x: (json['x'] as num?)?.toDouble() ?? 0.0,
-      y: (json['y'] as num?)?.toDouble() ?? 0.0,
-      scale: (json['scale'] as num?)?.toDouble() ?? 1.0,
-      width: (json['width'] as num?)?.toDouble() ?? 1080,
-      height: (json['height'] as num?)?.toDouble() ?? 1080,
-      fillColor: json['fillColor'] as String? ?? '#FFFFFF',
-      fillAlpha: (json['fillAlpha'] as num?)?.toDouble() ?? 1.0,
-      locked: json['locked'] as bool? ?? false,
-      isSelected: json['isSelected'] as bool? ?? false,
-    )..elements = (json['elements'] as List<dynamic>?)
-            ?.map(
-              (e) => CanvasElement.fromJson(e as Map<String, dynamic>),
-            )
-            .toList() ??
-        [];
+CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
+  id: json['id'] as String? ?? '',
+  width: (json['width'] as num?)?.toDouble() ?? 1080,
+  height: (json['height'] as num?)?.toDouble() ?? 1080,
+  x: (json['x'] as num?)?.toDouble() ?? 0.0,
+  y: (json['y'] as num?)?.toDouble() ?? 0.0,
+  scale: (json['scale'] as num?)?.toDouble() ?? 1.0,
+  fillColor: json['fillColor'] as String? ?? '#FFFFFF',
+  fillAlpha: (json['fillAlpha'] as num?)?.toDouble() ?? 1.0,
+  locked: json['locked'] as bool? ?? false,
+  isSelected: json['isSelected'] as bool? ?? false,
+  elements:
+      (json['elements'] as List<dynamic>?)
+          ?.map((e) => CanvasElement.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
+);
 
 Map<String, dynamic> _$CanvasModelToJson(CanvasModel instance) =>
     <String, dynamic>{

@@ -15,3 +15,4 @@ export 'package:json_serializable/json_serializable.dart';
 export 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 export 'package:app_settings/app_settings.dart';
 export 'package:json_annotation/json_annotation.dart';
+export 'package:webview_flutter/webview_flutter.dart' hide ProgressCallback;

@@ -26,6 +26,8 @@ class AppRoutes {
   static const forget = '/forget_password';
   static const set = '/set_password';
 
+  static const web = '/web';
+
   /// 404
   static const notFound = '/404';
 }

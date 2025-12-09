@@ -1,13 +1,14 @@
 import 'package:common/common.dart';
+import 'package:flutter/widgets.dart';
+import 'package:voicetemplate/model/api_response.dart';
+import 'login_response.dart';
 import 'user_model.dart';
 
 /// 登录方式
 enum LoginMode {
-  /// 验证码登录
-  sms,
-
+  sms, // 验证码登录
   /// 账号密码登录
-  password,
+  password, //
 }
 
 // import '../app/app_route.dart';
@@ -54,40 +55,6 @@ class GlobalLogic extends GetxController {
     passwordVisible.value = false;
   }
 
-  /// 切换协议勾选
-  void toggleAgreement() {
-    agreementChecked.value = !agreementChecked.value;
-  }
-
-  /// 切换密码可见性
-  void togglePasswordVisible() {
-    passwordVisible.value = !passwordVisible.value;
-  }
-
-  /// 校验手机号：简单 11 位数字校验
-  bool isPhoneValid(String phone) {
-    final text = phone.trim();
-    return RegExp(r'^1\\d{10}\$').hasMatch(text);
-  }
-
-  /// 校验第二个输入框内容
-  bool isSecondValid(String text) {
-    final value = text.trim();
-    if (isSmsLogin) {
-      // 验证码 4-6 位数字
-      return RegExp(r'^\\d{4,6}\$').hasMatch(value);
-    }
-    // 密码 6-20 位
-    return value.length >= 6 && value.length <= 20;
-  }
-
-  /// 是否可以点击登录按钮
-  bool canLogin(String phone, String secondInput) {
-    return isPhoneValid(phone) &&
-        isSecondValid(secondInput) &&
-        agreementChecked.value;
-  }
-
   // /// 用户头像
   // String? get wechatAvatar => userInfo.value.wechatAvatar;
 
@@ -131,27 +98,25 @@ class GlobalLogic extends GetxController {
   // /// 是否已认证
   // bool get isVerified => userInfo.value.authStatus == 2;
 
-  // final box = GetStorage();
+  final box = GetStorage();
 
-  // @override
-  // void onInit() {
-  //   super.onInit();
+  @override
+  void onInit() {
+    super.onInit();
 
-  //   accessToken.value = box.read(tokenKey) ?? '';
-  //   userInfo.value = UserModel.fromJson(box.read(userInfoKey) ?? {});
+    accessToken.value = box.read(tokenKey) ?? '';
+    // userInfo.value = UserModel.fromJson(box.read(userInfoKey) ?? {});
 
-  //   ever(accessToken, (token) {
-  //     box.write(tokenKey, token);
-  //   });
+    ever(accessToken, (token) {
+      box.write(tokenKey, token);
+    });
 
-  //   ever(userInfo, (user) {
-  //     box.write(userInfoKey, user);
+    ever(userInfo, (user) {
+      box.write(userInfoKey, user);
+    });
 
-  //     getAddressList();
-  //   });
-
-  //   Future.delayed(100.ms, getAddressList);
-  // }
+    // Future.delayed(100.ms, getAddressList);
+  }
 
   // /// 跳转到主页
   // /// [index] 跳转的tab索引
@@ -193,15 +158,13 @@ class GlobalLogic extends GetxController {
   // }
 
   // /// 获取用户信息
-  // void fetchUserInfo() async {
-  //   final ui = await http.get(
-  //     '/zx-auth/auth/app/login/info',
-  //     converter: UserModel.fromJson,
-  //   );
-  //   if (ui.data != null) {
-  //     userInfo.value = ui.data!;
-  //   }
-  // }
+  void fetchUserInfo() async {
+    final res = await http.post(
+      "path",
+      data: {"mobile": 15669993907, "code": 4566},
+    );
+    debugPrint("----哈哈哈哈哈哈---$res-----");
+  }
 
   // /// 获取配置的客服类型
   // /// 客服类型, 2为微信, 其他为应用内客服
@@ -211,3 +174,36 @@ class GlobalLogic extends GetxController {
   //   });
   // }
 }
+
+/// 获取验证码
+// Future<String> getVerifyCode() async {
+//   final globalLogic = Get.find<GlobalLogic>();
+//   showLoading('获取验证码中...');
+//   final completer = Completer<String>();
+//   try {
+//     final codeId =
+//         (await http.get(
+//           '/ds-applet/member/sendSetPassCode',
+//           query: {'phone': globalLogic.phone},
+//           converter: primitiveConverter<String>(),
+//         )).data ??
+//         '';
+//     showToast('验证码已发送');
+//     completer.complete(codeId);
+//   } catch (e) {
+//     completer.completeError(e);
+//   } finally {
+//     SmartDialog.dismiss(status: SmartStatus.loading);
+//   }
+//   return completer.future;
+// }
+
+
+
+/*
+final data = await http.post(
+      '/ds-app/appletDynamic/discoveryList/${globalLogic.memberId}',
+      data: {'labelList': [], 'discoveryBoardDTOList': discoveryBoardDTOList},
+     converter: listConverter(DiscoveryModel.fromJson),
+);
+*/ 

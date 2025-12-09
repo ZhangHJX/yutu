@@ -5,10 +5,10 @@ import '../../core/index.dart';
 class AppBinding extends Bindings {
   @override
   void dependencies() {
-    Get.put<GetStorageService>(
-      GetStorageService(GetStorage('app_storage')),
-      permanent: true,
-    );
+    // Get.put<GetStorageService>(
+    //   GetStorageService(GetStorage('app_storage')),
+    //   permanent: true,
+    // );
   }
 
   /// 这里只放“全局单例”的依赖

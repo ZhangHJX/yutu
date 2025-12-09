@@ -211,7 +211,7 @@ class MinePage extends StatelessWidget {
 
   Widget _buildDesignBlock() {
     final user = logic.global.userInfo.value;
-    final designs = user.designImages;
+    final designs = [];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
