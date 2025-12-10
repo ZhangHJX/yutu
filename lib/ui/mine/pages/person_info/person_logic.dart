@@ -37,7 +37,7 @@ class PersonLogic extends GetxController {
     final profile = userModel;
     avatar.value = profile.avatar.isNotEmpty ? profile.avatar : "";
     nickname.value = profile.nickname.isNotEmpty ? profile.nickname : "zhangmj";
-    phone.value = profile.phone.isNotEmpty ? profile.phone : "15669993907";
+    phone.value = profile.mobile.isNotEmpty ? profile.mobile : "15669993907";
     signature.value = "你是世界上最好的人";
 
     // profile.signature.isNotEmpty
@@ -68,7 +68,7 @@ class PersonLogic extends GetxController {
     final updatedProfile = UserModel(
       avatar: avatar.value,
       nickname: nicknameCtrl.text.trim(),
-      phone: phoneCtrl.text.trim().isNotEmpty
+      mobile: phoneCtrl.text.trim().isNotEmpty
           ? phoneCtrl.text.trim()
           : phone.value,
       // signature: signatureCtrl.text.trim(),

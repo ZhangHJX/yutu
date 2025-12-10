@@ -1,6 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'mine_logic.dart';
+import './pages/widgets/created_works_text.dart';
 
 class MinePage extends StatelessWidget {
   MinePage({super.key});
@@ -19,23 +20,32 @@ class MinePage extends StatelessWidget {
               return Column(
                 children: [
                   _buildHeaderBar(),
-                  _buildMineInfoContent(),
-                  if (logic.isLogin.value) _buildLoggedInContent(),
-                  if (logic.isLogin.value) _buildToolsCard(),
-                  _buildSoftwareInfoCard(),
-                  if (logic.isLogin.value) _buildLoginOutCard(),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          _buildMineInfoContent(),
+                          if (logic.global.isLogin) _buildLoggedInContent(),
+                          if (logic.global.isLogin) _buildToolsCard(),
+                          if (logic.global.isLogin) _buildSetPasswordCard(),
+                          _buildSoftwareInfoCard(),
+                          if (logic.global.isLogin) _buildLoginOutCard(),
 
-                  Spacer(),
-                  Text(
-                    '语音厅设计助手 V1.0\n让设计更简单',
-                    style: TextStyle(
-                      fontSize: 11.w,
-                      color: "#9E9E9E".color,
-                      fontWeight: FontWeight.w500,
+                          SizedBox(height: 15.w),
+                          Text(
+                            '语音厅设计助手 V1.0\n让设计更简单',
+                            style: TextStyle(
+                              fontSize: 11.w,
+                              color: "#9E9E9E".color,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 51.w),
+                        ],
+                      ),
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 51.w),
                 ],
               );
             }),
@@ -78,16 +88,6 @@ class MinePage extends StatelessWidget {
           ),
 
           const Spacer(),
-
-          // GestureDetector(
-          //   onTap: logic.onTapMyServices,
-          //   child: Image.asset(
-          //     "assets/images/mine/mine_top_services.png",
-          //     width: 22.w,
-          //     height: 22.w,
-          //     fit: BoxFit.cover,
-          //   ),
-          // ),
         ],
       ),
     );
@@ -100,66 +100,51 @@ class MinePage extends StatelessWidget {
       padding: EdgeInsets.only(left: 22.w, top: 9.w, right: 20.w),
       child: Row(
         children: [
-          Container(
-            width: 62.w,
-            height: 62.w,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(
-                  "assets/images/mine/mine_info_icon_bg.png",
-                ), // 或 NetworkImage(...)
-                fit: BoxFit.cover, // 拉伸方式：cover / contain 等
+          GestureDetector(
+            onTap: logic.onTapPersonInfo,
+            child: Container(
+              width: 62.w,
+              height: 62.w,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(
+                    "assets/images/mine/mine_info_icon_bg.png",
+                  ), // 或 NetworkImage(...)
+                  fit: BoxFit.cover, // 拉伸方式：cover / contain 等
+                ),
               ),
-            ),
-            child: Stack(
-              children: [
-                Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(4.w),
-                    child: GestureDetector(
-                      onTap: logic.onTapPersonInfo,
+              child: Stack(
+                children: [
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(4.w),
                       child: ClipOval(
                         child: user.avatar.isEmpty
-                            ? Container(
-                                width: 56.w,
-                                height: 56.w,
-                                color: const Color(0xFFF2F3F7),
-                                child: const Icon(
-                                  Icons.person_outline,
-                                  size: 32,
-                                ),
-                              )
-                            :
-                              // : Image.network(
-                              //     user.avatar,
-                              //     width: 56,
-                              //     height: 56,
-                              //     fit: BoxFit.cover,
-                              //   ),
-                              Image.asset(
+                            ? Image.asset(
                                 "assets/images/mine/mine_info_editor.png",
                                 fit: BoxFit.cover,
-                              ),
+                              )
+                            : Image.network(user.avatar, fit: BoxFit.cover),
                       ),
                     ),
                   ),
-                ),
 
-                if (logic.isLogin.value)
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: logic.onTapPersonInfo,
-                      child: Image.asset(
-                        "assets/images/mine/mine_info_editor.png",
-                        width: 18.w,
-                        height: 18.w,
-                        fit: BoxFit.cover,
+                  if (logic.global.isLogin)
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: logic.onTapPersonInfo,
+                        child: Image.asset(
+                          "assets/images/mine/mine_info_editor.png",
+                          width: 18.w,
+                          height: 18.w,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -172,7 +157,9 @@ class MinePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '点击登录',
+                    logic.global.isLogin
+                        ? logic.global.userInfo.value.nickname
+                        : '点击登录',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -180,10 +167,14 @@ class MinePage extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 4.w),
-                  Text(
-                    '登录后获取更多功能信息',
-                    style: TextStyle(fontSize: 13.w, color: "#848484".color),
-                  ),
+
+                  if (logic.global.isLogin)
+                    CreatedWorksText(count: logic.global.userInfo.value.count),
+                  if (!logic.global.isLogin)
+                    Text(
+                      '登录后获取更多功能信息',
+                      style: TextStyle(fontSize: 13.w, color: "#848484".color),
+                    ),
                 ],
               ),
             ),
@@ -422,6 +413,32 @@ class MinePage extends StatelessWidget {
     );
   }
 
+  /// 设置密码
+  Widget _buildSetPasswordCard() {
+    return GestureDetector(
+      onTap: logic.onTapPassWord,
+      child: Container(
+        height: 46.w,
+        width: ScreenTools.screenWidth,
+        padding: EdgeInsets.only(left: 13.w),
+        margin: EdgeInsets.only(left: 13.w, right: 14.w, top: 10.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12.w),
+        ),
+        alignment: Alignment.centerLeft, // 关键
+        child: Text(
+          '设置密码',
+          style: TextStyle(
+            fontSize: 14.w,
+            color: "#121F33".color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 软件信息卡片（登录前后通用）
   Widget _buildSoftwareInfoCard() {
     return GestureDetector(
@@ -431,7 +448,7 @@ class MinePage extends StatelessWidget {
         margin: EdgeInsets.only(
           left: 13.w,
           right: 14.w,
-          top: logic.isLogin.value ? 10.w : 21.w,
+          top: logic.global.isLogin ? 10.w : 21.w,
         ),
         decoration: BoxDecoration(
           color: Colors.white,

@@ -8,18 +8,16 @@ class UserModel {
   String nickname;
   String avatar;
   String sign;
-  int workCount;
-  String phone;
-  String token;
+  String mobile;
+  int count;
 
   UserModel({
     this.id = 0,
     this.nickname = '',
     this.avatar = '',
     this.sign = '',
-    this.workCount = 0,
-    this.phone = '',
-    this.token = '',
+    this.mobile = '',
+    this.count = 0,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) =>
@@ -33,16 +31,16 @@ class UserModel {
     String? nickname,
     String? avatar,
     String? sign,
-    int? workCount,
-    String? token,
+    String? mobile,
+    int? count,
   }) {
     return UserModel(
       id: id ?? this.id,
       nickname: nickname ?? this.nickname,
       avatar: avatar ?? this.avatar,
       sign: sign ?? this.sign,
-      workCount: workCount ?? this.workCount,
-      token: token ?? this.token,
+      mobile: mobile ?? this.mobile,
+      count: count ?? this.count,
     );
   }
 }

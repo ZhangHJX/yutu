@@ -9,10 +9,9 @@ class PasswordPage extends StatelessWidget {
 
   PasswordPage({super.key});
 
-  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
-  final TextEditingController _oneController = TextEditingController();
-  final TextEditingController _twoController = TextEditingController();
+  final TextEditingController _passwordOneController = TextEditingController();
+  final TextEditingController _passwordTwoController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -25,9 +24,9 @@ class PasswordPage extends StatelessWidget {
           Column(
             children: [
               CAppBar(
-                title: const Text(
-                  '忘记密码',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                title: Text(
+                  logic.globalLogic.isLogin ? "设置密码" : '忘记密码',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 backgroundColor: Colors.transparent,
               ),
@@ -106,8 +105,9 @@ class PasswordPage extends StatelessWidget {
 
           Expanded(
             child: TextField(
-              controller: _phoneController,
+              controller: logic.phoneController,
               keyboardType: TextInputType.number,
+              enabled: !logic.globalLogic.isLogin,
               inputFormatters: [LengthLimitingTextInputFormatter(11)],
               decoration: InputDecoration(
                 isCollapsed: true,
@@ -163,7 +163,7 @@ class PasswordPage extends StatelessWidget {
 
           Obx(
             () => TextButton(
-              onPressed: () {},
+              onPressed: logic.validatePhoneNumber,
               child: Text(
                 logic.isCountingDown.value
                     ? '${logic.countDown.value}s'
@@ -195,13 +195,14 @@ class PasswordPage extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
-              controller: _oneController,
+              controller: _passwordOneController,
+              obscureText: true,
               decoration: InputDecoration(
                 isCollapsed: true,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                hintText: '请输入验证码',
+                hintText: '请输入密码',
                 hintStyle: TextStyle(
                   fontSize: 14.w,
                   color: "#9E9E9E".color,
@@ -231,7 +232,8 @@ class PasswordPage extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
-              controller: _twoController,
+              controller: _passwordTwoController,
+              obscureText: true,
               decoration: InputDecoration(
                 isCollapsed: true,
                 border: InputBorder.none,

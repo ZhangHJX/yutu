@@ -1,17 +1,22 @@
 import 'package:common/common.dart';
+import 'package:flutter/widgets.dart';
 import 'dart:async';
-
-import 'package:flutter/material.dart';
+import '../model/code_model.dart';
+import '../model/phone_model.dart';
+import '../../../stores/global.dart';
 
 class ForgetLogic extends GetxController {
-  ///页面是否来自登陆页
-  final isFromLogin = (Get.arguments is bool ? Get.arguments : false).obs;
+  /// 全局应用
+  final globalLogic = Get.find<GlobalLogic>();
 
   // 输入内容
   final phone = ''.obs;
   final code = ''.obs;
   final password = ''.obs;
   final again = ''.obs;
+
+  /// TextField 控制器放在 Logic 里管理
+  late final TextEditingController phoneController;
 
   // 验证码相关状态
   final isCountingDown = false.obs;
@@ -21,9 +26,45 @@ class ForgetLogic extends GetxController {
   Timer? _timer;
 
   @override
-  void onClose() {
-    _timer?.cancel();
-    super.onClose();
+  void onInit() {
+    super.onInit();
+    // 初始化 TextEditingController
+    phoneController = TextEditingController(text: phone.value);
+    getPhoneNumber();
+
+    ever<String>(phone, (value) {
+      if (phoneController.text != value) {
+        phoneController.text = value;
+      }
+    });
+  }
+
+  Future<void> changePassWord() async {
+    try {
+      final result = await http.post(
+        '/homePage/user/index',
+        data: {"password": password.value, "code": "9999"},
+        withToken: true,
+      );
+      if (result.code == 0) {
+        Get.back();
+      }
+    } catch (e) {
+      debugPrint('===========  error: $e');
+    }
+  }
+
+  ///1、获取手机号码
+  void getPhoneNumber() async {
+    final result = await http.post<PhoneModel>(
+      "/passwordSet/index",
+      converter: PhoneModel.fromJson,
+      showErrorToast: false,
+      withToken: true,
+    );
+    if (result.data != null) {
+      phone.value = result.data!.mobile;
+    }
   }
 
   ///1、手机号验证
@@ -35,43 +76,41 @@ class ForgetLogic extends GetxController {
     getVerificationCode();
   }
 
-  // 获取验证码
+  ///2、获取验证码
+  /// 忘记密码不需要 token，要手机号
+  /// 设置密码： 全都需要token
   Future<void> getVerificationCode() async {
-    final res = await http.post("/authSms/send", data: {"mobile": phone.value});
+    isCountingDown.value = true;
+    countDown.value = 60;
+    try {
+      final result = await http.post<CodeModel>(
+        "/setPassword/sendSms",
+        // data: {"mobile": phone},
+        converter: CodeModel.fromJson,
+        showErrorToast: false,
+        withToken: globalLogic.isLogin,
+      );
 
-    debugPrint("----哈哈哈哈哈哈---$res-----");
-
-    showLoading('正在发送验证码...');
-
-    // isCountingDown.value = true;
-    // countDown.value = 60;
-
-    // try {
-    //   // final model = await http.get(
-    //   //   '/ds-app/member/sendLoginPassCode',
-    //   //   query: {'phone': phone},
-    //   //   converter: primitiveConverter<String>(),
-    //   // );
-
-    //   showToast('验证码发送成功');
-
-    //   Timer.periodic(Duration(seconds: 1), (timer) {
-    //     if (countDown.value > 0) {
-    //       countDown.value--;
-    //     } else {
-    //       timer.cancel();
-    //       isCountingDown.value = false;
-    //     }
-    //   });
-    // } catch (e) {
-    //   showToast('验证码发送失败');
-    //   isCountingDown.value = false;
-    // } finally {
-    //   SmartDialog.dismiss();
-    // }
+      debugPrint("-----$result------");
+      showToast('验证码发送成功');
+      Timer.periodic(Duration(seconds: 1), (timer) {
+        if (countDown.value > 0) {
+          countDown.value--;
+        } else {
+          timer.cancel();
+          isCountingDown.value = false;
+        }
+      });
+    } catch (e) {
+      showToast('验证码发送失败');
+      isCountingDown.value = false;
+    }
   }
 
-  Future<void> changePassWord() async {
-    // showToast('验证码发送成功');
+  @override
+  void onClose() {
+    _timer?.cancel();
+    phoneController.dispose();
+    super.onClose();
   }
 }

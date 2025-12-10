@@ -7,18 +7,19 @@ import '../../stores/global.dart';
 class MineLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
 
-  final isLogin = true.obs;
-
   @override
   void onInit() {
     super.onInit();
   }
 
   /// 点击登陆事件
-  void login() => Get.toNamed(AppRoutes.appLogin);
+  void login() {
+    if (global.isLogin) return;
+    Get.toNamed(AppRoutes.appLogin);
+  }
 
   /// 我的主页面点击事件
-  void onTapMyServices() => isLogin.value = !isLogin.value;
+  void onTapMyServices() {}
   void onTapPersonInfo() => Get.toNamed(AppRoutes.personInfo);
 
   void onTapMyDesign() =>
@@ -35,10 +36,12 @@ class MineLogic extends GetxController {
 
   void goToAppInfo() => Get.toNamed(AppRoutes.appInfoPage);
 
+  void onTapPassWord() => Get.toNamed(AppRoutes.password, arguments: false);
+
   /// 退出登录
   void logout() {
     global.userInfo.value = UserModel();
-    isLogin.value = false;
+    // isLogin.value = false;
   }
 
   void _showComingSoon(String title) {

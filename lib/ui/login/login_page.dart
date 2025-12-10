@@ -15,11 +15,7 @@ class LoginPage extends StatelessWidget {
   final TextEditingController _passwordController = TextEditingController();
 
   void _onLogin() {
-    logic.handleLogin(
-      logic.phone.value.trim(),
-      logic.password.value.trim(),
-      logic.code.value.trim(),
-    );
+    logic.handleLogin();
   }
 
   @override

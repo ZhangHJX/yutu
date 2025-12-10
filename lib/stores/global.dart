@@ -22,7 +22,7 @@ class GlobalLogic extends GetxController {
   final accessToken = ''.obs;
   final userInfo = UserModel().obs;
 
-  // /// 用户是否登录
+  /// 用户是否登录
   bool get isLogin => accessToken.value.isNotEmpty;
 
   /// 客服类型, 2为微信, 其他为应用内客服
@@ -104,17 +104,35 @@ class GlobalLogic extends GetxController {
     super.onInit();
 
     accessToken.value = box.read(tokenKey) ?? '';
-    // userInfo.value = UserModel.fromJson(box.read(userInfoKey) ?? {});
+    userInfo.value = UserModel.fromJson(box.read(userInfoKey) ?? {});
 
     ever(accessToken, (token) {
       box.write(tokenKey, token);
     });
 
     ever(userInfo, (user) {
-      box.write(userInfoKey, user);
+      box.write(userInfoKey, user.toJson());
     });
 
     // Future.delayed(100.ms, getAddressList);
+  }
+
+  /// 获取用户信息
+  void fetchUserInfo() async {
+    try {
+      final result = await http.post<UserModel>(
+        '/homePage/user/index',
+        converter: UserModel.fromJson,
+        withToken: true,
+      );
+      userInfo.value = result.data ?? UserModel();
+      debugPrint('===========  result: ${result.code}');
+      if (result.code == 0) {
+        Get.back();
+      }
+    } catch (e) {
+      debugPrint('===========  error: $e');
+    }
   }
 
   // /// 跳转到主页
@@ -155,15 +173,6 @@ class GlobalLogic extends GetxController {
   //   userInfo.value = UserModel();
   //   addressList.clear();
   // }
-
-  // /// 获取用户信息
-  void fetchUserInfo() async {
-    final res = await http.post(
-      "path",
-      data: {"mobile": 15669993907, "code": 4566},
-    );
-    debugPrint("----哈哈哈哈哈哈---$res-----");
-  }
 
   // /// 获取配置的客服类型
   // /// 客服类型, 2为微信, 其他为应用内客服

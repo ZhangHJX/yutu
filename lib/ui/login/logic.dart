@@ -1,7 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/stores/login_response.dart';
-import 'package:voicetemplate/stores/user_model.dart';
 import '../../stores/global.dart';
 import '../../app/routes/index.dart';
 import 'dart:async';
@@ -83,32 +82,34 @@ class LoginLogic extends GetxController {
     }
   }
 
-  Future<void> handleLogin(String phone, String password, String code) async {
+  Future<void> handleLogin() async {
     if (!isAgreement.value) {
       showToast('请先同意用户协议和隐私政策');
       return;
     }
     if (isPasswordLogin.value) {
-      handlePasswordLogin(phone, password);
+      handlePasswordLogin();
     } else {
-      handleCodeLogin(phone, code);
+      handleCodeLogin();
     }
   }
 
   // 处理密码登录
-  Future<void> handlePasswordLogin(String phone, String password) async {
+  Future<void> handlePasswordLogin() async {
     // 实现密码登录逻辑
     try {
-      final result = await http.post(
-        '/authPassword/login',
-        data: {'mobile': phone, 'code': code},
-        isNake: true,
+      final result = await http.post<LoginResponse>(
+        '/loginPassword/login',
+        data: {'mobile': phone.value, 'code': password.value},
+        converter: LoginResponse.fromJson,
+        withToken: false,
+        showErrorToast: true,
       );
-      debugPrint('=========== xxxxxxxxx result: $result');
-
-      // globalLogic.accessToken.value = result.data?.accessToken ?? '';
-      // globalLogic.fetchUserInfo();
-
+      if (result.code == 0) {
+        globalLogic.accessToken.value = result.data?.token ?? '';
+        globalLogic.fetchUserInfo();
+        Get.back();
+      }
       // 返回上一个页面
     } catch (e) {
       debugPrint('=========== xxxxxxxxx error: $e');
@@ -116,16 +117,20 @@ class LoginLogic extends GetxController {
   }
 
   // 处理验证码登录
-  Future<void> handleCodeLogin(String phone, String code) async {
+  Future<void> handleCodeLogin() async {
     try {
       final result = await http.post<LoginResponse>(
         '/loginSms/login',
         data: {'mobile': phone, 'code': code},
         converter: LoginResponse.fromJson,
+        withToken: false,
+        showErrorToast: true,
       );
-      globalLogic.accessToken.value = result.data?.token ?? '';
-      // globalLogic.fetchUserInfo();
-      debugPrint('accessToken===========: ${result.data?.token}');
+      if (result.code == 0) {
+        globalLogic.accessToken.value = result.data?.token ?? '';
+        globalLogic.fetchUserInfo();
+        Get.back();
+      }
     } catch (e) {
       debugPrint('=========== xxxxxxxxx error: $e');
     }
@@ -140,9 +145,9 @@ class LoginLogic extends GetxController {
         "/loginSms/send",
         data: {"mobile": phone},
         converter: CodeModel.fromJson,
-        showErrorToast: false,
+        showErrorToast: true,
+        withToken: false,
       );
-      showToast('验证码发送成功');
       Timer.periodic(Duration(seconds: 1), (timer) {
         if (countDown.value > 0) {
           countDown.value--;
@@ -154,8 +159,6 @@ class LoginLogic extends GetxController {
     } catch (e) {
       showToast('验证码发送失败');
       isCountingDown.value = false;
-    } finally {
-      SmartDialog.dismiss();
     }
   }
 

@@ -31,17 +31,16 @@ class HttpService {
         onRequest: (RequestOptions options, RequestInterceptorHandler handler) {
           final token = _box.read(tokenKey);
           if (options.extra[withTokenKey] == true && token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
+            // options.headers['Authorization'] = 'Bearer $token';
+            options.headers['token'] = token;
           }
 
-          if (options.path.startsWith('/ds-applet')) {
-            options.path = options.path.replaceFirst('/ds-applet', '/ds-app');
-          }
+          // if (options.path.startsWith('/ds-applet')) {
+          //   options.path = options.path.replaceFirst('/ds-applet', '/ds-app');
+          // }
 
           if (kDebugMode) {
-            print(
-              '👶👶👶----请求方式: ${options.path} ${options.method} ${options.path}',
-            );
+            print('👶👶👶----请求方式: ${options.baseUrl} ${options.path}');
             print('👧👧👧请求头: ${options.headers}');
             if (options.data != null) {
               print('👩👩👩请求参数: ${options.data}');
@@ -142,6 +141,7 @@ class HttpService {
         onSendProgress: onSendProgress,
         onReceiveProgress: onReceiveProgress,
       );
+      debugPrint('response===========: ${response.data}');
 
       if (isNake) {
         return BaseModel.fromJson(
@@ -157,6 +157,7 @@ class HttpService {
         showErrorToast ?? autoShowErrorToast,
       );
     } on DioException catch (e) {
+      debugPrint('response===========: $e');
       _handleError(e, showErrorToast: showErrorToast);
       rethrow;
     }

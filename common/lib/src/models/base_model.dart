@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import '../utils/index.dart';
 
 import 'server_page_model.dart';
@@ -23,18 +25,20 @@ class BaseModel<T> {
   ) {
     final rawData = json[dataKey];
     final code = json[codeKey];
-    final message = json[messageKey];
+    final String message = json[messageKey] as String? ?? '';
 
     T? data;
+
+    debugPrint('BaseModel===${HttpStatus.ok}');
+
+    if (showErrorToast && message.isNotEmpty) {
+      showToast(message);
+    }
 
     if (rawData is Map) {
       data = fromJsonT(rawData as Map<String, dynamic>);
     } else {
       data = fromJsonT({dstValueKey: rawData});
-    }
-
-    if (showErrorToast && code != HttpStatus.ok) {
-      showToast(message);
     }
 
     return BaseModel(code: code, message: message, data: data);
