@@ -52,6 +52,7 @@ dependencies:
   package_info_plus: ^9.0.0
   flutter_staggered_grid_view: ^0.7.0
   flutter_image_compress: ^2.4.0
+  flutter_native_splash: ^2.4.7
   
   
 
@@ -63,6 +64,7 @@ dev_dependencies:
   build_runner: ^2.4.13
   json_serializable: ^6.9.0
   flutter_launcher_icons: ^0.14.0  
+  
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -125,6 +127,22 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/icons/app_icon.png"
 
 
+flutter_native_splash:
+  # 全局配置
+  color: "#FFFFFF"    # 启动页背景颜色
+  background_image: assets/icons/splash_bg.png
+
+  fullscreen: true
+
+  # Android 12 及以上专用配置（很重要）
+  android_12:
+    color: "#40A8FF"
+    image: assets/icons/splash_logo.png
+
+  # 分平台细化（可选）
+  android: true
+  ios: true
+  web: false
 
 
 

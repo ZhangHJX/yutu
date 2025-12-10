@@ -25,7 +25,7 @@ class PasswordPage extends StatelessWidget {
             children: [
               CAppBar(
                 title: Text(
-                  logic.globalLogic.isLogin ? "设置密码" : '忘记密码',
+                  logic.global.isLogin ? "设置密码" : '忘记密码',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 backgroundColor: Colors.transparent,
@@ -107,7 +107,7 @@ class PasswordPage extends StatelessWidget {
             child: TextField(
               controller: logic.phoneController,
               keyboardType: TextInputType.number,
-              enabled: !logic.globalLogic.isLogin,
+              enabled: !logic.global.isLogin,
               inputFormatters: [LengthLimitingTextInputFormatter(11)],
               decoration: InputDecoration(
                 isCollapsed: true,
@@ -246,7 +246,7 @@ class PasswordPage extends StatelessWidget {
                   fontWeight: FontWeight.w400,
                 ),
               ),
-              onChanged: (value) => logic.password.value = value,
+              onChanged: (value) => logic.again.value = value,
             ),
           ),
         ],

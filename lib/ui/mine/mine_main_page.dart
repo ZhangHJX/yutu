@@ -17,6 +17,8 @@ class MinePage extends StatelessWidget {
           _buildHeaderBackground(),
           SafeArea(
             child: Obx(() {
+              final bool isLogin = logic.global.isLogin;
+
               return Column(
                 children: [
                   _buildHeaderBar(),
@@ -25,27 +27,49 @@ class MinePage extends StatelessWidget {
                       child: Column(
                         children: [
                           _buildMineInfoContent(),
-                          if (logic.global.isLogin) _buildLoggedInContent(),
-                          if (logic.global.isLogin) _buildToolsCard(),
-                          if (logic.global.isLogin) _buildSetPasswordCard(),
+                          if (isLogin) _buildLoggedInContent(),
+                          if (isLogin) _buildToolsCard(),
+                          if (isLogin) _buildSetPasswordCard(),
                           _buildSoftwareInfoCard(),
-                          if (logic.global.isLogin) _buildLoginOutCard(),
+                          if (isLogin) _buildLoginOutCard(),
 
                           SizedBox(height: 15.w),
-                          Text(
-                            '语音厅设计助手 V1.0\n让设计更简单',
-                            style: TextStyle(
-                              fontSize: 11.w,
-                              color: "#9E9E9E".color,
-                              fontWeight: FontWeight.w500,
+
+                          /// 登录状态：文案跟随内容在滚动区域中
+                          if (isLogin) ...[
+                            Text(
+                              '语音厅设计助手 V1.0\n让设计更简单',
+                              style: TextStyle(
+                                fontSize: 11.w,
+                                color: "#9E9E9E".color,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(height: 51.w),
+                            SizedBox(height: 51.w),
+                          ],
+
+                          /// 未登录时，可以留一点底部空隙，避免内容太贴近底部
+                          if (!isLogin) SizedBox(height: 15.w),
                         ],
                       ),
                     ),
                   ),
+
+                  /// 未登录状态：文案固定在页面底部（不跟随滚动）
+                  if (!isLogin)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 51.w),
+                      child: Text(
+                        '语音厅设计助手 V1.0\n让设计更简单',
+                        style: TextStyle(
+                          fontSize: 11.w,
+                          color: "#9E9E9E".color,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                 ],
               );
             }),
@@ -121,7 +145,7 @@ class MinePage extends StatelessWidget {
                       child: ClipOval(
                         child: user.avatar.isEmpty
                             ? Image.asset(
-                                "assets/images/mine/mine_info_editor.png",
+                                "assets/images/mine/mine_info_empty.png",
                                 fit: BoxFit.cover,
                               )
                             : Image.network(user.avatar, fit: BoxFit.cover),
@@ -201,7 +225,6 @@ class MinePage extends StatelessWidget {
   }
 
   Widget _buildDesignBlock() {
-    final user = logic.global.userInfo.value;
     final designs = [];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -1,6 +1,5 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../stores/user_model.dart';
 import '../../app/routes/index.dart';
 import '../../stores/global.dart';
 

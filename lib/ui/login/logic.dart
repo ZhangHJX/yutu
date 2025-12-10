@@ -100,7 +100,7 @@ class LoginLogic extends GetxController {
     try {
       final result = await http.post<LoginResponse>(
         '/loginPassword/login',
-        data: {'mobile': phone.value, 'code': password.value},
+        data: {'mobile': phone.value, 'password': password.value},
         converter: LoginResponse.fromJson,
         withToken: false,
         showErrorToast: true,

@@ -31,22 +31,13 @@ class PersonInfoAvatar extends StatelessWidget {
                     child: Padding(
                       padding: EdgeInsets.all(4.w),
                       child: ClipOval(
-                        child: logic.avatar.isEmpty
-                            ? Container(
-                                width: 76.w,
-                                height: 76.w,
-                                color: Color(0xFFF2F3F7),
-                                child: Icon(Icons.person_outline, size: 32.w),
+                        child: logic.avatar.value.isEmpty
+                            ? Image.asset(
+                                "assets/images/mine/mine_info_empty.png",
+                                fit: BoxFit.cover,
                               )
-                            :
-                              // : Image.network(
-                              //     user.avatar,
-                              //     width: 56,
-                              //     height: 56,
-                              //     fit: BoxFit.cover,
-                              //   ),
-                              Image.asset(
-                                "assets/images/mine/mine_info_editor.png",
+                            : Image.network(
+                                logic.avatar.value,
                                 fit: BoxFit.cover,
                               ),
                       ),

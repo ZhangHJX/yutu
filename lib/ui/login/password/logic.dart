@@ -7,7 +7,7 @@ import '../../../stores/global.dart';
 
 class ForgetLogic extends GetxController {
   /// 全局应用
-  final globalLogic = Get.find<GlobalLogic>();
+  final global = Get.find<GlobalLogic>();
 
   // 输入内容
   final phone = ''.obs;
@@ -29,9 +29,12 @@ class ForgetLogic extends GetxController {
   void onInit() {
     super.onInit();
     // 初始化 TextEditingController
-    phoneController = TextEditingController(text: phone.value);
-    getPhoneNumber();
-
+    if (global.isLogin) {
+      phoneController = TextEditingController(text: phone.value);
+      getPhoneNumber();
+    } else {
+      phoneController = TextEditingController();
+    }
     ever<String>(phone, (value) {
       if (phoneController.text != value) {
         phoneController.text = value;
@@ -41,10 +44,23 @@ class ForgetLogic extends GetxController {
 
   Future<void> changePassWord() async {
     try {
+      debugPrint('${password.value}===========${again.value}');
+      if (password.value != again.value) {
+        showToast("两次输入的密码不一致");
+        return;
+      }
       final result = await http.post(
-        '/homePage/user/index',
-        data: {"password": password.value, "code": "9999"},
-        withToken: true,
+        global.isLogin
+            ? '/passwordSet/setPassword'
+            : 'passwordChange/changePassword',
+        data: global.isLogin
+            ? {"password": password.value, "code": code.value}
+            : {
+                "mobile": phone.value,
+                "code": code.value,
+                "password": password.value,
+              },
+        withToken: global.isLogin,
       );
       if (result.code == 0) {
         Get.back();
@@ -60,7 +76,7 @@ class ForgetLogic extends GetxController {
       "/passwordSet/index",
       converter: PhoneModel.fromJson,
       showErrorToast: false,
-      withToken: true,
+      withToken: global.isLogin,
     );
     if (result.data != null) {
       phone.value = result.data!.mobile;
@@ -84,10 +100,11 @@ class ForgetLogic extends GetxController {
     countDown.value = 60;
     try {
       await http.post<CodeModel>(
-        "/passwordSet/sendSms",
+        global.isLogin ? "/passwordSet/sendSms" : '/passwordChange/sendSms',
+        data: global.isLogin ? {} : {'mobile': phone.value},
         converter: CodeModel.fromJson,
         showErrorToast: true,
-        withToken: globalLogic.isLogin,
+        withToken: global.isLogin,
       );
 
       Timer.periodic(Duration(seconds: 1), (timer) {
