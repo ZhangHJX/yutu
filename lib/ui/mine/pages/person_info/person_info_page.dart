@@ -118,7 +118,7 @@ class PersonInfoPage extends StatelessWidget {
 
   Widget _buildSaveButton(PersonLogic logic) {
     return GestureDetector(
-      onTap: logic.save,
+      onTap: logic.changeSave,
       child: Container(
         margin: EdgeInsets.symmetric(horizontal: 29.w),
         height: 48.w,

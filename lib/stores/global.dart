@@ -54,23 +54,17 @@ class GlobalLogic extends GetxController {
     passwordVisible.value = false;
   }
 
-  // /// 用户头像
-  // String? get wechatAvatar => userInfo.value.wechatAvatar;
+  /// 用户头像
+  String? get avatar => userInfo.value.avatar;
 
-  // /// 会员id
-  // String get memberId => userInfo.value.memberId ?? '';
+  /// 昵称
+  String? get nickname => userInfo.value.nickname;
 
-  // /// 会员类型
-  // int? get memberType => userInfo.value.memberType;
-
-  // /// 会员昵称
-  // String? get nickname => userInfo.value.wechatNickName;
-
-  // /// 手机号
-  // String? get phone => userInfo.value.mobile;
+  /// 手机号
+  String? get phone => userInfo.value.mobile;
 
   // /// 个性签名
-  // String? get signature => userInfo.value.signature;
+  String? get sign => userInfo.value.sign;
 
   // /// 生日
   // String? get birthday => userInfo.value.birthday;
@@ -167,12 +161,18 @@ class GlobalLogic extends GetxController {
   //   );
   // }
 
-  // /// 退出登录
-  // void logout() {
-  //   accessToken.value = '';
-  //   userInfo.value = UserModel();
-  //   addressList.clear();
-  // }
+  /// 退出登录
+  void logout() async {
+    final result = await http.post(
+      '/homePage/user/logout',
+      withToken: true,
+      showErrorToast: true,
+    );
+    if (result.code == 0) {
+      accessToken.value = '';
+      userInfo.value = UserModel();
+    }
+  }
 
   // /// 获取配置的客服类型
   // /// 客服类型, 2为微信, 其他为应用内客服
@@ -215,3 +215,4 @@ final data = await http.post(
      converter: listConverter(DiscoveryModel.fromJson),
 );
 */ 
+

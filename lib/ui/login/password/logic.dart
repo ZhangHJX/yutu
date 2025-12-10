@@ -83,16 +83,14 @@ class ForgetLogic extends GetxController {
     isCountingDown.value = true;
     countDown.value = 60;
     try {
-      final result = await http.post<CodeModel>(
-        "/setPassword/sendSms",
-        // data: {"mobile": phone},
+      await http.post<CodeModel>(
+        "/passwordSet/sendSms",
         converter: CodeModel.fromJson,
-        showErrorToast: false,
+        showErrorToast: true,
+
         withToken: globalLogic.isLogin,
       );
 
-      debugPrint("-----$result------");
-      showToast('验证码发送成功');
       Timer.periodic(Duration(seconds: 1), (timer) {
         if (countDown.value > 0) {
           countDown.value--;
@@ -102,7 +100,6 @@ class ForgetLogic extends GetxController {
         }
       });
     } catch (e) {
-      showToast('验证码发送失败');
       isCountingDown.value = false;
     }
   }

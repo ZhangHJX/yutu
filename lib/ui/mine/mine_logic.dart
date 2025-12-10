@@ -14,16 +14,14 @@ class MineLogic extends GetxController {
 
   /// 点击登陆事件
   void login() {
-    if (global.isLogin) return;
+    // if (global.isLogin) return;
     Get.toNamed(AppRoutes.appLogin);
   }
 
-  /// 我的主页面点击事件
-  void onTapMyServices() {}
+  /// 个人资料
   void onTapPersonInfo() => Get.toNamed(AppRoutes.personInfo);
 
-  void onTapMyDesign() =>
-      Get.toNamed(AppRoutes.designPage, arguments: global.userInfo.value);
+  void onTapMyDesign() => Get.toNamed(AppRoutes.designPage);
 
   /// 常用工具事件
   void onTapMyDraft() =>
@@ -39,10 +37,7 @@ class MineLogic extends GetxController {
   void onTapPassWord() => Get.toNamed(AppRoutes.password, arguments: false);
 
   /// 退出登录
-  void logout() {
-    global.userInfo.value = UserModel();
-    // isLogin.value = false;
-  }
+  void logout() => global.logout();
 
   void _showComingSoon(String title) {
     Get.snackbar(
