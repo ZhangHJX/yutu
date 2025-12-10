@@ -105,7 +105,7 @@ class HttpService {
 
     // 显示错误信息
     if (kDebugMode) {
-      print('😩😩😩网络请求发生错误: ${error.message}');
+      print('😩😩😩网络请求发生错误: ${error.type}---${error.message}');
     }
 
     final shouldShowToast = showErrorToast ?? autoShowErrorToast;
@@ -141,7 +141,7 @@ class HttpService {
         onSendProgress: onSendProgress,
         onReceiveProgress: onReceiveProgress,
       );
-      debugPrint('response===========: ${response.data}');
+      debugPrint('response=====result======: ${response.data}');
 
       if (isNake) {
         return BaseModel.fromJson(
@@ -157,7 +157,7 @@ class HttpService {
         showErrorToast ?? autoShowErrorToast,
       );
     } on DioException catch (e) {
-      debugPrint('response===========: $e');
+      debugPrint('response====error======: $e');
       _handleError(e, showErrorToast: showErrorToast);
       rethrow;
     }

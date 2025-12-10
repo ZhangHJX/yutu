@@ -87,7 +87,6 @@ class ForgetLogic extends GetxController {
         "/passwordSet/sendSms",
         converter: CodeModel.fromJson,
         showErrorToast: true,
-
         withToken: globalLogic.isLogin,
       );
 

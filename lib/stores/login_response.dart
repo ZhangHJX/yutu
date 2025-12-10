@@ -3,7 +3,7 @@ import 'user_model.dart';
 
 part 'login_response.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class LoginResponse {
   final UserModel user;
   final String token;
