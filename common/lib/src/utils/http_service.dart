@@ -35,7 +35,7 @@ class HttpService {
           }
 
           if (kDebugMode) {
-            print('👶👶👶----请求方式: ${options.baseUrl}${options.path}');
+            print('👶👶👶----请求方式: ${options.baseUrl}/${options.path}');
             print('👧👧👧请求头: ${options.headers}');
             if (options.data != null) {
               print('👩👩👩请求参数: ${options.data}');
@@ -156,7 +156,7 @@ class HttpService {
         );
       }
 
-      debugPrint('response=====result===$response===: ${response.data}');
+      debugPrint('response=========: ${response.data}');
 
       if (isNake) {
         return BaseModel.fromJson(

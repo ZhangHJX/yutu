@@ -44,7 +44,6 @@ class ForgetLogic extends GetxController {
 
   Future<void> changePassWord() async {
     try {
-      debugPrint('${password.value}===========${again.value}');
       if (password.value != again.value) {
         showToast("两次输入的密码不一致");
         return;

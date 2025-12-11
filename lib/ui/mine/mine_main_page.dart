@@ -119,7 +119,13 @@ class MinePage extends StatelessWidget {
 
   /// 个人信息
   Widget _buildMineInfoContent() {
-    final user = logic.global.userInfo.value;
+    final icon = logic.global.avatar ?? "";
+    final avatar = icon.isEmpty
+        ? "assets/images/mine/mine_info_empty.png"
+        : icon;
+
+    debugPrint("--你好啊啊----$avatar------");
+
     return Padding(
       padding: EdgeInsets.only(left: 22.w, top: 9.w, right: 20.w),
       child: Row(
@@ -129,6 +135,7 @@ class MinePage extends StatelessWidget {
             child: Container(
               width: 62.w,
               height: 62.w,
+              padding: EdgeInsets.all(4.w),
               decoration: BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage(
@@ -138,25 +145,14 @@ class MinePage extends StatelessWidget {
                 ),
               ),
               child: Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(4.w),
-                      child: ClipOval(
-                        child: user.avatar.isEmpty
-                            ? Image.asset(
-                                "assets/images/mine/mine_info_empty.png",
-                                fit: BoxFit.cover,
-                              )
-                            : Image.network(user.avatar, fit: BoxFit.cover),
-                      ),
-                    ),
-                  ),
+                  CBorderImage(size: 54.w, imgUrl: avatar, isCircle: true),
 
                   if (logic.global.isLogin)
                     Positioned(
-                      bottom: 0,
-                      right: 0,
+                      bottom: -6,
+                      right: -6,
                       child: GestureDetector(
                         onTap: logic.onTapPersonInfo,
                         child: Image.asset(

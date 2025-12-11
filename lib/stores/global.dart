@@ -125,30 +125,14 @@ class GlobalLogic extends GetxController {
   //   tabIndex.value = index;
   // }
 
-  // /// 更新用户信息
-  // /// [notify] 通知状态, 1为开启, 0为关闭
-  // /// [authStatus] 认证状态, 1为未认证, 2为已认证
-  // void updateUserInfo({
-  //   int? notify,
-  //   int? authStatus,
-  //   int? gender,
-  //   String? birthday,
-  //   String? signature,
-  //   String? wechatNickName,
-  //   String? wechatAvatar,
-  //   int? isSetPassword,
-  // }) {
-  //   userInfo.value = userInfo.value.copyWith(
-  //     notify: notify,
-  //     authStatus: authStatus,
-  //     gender: gender,
-  //     birthday: birthday,
-  //     signature: signature,
-  //     wechatNickName: wechatNickName,
-  //     wechatAvatar: wechatAvatar,
-  //     isSetPassword: isSetPassword,
-  //   );
-  // }
+  /// 更新用户信息
+  void updateUserInfo({String? nickname, String? avatar, String? sign}) {
+    userInfo.value = userInfo.value.copyWith(
+      nickname: nickname,
+      avatar: avatar,
+      sign: sign,
+    );
+  }
 
   /// 退出登录
   void logout() async {
@@ -194,7 +178,6 @@ class GlobalLogic extends GetxController {
 //   }
 //   return completer.future;
 // }
-
 
 
 /*

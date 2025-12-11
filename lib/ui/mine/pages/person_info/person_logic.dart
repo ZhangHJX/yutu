@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/stores/global.dart';
@@ -17,6 +16,15 @@ class PersonLogic extends GetxController {
   var signature = "".obs;
   final phoneBound = false.obs;
 
+  String fileAvarPath = ''; // 文件的路径
+  double fileSize = 0; // 单位字节 b
+  int fileId = 0; // resource_id
+
+  /// 原始值（用于比较哪些字段被修改了）
+  String _originalAvatar = "";
+  String _originalNickname = "";
+  String _originalSignature = "";
+
   /// 输入控制器
   final nicknameCtrl = TextEditingController();
   final signatureCtrl = TextEditingController();
@@ -30,118 +38,222 @@ class PersonLogic extends GetxController {
 
   /// 加载用户资料
   Future<void> loadProfile() async {
-    avatar.value = global.avatar ?? "";
+    final icon = global.avatar ?? "";
+    avatar.value = icon.isEmpty
+        ? "assets/images/mine/mine_info_empty.png"
+        : icon;
     nickname.value = global.nickname ?? "";
     phone.value = global.phone ?? "";
     signature.value = global.sign ?? "";
-
     nicknameCtrl.text = nickname.value;
     signatureCtrl.text = signature.value;
     phoneCtrl.text = phone.value;
     phoneBound.value = phone.value.isNotEmpty;
+
+    // 保存原始值用于比较
+    _originalAvatar = icon.isEmpty
+        ? "assets/images/mine/mine_info_empty.png"
+        : icon;
+    _originalNickname = global.nickname ?? "";
+    _originalSignature = global.sign ?? "";
   }
 
   /// 上传头像 BuildContext context
   Future<void> handlePickAvatar(BuildContext context) async {
-    final res = await PermissionUtil.requestPhotoAlbumPermission();
-    if (!res) {
-      SmartDialog.show(
-        builder: (context) => ConfirmPopWidget(
-          title: '提示',
-          subTitle: '打开相册选图片以上传图片',
-          sureTitle: "同意",
-          sureAction: () {
-            AppSettings.openAppSettings(type: AppSettingsType.settings);
-          },
-        ),
-        alignment: Alignment.center,
-        animationType: SmartAnimationType.centerFade_otherSlide,
-        animationTime: Duration(milliseconds: 250),
-        maskColor: "#000000".color.withValues(alpha: 0.5),
-        clickMaskDismiss: false,
-        useAnimation: true,
-        usePenetrate: false,
+    try {
+      final res = await PermissionUtil.requestPhotoAlbumPermission();
+      if (!res) {
+        showPermissionView("打开相册选图片以便更改头像");
+        return;
+      }
+      if (!context.mounted) {
+        return;
+      }
+      PickerImageManager.pickerPhotos(
+        context: context,
+        onSuccess:
+            (String filePath, double width, double height, int fileSize) {
+              fileSize = fileSize;
+              getUploadInfo(filePath);
+            },
       );
-      return;
+    } catch (e, stackTrace) {
+      showToast('读取照片路径报错，请重试');
+      debugPrint('从相册选择😟😟😟😟: $e $stackTrace');
     }
+  }
 
-    if (!context.mounted) {
-      return;
-    }
-    PickerImageManager.pickerPhotos(
-      context: context,
-      onSuccess: (String filePath, double width, double height) {
-        getUploadInfo(filePath);
-      },
+  // showMyBottomSheet([
+  //   BottomSheetItem(
+  //     title: '从相册选择',
+  //     onPressed: () async {
+  //       try {
+  //         final res = await PermissionUtil.requestPhotoAlbumPermission();
+  //         if (!res) {
+  //           showPermissionView("打开相册选图片以便更改头像");
+  //           return;
+  //         }
+  //         if (!context.mounted) {
+  //           return;
+  //         }
+  //         PickerImageManager.pickerPhotos(
+  //           context: context,
+  //           onSuccess:
+  //               (String filePath, double width, double height, int fileSize) {
+  //                 fileSize = fileSize;
+  //                 getUploadInfo(filePath);
+  //               },
+  //         );
+  //       } catch (e, stackTrace) {
+  //         showToast('读取照片路径报错，请重试');
+  //         debugPrint('从相册选择😟😟😟😟: $e $stackTrace');
+  //       }
+  //     },
+  //   ),
+  // BottomSheetItem(
+  //   title: '拍照',
+  //   onPressed: () async {
+  //     final res = await PermissionUtil.checkAndRequestCameraPermission();
+  //     if (!res) {
+  //       showPermissionView("打开相机并拍照以便更改头像");
+  //       return;
+  //     }
+
+  // final cameraRes = await imagePicker.pickImage(
+  //   source: ImageSource.camera,
+  // );
+  // if (cameraRes != null) {
+  //   _images.add(cameraRes.path);
+  // }
+  // onSuccess?.call();
+  //     },
+  //   ),
+  // ]);
+
+  void showPermissionView(String content) {
+    SmartDialog.show(
+      builder: (context) => ConfirmPopWidget(
+        title: '提示',
+        subTitle: '打开相册选图片以上传图片',
+        sureTitle: "同意",
+        sureAction: () {
+          AppSettings.openAppSettings(type: AppSettingsType.settings);
+        },
+      ),
+      alignment: Alignment.center,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: "#000000".color.withValues(alpha: 0.5),
+      clickMaskDismiss: false,
+      useAnimation: true,
+      usePenetrate: false,
     );
   }
 
   void getUploadInfo(String filePath) async {
-    final result = await http.post<PersonOssModel>(
-      '/upload/generateUploadUrl',
-      data: {"type": "user", "file_type": "png"},
-      converter: PersonOssModel.fromJson,
-      showErrorToast: false,
-      withToken: true,
-    );
+    try {
+      showLoading("上传中");
 
-    final file = File(filePath);
-    final bytes = await file.readAsBytes();
-    final res = await http.put(
-      result.data!.signUrl,
-      data: bytes,
-      options: Options(
-        contentType: 'image/png', // ✅ 正常 MIME
-        headers: {
-          Headers.contentLengthHeader: bytes.length, // 很多存储要求带上
-        },
-      ),
-      useBaseUrl: false,
-      withToken: true,
-      isNake: true,
-    );
-    debugPrint('uploadFile===========  result: ${res.isSuccess}');
+      final fileType = PickerImageManager.getFileExtensionFromPath(filePath);
+      final result = await http.post<PersonOssModel>(
+        '/upload/generateUploadUrl',
+        data: {"type": "user", "file_type": fileType, "field_type": "avatar"},
+        converter: PersonOssModel.fromJson,
+        showErrorToast: false,
+        withToken: true,
+      );
+      if (result.code == 0) {
+        String mimeType = mimeTypeMap[fileType] ?? "";
+        fileAvarPath = result.data?.file ?? "";
+        await uploadFile(result.data!, filePath, mimeType);
+      } else {
+        SmartDialog.dismiss();
+      }
+    } catch (e) {
+      // 上传失败，恢复原始头像
+      SmartDialog.dismiss();
+    }
   }
 
-  // {sign_url: http://yutu-1363209587.cos.ap-nanjing.myqcloud.com/image/avatar/avatar601471f1b97b218a4cbf7477d2bcb6e6.png?sign=q-sign-algorithm%3Dsha1%26q-ak%3DAKIDsmU1LUQ9fz63pOkspY6ScaKq8E6nJemg%26q-sign-time%3D1765335985%3B1765444045%26q-key-time%3D1765335985%3B1765444045%26q-header-list%3Dhost%26q-url-param-list%3D%26q-signature%3D72d5adb8b6aa5369aaeb48f33c75462dd0794bc9&,
-  //  resource_id: 3}
-
-  //  endpoint: ,
-  //  bucket: yutu-1363209587,
-  //  path: /image/avatar/avatar601471f1b97b218a4cbf7477d2bcb6e6.png,
-  //  file: http://yutu-1363209587.cos.ap-nanjing.myqcloud.com/image/avatar/avatar601471f1b97b218a4cbf7477d2bcb6e6.png,
+  Future<void> uploadFile(
+    PersonOssModel ossModel,
+    String filePath,
+    String mimeType,
+  ) async {
+    try {
+      debugPrint('======res===== 开始${ossModel.signUrl} ');
+      final file = File(filePath);
+      final bytes = await file.readAsBytes();
+      final res = await http.put(
+        ossModel.signUrl,
+        data: bytes,
+        options: Options(
+          contentType: mimeType, // ✅ 正常 MIME
+          headers: {
+            Headers.contentLengthHeader: bytes.length, // 很多存储要求带上
+          },
+        ),
+        useBaseUrl: false,
+        withToken: true,
+        isNake: true,
+      );
+      if (res.isSuccess) {
+        // 上传成功后更新为服务器URL
+        fileId = ossModel.resourceId;
+        avatar.value = filePath;
+      }
+      SmartDialog.dismiss();
+    } catch (e) {
+      showToast("图片上传失败");
+      debugPrint('======出错了===== $e ');
+      SmartDialog.dismiss();
+    }
+  }
 
   Future<void> changeSave() async {
     if (nickname.value.trim().isEmpty) {
       showToast("请输入昵称");
       return;
     }
+    // 构建只包含修改过的字段的数据
+    final Map<String, dynamic> data = {};
+    // 比较并只添加修改过的字段
+    if (nickname.value != _originalNickname) {
+      data["nickname"] = nickname.value;
+    }
+    if (signature.value != _originalSignature) {
+      data["sign"] = signature.value;
+    }
+    // 头像比较：需要处理默认头像的情况
+    if (avatar.value != _originalAvatar) {
+      data["resource_id"] = fileId;
+      double sizeInKb = fileSize / 1024;
+      data["file_size"] = "$sizeInKb";
+    }
 
-    // final updatedProfile = UserModel(
-    //   avatar: avatar.value,
-    //   nickname: nicknameCtrl.text.trim(),
-    //   mobile: phoneCtrl.text.trim().isNotEmpty
-    //       ? phoneCtrl.text.trim()
-    //       : phone.value,
-    //   // signature: signatureCtrl.text.trim(),
-    // );
-
+    if (data.isEmpty) {
+      showToast("未修改用户信息");
+      return;
+    }
+    showLoading("修改中");
     try {
       final result = await http.post(
         '/user/edit',
-        data: {
-          "nickname": nickname.value,
-          "avatar": avatar.value,
-          "sign": signature.value,
-        },
+        data: data,
         withToken: true,
         showErrorToast: true,
       );
-      debugPrint('===========  result: $result');
+      SmartDialog.dismiss();
       if (result.code == 0) {
+        global.updateUserInfo(
+          nickname: nickname.value,
+          sign: signature.value,
+          avatar: fileAvarPath,
+        );
         Get.back();
       }
     } catch (e) {
+      SmartDialog.dismiss();
       debugPrint('===========  error: $e');
     }
   }

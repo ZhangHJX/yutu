@@ -10,3 +10,15 @@ const double editHitCircleSize = 25.0; // 控制点点击范围
 
 const double rotationButtonSize = 26.0; //旋转按钮大小
 const double rotationButtonPadding = 15.0; //旋转按钮到边框的间距
+
+Map<String, String> mimeTypeMap = {
+  "jpeg": "image/jpeg",
+  "jpg": "image/jpeg",
+  "gif": "image/gif",
+  "png": "image/png",
+  "heic": "image/heic",
+  "heif": "image/heif",
+  "svg": "image/svg+xml",
+  "webp": "image/webp",
+  "bmp": "image/bmp",
+};

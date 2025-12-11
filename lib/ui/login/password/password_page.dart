@@ -1,4 +1,5 @@
 import 'package:common/common.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../widgets/app_status_bar.dart';
@@ -15,70 +16,74 @@ class PasswordPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          AppStatusBar(),
-          Column(
-            children: [
-              CAppBar(
-                title: Text(
-                  logic.global.isLogin ? "设置密码" : '忘记密码',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+    return KeyboardDismissOnTap(
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        backgroundColor: Colors.white,
+        body: Stack(
+          children: [
+            AppStatusBar(),
+            Column(
+              children: [
+                CAppBar(
+                  title: Text(
+                    logic.global.isLogin ? "设置密码" : '忘记密码',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  backgroundColor: Colors.transparent,
                 ),
-                backgroundColor: Colors.transparent,
-              ),
 
-              SizedBox(height: 24.w),
+                SizedBox(height: 24.w),
 
-              _buildPhoneField(),
-              SizedBox(height: 16.w),
+                _buildPhoneField(),
+                SizedBox(height: 16.w),
 
-              _buildYanZhengField(),
-              SizedBox(height: 16.w),
+                _buildYanZhengField(),
+                SizedBox(height: 16.w),
 
-              _buildNewPassworldField(),
-              SizedBox(height: 16.w),
+                _buildNewPassworldField(),
+                SizedBox(height: 16.w),
 
-              _buildAgainPassworldField(),
+                _buildAgainPassworldField(),
 
-              Spacer(),
+                Spacer(),
 
-              GestureDetector(
-                onTap: logic.changePassWord,
-                child: Container(
-                  height: 48.w,
-                  margin: EdgeInsets.only(
-                    left: 29.w,
-                    right: 29.w,
-                    bottom: 51.w,
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 29.w),
-                  decoration: BoxDecoration(
-                    color: "#64A2FF".color,
-                    image: DecorationImage(
-                      image: AssetImage('assets/images/login/login_btn_bg.png'),
-                      fit: BoxFit.cover,
+                GestureDetector(
+                  onTap: logic.changePassWord,
+                  child: Container(
+                    height: 48.w,
+                    margin: EdgeInsets.only(
+                      left: 29.w,
+                      right: 29.w,
+                      bottom: 51.w,
                     ),
-                    borderRadius: BorderRadius.circular(24.w),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '登录',
-                      style: TextStyle(
-                        fontSize: 16.w,
-                        fontWeight: FontWeight.w500,
-                        color: "#FFFFFF".color,
+                    padding: EdgeInsets.symmetric(horizontal: 29.w),
+                    decoration: BoxDecoration(
+                      color: "#64A2FF".color,
+                      image: DecorationImage(
+                        image: AssetImage(
+                          'assets/images/login/login_btn_bg.png',
+                        ),
+                        fit: BoxFit.cover,
+                      ),
+                      borderRadius: BorderRadius.circular(24.w),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '登录',
+                        style: TextStyle(
+                          fontSize: 16.w,
+                          fontWeight: FontWeight.w500,
+                          color: "#FFFFFF".color,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

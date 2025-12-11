@@ -9,6 +9,7 @@ class ProfileInput extends StatefulWidget {
   final int maxLines;
   final int? maxLength;
   final bool showCounter;
+  final void Function(String value) changeValue;
 
   const ProfileInput({
     super.key,
@@ -19,6 +20,7 @@ class ProfileInput extends StatefulWidget {
     this.maxLines = 1,
     this.maxLength,
     this.showCounter = false,
+    required this.changeValue,
   });
 
   @override
@@ -97,6 +99,9 @@ class _ProfileInputState extends State<ProfileInput> {
                             ? "#848484".color
                             : "#121F33".color,
                       ),
+                      onChanged: (value) {
+                        widget.changeValue(value);
+                      },
                     ),
                   ),
                 ],

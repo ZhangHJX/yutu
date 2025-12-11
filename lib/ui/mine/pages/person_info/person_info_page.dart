@@ -63,6 +63,9 @@ class PersonInfoPage extends StatelessWidget {
                               controller: logic.nicknameCtrl,
                               hint: "输入昵称",
                               maxLength: 15,
+                              changeValue: (value) {
+                                logic.nickname.value = value;
+                              },
                             ),
 
                             SizedBox(height: 16.w),
@@ -75,6 +78,9 @@ class PersonInfoPage extends StatelessWidget {
                                 hint: logic.phoneBound.value
                                     ? logic.phone.value
                                     : "输入手机号",
+                                changeValue: (value) {
+                                  logic.phone.value = value;
+                                },
                               ),
                             ),
 
@@ -87,6 +93,9 @@ class PersonInfoPage extends StatelessWidget {
                               maxLength: 30,
                               showCounter: true,
                               hint: "输入你的签名吧~",
+                              changeValue: (value) {
+                                logic.signature.value = value;
+                              },
                             ),
                             SizedBox(height: 33.w),
                             Text(

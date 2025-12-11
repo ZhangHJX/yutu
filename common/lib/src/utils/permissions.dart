@@ -183,4 +183,37 @@ class PermissionUtil {
       return false;
     }
   }
+
+  /// 检查相机权限
+  static Future<bool> checkCameraPermission() async {
+    try {
+      final status = await Permission.camera.status;
+      return status.isGranted;
+    } catch (e) {
+      debugPrint('检查相机权限出错: $e');
+      return false;
+    }
+  }
+
+  /// 请求相机权限
+  static Future<bool> requestCameraPermission() async {
+    try {
+      final status = await Permission.camera.request();
+      return status.isGranted;
+    } catch (e) {
+      debugPrint('请求相机权限出错: $e');
+      return false;
+    }
+  }
+
+  /// 检查并请求相机权限
+  static Future<bool> checkAndRequestCameraPermission() async {
+    // 先检查是否已有权限
+    if (await checkCameraPermission()) {
+      return true;
+    }
+    // 请求权限
+    final permissionGranted = await requestCameraPermission();
+    return permissionGranted;
+  }
 }
