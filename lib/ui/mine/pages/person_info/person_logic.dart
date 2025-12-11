@@ -3,7 +3,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/stores/global.dart';
 import '../model/person_oss_model.dart';
-import './utils/picker_image_manager.dart';
+import './utils/index.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 
 class PersonLogic extends GetxController {
@@ -154,7 +154,7 @@ class PersonLogic extends GetxController {
     try {
       showLoading("上传中");
 
-      final fileType = PickerImageManager.getFileExtensionFromPath(filePath);
+      final fileType = ImageCameraUtils.getFileExtensionFromPath(filePath);
       final result = await http.post<PersonOssModel>(
         '/upload/generateUploadUrl',
         data: {"type": "user", "file_type": fileType, "field_type": "avatar"},
