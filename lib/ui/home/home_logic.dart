@@ -6,6 +6,17 @@ import '../../app/routes/index.dart';
 import '../utils/file/canvals_file_manager.dart';
 
 class HomeLogic extends GetxController {
+  // Tab 索引
+  final selectedTabIndex = 0.obs;
+
+  // Tab 列表
+  final tabs = ['全部', '二次元', '恋爱', '简约', '炫彩', '海报'].obs;
+
+  // 切换 tab
+  void switchTab(int index) {
+    selectedTabIndex.value = index;
+  }
+
   @override
   void onInit() {
     super.onInit();

@@ -29,7 +29,7 @@ class BaseModel<T> {
 
     T? data;
 
-    debugPrint('BaseModel===$rawData');
+    debugPrint('BaseModel======$rawData======${HttpStatus.ok}');
 
     if (showErrorToast && message.isNotEmpty) {
       showToast(message);

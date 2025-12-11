@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/stores/global.dart';
 import '../model/person_oss_model.dart';
+import './utils/picker_image_manager.dart';
+import 'package:voicetemplate/ui/widgets/index.dart';
 
 class PersonLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
@@ -37,20 +41,66 @@ class PersonLogic extends GetxController {
     phoneBound.value = phone.value.isNotEmpty;
   }
 
-  /// 上传头像
-  Future<void> pickAvatar() async {
-    // try {
-    //   final result = await http.post<PersonOssModel>(
-    //     '/upload/generateUploadUrl',
-    //     data: {"type": "avatar", "file_type": "png"},
-    //     converter: PersonOssModel.fromJson,
-    //     showErrorToast: false,
-    //     withToken: true,
-    //   );
-    //   debugPrint('===========  result: ${result.data?.signUrl}');
-    // } catch (e) {
-    //   debugPrint('===========  error: $e');
-    // }
+  /// 上传头像 BuildContext context
+  Future<void> handlePickAvatar(BuildContext context) async {
+    final res = await PermissionUtil.requestPhotoAlbumPermission();
+    if (!res) {
+      SmartDialog.show(
+        builder: (context) => ConfirmPopWidget(
+          title: '提示',
+          subTitle: '打开相册选图片以上传图片',
+          sureTitle: "同意",
+          sureAction: () {
+            AppSettings.openAppSettings(type: AppSettingsType.settings);
+          },
+        ),
+        alignment: Alignment.center,
+        animationType: SmartAnimationType.centerFade_otherSlide,
+        animationTime: Duration(milliseconds: 250),
+        maskColor: "#000000".color.withValues(alpha: 0.5),
+        clickMaskDismiss: false,
+        useAnimation: true,
+        usePenetrate: false,
+      );
+      return;
+    }
+
+    if (!context.mounted) {
+      return;
+    }
+    PickerImageManager.pickerPhotos(
+      context: context,
+      onSuccess: (String filePath, double width, double height) {
+        getUploadInfo(filePath);
+      },
+    );
+  }
+
+  void getUploadInfo(String filePath) async {
+    final result = await http.post<PersonOssModel>(
+      '/upload/generateUploadUrl',
+      data: {"type": "user", "file_type": "png"},
+      converter: PersonOssModel.fromJson,
+      showErrorToast: false,
+      withToken: true,
+    );
+
+    final file = File(filePath);
+    final bytes = await file.readAsBytes();
+    final res = await http.put(
+      result.data!.signUrl,
+      data: bytes,
+      options: Options(
+        contentType: 'image/png', // ✅ 正常 MIME
+        headers: {
+          Headers.contentLengthHeader: bytes.length, // 很多存储要求带上
+        },
+      ),
+      useBaseUrl: false,
+      withToken: true,
+      isNake: true,
+    );
+    debugPrint('uploadFile===========  result: ${res.isSuccess}');
   }
 
   // {sign_url: http://yutu-1363209587.cos.ap-nanjing.myqcloud.com/image/avatar/avatar601471f1b97b218a4cbf7477d2bcb6e6.png?sign=q-sign-algorithm%3Dsha1%26q-ak%3DAKIDsmU1LUQ9fz63pOkspY6ScaKq8E6nJemg%26q-sign-time%3D1765335985%3B1765444045%26q-key-time%3D1765335985%3B1765444045%26q-header-list%3Dhost%26q-url-param-list%3D%26q-signature%3D72d5adb8b6aa5369aaeb48f33c75462dd0794bc9&,

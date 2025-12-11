@@ -127,22 +127,3 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/icons/app_icon.png"
 
 
-flutter_native_splash:
-  # 全局配置
-  color: "#FFFFFF"    # 启动页背景颜色
-  background_image: assets/icons/splash_bg.png
-
-  fullscreen: true
-
-  # Android 12 及以上专用配置（很重要）
-  android_12:
-    color: "#40A8FF"
-    image: assets/icons/splash_logo.png
-
-  # 分平台细化（可选）
-  android: true
-  ios: true
-  web: false
-
-
-

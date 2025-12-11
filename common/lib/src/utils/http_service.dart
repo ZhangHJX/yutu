@@ -31,13 +31,8 @@ class HttpService {
         onRequest: (RequestOptions options, RequestInterceptorHandler handler) {
           final token = _box.read(tokenKey);
           if (options.extra[withTokenKey] == true && token != null) {
-            // options.headers['Authorization'] = 'Bearer $token';
             options.headers['token'] = token;
           }
-
-          // if (options.path.startsWith('/ds-applet')) {
-          //   options.path = options.path.replaceFirst('/ds-applet', '/ds-app');
-          // }
 
           if (kDebugMode) {
             print('👶👶👶----请求方式: ${options.baseUrl}${options.path}');
@@ -127,21 +122,41 @@ class HttpService {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
     T Function(Map<String, dynamic>)? converter,
+    bool useBaseUrl = true,
   }) async {
     try {
-      final response = await _dio.request(
-        path,
-        data: data,
-        queryParameters: query,
-        options: (options ?? Options(contentType: 'application/json'))
-          ..method = method
-          ..extra ??= {}
-          ..extra?[withTokenKey] = withToken,
-        cancelToken: cancelToken,
-        onSendProgress: onSendProgress,
-        onReceiveProgress: onReceiveProgress,
-      );
-      debugPrint('response=====result======: ${response.data}');
+      final Options finalOptions =
+          (options ?? Options(contentType: 'application/json'))
+            ..method = method
+            ..extra ??= {}
+            ..extra?[withTokenKey] = withToken;
+
+      Response response;
+
+      if (useBaseUrl) {
+        // 走「baseUrl + path」
+        response = await _dio.request(
+          path,
+          data: data,
+          queryParameters: query,
+          options: finalOptions,
+          cancelToken: cancelToken,
+          onSendProgress: onSendProgress,
+          onReceiveProgress: onReceiveProgress,
+        );
+      } else {
+        // 完全使用外部传入的 URL，忽略 baseUrl
+        response = await _dio.requestUri(
+          Uri.parse(path),
+          data: data,
+          options: finalOptions,
+          cancelToken: cancelToken,
+          onSendProgress: onSendProgress,
+          onReceiveProgress: onReceiveProgress,
+        );
+      }
+
+      debugPrint('response=====result===$response===: ${response.data}');
 
       if (isNake) {
         return BaseModel.fromJson(
@@ -224,6 +239,7 @@ class HttpService {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
     T Function(Map<String, dynamic>)? converter,
+    bool useBaseUrl = true,
   }) => request<T>(
     path,
     data: data,
@@ -287,29 +303,6 @@ class HttpService {
     showErrorToast: showErrorToast,
     onSendProgress: onSendProgress,
     onReceiveProgress: onReceiveProgress,
-  );
-
-  Future<BaseModel<T>> uploadFile<T>(
-    String path, {
-    required FormData formData,
-    T Function(Map<String, dynamic>)? converter,
-    Map<String, dynamic>? query,
-    Options? options,
-    CancelToken? cancelToken,
-    ProgressCallback? onSendProgress,
-    bool? showErrorToast,
-    bool? withToken = true,
-  }) => request<T>(
-    path,
-    converter: converter,
-    method: 'POST',
-    data: formData,
-    query: query,
-    options: options?.copyWith(contentType: 'multipart/form-data'),
-    cancelToken: cancelToken,
-    onSendProgress: onSendProgress,
-    showErrorToast: showErrorToast,
-    withToken: withToken,
   );
 
   Future<Response> downloadFile(

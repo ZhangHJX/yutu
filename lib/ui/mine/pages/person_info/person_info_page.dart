@@ -51,7 +51,10 @@ class PersonInfoPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             /// 头像
-                            PersonInfoAvatar(logic: logic),
+                            GestureDetector(
+                              onTap: () => logic.handlePickAvatar(context),
+                              child: PersonInfoAvatar(logic: logic),
+                            ),
 
                             SizedBox(height: 24.w),
 

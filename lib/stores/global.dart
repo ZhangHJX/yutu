@@ -25,14 +25,6 @@ class GlobalLogic extends GetxController {
   /// 用户是否登录
   bool get isLogin => accessToken.value.isNotEmpty;
 
-  /// 客服类型, 2为微信, 其他为应用内客服
-  // final serviceType = '2'.obs;
-
-  // /// 是否设置了支付密码
-  // bool get isSetPassword => userInfo.value.isSetPassword == 1;
-
-  /// ---------------- 登录相关状态（使用 GetX 全局管理） ----------------
-
   /// 当前登录方式
   final loginMode = LoginMode.sms.obs;
 
@@ -68,9 +60,6 @@ class GlobalLogic extends GetxController {
 
   // /// 生日
   // String? get birthday => userInfo.value.birthday;
-
-  // /// 代理人id
-  // String? get agentId => userInfo.value.agentId;
 
   // /// 性别, 1为女, 2为男, 3为未知
   // int get gender => userInfo.value.gender;
