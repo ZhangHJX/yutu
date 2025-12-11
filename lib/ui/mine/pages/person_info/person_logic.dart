@@ -17,7 +17,7 @@ class PersonLogic extends GetxController {
   final phoneBound = false.obs;
 
   String fileAvarPath = ''; // 文件的路径
-  double fileSize = 0; // 单位字节 b
+  int filemeMemorySize = 0; // 单位字节 b
   int fileId = 0; // resource_id
 
   /// 原始值（用于比较哪些字段被修改了）
@@ -73,7 +73,7 @@ class PersonLogic extends GetxController {
         context: context,
         onSuccess:
             (String filePath, double width, double height, int fileSize) {
-              fileSize = fileSize;
+              filemeMemorySize = fileSize;
               getUploadInfo(filePath);
             },
       );
@@ -227,10 +227,10 @@ class PersonLogic extends GetxController {
     // 头像比较：需要处理默认头像的情况
     if (avatar.value != _originalAvatar) {
       data["resource_id"] = fileId;
-      double sizeInKb = fileSize / 1024;
+      double sizeInKb = filemeMemorySize / 1024;
       data["file_size"] = "$sizeInKb";
     }
-
+    debugPrint('file_size==$data====');
     if (data.isEmpty) {
       showToast("未修改用户信息");
       return;

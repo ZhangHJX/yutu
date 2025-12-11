@@ -97,7 +97,9 @@ class GlobalLogic extends GetxController {
       box.write(userInfoKey, user.toJson());
     });
 
-    // Future.delayed(100.ms, getAddressList);
+    // if (accessToken.value.isNotEmpty) {
+    //   updateUserToken();
+    // }
   }
 
   /// 获取用户信息
@@ -109,12 +111,25 @@ class GlobalLogic extends GetxController {
         withToken: true,
       );
       userInfo.value = result.data ?? UserModel();
-      debugPrint('===========  result: ${result.code}');
       if (result.code == 0) {
         Get.back();
       }
     } catch (e) {
       debugPrint('===========  error: $e');
+    }
+  }
+
+  /// 获取更新Token值
+  void updateUserToken() async {
+    try {
+      final result = await http.post(
+        '/homePage/user/refreshUserToken',
+        // converter: UserModel.fromJson,
+        withToken: true,
+      );
+      debugPrint('updateUserToken====$result=======${result.data}');
+    } catch (e) {
+      debugPrint('updateUserToken===========$e');
     }
   }
 
