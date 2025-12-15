@@ -97,13 +97,13 @@ class GlobalLogic extends GetxController {
       box.write(userInfoKey, user.toJson());
     });
 
-    // if (accessToken.value.isNotEmpty) {
-    //   updateUserToken();
-    // }
+    if (accessToken.value.isNotEmpty) {
+      updateUserToken();
+    }
   }
 
   /// 获取用户信息
-  void fetchUserInfo() async {
+  void fetchUserInfo({bool isLaunch = false}) async {
     try {
       final result = await http.post<UserModel>(
         '/homePage/user/index',
@@ -111,7 +111,7 @@ class GlobalLogic extends GetxController {
         withToken: true,
       );
       userInfo.value = result.data ?? UserModel();
-      if (result.code == 0) {
+      if (result.code == 0 && !isLaunch) {
         Get.back();
       }
     } catch (e) {
@@ -122,23 +122,19 @@ class GlobalLogic extends GetxController {
   /// 获取更新Token值
   void updateUserToken() async {
     try {
-      final result = await http.post(
+      final result = await http.post<LoginResponse>(
         '/homePage/user/refreshUserToken',
-        // converter: UserModel.fromJson,
+        converter: LoginResponse.fromJson,
         withToken: true,
       );
-      debugPrint('updateUserToken====$result=======${result.data}');
+      if (result.code == 0) {}
+      debugPrint(
+        'updateUserToken====${result.code}=======${result.data?.token}',
+      );
     } catch (e) {
       debugPrint('updateUserToken===========$e');
     }
   }
-
-  // /// 跳转到主页
-  // /// [index] 跳转的tab索引
-  // void toMain(int index) {
-  //   Get.until((route) => Get.currentRoute == AppRoutes.main);
-  //   tabIndex.value = index;
-  // }
 
   /// 更新用户信息
   void updateUserInfo({String? nickname, String? avatar, String? sign}) {
@@ -157,9 +153,13 @@ class GlobalLogic extends GetxController {
       showErrorToast: true,
     );
     if (result.code == 0) {
-      accessToken.value = '';
-      userInfo.value = UserModel();
+      removeUserInfo();
     }
+  }
+
+  void removeUserInfo() {
+    accessToken.value = '';
+    userInfo.value = UserModel();
   }
 
   // /// 获取配置的客服类型

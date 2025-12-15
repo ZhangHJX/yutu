@@ -51,7 +51,7 @@ class ForgetLogic extends GetxController {
       final result = await http.post(
         global.isLogin
             ? '/passwordSet/setPassword'
-            : 'passwordChange/changePassword',
+            : '/passwordChange/changePassword',
         data: global.isLogin
             ? {"password": password.value, "code": code.value}
             : {
@@ -71,6 +71,8 @@ class ForgetLogic extends GetxController {
 
   ///1、获取手机号码
   void getPhoneNumber() async {
+    debugPrint('=====getPhoneNumber======');
+
     final result = await http.post<PhoneModel>(
       "/passwordSet/index",
       converter: PhoneModel.fromJson,

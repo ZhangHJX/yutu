@@ -11,16 +11,26 @@ class AppTheme {
     ),
     appBarTheme: AppBarTheme(
       surfaceTintColor: Colors.transparent,
-      systemOverlayStyle: SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent),
+      systemOverlayStyle: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent,
+      ),
       centerTitle: true,
       backgroundColor: Colors.white,
       foregroundColor: cff333333,
       elevation: 2,
-      titleTextStyle: TextStyle(fontSize: 17, color: cff333333, fontFamily: 'NotoSansSC'),
+      titleTextStyle: TextStyle(
+        fontSize: 17,
+        color: cff333333,
+        fontFamily: 'NotoSansSC',
+      ),
     ),
     inputDecorationTheme: InputDecorationTheme(
-      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: cffedeee)),
-      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: cffedeee)),
+      enabledBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: cffedeee),
+      ),
+      focusedBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: cffedeee),
+      ),
       alignLabelWithHint: true,
       hintStyle: TextStyle(color: cffb8b8b8),
       contentPadding: EdgeInsets.zero,
@@ -54,8 +64,12 @@ class AppTheme {
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: cffedeee)),
-        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: cffedeee)),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: cffedeee),
+        ),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: cffedeee),
+        ),
         alignLabelWithHint: true,
         hintStyle: TextStyle(color: cffb8b8b8),
         contentPadding: EdgeInsets.zero,

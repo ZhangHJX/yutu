@@ -124,8 +124,6 @@ class MinePage extends StatelessWidget {
         ? "assets/images/mine/mine_info_empty.png"
         : icon;
 
-    debugPrint("--你好啊啊----$avatar------");
-
     return Padding(
       padding: EdgeInsets.only(left: 22.w, top: 9.w, right: 20.w),
       child: Row(

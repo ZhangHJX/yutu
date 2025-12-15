@@ -19,6 +19,12 @@ class CanvasModel {
   bool locked;
   bool isSelected;
 
+  /// 版本号
+  String version;
+
+  ///时间戳
+  int timestamp;
+
   @JsonKey(includeFromJson: false, includeToJson: false)
   Matrix4 transform = Matrix4.identity();
 
@@ -36,6 +42,8 @@ class CanvasModel {
     this.locked = false,
     this.isSelected = false,
     this.elements = const [],
+    this.version = '',
+    this.timestamp = 0,
   });
 
   // 自动生成的 JSON 解析

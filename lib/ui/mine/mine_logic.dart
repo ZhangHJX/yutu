@@ -6,19 +6,19 @@ import '../../stores/global.dart';
 class MineLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
 
-  @override
-  void onInit() {
-    super.onInit();
-  }
-
   /// 点击登陆事件
   void login() {
-    // if (global.isLogin) return;
+    if (global.isLogin) return;
     Get.toNamed(AppRoutes.appLogin);
   }
 
   /// 个人资料
-  void onTapPersonInfo() => Get.toNamed(AppRoutes.personInfo);
+  void onTapPersonInfo() {
+    global.removeUserInfo();
+
+    if (!global.isLogin) return;
+    Get.toNamed(AppRoutes.personInfo);
+  }
 
   void onTapMyDesign() => Get.toNamed(AppRoutes.designPage);
 
