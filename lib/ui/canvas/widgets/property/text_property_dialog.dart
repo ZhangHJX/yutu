@@ -192,11 +192,11 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
               unselectedLabelColor: "#ff262626".color.withValues(alpha: 0.6),
               labelStyle: TextStyle(
                 fontSize: 16.w,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
               unselectedLabelStyle: TextStyle(
                 fontSize: 16.w,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
               indicatorColor: Colors.transparent,
               dividerColor: Colors.transparent,
@@ -206,7 +206,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                 Container(
                   width: 70.w,
                   color: Colors.white,
-                  child: Tab(text: '文本属性'),
+                  child: Tab(text: '字体属性'),
                 ),
                 Container(
                   width: 70.w,

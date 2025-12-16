@@ -1,5 +1,25 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:voicetemplate/ui/widgets/index.dart';
+
+/// 字体数据模型
+class FontItem {
+  final String id;
+  final String name;
+  final String fontFamily;
+  final bool isRecommended;
+  final bool isDownloaded;
+  final String? downloadUrl;
+
+  FontItem({
+    required this.id,
+    required this.name,
+    required this.fontFamily,
+    this.isRecommended = false,
+    this.isDownloaded = true,
+    this.downloadUrl,
+  });
+}
 
 /// 字体属性组件
 class TextPropertyWidget extends StatefulWidget {
@@ -9,6 +29,9 @@ class TextPropertyWidget extends StatefulWidget {
   final Function(String, String, FontWeight) onFontChanged;
   final Function(String) onColorChanged;
 
+  /// 字体列表数据（可从接口获取）
+  final List<FontItem>? fontList;
+
   const TextPropertyWidget({
     super.key,
     required this.element,
@@ -16,13 +39,15 @@ class TextPropertyWidget extends StatefulWidget {
     this.onDeleteText,
     required this.onFontChanged,
     required this.onColorChanged,
+    this.fontList,
   });
 
   @override
   State<TextPropertyWidget> createState() => _TextPropertyWidgetState();
 }
 
-class _TextPropertyWidgetState extends State<TextPropertyWidget> {
+class _TextPropertyWidgetState extends State<TextPropertyWidget>
+    with SingleTickerProviderStateMixin {
   // 字体和字号
   String _fontFamily = '系统默认';
   final TextEditingController _fontSizeController = TextEditingController(
@@ -32,21 +57,12 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget> {
   // 字重
   String _fontWeight = '系统默认';
 
-  // 下拉列表状态
-  bool _showFontFamilyDropdown = false;
-  bool _showFontWeightDropdown = false;
+  // Tab控制器
+  late TabController _tabController;
 
   // 字体列表
-  final List<String> _fontFamilies = [
-    '系统默认',
-    'Arial',
-    'Times New Roman',
-    'Courier New',
-    'Verdana',
-    'Helvetica',
-    'Georgia',
-    'Palatino',
-  ];
+  late List<FontItem> _allFonts;
+  late List<FontItem> _recommendedFonts;
 
   // 字重列表
   final List<String> _fontWeights = [
@@ -61,7 +77,66 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget> {
   @override
   void initState() {
     super.initState();
+    _initializeFonts();
+    _tabController = TabController(length: 2, vsync: this);
     _initializeFromModel();
+  }
+
+  /// 初始化字体列表
+  void _initializeFonts() {
+    if (widget.fontList != null && widget.fontList!.isNotEmpty) {
+      _allFonts = widget.fontList!;
+      _recommendedFonts = widget.fontList!
+          .where((font) => font.isRecommended)
+          .toList();
+    } else {
+      // 默认字体列表
+      _allFonts = [
+        FontItem(
+          id: '1',
+          name: '系统默认',
+          fontFamily: 'Courier',
+          isRecommended: true,
+        ),
+        FontItem(
+          id: '2',
+          name: 'Arial',
+          fontFamily: 'Arial',
+          isRecommended: true,
+        ),
+        FontItem(
+          id: '3',
+          name: 'Times New Roman',
+          fontFamily: 'Times New Roman',
+          isRecommended: true,
+        ),
+        FontItem(id: '4', name: 'Courier New', fontFamily: 'Courier New'),
+        FontItem(id: '5', name: 'Verdana', fontFamily: 'Verdana'),
+        FontItem(id: '6', name: 'Helvetica', fontFamily: 'Helvetica'),
+        FontItem(id: '7', name: 'Georgia', fontFamily: 'Georgia'),
+        FontItem(id: '8', name: 'Palatino', fontFamily: 'Palatino'),
+        FontItem(
+          id: '3',
+          name: 'Times New Roman',
+          fontFamily: 'Times New Roman',
+          isRecommended: true,
+        ),
+
+        FontItem(
+          id: '3',
+          name: 'Times New Roman',
+          fontFamily: 'Times New Roman',
+          isRecommended: true,
+        ),
+        FontItem(
+          id: '3',
+          name: 'Times New Roman',
+          fontFamily: 'Times New Roman',
+          isRecommended: true,
+        ),
+      ];
+      _recommendedFonts = _allFonts.where((f) => f.isRecommended).toList();
+    }
   }
 
   /// 从模型初始化UI状态
@@ -118,6 +193,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget> {
   @override
   void dispose() {
     _fontSizeController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -132,193 +208,267 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 15.w),
-            // 字体和字号
-            _buildFontAndSizeSection(),
-            SizedBox(height: 17.w),
-
-            // 字重和颜色
-            _buildFontWeightAndColorSection(),
-            SizedBox(height: 20.w),
-
-            // 删除文本按钮
-            _buildDeleteButton(),
-
-            SizedBox(height: ScreenTools.bottomBarHeight + 15.w),
-          ],
-        ),
-
-        // 字体下拉列表
-        if (_showFontFamilyDropdown)
-          Positioned(
-            left: 16.w,
-            top: 130.w,
-            child: _buildDropdownList(165.w, _fontFamilies, _fontFamily, (
-              font,
-            ) {
-              setState(() {
-                _fontFamily = font;
-                _showFontFamilyDropdown = false;
-                _updateModel();
-              });
-            }),
-          ),
-
-        // 字重下拉列表
-        if (_showFontWeightDropdown)
-          Positioned(
-            left: 20.w,
-            top: 210.w,
-            child: _buildDropdownList(100.w, _fontWeights, _fontWeight, (
-              weight,
-            ) {
-              setState(() {
-                _fontWeight = weight;
-                _showFontWeightDropdown = false;
-                _updateModel();
-              });
-            }),
-          ),
+        SizedBox(height: 5.w),
+        // 字体选择区域（Tabs + 字体列表）
+        _buildFontSelectionSection(),
+        SizedBox(height: 20.w),
+        // 字重和字号
+        _buildFontWeightAndSizeSection(),
+        SizedBox(height: 20.w),
+        // 删除文本按钮
+        _buildDeleteButton(),
+        SizedBox(height: ScreenTools.bottomBarHeight + 15.w),
       ],
     );
   }
 
-  // 字体
-  Widget _buildFontAndSizeSection() {
-    return Padding(
-      padding: EdgeInsets.only(left: 16.w, right: 30.w),
-      child: Row(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  /// 构建字体选择区域（Tabs + 字体列表）
+  Widget _buildFontSelectionSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: 28.w),
+          child: TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            controller: _tabController,
+            indicatorSize: TabBarIndicatorSize.label,
+            // ✅ 指示器居中：不要用不对称 indicatorPadding
+            indicatorPadding: EdgeInsets.zero,
+            // ✅ Tab 间距放这里（推荐）
+            labelPadding: EdgeInsets.only(right: 24.w),
+            indicator: TabBarUnderlineIndicator(
+              width: 13.w,
+              height: 2.w,
+              color: "#9082FF".color,
+              borderRadius: const BorderRadius.all(Radius.circular(100)),
+            ),
+            dividerColor: Colors.transparent,
+            labelColor: "#262626".color,
+            unselectedLabelColor: "#999999".color.withValues(alpha: 0.4),
+            labelStyle: TextStyle(fontSize: 14.w, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: TextStyle(
+              fontSize: 14.w,
+              fontWeight: FontWeight.w600,
+            ),
+            tabs: const [
+              Tab(text: '推荐字体'),
+              Tab(text: '全部字体'),
+            ],
+          ),
+        ),
+        SizedBox(height: 12.w),
+        // 字体列表
+        SizedBox(
+          height: 300.w, // 固定高度，可根据需要调整
+          child: TabBarView(
+            controller: _tabController,
+            physics: const NeverScrollableScrollPhysics(), // ✅ 禁止拖动
             children: [
-              Text(
-                '字体',
-                style: TextStyle(
-                  fontSize: 16.w,
-                  color: "#FF3E3E3E".color.withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w400,
-                ),
+              _buildFontList(_recommendedFonts),
+              _buildFontList(_allFonts),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建字体列表（每行3个）
+  Widget _buildFontList(List<FontItem> fonts) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: GridView.builder(
+        padding: EdgeInsets.zero,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 8.w,
+          mainAxisSpacing: 12.w,
+          childAspectRatio: 1.557,
+        ),
+        itemCount: fonts.length,
+        itemBuilder: (context, index) {
+          final font = fonts[index];
+          final isSelected =
+              _fontFamily == font.fontFamily ||
+              (_fontFamily == '系统默认' && font.fontFamily == 'Courier');
+          return _buildFontItem(font, isSelected);
+        },
+      ),
+    );
+  }
+
+  /// 构建单个字体项
+  Widget _buildFontItem(FontItem font, bool isSelected) {
+    return Column(
+      children: [
+        // 字体预览按钮
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _fontFamily = font.fontFamily;
+                _updateModel();
+              });
+            },
+            child: SelectItemGradientBorder(
+              isSelected: isSelected,
+              radius: 12.w,
+              borderWidth: 1.6.w,
+              unselectedBorderColor: Colors.transparent,
+              unselectedBorderWidth: 0,
+              selectedGradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: ["#C86CFF".color, "#5B98FF".color],
               ),
+              child: Stack(
+                children: [
+                  // 字体预览文字
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w),
+                      child: Text(
+                        '示例文字',
+                        style: TextStyle(
+                          fontSize: 14.w,
+                          fontFamily: font.fontFamily == 'Courier'
+                              ? null
+                              : font.fontFamily,
+                          color: isSelected ? "#3C7BFF".color : "#242424".color,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
 
-              SizedBox(height: 6.w),
+                  // 下载图标（如果需要下载）
+                  if (!font.isDownloaded && font.downloadUrl != null)
+                    Positioned(
+                      top: 4.w,
+                      right: 4.w,
+                      child: Container(
+                        width: 20.w,
+                        height: 20.w,
+                        decoration: BoxDecoration(
+                          color: "#3C7BFF".color,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.download,
+                          size: 12.w,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 4.w),
+        Text(
+          font.name,
+          style: TextStyle(fontSize: 12.w, color: "#232535".color),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
 
-              GestureDetector(
+  /// 构建字重和字号区域
+  /// 构建字重和字号区域（修复：Row 内无限宽/约束问题）
+  Widget _buildFontWeightAndSizeSection() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: _LabeledField(
+              title: '字重',
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12.w),
                 onTap: () {
-                  setState(() {
-                    _showFontFamilyDropdown = !_showFontFamilyDropdown;
-                    _showFontWeightDropdown = false; // 关闭字重下拉
-                  });
+                  // _showFontWeightDialog(context);
                 },
                 child: Container(
-                  width: 140.w,
                   height: 42.w,
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12.w),
-                    border: BoxBorder.all(color: "#FFE6E6E6".color, width: 1.w),
+                    border: Border.all(color: "#FFE6E6E6".color, width: 1.w),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(left: 16.w),
-                          child: Text(
-                            _fontFamily,
-                            style: TextStyle(
-                              fontSize: 14.w,
-                              color: "#ff242424".color,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                        child: Text(
+                          _fontWeight,
+                          style: TextStyle(
+                            fontSize: 14.w,
+                            color: "#ff242424".color,
+                            fontWeight: FontWeight.w600,
                           ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
-
-                      Container(
-                        width: 36.w,
-                        height: 42.w,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10.w),
-                        ),
-                        child: Center(
-                          child: SizedBox(
-                            width: 16.w,
-                            height: 16.w,
-                            child: Image.asset(
-                              'assets/images/canvals/canvals_text_font_down.png',
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14.w,
+                        color: "#999999".color,
                       ),
                     ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
-
-          SizedBox(width: 14.w),
-
+          SizedBox(width: 12.w),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '字号',
+            child: _LabeledField(
+              title: '字号',
+              child: Container(
+                height: 42.w,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.w),
+                  border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
+                ),
+                alignment: Alignment.center,
+                child: TextField(
+                  controller: _fontSizeController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: const [
+                    // FilteringTextInputFormatter.digitsOnly,
+                    // LengthLimitingTextInputFormatter(3),
+                  ],
+                  textAlign: TextAlign.left,
+                  textAlignVertical: TextAlignVertical.center,
                   style: TextStyle(
-                    fontSize: 16.w,
-                    color: "#FF3E3E3E".color.withValues(alpha: 0.6),
-                    fontWeight: FontWeight.w400,
+                    fontSize: 14.w,
+                    color: "#ff242424".color,
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                  ),
+                  onChanged: (_) => _updateModel(),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
                   ),
                 ),
-                SizedBox(height: 6.w),
-
-                Container(
-                  height: 42.w,
-                  width: 148.w,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12.w),
-                    border: Border.all(
-                      color: "#ffE6E6E6".color, // 边框颜色
-                      width: 1.w, // 边框宽度
-                    ),
-                  ),
-                  child: TextField(
-                    controller: _fontSizeController,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.left,
-                    style: TextStyle(
-                      fontSize: 14.w,
-                      color: "#ff242424".color,
-                      fontWeight: FontWeight.w600,
-                      height: 1.5,
-                    ),
-                    onChanged: (value) {
-                      _updateModel();
-                    },
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        vertical: 16.w,
-                        horizontal: 12.w,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
@@ -326,78 +476,58 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget> {
     );
   }
 
-  // 字重
-  Widget _buildFontWeightAndColorSection() {
-    return Padding(
-      padding: EdgeInsets.only(left: 16.w, right: 30.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '字重',
-            style: TextStyle(fontSize: 14.w, color: "#ff999999".color),
-          ),
-
-          SizedBox(height: 6.w),
-
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _showFontWeightDropdown = !_showFontWeightDropdown;
-                _showFontFamilyDropdown = false; // 关闭字体下拉
-                debugPrint("----还剩多少---$_showFontWeightDropdown---");
-              });
-            },
-            child: Container(
-              height: 42.w,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.w),
-                border: Border.all(color: "#FFE6E6E6".color, width: 1.w),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(left: 16.w),
-                      child: Text(
-                        _fontWeight,
-                        style: TextStyle(
-                          fontSize: 14.w,
-                          color: "#ff242424".color,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ),
-
-                  Container(
-                    width: 36.w,
-                    height: 42.w,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10.w),
-                    ),
-                    child: Center(
-                      child: SizedBox(
-                        width: 16.w,
-                        height: 16.w,
-                        child: Image.asset(
-                          'assets/images/canvals/canvals_text_font_down.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+  /// 显示字重选择对话框
+  void _showFontWeightDialog(BuildContext buildContext) {
+    if (!mounted) return;
+    showModalBottomSheet<dynamic>(
+      context: buildContext,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext dialogContext) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.w)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 16.w),
+              child: Text(
+                '选择字重',
+                style: TextStyle(
+                  fontSize: 16.w,
+                  fontWeight: FontWeight.w600,
+                  color: "#242424".color,
+                ),
               ),
             ),
-          ),
-        ],
+            Divider(height: 1.w),
+            ..._fontWeights.map(
+              (weight) => ListTile(
+                title: Text(
+                  weight,
+                  style: TextStyle(
+                    fontSize: 14.w,
+                    color: _fontWeight == weight
+                        ? "#3C7BFF".color
+                        : "#242424".color,
+                    fontWeight: _fontWeight == weight
+                        ? FontWeight.w600
+                        : FontWeight.w400,
+                  ),
+                ),
+                onTap: () {
+                  setState(() {
+                    _fontWeight = weight;
+                    _updateModel();
+                  });
+                  Navigator.pop(dialogContext);
+                },
+              ),
+            ),
+            SizedBox(height: ScreenTools.bottomBarHeight),
+          ],
+        ),
       ),
     );
   }
@@ -432,63 +562,32 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget> {
       ),
     );
   }
+}
 
-  Widget _buildDropdownList(
-    double height,
-    List<String> items,
-    String selectedItem,
-    Function(String) onItemSelected,
-  ) {
-    return Container(
-      width: 125.w,
-      height: height,
-      padding: EdgeInsets.only(top: 8.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.w),
-        boxShadow: [
-          BoxShadow(
-            color: "#CDE4FF".color,
-            blurRadius: 5.w,
-            offset: Offset(0, 1.w),
+/// 标题 + 输入框/选择框的通用布局（避免重复）
+class _LabeledField extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _LabeledField({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 14.w,
+            color: "#999999".color,
+            fontWeight: FontWeight.w400,
           ),
-        ],
-      ),
-      child: ListView.builder(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          final item = items[index];
-          return GestureDetector(
-            onTap: () => onItemSelected(item),
-            child: Container(
-              width: 108.w,
-              margin: EdgeInsets.only(left: 7.w, right: 7.w, top: 7.w),
-              decoration: BoxDecoration(
-                color: selectedItem == item ? "#DCEDFE".color : "#FFFFFF".color,
-                borderRadius: BorderRadius.all(Radius.circular(8.w)),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 5.w),
-                child: Text(
-                  item,
-                  style: TextStyle(
-                    fontSize: 14.w,
-                    fontWeight: FontWeight.w400,
-                    color: selectedItem == item
-                        ? "#3C7BFF ".color
-                        : "#727272".color,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
+        ),
+        SizedBox(height: 6.w),
+        child,
+      ],
     );
   }
 }
