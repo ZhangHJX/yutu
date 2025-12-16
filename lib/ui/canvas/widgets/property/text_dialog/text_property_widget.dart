@@ -1,26 +1,8 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
+import 'model/font_info_model.dart';
 import 'text_property_controller.dart';
-
-/// 字体数据模型
-class FontItem {
-  final String id;
-  final String name;
-  final String fontFamily;
-  final bool isRecommended;
-  final bool isDownloaded;
-  final String? downloadUrl;
-
-  FontItem({
-    required this.id,
-    required this.name,
-    required this.fontFamily,
-    this.isRecommended = false,
-    this.isDownloaded = true,
-    this.downloadUrl,
-  });
-}
 
 /// 字体属性组件
 class TextPropertyWidget extends StatefulWidget {
@@ -30,9 +12,6 @@ class TextPropertyWidget extends StatefulWidget {
   final Function(String, String, FontWeight) onFontChanged;
   final Function(String) onColorChanged;
 
-  /// 字体列表数据（可从接口获取）
-  final List<FontItem>? fontList;
-
   const TextPropertyWidget({
     super.key,
     required this.element,
@@ -40,7 +19,6 @@ class TextPropertyWidget extends StatefulWidget {
     this.onDeleteText,
     required this.onFontChanged,
     required this.onColorChanged,
-    this.fontList,
   });
 
   @override
@@ -49,6 +27,8 @@ class TextPropertyWidget extends StatefulWidget {
 
 class _TextPropertyWidgetState extends State<TextPropertyWidget>
     with SingleTickerProviderStateMixin {
+  final logic = Get.put(TextPropertyController(), tag: dialog);
+
   // 字体和字号
   String _fontFamily = '系统默认';
   final TextEditingController _fontSizeController = TextEditingController(
@@ -57,13 +37,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
 
   // 字重
   String _fontWeight = '系统默认';
-
   // Tab控制器
   late TabController _tabController;
-
-  // 字体列表
-  late List<FontItem> _allFonts;
-  late List<FontItem> _recommendedFonts;
 
   // 字重列表
   final List<String> _fontWeights = [
@@ -78,66 +53,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   @override
   void initState() {
     super.initState();
-    _initializeFonts();
     _tabController = TabController(length: 2, vsync: this);
     _initializeFromModel();
-  }
-
-  /// 初始化字体列表
-  void _initializeFonts() {
-    if (widget.fontList != null && widget.fontList!.isNotEmpty) {
-      _allFonts = widget.fontList!;
-      _recommendedFonts = widget.fontList!
-          .where((font) => font.isRecommended)
-          .toList();
-    } else {
-      // 默认字体列表
-      _allFonts = [
-        FontItem(
-          id: '1',
-          name: '系统默认',
-          fontFamily: 'Courier',
-          isRecommended: true,
-        ),
-        FontItem(
-          id: '2',
-          name: 'Arial',
-          fontFamily: 'Arial',
-          isRecommended: true,
-        ),
-        FontItem(
-          id: '3',
-          name: 'Times New Roman',
-          fontFamily: 'Times New Roman',
-          isRecommended: true,
-        ),
-        FontItem(id: '4', name: 'Courier New', fontFamily: 'Courier New'),
-        FontItem(id: '5', name: 'Verdana', fontFamily: 'Verdana'),
-        FontItem(id: '6', name: 'Helvetica', fontFamily: 'Helvetica'),
-        FontItem(id: '7', name: 'Georgia', fontFamily: 'Georgia'),
-        FontItem(id: '8', name: 'Palatino', fontFamily: 'Palatino'),
-        FontItem(
-          id: '3',
-          name: 'Times New Roman',
-          fontFamily: 'Times New Roman',
-          isRecommended: true,
-        ),
-
-        FontItem(
-          id: '3',
-          name: 'Times New Roman',
-          fontFamily: 'Times New Roman',
-          isRecommended: true,
-        ),
-        FontItem(
-          id: '3',
-          name: 'Times New Roman',
-          fontFamily: 'Times New Roman',
-          isRecommended: true,
-        ),
-      ];
-      _recommendedFonts = _allFonts.where((f) => f.isRecommended).toList();
-    }
   }
 
   /// 从模型初始化UI状态
@@ -270,8 +187,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
             controller: _tabController,
             physics: const NeverScrollableScrollPhysics(), // ✅ 禁止拖动
             children: [
-              _buildFontList(_recommendedFonts),
-              _buildFontList(_allFonts),
+              _buildFontList(logic.fontList),
+              _buildFontList(logic.fontList),
             ],
           ),
         ),
@@ -280,7 +197,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   }
 
   /// 构建字体列表（每行3个）
-  Widget _buildFontList(List<FontItem> fonts) {
+  Widget _buildFontList(List<FontInfoModel> fonts) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: GridView.builder(
@@ -294,17 +211,17 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
         itemCount: fonts.length,
         itemBuilder: (context, index) {
           final font = fonts[index];
-          final isSelected =
-              _fontFamily == font.fontFamily ||
-              (_fontFamily == '系统默认' && font.fontFamily == 'Courier');
-          return _buildFontItem(font, isSelected);
+          // final isSelected =
+          //     _fontFamily == font.fontFamily ||
+          //     (_fontFamily == '系统默认' && font.fontFamily == 'Courier');
+          return _buildFontItem(font, true);
         },
       ),
     );
   }
 
   /// 构建单个字体项
-  Widget _buildFontItem(FontItem font, bool isSelected) {
+  Widget _buildFontItem(FontInfoModel font, bool isSelected) {
     return Column(
       children: [
         // 字体预览按钮
@@ -312,7 +229,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
           child: GestureDetector(
             onTap: () {
               setState(() {
-                _fontFamily = font.fontFamily;
+                // _fontFamily = font.fontFamily;
                 _updateModel();
               });
             },
@@ -329,45 +246,46 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
               ),
               child: Stack(
                 children: [
-                  // 字体预览文字
+                  Positioned.fill(
+                    child: CachedNetworkImage(
+                      imageUrl:
+                          'https://ucc.alicdn.com/images/user-upload-01/20210324100419204.png',
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => CAssetImage(
+                        imgUrl:
+                            'assets/images/canvals/text_property_loading.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  // loading
                   Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w),
-                      child: Text(
-                        '示例文字',
-                        style: TextStyle(
-                          fontSize: 14.w,
-                          fontFamily: font.fontFamily == 'Courier'
-                              ? null
-                              : font.fontFamily,
-                          color: isSelected ? "#3C7BFF".color : "#242424".color,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    child: SizedBox(
+                      width: 16.w,
+                      height: 16.w,
+                      child: CAssetImage(
+                        imgUrl:
+                            'assets/images/canvals/text_property_loading.png',
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
 
                   // 下载图标（如果需要下载）
-                  if (!font.isDownloaded && font.downloadUrl != null)
-                    Positioned(
-                      top: 4.w,
-                      right: 4.w,
-                      child: Container(
-                        width: 20.w,
-                        height: 20.w,
-                        decoration: BoxDecoration(
-                          color: "#3C7BFF".color,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.download,
-                          size: 12.w,
-                          color: Colors.white,
-                        ),
+                  // if (!font.isDownloaded && font.downloadUrl != null)
+                  Positioned(
+                    top: 2.w,
+                    right: 2.w,
+                    child: SizedBox(
+                      width: 16.w,
+                      height: 16.w,
+                      child: CAssetImage(
+                        imgUrl:
+                            'assets/images/canvals/text_property_download.png',
+                        fit: BoxFit.cover,
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
@@ -422,10 +340,14 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                           maxLines: 1,
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 14.w,
-                        color: "#999999".color,
+
+                      SizedBox(
+                        width: 16.w,
+                        height: 16.w,
+                        child: Image.asset(
+                          'assets/images/canvals/canvals_text_font_down.png',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ],
                   ),

@@ -54,8 +54,6 @@ dependencies:
   flutter_image_compress: ^2.4.0
   flutter_native_splash: ^2.4.7
   
-  
-
 
 dev_dependencies:
   flutter_test:

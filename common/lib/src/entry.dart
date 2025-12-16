@@ -6,7 +6,6 @@ export 'package:get/get.dart' hide FormData, Response, MultipartFile;
 export 'package:get/get_navigation/src/router_report.dart';
 export 'package:path_provider/path_provider.dart';
 export 'package:path/path.dart';
-export 'package:permission_handler/permission_handler.dart';
 export 'package:pull_to_refresh/pull_to_refresh.dart';
 export 'package:get_storage/get_storage.dart';
 export 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -16,3 +15,8 @@ export 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 export 'package:app_settings/app_settings.dart';
 export 'package:json_annotation/json_annotation.dart';
 export 'package:webview_flutter/webview_flutter.dart' hide ProgressCallback;
+export 'package:cached_network_image/cached_network_image.dart';
+export 'package:flutter_archive/flutter_archive.dart';
+export 'package:background_downloader/background_downloader.dart'
+    hide PermissionStatus;
+export 'package:permission_handler/permission_handler.dart';
