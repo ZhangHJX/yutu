@@ -17,4 +17,9 @@ class FontInfoModel {
     required this.image,
     required this.url,
   });
+
+  factory FontInfoModel.fromJson(Map<String, dynamic> json) =>
+      _$FontInfoModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FontInfoModelToJson(this);
 }

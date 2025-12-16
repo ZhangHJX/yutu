@@ -8,6 +8,6 @@ export 'property/element_attribute_toolbar.dart';
 export 'property/canvals_property_dialog.dart';
 export 'property/image_property_dialog.dart';
 export 'property/shape_property_dialog.dart';
-export 'property/text_property_dialog.dart';
+export 'property/text_dialog/text_property_dialog.dart';
 export 'dialog/text_input_dialog.dart';
 export 'dialog/canvals_shape_dialog.dart';

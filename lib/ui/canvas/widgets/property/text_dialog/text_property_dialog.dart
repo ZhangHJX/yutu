@@ -1,9 +1,10 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-import './text_widget/text_property_widget.dart';
-import './text_widget/color_effect_widget.dart';
-import './text_widget/spacing_alignment_widget.dart';
+import 'text_property_widget.dart';
+import 'color_effect_widget.dart';
+import 'spacing_alignment_widget.dart';
+import 'text_property_controller.dart';
 
 class TextPropertyDialog extends StatefulWidget {
   final VoidCallback? onDeleteText;
@@ -25,6 +26,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     with SingleTickerProviderStateMixin {
   // TabController
   late TabController _tabController;
+  final logic = Get.put(TextPropertyController(element: null));
 
   @override
   void initState() {

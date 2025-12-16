@@ -1,6 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
+import 'text_property_controller.dart';
 
 /// 字体数据模型
 class FontItem {
@@ -264,7 +265,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
         SizedBox(height: 12.w),
         // 字体列表
         SizedBox(
-          height: 300.w, // 固定高度，可根据需要调整
+          height: 211.w, // 固定高度，可根据需要调整
           child: TabBarView(
             controller: _tabController,
             physics: const NeverScrollableScrollPhysics(), // ✅ 禁止拖动
