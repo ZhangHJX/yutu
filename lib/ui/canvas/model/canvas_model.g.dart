@@ -22,6 +22,8 @@ CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
           ?.map((e) => CanvasElement.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
+  version: json['version'] as String? ?? '',
+  timestamp: (json['timestamp'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$CanvasModelToJson(CanvasModel instance) =>
@@ -36,5 +38,7 @@ Map<String, dynamic> _$CanvasModelToJson(CanvasModel instance) =>
       'fillAlpha': instance.fillAlpha,
       'locked': instance.locked,
       'isSelected': instance.isSelected,
+      'version': instance.version,
+      'timestamp': instance.timestamp,
       'elements': instance.elements.map((e) => e.toJson()).toList(),
     };
