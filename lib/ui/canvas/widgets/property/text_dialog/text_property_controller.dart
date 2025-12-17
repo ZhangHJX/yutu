@@ -12,11 +12,11 @@ const String dialog = 'TextPropertyDialogController';
 /// - 推荐字体 / 全部字体列表
 /// - 将变更回写到画布元素（element）
 class TextPropertyController extends GetxController {
-  /// 画布上的文本元素（原来从 TextPropertyWidget / Dialog 传入的 element）
-  // final dynamic element;
-
   /// 全部字体列表（从接口获取的数据）
   final RxList<FontInfoModel> fontList = <FontInfoModel>[].obs;
+
+  /// 最终选中
+  final RxnInt selectedFontId = RxnInt();
 
   /// 当前选中的字体 family
   final RxString fontFamily = '系统默认'.obs;
@@ -43,7 +43,7 @@ class TextPropertyController extends GetxController {
       final result = await http.post(
         '/front/index',
         withToken: true,
-        showErrorToast: true,
+        showErrorToast: false,
         converter: listConverter(FontInfoModel.fromJson),
       );
       if (result.code == 0 && result.data != null) {
