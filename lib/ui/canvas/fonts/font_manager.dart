@@ -64,7 +64,7 @@ class FontManager extends GetxController {
   /// 准备/安装字体（原子提交）
   Future<FontFamilyMeta> prepareFont({
     required int fontId,
-    required int version,
+    required String version,
     required String url,
     ValueChanged<double>? onProgress,
   }) {
@@ -87,7 +87,7 @@ class FontManager extends GetxController {
 
   Future<FontFamilyMeta> _prepareFontInternal({
     required int fontId,
-    required int version,
+    required String version,
     required String url,
     ValueChanged<double>? onProgress,
   }) async {
@@ -113,7 +113,7 @@ class FontManager extends GetxController {
 
     fontStatus[fontId] = FontStatus.installing;
 
-    // 3. 解压到临时安装目录  ../tmp/fonts_install/<fontId>/
+    // 3. 解压到临时安装目录  ../tmp/fonts_install/fontId/
     final installTmpDir = await DirectoryManager.getTempSubDirectory(
       'fonts_install/$fontId',
     );
@@ -128,22 +128,27 @@ class FontManager extends GetxController {
 
     onProgress?.call(0.85); // 解压+解析完成
 
-    // 4. 原子替换到最终目录 ApplicationSupportDirectory/cavals/fonts/<fontId>
+    // 4. 原子替换到最终目录 ApplicationSupportDirectory/fonts/fontId
     final targetDir = await FontMetaStore.instance.fontDir(fontId);
+    debugPrint('原子替换到最终目录 $targetDir');
     Directory? backup;
     try {
+      /// 生成一个备份目录路径：
       if (await targetDir.exists()) {
         backup = Directory('${targetDir.path}_backup');
         if (await backup.exists()) {
           await backup.delete(recursive: true);
         }
+
+        /// 把现有的 targetDir 重命名/移动到备份路径
         await targetDir.rename(backup.path);
       }
 
-      // 将临时目录 rename 过去
+      // 将临时目录 rename 过去   targetDir 仍然存在。此时你直接 delete(recursive: true) 会把旧字体目录彻底删掉
       if (await targetDir.exists()) {
         await targetDir.delete(recursive: true);
       }
+
       final sourceDir = Directory(result.installDir);
       await sourceDir.rename(targetDir.path);
 

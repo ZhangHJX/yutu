@@ -67,7 +67,7 @@ class FontFamilyMeta {
   final int fontId;
 
   /// 业务侧版本号，避免旧 zip 叠加
-  final int version;
+  final String version;
 
   /// 推荐展示的系列名（通常取第一个权重的 familyName）
   final String displayFamilyName;
@@ -96,7 +96,7 @@ class FontFamilyMeta {
 
   factory FontFamilyMeta.fromJson(Map<String, dynamic> json) => FontFamilyMeta(
     fontId: json['fontId'] as int,
-    version: json['version'] as int,
+    version: json['version'] as String,
     displayFamilyName: json['displayFamilyName'] as String,
     url: json['url'] as String,
     weights: (json['weights'] as List<dynamic>)

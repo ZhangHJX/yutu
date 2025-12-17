@@ -5,7 +5,7 @@ part 'font_info_model.g.dart';
 @JsonSerializable(explicitToJson: true)
 class FontInfoModel {
   int id;
-  int version;
+  String version;
   String name;
   String image;
   String url;

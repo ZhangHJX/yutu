@@ -7,9 +7,8 @@ import '../../../file/index.dart';
 import 'font_models.dart';
 
 /// 负责读写本地的字体 meta.json，并做简单缓存
-///
 /// 目录规范：
-/// - 最终安装目录：ApplicationSupportDirectory/cavals/fonts/<fontId>/
+/// - 最终安装目录：ApplicationSupportDirectory/fonts/fontId/
 /// - 其中 meta.json 存放 FontMetaFile
 class FontMetaStore {
   FontMetaStore._();
@@ -21,17 +20,15 @@ class FontMetaStore {
 
   Directory? _baseDir;
 
-  /// ApplicationSupportDirectory/cavals/fonts
+  /// ApplicationSupportDirectory/
   Future<Directory> _ensureBaseDir() async {
     if (_baseDir != null) return _baseDir!;
-    final fontsDir = await DirectoryManager.getSupportSubDirectory(
-      'cavals/fonts',
-    );
+    final fontsDir = await DirectoryManager.getSupportSubDirectory('fonts');
     _baseDir = fontsDir;
     return fontsDir;
   }
 
-  /// 单个字体最终目录：.../cavals/fonts/<fontId>
+  /// 单个字体最终目录：.../fonts/fontId
   Future<Directory> fontDir(int fontId) async {
     final base = await _ensureBaseDir();
     return await DirectoryManager.getOrCreateSubDirectory(base, '$fontId');

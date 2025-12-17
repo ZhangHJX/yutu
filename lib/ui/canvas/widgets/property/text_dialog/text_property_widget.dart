@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import 'model/font_info_model.dart';
 import 'text_property_controller.dart';
+import '../../../fonts/font_manager.dart';
+import '../../../fonts/font_models.dart';
 
 /// 字体属性组件
 class TextPropertyWidget extends StatefulWidget {
@@ -187,8 +189,10 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
             controller: _tabController,
             physics: const NeverScrollableScrollPhysics(), // ✅ 禁止拖动
             children: [
-              _buildFontList(logic.fontList),
-              _buildFontList(logic.fontList),
+              // 推荐字体 Tab
+              Obx(() => _buildFontList(logic.recommendedFonts)),
+              // 全部字体 Tab
+              Obx(() => _buildFontList(logic.allFonts)),
             ],
           ),
         ),
@@ -222,84 +226,163 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
 
   /// 构建单个字体项
   Widget _buildFontItem(FontInfoModel font, bool isSelected) {
-    return Column(
-      children: [
-        // 字体预览按钮
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                // _fontFamily = font.fontFamily;
-                _updateModel();
-              });
-            },
-            child: SelectItemGradientBorder(
-              isSelected: isSelected,
-              radius: 12.w,
-              borderWidth: 1.6.w,
-              unselectedBorderColor: Colors.transparent,
-              unselectedBorderWidth: 0,
-              selectedGradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: ["#C86CFF".color, "#5B98FF".color],
-              ),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: CachedNetworkImage(
-                      imageUrl:
-                          'https://ucc.alicdn.com/images/user-upload-01/20210324100419204.png',
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => CAssetImage(
-                        imgUrl:
-                            'assets/images/canvals/text_property_loading.png',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  // loading
-                  Center(
-                    child: SizedBox(
-                      width: 16.w,
-                      height: 16.w,
-                      child: CAssetImage(
-                        imgUrl:
-                            'assets/images/canvals/text_property_loading.png',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
+    // 使用 Obx 监听字体状态变化
+    return Obx(() {
+      final fontStatus =
+          FontManager.to.fontStatus[font.id] ?? FontStatus.missing;
+      final isReady = fontStatus == FontStatus.ready;
+      final isDownloading = fontStatus == FontStatus.downloading;
+      final isInstalling = fontStatus == FontStatus.installing;
+      final isFailed = fontStatus == FontStatus.failed;
+      // 获取字体元数据（如果已安装）
+      final fontMeta = FontManager.to.allFonts[font.id];
 
-                  // 下载图标（如果需要下载）
-                  // if (!font.isDownloaded && font.downloadUrl != null)
-                  Positioned(
-                    top: 2.w,
-                    right: 2.w,
-                    child: SizedBox(
-                      width: 16.w,
-                      height: 16.w,
-                      child: CAssetImage(
-                        imgUrl:
-                            'assets/images/canvals/text_property_download.png',
+      return Column(
+        children: [
+          // 字体预览按钮
+          Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                // 如果字体已准备好，直接选中
+                if (isReady && fontMeta != null) {
+                  setState(() {
+                    _fontFamily = fontMeta.displayFamilyName;
+                    // 获取默认字重
+                    final defaultWeight = FontManager.to.getDefaultWeight(
+                      font.id,
+                    );
+                    if (defaultWeight != null) {
+                      _fontWeight = defaultWeight.styleName;
+                    }
+                    _updateModel();
+                  });
+                  return;
+                }
+
+                // 如果正在下载或安装中，不重复触发
+                if (isDownloading || isInstalling) {
+                  return;
+                }
+
+                // 如果字体未准备好，调用 FontManager 准备字体
+                try {
+                  final meta = await FontManager.to.prepareFontByInfo(
+                    font,
+                    onProgress: (progress) {
+                      // 可以在这里显示进度，如果需要的话
+                      debugPrint(
+                        '字体 ${font.name} 下载进度: ${(progress * 100).toStringAsFixed(1)}%',
+                      );
+                    },
+                  );
+
+                  // 字体准备成功后，更新选中状态
+                  if (mounted) {
+                    setState(() {
+                      _fontFamily = meta.displayFamilyName;
+                      // 获取默认字重
+                      final defaultWeight = FontManager.to.getDefaultWeight(
+                        font.id,
+                      );
+                      if (defaultWeight != null) {
+                        _fontWeight = defaultWeight.styleName;
+                      }
+                      _updateModel();
+                    });
+                  }
+                } catch (e) {
+                  debugPrint('字体准备失败: $e');
+                  // 可以显示错误提示
+                  if (mounted) {
+                    // 可以在这里显示 Toast 提示用户
+                    // SmartDialog.showToast('字体下载失败，请重试');
+                  }
+                }
+              },
+              child: SelectItemGradientBorder(
+                isSelected: isSelected && isReady,
+                radius: 12.w,
+                borderWidth: 1.6.w,
+                unselectedBorderColor: Colors.transparent,
+                unselectedBorderWidth: 0,
+                selectedGradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: ["#C86CFF".color, "#5B98FF".color],
+                ),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CachedNetworkImage(
+                        imageUrl: font.image,
                         fit: BoxFit.cover,
+                        placeholder: (context, url) => CAssetImage(
+                          imgUrl:
+                              'assets/images/canvals/text_property_download.png',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+
+                    // 下载/安装中的加载指示器
+                    if (isDownloading || isInstalling)
+                      Center(
+                        child: SizedBox(
+                          width: 16.w,
+                          height: 16.w,
+                          child: CAssetImage(
+                            imgUrl:
+                                'assets/images/canvals/text_property_loading.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+
+                    // 下载图标（如果字体未安装且不在下载/安装中）
+                    if (!isReady &&
+                        !isDownloading &&
+                        !isInstalling &&
+                        !isFailed)
+                      Positioned(
+                        top: 2.w,
+                        right: 2.w,
+                        child: Container(
+                          padding: EdgeInsets.all(2.w),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(4.w),
+                          ),
+                          child: SizedBox(
+                            width: 16.w,
+                            height: 16.w,
+                            child: CAssetImage(
+                              imgUrl:
+                                  'assets/images/canvals/text_property_download.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-        SizedBox(height: 4.w),
-        Text(
-          font.name,
-          style: TextStyle(fontSize: 12.w, color: "#232535".color),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    );
+          SizedBox(height: 4.w),
+          Text(
+            font.name,
+            style: TextStyle(
+              fontSize: 12.w,
+              color: "#232535".color,
+              // 如果字体已准备好，可以加粗显示
+              fontWeight: isReady ? FontWeight.w600 : FontWeight.normal,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      );
+    });
   }
 
   /// 构建字重和字号区域
