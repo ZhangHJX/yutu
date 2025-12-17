@@ -170,6 +170,51 @@ class FontZipExtractor {
     return results;
   }
 
+  /// 去重 + 排序（同字重保留第一个）
+  /// 注意：这里假设 FontWeightMeta 有 int weight 字段（你项目里若字段名不同，改一下这里即可）
+  static List<FontWeightMeta> _dedupeAndSortWeights(
+    List<FontWeightMeta> input,
+  ) {
+    final map = <int, FontWeightMeta>{};
+    for (final item in input) {
+      final int w = item.weight; // 若你的字段叫 fontWeight / usWeightClass，改这里
+      map.putIfAbsent(w, () => item);
+    }
+
+    final list = map.values.toList();
+    list.sort((a, b) => a.weight.compareTo(b.weight));
+    return list;
+  }
+
+  /// 选择一个更稳定的 displayFamilyName：
+  /// - 取出现次数最多的 familyName（不同文件 familyName 不一致时更鲁棒）
+  static String _pickDisplayFamilyName(List<FontWeightMeta> weights) {
+    final counts = <String, int>{};
+
+    for (final w in weights) {
+      final name = w.familyName.trim();
+      if (name.isEmpty) continue;
+      counts[name] = (counts[name] ?? 0) + 1;
+    }
+
+    if (counts.isEmpty) {
+      return weights.first.familyName;
+    }
+
+    String best = counts.keys.first;
+    int bestCount = counts[best] ?? 0;
+
+    for (final entry in counts.entries) {
+      if (entry.value > bestCount) {
+        best = entry.key;
+        bestCount = entry.value;
+      }
+    }
+
+    return best;
+  }
+
+  /// 清除本地解压后的垃圾文件
   static Future<void> cleanupExtractArtifacts(Directory rootDir) async {
     if (!await rootDir.exists()) return;
 
@@ -216,49 +261,5 @@ class FontZipExtractor {
         }
       } catch (_) {}
     }
-  }
-
-  /// 去重 + 排序（同字重保留第一个）
-  /// 注意：这里假设 FontWeightMeta 有 int weight 字段（你项目里若字段名不同，改一下这里即可）
-  static List<FontWeightMeta> _dedupeAndSortWeights(
-    List<FontWeightMeta> input,
-  ) {
-    final map = <int, FontWeightMeta>{};
-    for (final item in input) {
-      final int w = item.weight; // 若你的字段叫 fontWeight / usWeightClass，改这里
-      map.putIfAbsent(w, () => item);
-    }
-
-    final list = map.values.toList();
-    list.sort((a, b) => a.weight.compareTo(b.weight));
-    return list;
-  }
-
-  /// 选择一个更稳定的 displayFamilyName：
-  /// - 取出现次数最多的 familyName（不同文件 familyName 不一致时更鲁棒）
-  static String _pickDisplayFamilyName(List<FontWeightMeta> weights) {
-    final counts = <String, int>{};
-
-    for (final w in weights) {
-      final name = w.familyName.trim();
-      if (name.isEmpty) continue;
-      counts[name] = (counts[name] ?? 0) + 1;
-    }
-
-    if (counts.isEmpty) {
-      return weights.first.familyName;
-    }
-
-    String best = counts.keys.first;
-    int bestCount = counts[best] ?? 0;
-
-    for (final entry in counts.entries) {
-      if (entry.value > bestCount) {
-        best = entry.key;
-        bestCount = entry.value;
-      }
-    }
-
-    return best;
   }
 }
