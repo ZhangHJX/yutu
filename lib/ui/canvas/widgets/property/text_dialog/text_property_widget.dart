@@ -246,13 +246,13 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                 // 如果字体已准备好，直接选中
                 if (isReady && fontMeta != null) {
                   setState(() {
-                    _fontFamily = fontMeta.displayFamilyName;
+                    // _fontFamily = fontMeta.displayFamilyName;
                     // 获取默认字重
                     final defaultWeight = FontManager.to.getDefaultWeight(
                       font.id,
                     );
                     if (defaultWeight != null) {
-                      _fontWeight = defaultWeight.styleName;
+                      // _fontWeight = defaultWeight.styleName;
                     }
                     _updateModel();
                   });
@@ -279,13 +279,13 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   // 字体准备成功后，更新选中状态
                   if (mounted) {
                     setState(() {
-                      _fontFamily = meta.displayFamilyName;
+                      // _fontFamily = meta.displayFamilyName;
                       // 获取默认字重
                       final defaultWeight = FontManager.to.getDefaultWeight(
                         font.id,
                       );
                       if (defaultWeight != null) {
-                        _fontWeight = defaultWeight.styleName;
+                        // _fontWeight = defaultWeight.styleName;
                       }
                       _updateModel();
                     });

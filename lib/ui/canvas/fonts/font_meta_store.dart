@@ -46,9 +46,9 @@ class FontMetaStore {
         fileName: 'meta.json',
       );
       if (content == null) return null;
-      final metaFile = FontMetaFile.decode(content);
-      _cache[fontId] = metaFile.family;
-      return metaFile.family;
+      final familyMeta = FontFamilyMeta.decode(content);
+      _cache[fontId] = familyMeta;
+      return familyMeta;
     } catch (e) {
       debugPrint('FontMetaStore readMeta error: $e');
       return null;
@@ -59,11 +59,10 @@ class FontMetaStore {
   Future<void> writeMeta(FontFamilyMeta meta) async {
     _cache[meta.fontId] = meta;
     final dir = await fontDir(meta.fontId);
-    final metaFile = FontMetaFile(schemaVersion: 1, family: meta);
     await FileManager.writeTextFile(
       directory: dir,
       fileName: 'meta.json',
-      content: metaFile.encode(),
+      content: meta.encode(),
     );
   }
 

@@ -207,15 +207,12 @@ class FontManager extends GetxController {
   FontWeightMeta? getDefaultWeight(int fontId) {
     final meta = allFonts[fontId];
     if (meta == null) return null;
-    // 先找 styleName = Regular，再找 weight 400，最后兜底第一个
+    //找 weight 400，最后兜底第一个
     return meta.weights.firstWhere(
-      (w) => w.styleName.toLowerCase() == 'regular',
-      orElse: () => meta.weights.firstWhere(
-        (w) => w.weight == 400,
-        orElse: () {
-          return meta.weights.first;
-        },
-      ),
+      (w) => w.weight == 400,
+      orElse: () {
+        return meta.weights.first;
+      },
     );
   }
 

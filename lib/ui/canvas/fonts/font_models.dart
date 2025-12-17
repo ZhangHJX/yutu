@@ -15,11 +15,8 @@ class FontWeightMeta {
   /// 字体文件相对目录（相对于 font 安装目录）
   final String relativePath;
 
-  /// name 表中 familyName（一般是系列名，例如 "Alibaba PuHuiTi"）
+  /// familyName
   final String familyName;
-
-  /// name 表中 subfamily/styleName，例如 "Regular" / "Bold"
-  final String styleName;
 
   /// OS/2 表中的 usWeightClass（100~900）
   final int weight;
@@ -27,7 +24,6 @@ class FontWeightMeta {
   const FontWeightMeta({
     required this.relativePath,
     required this.familyName,
-    required this.styleName,
     required this.weight,
   });
 
@@ -47,19 +43,18 @@ class FontWeightMeta {
   Map<String, dynamic> toJson() => <String, dynamic>{
     'relativePath': relativePath,
     'familyName': familyName,
-    'styleName': styleName,
     'weight': weight,
   };
 
   factory FontWeightMeta.fromJson(Map<String, dynamic> json) => FontWeightMeta(
     relativePath: json['relativePath'] as String,
     familyName: json['familyName'] as String,
-    styleName: json['styleName'] as String,
     weight: json['weight'] as int,
   );
 }
 
 /// 单个 fontId 的完整 meta 信息； 一个 fontId 下可能有多个字重（多个 ttf/otf 文件）
+/// meta.json 的整体结构（后续如需版本迁移，可在此处扩展）
 class FontFamilyMeta {
   /// 业务侧 fontId（来自模板/接口）
   final int fontId;
@@ -67,11 +62,8 @@ class FontFamilyMeta {
   /// 业务侧版本号，避免旧 zip 叠加
   final String version;
 
-  /// 推荐展示的系列名（通常取第一个权重的 familyName）
-  final String displayFamilyName;
-
-  /// 对应的字体 zip 下载 url（冗余存起来，方便重新下载）
-  final String url;
+  /// 推荐展示的系列名  font_fontId_v$version
+  final String familyKey;
 
   /// 已解析的所有字重
   final List<FontWeightMeta> weights;
@@ -79,49 +71,28 @@ class FontFamilyMeta {
   const FontFamilyMeta({
     required this.fontId,
     required this.version,
-    required this.displayFamilyName,
-    required this.url,
+    required this.familyKey,
     required this.weights,
   });
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'fontId': fontId,
     'version': version,
-    'displayFamilyName': displayFamilyName,
-    'url': url,
+    'familyKey': familyKey,
     'weights': weights.map((e) => e.toJson()).toList(),
   };
 
   factory FontFamilyMeta.fromJson(Map<String, dynamic> json) => FontFamilyMeta(
     fontId: json['fontId'] as int,
     version: json['version'] as String,
-    displayFamilyName: json['displayFamilyName'] as String,
-    url: json['url'] as String,
+    familyKey: json['familyKey'] as String,
     weights: (json['weights'] as List<dynamic>)
         .map((e) => FontWeightMeta.fromJson(e as Map<String, dynamic>))
         .toList(growable: false),
   );
-}
-
-/// meta.json 的整体结构（后续如需版本迁移，可在此处扩展）
-class FontMetaFile {
-  final int schemaVersion;
-  final FontFamilyMeta family;
-
-  const FontMetaFile({required this.schemaVersion, required this.family});
-
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'schemaVersion': schemaVersion,
-    'family': family.toJson(),
-  };
-
-  factory FontMetaFile.fromJson(Map<String, dynamic> json) => FontMetaFile(
-    schemaVersion: json['schemaVersion'] as int? ?? 1,
-    family: FontFamilyMeta.fromJson(json['family'] as Map<String, dynamic>),
-  );
 
   String encode() => jsonEncode(toJson());
 
-  static FontMetaFile decode(String source) =>
-      FontMetaFile.fromJson(jsonDecode(source) as Map<String, dynamic>);
+  static FontFamilyMeta decode(String source) =>
+      FontFamilyMeta.fromJson(jsonDecode(source) as Map<String, dynamic>);
 }

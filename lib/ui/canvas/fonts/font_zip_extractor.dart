@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:common/common.dart';
-import 'font_file_parser.dart';
+import 'ttf_metadata_plus.dart';
 import 'font_models.dart';
 import 'dart:async';
 import 'dart:io';
@@ -96,13 +96,14 @@ class FontZipExtractor {
     for (final file in fontFiles) {
       // 单个文件失败不要影响整体
       try {
-        final meta = await FontFileParser.parseFontFile(
-          file: file,
-          rootDir: rootDir,
+        final meta = await TTfMetadataPlus.fromFile(file.path);
+        final relativePath = p.relative(file.path, from: rootDir.path);
+        final weightMeta = FontWeightMeta(
+          familyName: meta.metrics.fontName,
+          relativePath: relativePath,
+          weight: meta.weight,
         );
-        if (meta != null) {
-          parsedWeights.add(meta);
-        }
+        parsedWeights.add(weightMeta);
       } catch (e) {
         // isolate 内 debugPrint 可用，但别太频繁
         debugPrint('FontZipExtractor parse error: $e');
@@ -115,15 +116,11 @@ class FontZipExtractor {
       );
     }
 
-    final weights = _dedupeAndSortWeights(parsedWeights);
-    final displayFamilyName = _pickDisplayFamilyName(weights);
-
     final familyMeta = FontFamilyMeta(
       fontId: params.fontId,
       version: params.version,
-      displayFamilyName: displayFamilyName,
-      url: params.url,
-      weights: weights,
+      familyKey: 'font_${params.fontId}_v${params.version}',
+      weights: parsedWeights,
     );
 
     return FontInstallResult(meta: familyMeta, installDir: params.installDir);
@@ -168,45 +165,6 @@ class FontZipExtractor {
       results.add(entity);
     }
     return results;
-  }
-
-  /// 去重 + 排序（同字重保留第一个）
-  /// 注意：这里假设 FontWeightMeta 有 int weight 字段
-  static List<FontWeightMeta> _dedupeAndSortWeights(
-    List<FontWeightMeta> input,
-  ) {
-    // 业务期望：同一字体包里的每个字重文件都保留，不再按 weight 去重
-    final list = List<FontWeightMeta>.from(input);
-    list.sort((a, b) => a.weight.compareTo(b.weight));
-    return list;
-  }
-
-  /// 选择一个更稳定的 displayFamilyName：
-  /// - 取出现次数最多的 familyName（不同文件 familyName 不一致时更鲁棒）
-  static String _pickDisplayFamilyName(List<FontWeightMeta> weights) {
-    final counts = <String, int>{};
-
-    for (final w in weights) {
-      final name = w.familyName.trim();
-      if (name.isEmpty) continue;
-      counts[name] = (counts[name] ?? 0) + 1;
-    }
-
-    if (counts.isEmpty) {
-      return weights.first.familyName;
-    }
-
-    String best = counts.keys.first;
-    int bestCount = counts[best] ?? 0;
-
-    for (final entry in counts.entries) {
-      if (entry.value > bestCount) {
-        best = entry.key;
-        bestCount = entry.value;
-      }
-    }
-
-    return best;
   }
 
   /// 清除本地解压后的垃圾文件
