@@ -74,23 +74,36 @@ class FontFileParser {
     String? familyName;
     String? subfamilyName;
 
+    // 优先使用 Windows / Unicode 平台的记录，避免乱码
     for (int i = 0; i < count; i++) {
       final recOffset = nameOffset + 6 + i * 12;
       if (recOffset + 12 > bd.lengthInBytes) break;
 
+      final platformId = _readUint16(
+        bd,
+        recOffset,
+      ); // 0=Unicode,1=Mac,3=Windows
+      final encodingId = _readUint16(bd, recOffset + 2);
       final nameId = _readUint16(bd, recOffset + 6);
       final length = _readUint16(bd, recOffset + 8);
       final offset = _readUint16(bd, recOffset + 10);
 
       if (nameId != 1 && nameId != 2) continue;
+
+      // 仅解析 Unicode 相关平台，避免把 MacRoman 等按 UTF-16 解码成乱码
+      final isUnicodePlatform =
+          platformId == 3 || platformId == 0; // Windows/Unicode 或 Unicode
+      if (!isUnicodePlatform) continue;
+
       final strStart = nameOffset + stringOffset + offset;
       final strEnd = strStart + length;
       if (strEnd > bd.lengthInBytes) continue;
 
       final raw = bd.buffer.asUint8List(strStart, length);
-      // name 表通常使用 UTF-16BE
+
       String decoded;
       try {
+        // name 表在 Unicode 平台通常使用 UTF-16BE
         decoded = _decodeUtf16Be(raw);
       } catch (_) {
         decoded = String.fromCharCodes(raw);

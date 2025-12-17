@@ -171,17 +171,12 @@ class FontZipExtractor {
   }
 
   /// 去重 + 排序（同字重保留第一个）
-  /// 注意：这里假设 FontWeightMeta 有 int weight 字段（你项目里若字段名不同，改一下这里即可）
+  /// 注意：这里假设 FontWeightMeta 有 int weight 字段
   static List<FontWeightMeta> _dedupeAndSortWeights(
     List<FontWeightMeta> input,
   ) {
-    final map = <int, FontWeightMeta>{};
-    for (final item in input) {
-      final int w = item.weight; // 若你的字段叫 fontWeight / usWeightClass，改这里
-      map.putIfAbsent(w, () => item);
-    }
-
-    final list = map.values.toList();
+    // 业务期望：同一字体包里的每个字重文件都保留，不再按 weight 去重
+    final list = List<FontWeightMeta>.from(input);
     list.sort((a, b) => a.weight.compareTo(b.weight));
     return list;
   }

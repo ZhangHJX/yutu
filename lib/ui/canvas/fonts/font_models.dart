@@ -59,9 +59,7 @@ class FontWeightMeta {
   );
 }
 
-/// 单个 fontId 的完整 meta 信息
-///
-/// 一个 fontId 下可能有多个字重（多个 ttf/otf 文件）
+/// 单个 fontId 的完整 meta 信息； 一个 fontId 下可能有多个字重（多个 ttf/otf 文件）
 class FontFamilyMeta {
   /// 业务侧 fontId（来自模板/接口）
   final int fontId;
