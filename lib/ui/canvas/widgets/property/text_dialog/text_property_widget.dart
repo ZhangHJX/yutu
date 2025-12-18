@@ -1,5 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:voicetemplate/ui/canvas/widgets/property/text_dialog/widgets/spinning_widget.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import 'model/font_info_model.dart';
 import 'text_property_controller.dart';
@@ -203,6 +204,10 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
           Expanded(
             child: GestureDetector(
               onTap: () async {
+                if (FontManager.to.isInstallingTasks) {
+                  showToast("已有字体在下载，请稍后操作");
+                  return;
+                }
                 // 如果字体已准备好，直接选中
                 if (isReady && fontMeta != null) {
                   // 使用GetX更新选中状态
@@ -213,7 +218,6 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   });
                   return;
                 }
-
                 // 如果正在下载或安装中，不重复触发
                 if (isDownloading || isInstalling) {
                   return;
@@ -232,7 +236,6 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   );
                   // 字体准备成功后，更新选中状态
                   if (mounted) {
-                    // 使用GetX更新选中状态
                     logic.selectedFontId.value = font.id;
                     logic.familyKey.value = 'font_${font.id}_v${font.version}';
                     setState(() {
@@ -297,13 +300,12 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                     // 下载/安装中的加载指示器
                     if (isDownloading || isInstalling)
                       Center(
-                        child: SizedBox(
-                          width: 16.w,
-                          height: 16.w,
+                        child: SpinningWidget(
                           child: CAssetImage(
                             imgUrl:
                                 'assets/images/canvals/text_property_loading.png',
                             fit: BoxFit.cover,
+                            size: 16.w,
                           ),
                         ),
                       ),

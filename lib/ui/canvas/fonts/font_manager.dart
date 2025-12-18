@@ -41,6 +41,9 @@ class FontManager extends GetxController {
   /// 已经通过 FontLoader 注册过的 familyKey，避免重复 load
   final Set<String> _registeredFamilyKeys = <String>{};
 
+  /// 判断是否有有值
+  bool get isInstallingTasks => _installingTasks.isNotEmpty;
+
   /// 初始化：扫描本地已安装字体
   Future<void> initFromDisk() async {
     final installed = await FontMetaStore.instance.scanAllInstalled();
