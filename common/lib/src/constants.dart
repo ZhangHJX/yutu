@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// 登录token的key
 String tokenKey = 'app_token_key';
 
@@ -22,3 +24,16 @@ Map<String, String> mimeTypeMap = {
   "webp": "image/webp",
   "bmp": "image/bmp",
 };
+
+FontWeight getTextFontWeight(int w) {
+  if (w <= 150) return FontWeight.w100;
+  if (w <= 250) return FontWeight.w200;
+  if (w <= 350) return FontWeight.w300;
+  if (w <= 450) return FontWeight.w400;
+  if (w <= 550) return FontWeight.w500;
+  if (w <= 650) return FontWeight.w600;
+  if (w <= 750) return FontWeight.w700;
+  if (w <= 850) return FontWeight.w800;
+  if (w > 850) return FontWeight.w900;
+  return FontWeight.w400;
+}

@@ -32,22 +32,9 @@ class CanvasElement {
   // 文字相关属性
   String text;
   double fontSize;
-
-  /// 字体ID（来自接口的FontInfoModel.id），用于标识使用的是哪个下载的字体
-  /// 如果为null，表示使用系统默认字体
-  @JsonKey(includeIfNull: false)
-  int? fontId;
-
-  /// Flutter使用的字体家族名（FontFamilyMeta.familyKey），用于实际渲染
-  String fontFamily;
-
-  /// 字重（OS/2表中的usWeightClass，100~900）
-  /// 序列化时转换为int，反序列化时转换为FontWeight
-  @JsonKey(
-    fromJson: CanvasElement._fontWeightFromJson,
-    toJson: CanvasElement._fontWeightToJson,
-  )
-  FontWeight fontWeight;
+  int fontId;
+  String familyKey; // 字体家族名
+  int fontWeight;
 
   @JsonKey(
     fromJson: CanvasElement._textAlignFromJson,
@@ -97,10 +84,10 @@ class CanvasElement {
     this.fillColor = '#D8D8D8',
 
     this.text = '',
-    this.fontId,
-    this.fontFamily = "Courier",
+    this.fontId = 0,
+    this.familyKey = "AlibabaPuHuiTi",
     this.fontSize = 14,
-    this.fontWeight = FontWeight.w400,
+    this.fontWeight = 400,
     this.lineHeight = 1.0,
     this.fontSpace = 0,
     this.align = TextAlign.left,
@@ -133,27 +120,6 @@ class CanvasElement {
   // -----------------------
   // 自定义序列化方法（关键）
   // -----------------------
-
-  // FontWeight
-  /// 将int（100~900）转换为FontWeight
-  static FontWeight _fontWeightFromJson(int value) {
-    // 将OS/2表中的usWeightClass（100~900）转换为Flutter的FontWeight
-    if (value <= 150) return FontWeight.w100;
-    if (value <= 250) return FontWeight.w200;
-    if (value <= 350) return FontWeight.w300;
-    if (value <= 450) return FontWeight.w400;
-    if (value <= 550) return FontWeight.w500;
-    if (value <= 650) return FontWeight.w600;
-    if (value <= 750) return FontWeight.w700;
-    if (value <= 850) return FontWeight.w800;
-    return FontWeight.w900;
-  }
-
-  /// 将FontWeight转换为int（100~900）
-  static int _fontWeightToJson(FontWeight weight) {
-    return weight.value;
-  }
-
   // TextAlign
   static TextAlign _textAlignFromJson(int value) => TextAlign.values[value];
   static int _textAlignToJson(TextAlign align) =>

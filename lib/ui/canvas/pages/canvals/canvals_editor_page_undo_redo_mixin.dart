@@ -302,13 +302,13 @@ mixin CanvasEditorUndoRedoMixin<T extends StatefulWidget> on State<T> {
       );
     }
 
-    if (old.fontFamily != current.fontFamily) {
+    if (old.familyKey != current.familyKey) {
       historyManager.executeCommand(
         UpdateTextPropertiesCommand(
           boxes: boxes,
           elementId: current.id,
-          oldProperties: {'fontFamily': old.fontFamily},
-          newProperties: {'fontFamily': current.fontFamily},
+          oldProperties: {'familyKey': old.familyKey},
+          newProperties: {'familyKey': current.familyKey},
         ),
       );
     }

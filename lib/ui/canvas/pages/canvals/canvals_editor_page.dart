@@ -102,7 +102,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
       // 检查影响尺寸的属性是否改变（与上一次比较，而不是与打开对话框时比较）
       needRecalculateSize =
           old.fontSize != box.fontSize ||
-          old.fontFamily != box.fontFamily ||
+          old.familyKey != box.familyKey ||
           old.fontWeight != box.fontWeight ||
           old.lineHeight != box.lineHeight ||
           old.fontSpace != box.fontSpace;
@@ -122,7 +122,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
         final singleLineSize = TextMeasureUtil.measureText(
           text: box.text,
           fontSize: box.fontSize,
-          fontFamily: box.fontFamily,
+          fontFamily: box.familyKey,
           fontWeight: box.fontWeight,
           letterSpacing: box.fontSpace,
           lineHeight: box.lineHeight,
@@ -138,7 +138,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
           final textSize = TextMeasureUtil.measureTextWithWidth(
             text: box.text,
             fontSize: box.fontSize,
-            fontFamily: box.fontFamily,
+            fontFamily: box.familyKey,
             fontWeight: box.fontWeight,
             letterSpacing: box.fontSpace,
             lineHeight: box.lineHeight,

@@ -201,8 +201,8 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       Size textSize = TextMeasureUtil.measureText(
         text: text,
         fontSize: 14.w,
-        fontFamily: 'Courier', // 默认字体
-        fontWeight: FontWeight.w500, // 默认字重
+        fontFamily: 'AlibabaPuHuiTi', // 默认字体
+        fontWeight: 400, // 默认字重
         letterSpacing: 0, // 默认字间距
         lineHeight: 1.0, // 默认行高
       );
@@ -322,7 +322,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
               final textSize = TextMeasureUtil.measureTextWithWidth(
                 text: newText,
                 fontSize: box.fontSize,
-                fontFamily: box.fontFamily,
+                fontFamily: box.familyKey,
                 fontWeight: box.fontWeight,
                 letterSpacing: box.fontSpace,
                 lineHeight: box.lineHeight,

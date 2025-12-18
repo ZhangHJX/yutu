@@ -7,16 +7,16 @@ import 'package:voicetemplate/ui/canvas/fonts/font_models.dart';
 const String dialog = 'TextPropertyDialogController';
 
 /// 文本属性（字体相关）控制器
-///
-/// 负责管理：
-/// - 当前字体 family / size / weight
-/// - 推荐字体 / 全部字体列表
-/// - 将变更回写到画布元素（element）
 class TextPropertyController extends GetxController {
   /// 全部字体列表（从接口获取的数据）
   final RxList<FontInfoModel> fontList = <FontInfoModel>[].obs;
+  List<FontInfoModel> get allFontList => fontList.toList();
 
-  /// 最终选中
+  //获取推荐字体列表（从 FontManager 获取，并转换为 FontInfoModel）
+  final RxList<FontInfoModel> recommendedFonts = <FontInfoModel>[].obs;
+  List<FontInfoModel> get allRecommendedFonts => recommendedFonts.toList();
+
+  /// 选中的字体fonId
   final RxnInt selectedFontId = RxnInt();
 
   /// 当前选中的字体 family
@@ -27,6 +27,26 @@ class TextPropertyController extends GetxController {
 
   /// 当前字重（以字符串描述：Light / Regular / Bold 等）
   final RxString fontWeight = '系统默认'.obs;
+
+  // /// 获取推荐字体列表（从 FontManager 获取，并转换为 FontInfoModel）
+  // /// 使用 Obx 监听 FontManager 的推荐字体变化
+  // List<FontInfoModel> get recommendedFonts {
+  //   // 监听 FontManager 的推荐字体变化
+  //   final recommendedMetaList = FontManager.to.recommendedFonts;
+  //   // 从全部字体列表中筛选出推荐字体，保持推荐顺序
+  //   final recommendedList = <FontInfoModel>[];
+  //   final fontMap = {for (var font in fontList) font.id: font};
+
+  //   // 按照推荐顺序添加
+  //   for (final meta in recommendedMetaList) {
+  //     final font = fontMap[meta.fontId];
+  //     if (font != null) {
+  //       recommendedList.add(font);
+  //     }
+  //   }
+  //   // 如果推荐列表为空，返回全部字体列表（兜底）
+  //   return recommendedList.isEmpty ? fontList.toList() : recommendedList;
+  // }
 
   // 字重列表
   List<String> fontWeights = [];
@@ -71,32 +91,6 @@ class TextPropertyController extends GetxController {
       debugPrint("-获取字体列表中数据异常: $e");
     }
   }
-
-  /// 获取推荐字体列表（从 FontManager 获取，并转换为 FontInfoModel）
-  /// 使用 Obx 监听 FontManager 的推荐字体变化
-  List<FontInfoModel> get recommendedFonts {
-    // 监听 FontManager 的推荐字体变化
-    final recommendedMetaList = FontManager.to.recommendedFonts;
-    final recommendedFontIds = recommendedMetaList.map((m) => m.fontId).toSet();
-
-    // 从全部字体列表中筛选出推荐字体，保持推荐顺序
-    final recommendedList = <FontInfoModel>[];
-    final fontMap = {for (var font in fontList) font.id: font};
-
-    // 按照推荐顺序添加
-    for (final meta in recommendedMetaList) {
-      final font = fontMap[meta.fontId];
-      if (font != null) {
-        recommendedList.add(font);
-      }
-    }
-
-    // 如果推荐列表为空，返回全部字体列表（兜底）
-    return recommendedList.isEmpty ? fontList.toList() : recommendedList;
-  }
-
-  /// 获取全部字体列表
-  List<FontInfoModel> get allFonts => fontList.toList();
 
   /// 从 element 初始化当前 UI 状态
   // void _initFromElement() {

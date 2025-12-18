@@ -31,9 +31,7 @@ class CanvasElementWidget extends StatelessWidget {
         return Opacity(
           opacity: data.fileAlpha,
           child: Image.file(
-            File(
-              CanvalsFileManager.getImageFullPathByFileName(data.fileName),
-            ),
+            File(CanvalsFileManager.getImageFullPathByFileName(data.fileName)),
             width: data.width,
             height: data.height,
             fit: BoxFit.cover,
@@ -136,9 +134,9 @@ class CanvasElementWidget extends StatelessWidget {
           child: CanvasTextWidget(
             text: data.text,
             textStyle: TextStyle(
-              fontFamily: data.fontFamily,
+              fontFamily: data.familyKey,
               fontSize: data.fontSize,
-              fontWeight: data.fontWeight,
+              fontWeight: getTextFontWeight(data.fontWeight),
               color: data.textColor.color.withValues(alpha: data.textAlpha),
               height: data.lineHeight,
               letterSpacing: data.fontSpace,

@@ -34,7 +34,7 @@ extension _TextElementGestureHelper on ElementGestureManager {
         final textSize = TextMeasureUtil.measureTextWithWidth(
           text: box.text,
           fontSize: box.fontSize,
-          fontFamily: box.fontFamily,
+          fontFamily: box.familyKey,
           fontWeight: box.fontWeight,
           letterSpacing: box.fontSpace,
           lineHeight: box.lineHeight,
@@ -61,7 +61,7 @@ extension _TextElementGestureHelper on ElementGestureManager {
         final singleLineSize = TextMeasureUtil.measureText(
           text: box.text,
           fontSize: state.resizeStartFontSize,
-          fontFamily: box.fontFamily,
+          fontFamily: box.familyKey,
           fontWeight: box.fontWeight,
           letterSpacing: state.resizeStartFontSpace,
           lineHeight: state.resizeStartLineHeight,
@@ -89,7 +89,7 @@ extension _TextElementGestureHelper on ElementGestureManager {
           final textSize = TextMeasureUtil.measureTextWithWidth(
             text: box.text,
             fontSize: finalFontSize,
-            fontFamily: box.fontFamily,
+            fontFamily: box.familyKey,
             fontWeight: box.fontWeight,
             letterSpacing: finalFontSpace,
             lineHeight: state.resizeStartLineHeight,
@@ -188,7 +188,7 @@ extension _TextElementGestureHelper on ElementGestureManager {
     final singleLineSize = TextMeasureUtil.measureText(
       text: box.text,
       fontSize: ElementGestureManager.minFontSize,
-      fontFamily: box.fontFamily,
+      fontFamily: box.familyKey,
       fontWeight: box.fontWeight,
       letterSpacing: box.fontSpace,
       lineHeight: box.lineHeight,
@@ -209,7 +209,7 @@ extension _TextElementGestureHelper on ElementGestureManager {
     final minTextSize = TextMeasureUtil.measureTextWithWidth(
       text: box.text,
       fontSize: ElementGestureManager.minFontSize,
-      fontFamily: box.fontFamily,
+      fontFamily: box.familyKey,
       fontWeight: box.fontWeight,
       letterSpacing: box.fontSpace,
       lineHeight: box.lineHeight,

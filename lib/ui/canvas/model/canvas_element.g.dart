@@ -22,13 +22,10 @@ CanvasElement _$CanvasElementFromJson(Map<String, dynamic> json) =>
       fillAlpha: (json['fillAlpha'] as num?)?.toDouble() ?? 1.0,
       fillColor: json['fillColor'] as String? ?? '#D8D8D8',
       text: json['text'] as String? ?? '',
-      fontFamily: json['fontFamily'] as String? ?? "Courier",
+      fontId: (json['fontId'] as num?)?.toInt() ?? 0,
+      familyKey: json['familyKey'] as String? ?? "AlibabaPuHuiTi",
       fontSize: (json['fontSize'] as num?)?.toDouble() ?? 14,
-      fontWeight: json['fontWeight'] == null
-          ? FontWeight.w500
-          : CanvasElement._fontWeightFromJson(
-              (json['fontWeight'] as num).toInt(),
-            ),
+      fontWeight: (json['fontWeight'] as num?)?.toInt() ?? 400,
       lineHeight: (json['lineHeight'] as num?)?.toDouble() ?? 1.0,
       fontSpace: (json['fontSpace'] as num?)?.toDouble() ?? 0,
       align: json['align'] == null
@@ -65,9 +62,10 @@ Map<String, dynamic> _$CanvasElementToJson(CanvasElement instance) =>
       'fillColor': instance.fillColor,
       'fillAlpha': instance.fillAlpha,
       'text': instance.text,
-      'fontFamily': instance.fontFamily,
       'fontSize': instance.fontSize,
-      'fontWeight': CanvasElement._fontWeightToJson(instance.fontWeight),
+      'fontId': instance.fontId,
+      'familyKey': instance.familyKey,
+      'fontWeight': instance.fontWeight,
       'align': CanvasElement._textAlignToJson(instance.align),
       'lineHeight': instance.lineHeight,
       'fontSpace': instance.fontSpace,

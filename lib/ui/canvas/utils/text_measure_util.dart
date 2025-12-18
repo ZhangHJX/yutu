@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:common/common.dart';
 
 class TextMeasureUtil {
   /// 智能计算文本尺寸：自动判断单行/多行并返回实际的宽高
@@ -12,14 +13,14 @@ class TextMeasureUtil {
     required String text,
     required double fontSize,
     required String? fontFamily,
-    required FontWeight? fontWeight,
+    required int fontWeight,
     required double? letterSpacing,
     required double? lineHeight,
   }) {
     final textStyle = TextStyle(
       fontSize: fontSize,
       fontFamily: fontFamily,
-      fontWeight: fontWeight,
+      fontWeight: getTextFontWeight(fontWeight),
       letterSpacing: letterSpacing,
       height: lineHeight,
     );
@@ -39,7 +40,7 @@ class TextMeasureUtil {
     required String text,
     required double fontSize,
     required String? fontFamily,
-    required FontWeight? fontWeight,
+    required int fontWeight,
     required double? letterSpacing,
     required double? lineHeight,
     required double maxWidth,
@@ -47,7 +48,7 @@ class TextMeasureUtil {
     final textStyle = TextStyle(
       fontSize: fontSize,
       fontFamily: fontFamily,
-      fontWeight: fontWeight,
+      fontWeight: getTextFontWeight(fontWeight),
       letterSpacing: letterSpacing,
       height: lineHeight,
     );

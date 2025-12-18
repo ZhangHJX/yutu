@@ -307,9 +307,9 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
               physics: const NeverScrollableScrollPhysics(), // ✅ 禁止拖动
               children: [
                 // 推荐字体 Tab - 完全响应式
-                _buildFontList(logic.recommendedFonts),
+                _buildFontList(logic.allRecommendedFonts),
                 // 全部字体 Tab - 完全响应式
-                _buildFontList(logic.allFonts),
+                _buildFontList(logic.allFontList),
               ],
             );
           }),

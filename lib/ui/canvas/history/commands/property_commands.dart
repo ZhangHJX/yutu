@@ -79,8 +79,8 @@ class UpdateTextPropertiesCommand implements CanvasCommand {
     if (properties.containsKey('fontSize')) {
       element.fontSize = properties['fontSize'] as double;
     }
-    if (properties.containsKey('fontFamily')) {
-      element.fontFamily = properties['fontFamily'] as String;
+    if (properties.containsKey('familyKey')) {
+      element.familyKey = properties['familyKey'] as String;
     }
     if (properties.containsKey('fontWeight')) {
       element.fontWeight = properties['fontWeight'] as FontWeight;
