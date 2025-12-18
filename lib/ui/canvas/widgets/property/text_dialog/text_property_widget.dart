@@ -32,9 +32,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
     with SingleTickerProviderStateMixin {
   final logic = Get.put(TextPropertyController(), tag: dialog);
 
-  final TextEditingController _fontSizeController = TextEditingController(
-    text: '16',
-  );
+  final TextEditingController _fontSizeController = TextEditingController();
   // Tab控制器
   late TabController _tabController;
   // 字重下拉菜单显示状态
@@ -228,12 +226,10 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   await FontManager.to.prepareFontByInfo(
                     font,
                     onProgress: (progress) {
-                      // 可以在这里显示进度，如果需要的话
-                      debugPrint(
-                        '字体 ${font.name} 下载进度: ${(progress * 100).toStringAsFixed(1)}%',
-                      );
+                      debugPrint('字体 ${font.name} 下载进度: $progress');
                     },
                   );
+                  logic.isFontEdit.value = true;
                   // 字体准备成功后，更新选中状态
                   if (mounted) {
                     logic.selectedFontId.value = font.id;
@@ -245,12 +241,9 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                     });
                   }
                 } catch (e) {
+                  logic.isFontEdit.value = true;
                   debugPrint('字体准备失败: $e');
-                  // 可以显示错误提示
-                  if (mounted) {
-                    // 可以在这里显示 Toast 提示用户
-                    // SmartDialog.showToast('字体下载失败，请重试');
-                  }
+                  showToast('字体下载失败，请重试');
                 }
               },
               child: SelectItemGradientBorder(
@@ -368,6 +361,10 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12.w),
                         onTap: () {
+                          if (FontManager.to.isInstallingTasks) {
+                            showToast("字体正在下载中，暂不能操作");
+                            return;
+                          }
                           // 先收起键盘
                           FocusManager.instance.primaryFocus?.unfocus();
                           logic.getCurrentFontIdWeight();
@@ -429,40 +426,42 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                           ),
                         ),
                         alignment: Alignment.center,
-                        child: TextField(
-                          controller: _fontSizeController,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: const [
-                            // FilteringTextInputFormatter.digitsOnly,
-                            // LengthLimitingTextInputFormatter(3),
-                          ],
-                          textAlign: TextAlign.left,
-                          textAlignVertical: TextAlignVertical.center,
-                          style: TextStyle(
-                            fontSize: 14.w,
-                            color: "#ff242424".color,
-                            fontWeight: FontWeight.w600,
-                            height: 1.2,
-                          ),
-                          onChanged: (_) => _updateModel(),
-                          onTap: () {
-                            // 点击字号输入框时关闭字重下拉菜单
-                            if (_showFontWeightDropdown) {
-                              setState(() {
-                                _showFontWeightDropdown = false;
-                              });
-                            }
-                          },
-                          decoration: InputDecoration(
-                            isDense: true,
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16.w,
+                        child: Obx(() {
+                          return TextField(
+                            controller: _fontSizeController,
+                            keyboardType: TextInputType.number,
+                            enabled: logic.isFontEdit.value,
+                            inputFormatters: const [
+                              // FilteringTextInputFormatter.digitsOnly,
+                              // LengthLimitingTextInputFormatter(3),
+                            ],
+                            textAlign: TextAlign.left,
+                            textAlignVertical: TextAlignVertical.center,
+                            style: TextStyle(
+                              fontSize: 14.w,
+                              color: "#ff242424".color,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
                             ),
-                          ),
-                        ),
+                            onChanged: (_) => _updateModel(),
+                            onTap: () {
+                              if (_showFontWeightDropdown) {
+                                setState(() {
+                                  _showFontWeightDropdown = false;
+                                });
+                              }
+                            },
+                            decoration: InputDecoration(
+                              isDense: true,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16.w,
+                              ),
+                            ),
+                          );
+                        }),
                       ),
                     ),
                   ),

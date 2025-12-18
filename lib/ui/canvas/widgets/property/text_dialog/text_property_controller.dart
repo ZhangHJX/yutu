@@ -45,6 +45,8 @@ class TextPropertyController extends GetxController {
   // 字重列表
   List<String> fontWeights = [];
 
+  RxBool get isFontEdit => FontManager.to.isInstallingTasks.obs;
+
   @override
   void onInit() {
     super.onInit();
