@@ -16,16 +16,10 @@ class TextPropertyController extends GetxController {
   final RxList<FontInfoModel> recommendedFonts = <FontInfoModel>[].obs;
   List<FontInfoModel> get allRecommendedFonts => recommendedFonts.toList();
 
-  /// 选中的字体fonId
+  /// 字体相关属性
+  final RxString familyKey = 'AlibabaPuHuiTi'.obs; // 注册字体名称
   final RxnInt selectedFontId = RxnInt();
-
-  /// 当前选中的字体 family
-  final RxString fontFamily = '系统默认'.obs;
-
-  /// 当前字号（字符串形式，方便直接绑定到输入框）
   final RxString fontSize = '16'.obs;
-
-  /// 当前字重（以字符串描述：Light / Regular / Bold 等）
   final RxString fontWeight = '系统默认'.obs;
 
   // /// 获取推荐字体列表（从 FontManager 获取，并转换为 FontInfoModel）
@@ -66,7 +60,7 @@ class TextPropertyController extends GetxController {
       return a.weight.compareTo(b.weight);
     });
     fontWeights = weightList.map((FontWeightMeta meta) {
-      return meta.flutterFontWeight;
+      return flutterFontWeight(meta.weight);
     }).toList();
   }
 

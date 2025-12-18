@@ -11,7 +11,7 @@ class TextPropertyWidget extends StatefulWidget {
   final dynamic element;
   final Function(bool notify)? onPropertyChanged;
   final VoidCallback? onDeleteText;
-  final Function(String, String, FontWeight) onFontChanged;
+  final Function(String, String, int) onFontChanged;
   final Function(String) onColorChanged;
 
   const TextPropertyWidget({
@@ -31,17 +31,11 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
     with SingleTickerProviderStateMixin {
   final logic = Get.put(TextPropertyController(), tag: dialog);
 
-  // 字体和字号
-  String _fontFamily = '系统默认';
   final TextEditingController _fontSizeController = TextEditingController(
     text: '16',
   );
-
-  // 字重
-  String _fontWeight = '系统默认';
   // Tab控制器
   late TabController _tabController;
-
   // 字重下拉菜单显示状态
   bool _showFontWeightDropdown = false;
 
@@ -57,98 +51,14 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
     if (widget.element == null) return;
 
     final data = widget.element;
-
     // 初始化字体ID（用于字体选择状态）
     if (data.fontId != null) {
       logic.selectedFontId.value = data.fontId;
     }
-
-    // 初始化字体家族名（用于渲染）
-    _fontFamily = data.fontFamily ?? '系统默认';
-
     // 初始化字号
-    _fontSizeController.text = data.fontSize?.toInt().toString() ?? '16';
-
-    // 初始化字重
-    // 如果element有fontId，尝试从FontManager获取对应的FontWeightMeta来转换
-    if (data.fontId != null) {
-      final fontMeta = FontManager.to.allFonts[data.fontId];
-      if (fontMeta != null && data.fontWeight != null) {
-        // 找到最接近的FontWeightMeta
-        final weightValue = data.fontWeight.value as int;
-        final matchedWeight = fontMeta.weights.firstWhere(
-          (w) => w.weight == weightValue,
-          orElse: () {
-            // 如果找不到完全匹配的，找最接近的
-            FontWeightMeta? closest;
-            int minDiff = 1000;
-            for (final w in fontMeta.weights) {
-              final diff = (w.weight - weightValue).abs();
-              if (diff < minDiff) {
-                minDiff = diff;
-                closest = w;
-              }
-            }
-            return closest ?? fontMeta.weights.first;
-          },
-        );
-        _fontWeight = _weightToStyleName(matchedWeight.weight);
-      } else {
-        _fontWeight = _fontWeightToString(data.fontWeight);
-      }
-    } else {
-      // 没有fontId，使用系统默认字体
-      _fontWeight = _fontWeightToString(data.fontWeight);
-    }
-  }
-
-  /// 将FontWeight转换为字符串
-  String _fontWeightToString(FontWeight? weight) {
-    if (weight == null) return '系统默认';
-    switch (weight) {
-      case FontWeight.w300:
-        return 'Light';
-      case FontWeight.w400:
-        return 'Regular';
-      case FontWeight.w500:
-        return 'Medium';
-      case FontWeight.w700:
-        return 'Bold';
-      case FontWeight.w800:
-        return 'Extra Bold';
-      default:
-        return '系统默认';
-    }
-  }
-
-  /// 将字符串转换为FontWeight
-  FontWeight _stringToFontWeight(String weight) {
-    switch (weight) {
-      case 'Light':
-        return FontWeight.w300;
-      case 'Regular':
-        return FontWeight.w400;
-      case 'Medium':
-        return FontWeight.w500;
-      case 'Bold':
-        return FontWeight.w700;
-      case 'Extra Bold':
-        return FontWeight.w800;
-      default:
-        return FontWeight.w400;
-    }
-  }
-
-  /// 将字重数值转换为样式名称
-  String _weightToStyleName(int weight) {
-    if (weight <= 250) return 'Light';
-    if (weight <= 350) return 'Light';
-    if (weight <= 450) return 'Regular';
-    if (weight <= 550) return 'Medium';
-    if (weight <= 650) return 'Medium';
-    if (weight <= 750) return 'Bold';
-    if (weight <= 850) return 'Extra Bold';
-    return 'Extra Bold';
+    _fontSizeController.text = data.fontSize?.toInt().toString() ?? '14';
+    logic.fontWeight.value = flutterFontWeight(data.fontWeight);
+    logic.familyKey.value = data.familyKey;
   }
 
   @override
@@ -160,88 +70,18 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
 
   void _updateModel({bool notify = true}) {
     final data = widget.element;
-
     // 更新字体ID和字体家族名
     if (logic.selectedFontId.value != null) {
       data.fontId = logic.selectedFontId.value;
     }
-
-    // 如果选择了系统默认字体，fontId设为null
-    if (_fontFamily == '系统默认') {
-      data.fontId = null;
-      data.fontFamily = 'Courier';
-    } else {
-      data.fontFamily = _fontFamily;
-    }
-
     // 更新字号
     final fontSize = double.tryParse(_fontSizeController.text) ?? 16.0;
     data.fontSize = fontSize;
-
-    // 更新字重
-    // 如果有fontId，需要从FontManager获取对应的FontWeightMeta
-    FontWeight targetWeight;
-    if (logic.selectedFontId.value != null) {
-      final fontMeta = FontManager.to.allFonts[logic.selectedFontId.value];
-      if (fontMeta != null) {
-        // 根据选择的字重字符串找到对应的FontWeightMeta
-        final weightString = _fontWeight;
-        FontWeightMeta? matchedWeight;
-        switch (weightString) {
-          case 'Light':
-            matchedWeight = fontMeta.weights.firstWhere(
-              (w) => w.weight <= 350,
-              orElse: () => fontMeta.weights.first,
-            );
-            break;
-          case 'Regular':
-            matchedWeight = fontMeta.weights.firstWhere(
-              (w) => w.weight >= 350 && w.weight <= 450,
-              orElse: () =>
-                  FontManager.to.getDefaultWeight(
-                    logic.selectedFontId.value!,
-                  ) ??
-                  fontMeta.weights.first,
-            );
-            break;
-          case 'Medium':
-            matchedWeight = fontMeta.weights.firstWhere(
-              (w) => w.weight >= 450 && w.weight <= 550,
-              orElse: () => fontMeta.weights.first,
-            );
-            break;
-          case 'Bold':
-            matchedWeight = fontMeta.weights.firstWhere(
-              (w) => w.weight >= 650 && w.weight <= 750,
-              orElse: () => fontMeta.weights.first,
-            );
-            break;
-          case 'Extra Bold':
-            matchedWeight = fontMeta.weights.firstWhere(
-              (w) => w.weight >= 750,
-              orElse: () => fontMeta.weights.last,
-            );
-            break;
-          default:
-            matchedWeight =
-                FontManager.to.getDefaultWeight(logic.selectedFontId.value!) ??
-                fontMeta.weights.first;
-        }
-        // targetWeight = matchedWeight.flutterFontWeight;
-      } else {
-        // targetWeight = _stringToFontWeight(_fontWeight);
-      }
-    } else {
-      targetWeight = _stringToFontWeight(_fontWeight);
-    }
-
-    // data.fontWeight = targetWeight;
-
     // 调用回调
     widget.onFontChanged(
-      data.fontFamily,
+      logic.familyKey.value,
       _fontSizeController.text,
-      FontWeight.w700,
+      getNumberFontWeight(logic.fontWeight.value),
     );
     widget.onPropertyChanged?.call(notify);
   }
@@ -368,14 +208,6 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   // 使用GetX更新选中状态
                   logic.selectedFontId.value = font.id;
                   setState(() {
-                    _fontFamily = fontMeta.familyKey;
-                    // 获取默认字重
-                    final defaultWeight = FontManager.to.getDefaultWeight(
-                      font.id,
-                    );
-                    if (defaultWeight != null) {
-                      _fontWeight = _weightToStyleName(defaultWeight.weight);
-                    }
                     _updateModel();
                   });
                   return;
@@ -388,7 +220,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
 
                 // 如果字体未准备好，调用 FontManager 准备字体
                 try {
-                  final meta = await FontManager.to.prepareFontByInfo(
+                  await FontManager.to.prepareFontByInfo(
                     font,
                     onProgress: (progress) {
                       // 可以在这里显示进度，如果需要的话
@@ -402,14 +234,9 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                     // 使用GetX更新选中状态
                     logic.selectedFontId.value = font.id;
                     setState(() {
-                      _fontFamily = meta.familyKey;
                       // 获取默认字重
-                      final defaultWeight = FontManager.to.getDefaultWeight(
-                        font.id,
-                      );
-                      if (defaultWeight != null) {
-                        _fontWeight = _weightToStyleName(defaultWeight.weight);
-                      }
+                      FontManager.to.getDefaultWeight(font.id);
+
                       _updateModel();
                     });
                   }
@@ -435,7 +262,36 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                 ),
                 child: Stack(
                   children: [
-                    Positioned.fill(child: _buildFontPreviewImage(font.image)),
+                    Positioned.fill(
+                      child: CachedNetworkImage(
+                        imageUrl: font.image,
+                        imageBuilder: (context, imageProvider) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12.w),
+                              image: DecorationImage(
+                                image: imageProvider,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          );
+                        },
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12.w),
+                            color: const Color(0xFFE7EEF7),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12.w),
+                            color: const Color(0xFFE7EEF7),
+                          ),
+                        ),
+                        fadeInDuration: const Duration(milliseconds: 200),
+                      ),
+                    ),
 
                     // 下载/安装中的加载指示器
                     if (isDownloading || isInstalling)
@@ -459,20 +315,13 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                       Positioned(
                         top: 2.w,
                         right: 2.w,
-                        child: Container(
-                          padding: EdgeInsets.all(2.w),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(4.w),
-                          ),
-                          child: SizedBox(
-                            width: 16.w,
-                            height: 16.w,
-                            child: CAssetImage(
-                              imgUrl:
-                                  'assets/images/canvals/text_property_download.png',
-                              fit: BoxFit.cover,
-                            ),
+                        child: SizedBox(
+                          width: 16.w,
+                          height: 16.w,
+                          child: CAssetImage(
+                            imgUrl:
+                                'assets/images/canvals/text_property_download.png',
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),
@@ -498,56 +347,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
     });
   }
 
-  /// 构建字体预览图片（修复URI错误）
-  Widget _buildFontPreviewImage(String imageUrl) {
-    // 验证URL是否有效
-    if (imageUrl.isEmpty) {
-      return CAssetImage(
-        imgUrl: 'assets/images/canvals/text_property_download.png',
-        fit: BoxFit.cover,
-      );
-    }
-
-    // 检查URL格式
-    final isValidUrl =
-        imageUrl.startsWith('http://') ||
-        imageUrl.startsWith('https://') ||
-        imageUrl.startsWith('assets/');
-
-    if (!isValidUrl) {
-      // 如果URL格式无效，使用占位图
-      return CAssetImage(
-        imgUrl: 'assets/images/canvals/text_property_download.png',
-        fit: BoxFit.cover,
-      );
-    }
-
-    // 如果是网络图片，使用CachedNetworkImage
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return CachedNetworkImage(
-        imageUrl: imageUrl,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => CAssetImage(
-          imgUrl: 'assets/images/canvals/text_property_download.png',
-          fit: BoxFit.cover,
-        ),
-        errorWidget: (context, url, error) {
-          // 修复URI错误：当图片加载失败时显示占位图
-          debugPrint('字体预览图片加载失败: $url, 错误: $error');
-          return CAssetImage(
-            imgUrl: 'assets/images/canvals/text_property_download.png',
-            fit: BoxFit.cover,
-          );
-        },
-      );
-    }
-
-    // 如果是本地资源，使用CAssetImage
-    return CAssetImage(imgUrl: imageUrl, fit: BoxFit.cover);
-  }
-
-  /// 构建字重和字号区域
-  /// 构建字重和字号区域（修复：Row 内无限宽/约束问题）
+  /// 构建字重和字号区域 修复：Row 内无限宽/约束问题）
   Widget _buildFontWeightAndSizeSection(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -587,7 +387,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                             children: [
                               Expanded(
                                 child: Text(
-                                  _fontWeight,
+                                  logic.fontWeight.value,
                                   style: TextStyle(
                                     fontSize: 14.w,
                                     color: "#ff242424".color,
@@ -703,11 +503,11 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                 child: SingleChildScrollView(
                   child: Column(
                     children: logic.fontWeights.map((weight) {
-                      final isSelected = _fontWeight == weight;
+                      final isSelected = logic.fontWeight.value == weight;
                       return InkWell(
                         onTap: () {
                           setState(() {
-                            _fontWeight = weight;
+                            logic.fontWeight.value = weight;
                             _showFontWeightDropdown = false;
                             _updateModel();
                           });

@@ -86,7 +86,7 @@ class CanvasElement {
     this.text = '',
     this.fontId = 0,
     this.familyKey = "AlibabaPuHuiTi",
-    this.fontSize = 14,
+    this.fontSize = 16,
     this.fontWeight = 400,
     this.lineHeight = 1.0,
     this.fontSpace = 0,

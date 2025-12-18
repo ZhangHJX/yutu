@@ -37,3 +37,42 @@ FontWeight getTextFontWeight(int w) {
   if (w > 850) return FontWeight.w900;
   return FontWeight.w400;
 }
+
+int getNumberFontWeight(String styleName) {
+  switch (styleName) {
+    case '极细':
+      return 100;
+    case '特细':
+      return 200;
+    case '细体':
+      return 300;
+    case '系统默认':
+    case '常规':
+      return 400;
+    case '中等':
+      return 500;
+    case '半粗':
+      return 600;
+    case '粗体':
+      return 700;
+    case '特粗':
+      return 800;
+    case '黑体/重':
+      return 900;
+    default:
+      return 400;
+  }
+}
+
+String flutterFontWeight(int w) {
+  if (w <= 150) return '极细';
+  if (w <= 250) return '特细';
+  if (w <= 350) return '细体';
+  if (w <= 450) return '系统默认';
+  if (w <= 550) return '中等';
+  if (w <= 650) return '半粗';
+  if (w <= 750) return '粗体';
+  if (w <= 850) return '特粗';
+  if (w > 850) return '黑体/重';
+  return '系统默认';
+}

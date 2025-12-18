@@ -100,9 +100,9 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
             element: widget.element,
             onPropertyChanged: widget.onPropertyChanged,
             onDeleteText: widget.onDeleteText,
-            onFontChanged: (fontFamily, fontSize, fontWeight) {
+            onFontChanged: (familyKey, fontSize, fontWeight) {
               final data = widget.element;
-              data.fontFamily = fontFamily;
+              data.familyKey = familyKey;
               data.fontSize = double.tryParse(fontSize) ?? 16.0;
               data.fontWeight = fontWeight;
               widget.onPropertyChanged?.call(true);
@@ -167,9 +167,9 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
             element: widget.element,
             onPropertyChanged: widget.onPropertyChanged,
             onDeleteText: widget.onDeleteText,
-            onFontChanged: (fontFamily, fontSize, fontWeight) {
+            onFontChanged: (familyKey, fontSize, fontWeight) {
               final data = widget.element;
-              data.fontFamily = fontFamily;
+              data.familyKey = familyKey;
               data.fontSize = double.tryParse(fontSize) ?? 16.0;
               data.fontWeight = fontWeight;
               widget.onPropertyChanged?.call(true);
