@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:common/common.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
 
 import '../../../file/index.dart';
 import '../widgets/property/text_dialog/model/font_info_model.dart';
@@ -36,12 +38,17 @@ class FontManager extends GetxController {
   /// 模板已使用的字体 id（用于推荐优先展示）
   final List<int> _templateUsed = [];
 
+  /// 已经通过 FontLoader 注册过的 familyKey，避免重复 load
+  final Set<String> _registeredFamilyKeys = <String>{};
+
   /// 初始化：扫描本地已安装字体
   Future<void> initFromDisk() async {
     final installed = await FontMetaStore.instance.scanAllInstalled();
     for (final meta in installed) {
       allFonts[meta.fontId] = meta;
       fontStatus[meta.fontId] = FontStatus.ready;
+      // 启动时自动把本地已安装字体注册到 Flutter 引擎
+      await _registerFontFamily(meta);
     }
   }
 
@@ -157,6 +164,10 @@ class FontManager extends GetxController {
 
       allFonts[fontId] = result.meta;
       fontStatus[fontId] = FontStatus.ready;
+
+      // 6. 使用内部 familyKey + FontLoader 注册到 Flutter 引擎
+      await _registerFontFamily(result.meta);
+
       _markUsed(fontId);
       onProgress?.call(1.0);
 
@@ -259,5 +270,60 @@ class FontManager extends GetxController {
         for (final id in fontIds) id, // 保留传入顺序去重
       });
     _rebuildRecommended();
+  }
+
+  /// 使用内部 familyKey 注册字体到 Flutter 引擎
+  ///
+  /// - 不依赖 ttf/otf 内部的 familyName
+  /// - 一个 familyKey 下可能有多个字重文件，全部用 FontLoader 加载
+  Future<void> _registerFontFamily(FontFamilyMeta meta) async {
+    // 已注册过的 familyKey 不再重复 load，避免性能浪费和潜在异常
+    if (_registeredFamilyKeys.contains(meta.familyKey)) {
+      return;
+    }
+
+    final dir = await FontMetaStore.instance.fontDir(meta.fontId);
+    final loader = FontLoader(meta.familyKey);
+
+    var addedCount = 0;
+    for (final weightMeta in meta.weights) {
+      final filePath = p.join(dir.path, weightMeta.relativePath);
+      final file = File(filePath);
+      if (!await file.exists()) {
+        debugPrint(
+          'FontManager: font file missing for fontId=${meta.fontId}, path=$filePath',
+        );
+        continue;
+      }
+
+      try {
+        final bytes = await file.readAsBytes();
+        loader.addFont(Future.value(ByteData.view(bytes.buffer)));
+        addedCount++;
+      } catch (e) {
+        debugPrint(
+          'FontManager: failed to load font file for fontId=${meta.fontId}, path=$filePath, error=$e',
+        );
+      }
+    }
+
+    if (addedCount == 0) {
+      debugPrint(
+        'FontManager: no valid font files to register for fontId=${meta.fontId}, familyKey=${meta.familyKey}',
+      );
+      return;
+    }
+
+    try {
+      await loader.load();
+      _registeredFamilyKeys.add(meta.familyKey);
+      debugPrint(
+        'FontManager: registered familyKey=${meta.familyKey} with $addedCount font files',
+      );
+    } catch (e) {
+      debugPrint(
+        'FontManager: FontLoader.load failed for familyKey=${meta.familyKey}, error=$e',
+      );
+    }
   }
 }

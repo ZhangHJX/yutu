@@ -207,6 +207,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                 if (isReady && fontMeta != null) {
                   // 使用GetX更新选中状态
                   logic.selectedFontId.value = font.id;
+                  logic.familyKey.value = 'font_${font.id}_v${font.version}';
                   setState(() {
                     _updateModel();
                   });
@@ -233,10 +234,10 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   if (mounted) {
                     // 使用GetX更新选中状态
                     logic.selectedFontId.value = font.id;
+                    logic.familyKey.value = 'font_${font.id}_v${font.version}';
                     setState(() {
                       // 获取默认字重
                       FontManager.to.getDefaultWeight(font.id);
-
                       _updateModel();
                     });
                   }
