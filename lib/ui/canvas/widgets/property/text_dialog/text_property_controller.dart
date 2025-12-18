@@ -2,6 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'model/font_info_model.dart';
 import '../../../fonts/font_manager.dart';
+import 'package:voicetemplate/ui/canvas/fonts/font_models.dart';
 
 const String dialog = 'TextPropertyDialogController';
 
@@ -27,7 +28,8 @@ class TextPropertyController extends GetxController {
   /// 当前字重（以字符串描述：Light / Regular / Bold 等）
   final RxString fontWeight = '系统默认'.obs;
 
-  // TextPropertyController({required this.element});
+  // 字重列表
+  List<String> fontWeights = [];
 
   @override
   void onInit() {
@@ -35,6 +37,17 @@ class TextPropertyController extends GetxController {
     debugPrint("-获取字体列表中数据----onInit------");
     getFontListData();
     // _initFromElement();
+  }
+
+  /// 获取字体列表pop数据
+  void getCurrentFontIdWeight() {
+    final weightList = FontManager.to.getWeights(selectedFontId.value ?? 1);
+    weightList.sort((FontWeightMeta a, FontWeightMeta b) {
+      return a.weight.compareTo(b.weight);
+    });
+    fontWeights = weightList.map((FontWeightMeta meta) {
+      return meta.flutterFontWeight;
+    }).toList();
   }
 
   /// 获取字体列表中数据
@@ -105,43 +118,6 @@ class TextPropertyController extends GetxController {
   //     fontWeight.value = _fontWeightToString(element.fontWeight);
   //   } catch (_) {}
   // }
-
-  /// 内部：FontWeight -> 文本
-  String _fontWeightToString(FontWeight? weight) {
-    if (weight == null) return '系统默认';
-    switch (weight) {
-      case FontWeight.w300:
-        return 'Light';
-      case FontWeight.w400:
-        return 'Regular';
-      case FontWeight.w500:
-        return 'Medium';
-      case FontWeight.w700:
-        return 'Bold';
-      case FontWeight.w800:
-        return 'Extra Bold';
-      default:
-        return '系统默认';
-    }
-  }
-
-  /// 内部：文本 -> FontWeight
-  FontWeight _stringToFontWeight(String value) {
-    switch (value) {
-      case 'Light':
-        return FontWeight.w300;
-      case 'Regular':
-        return FontWeight.w400;
-      case 'Medium':
-        return FontWeight.w500;
-      case 'Bold':
-        return FontWeight.w700;
-      case 'Extra Bold':
-        return FontWeight.w800;
-      default:
-        return FontWeight.w400;
-    }
-  }
 
   /// 选中某个字体
   // void selectFont(FontItem font) {

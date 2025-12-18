@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
-
 /// 字体当前状态
 /// - [missing]   ：本地没有，需要下载
 /// - [downloading]：正在通过 background_downloader 下载 zip
@@ -27,17 +25,18 @@ class FontWeightMeta {
     required this.weight,
   });
 
-  FontWeight get flutterFontWeight {
+  String get flutterFontWeight {
     final w = weight;
-    if (w <= 150) return FontWeight.w100;
-    if (w <= 250) return FontWeight.w200;
-    if (w <= 350) return FontWeight.w300;
-    if (w <= 450) return FontWeight.w400;
-    if (w <= 550) return FontWeight.w500;
-    if (w <= 650) return FontWeight.w600;
-    if (w <= 750) return FontWeight.w700;
-    if (w <= 850) return FontWeight.w800;
-    return FontWeight.w900;
+    if (w <= 150) return '极细';
+    if (w <= 250) return '特细';
+    if (w <= 350) return '细体';
+    if (w <= 450) return '常规';
+    if (w <= 550) return '中等';
+    if (w <= 650) return '半粗';
+    if (w <= 750) return '粗体';
+    if (w <= 850) return '特粗';
+    if (w > 850) return '黑体/重';
+    return '常规';
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{

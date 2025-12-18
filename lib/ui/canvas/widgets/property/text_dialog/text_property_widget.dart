@@ -42,15 +42,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   // Tab控制器
   late TabController _tabController;
 
-  // 字重列表
-  final List<String> _fontWeights = [
-    '系统默认',
-    'Light',
-    'Regular',
-    'Medium',
-    'Bold',
-    'Extra Bold',
-  ];
+  // 字重下拉菜单显示状态
+  bool _showFontWeightDropdown = false;
 
   @override
   void initState() {
@@ -65,12 +58,48 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
 
     final data = widget.element;
 
-    // 初始化字体和字号
+    // 初始化字体ID（用于字体选择状态）
+    if (data.fontId != null) {
+      logic.selectedFontId.value = data.fontId;
+    }
+
+    // 初始化字体家族名（用于渲染）
     _fontFamily = data.fontFamily ?? '系统默认';
+
+    // 初始化字号
     _fontSizeController.text = data.fontSize?.toInt().toString() ?? '16';
 
     // 初始化字重
-    _fontWeight = _fontWeightToString(data.fontWeight);
+    // 如果element有fontId，尝试从FontManager获取对应的FontWeightMeta来转换
+    if (data.fontId != null) {
+      final fontMeta = FontManager.to.allFonts[data.fontId];
+      if (fontMeta != null && data.fontWeight != null) {
+        // 找到最接近的FontWeightMeta
+        final weightValue = data.fontWeight.value as int;
+        final matchedWeight = fontMeta.weights.firstWhere(
+          (w) => w.weight == weightValue,
+          orElse: () {
+            // 如果找不到完全匹配的，找最接近的
+            FontWeightMeta? closest;
+            int minDiff = 1000;
+            for (final w in fontMeta.weights) {
+              final diff = (w.weight - weightValue).abs();
+              if (diff < minDiff) {
+                minDiff = diff;
+                closest = w;
+              }
+            }
+            return closest ?? fontMeta.weights.first;
+          },
+        );
+        _fontWeight = _weightToStyleName(matchedWeight.weight);
+      } else {
+        _fontWeight = _fontWeightToString(data.fontWeight);
+      }
+    } else {
+      // 没有fontId，使用系统默认字体
+      _fontWeight = _fontWeightToString(data.fontWeight);
+    }
   }
 
   /// 将FontWeight转换为字符串
@@ -110,6 +139,18 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
     }
   }
 
+  /// 将字重数值转换为样式名称
+  String _weightToStyleName(int weight) {
+    if (weight <= 250) return 'Light';
+    if (weight <= 350) return 'Light';
+    if (weight <= 450) return 'Regular';
+    if (weight <= 550) return 'Medium';
+    if (weight <= 650) return 'Medium';
+    if (weight <= 750) return 'Bold';
+    if (weight <= 850) return 'Extra Bold';
+    return 'Extra Bold';
+  }
+
   @override
   void dispose() {
     _fontSizeController.dispose();
@@ -118,10 +159,89 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   }
 
   void _updateModel({bool notify = true}) {
+    final data = widget.element;
+
+    // 更新字体ID和字体家族名
+    if (logic.selectedFontId.value != null) {
+      data.fontId = logic.selectedFontId.value;
+    }
+
+    // 如果选择了系统默认字体，fontId设为null
+    if (_fontFamily == '系统默认') {
+      data.fontId = null;
+      data.fontFamily = 'Courier';
+    } else {
+      data.fontFamily = _fontFamily;
+    }
+
+    // 更新字号
+    final fontSize = double.tryParse(_fontSizeController.text) ?? 16.0;
+    data.fontSize = fontSize;
+
+    // 更新字重
+    // 如果有fontId，需要从FontManager获取对应的FontWeightMeta
+    FontWeight targetWeight;
+    if (logic.selectedFontId.value != null) {
+      final fontMeta = FontManager.to.allFonts[logic.selectedFontId.value];
+      if (fontMeta != null) {
+        // 根据选择的字重字符串找到对应的FontWeightMeta
+        final weightString = _fontWeight;
+        FontWeightMeta? matchedWeight;
+        switch (weightString) {
+          case 'Light':
+            matchedWeight = fontMeta.weights.firstWhere(
+              (w) => w.weight <= 350,
+              orElse: () => fontMeta.weights.first,
+            );
+            break;
+          case 'Regular':
+            matchedWeight = fontMeta.weights.firstWhere(
+              (w) => w.weight >= 350 && w.weight <= 450,
+              orElse: () =>
+                  FontManager.to.getDefaultWeight(
+                    logic.selectedFontId.value!,
+                  ) ??
+                  fontMeta.weights.first,
+            );
+            break;
+          case 'Medium':
+            matchedWeight = fontMeta.weights.firstWhere(
+              (w) => w.weight >= 450 && w.weight <= 550,
+              orElse: () => fontMeta.weights.first,
+            );
+            break;
+          case 'Bold':
+            matchedWeight = fontMeta.weights.firstWhere(
+              (w) => w.weight >= 650 && w.weight <= 750,
+              orElse: () => fontMeta.weights.first,
+            );
+            break;
+          case 'Extra Bold':
+            matchedWeight = fontMeta.weights.firstWhere(
+              (w) => w.weight >= 750,
+              orElse: () => fontMeta.weights.last,
+            );
+            break;
+          default:
+            matchedWeight =
+                FontManager.to.getDefaultWeight(logic.selectedFontId.value!) ??
+                fontMeta.weights.first;
+        }
+        // targetWeight = matchedWeight.flutterFontWeight;
+      } else {
+        // targetWeight = _stringToFontWeight(_fontWeight);
+      }
+    } else {
+      targetWeight = _stringToFontWeight(_fontWeight);
+    }
+
+    // data.fontWeight = targetWeight;
+
+    // 调用回调
     widget.onFontChanged(
-      _fontFamily == '系统默认' ? 'Courier' : _fontFamily,
+      data.fontFamily,
       _fontSizeController.text,
-      _stringToFontWeight(_fontWeight),
+      FontWeight.w700,
     );
     widget.onPropertyChanged?.call(notify);
   }
@@ -136,11 +256,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
         _buildFontSelectionSection(),
         SizedBox(height: 20.w),
         // 字重和字号
-        _buildFontWeightAndSizeSection(),
-        SizedBox(height: 20.w),
-        // 删除文本按钮
-        _buildDeleteButton(),
-        SizedBox(height: ScreenTools.bottomBarHeight + 15.w),
+        _buildFontWeightAndSizeSection(context),
       ],
     );
   }
@@ -182,25 +298,27 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
           ),
         ),
         SizedBox(height: 12.w),
-        // 字体列表
+        // 字体列表 - 使用GetX完全响应式
         SizedBox(
           height: 211.w, // 固定高度，可根据需要调整
-          child: TabBarView(
-            controller: _tabController,
-            physics: const NeverScrollableScrollPhysics(), // ✅ 禁止拖动
-            children: [
-              // 推荐字体 Tab
-              Obx(() => _buildFontList(logic.recommendedFonts)),
-              // 全部字体 Tab
-              Obx(() => _buildFontList(logic.allFonts)),
-            ],
-          ),
+          child: Obx(() {
+            return TabBarView(
+              controller: _tabController,
+              physics: const NeverScrollableScrollPhysics(), // ✅ 禁止拖动
+              children: [
+                // 推荐字体 Tab - 完全响应式
+                _buildFontList(logic.recommendedFonts),
+                // 全部字体 Tab - 完全响应式
+                _buildFontList(logic.allFonts),
+              ],
+            );
+          }),
         ),
       ],
     );
   }
 
-  /// 构建字体列表（每行3个）
+  /// 构建字体列表（每行3个）- 使用GetX响应式
   Widget _buildFontList(List<FontInfoModel> fonts) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -215,10 +333,12 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
         itemCount: fonts.length,
         itemBuilder: (context, index) {
           final font = fonts[index];
-          // final isSelected =
-          //     _fontFamily == font.fontFamily ||
-          //     (_fontFamily == '系统默认' && font.fontFamily == 'Courier');
-          return _buildFontItem(font, true);
+          // 使用GetX响应式判断是否选中
+          return Obx(() {
+            final selectedId = logic.selectedFontId.value;
+            final isSelected = selectedId != null && selectedId == font.id;
+            return _buildFontItem(font, isSelected);
+          });
         },
       ),
     );
@@ -245,14 +365,16 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
               onTap: () async {
                 // 如果字体已准备好，直接选中
                 if (isReady && fontMeta != null) {
+                  // 使用GetX更新选中状态
+                  logic.selectedFontId.value = font.id;
                   setState(() {
-                    // _fontFamily = fontMeta.displayFamilyName;
+                    _fontFamily = fontMeta.familyKey;
                     // 获取默认字重
                     final defaultWeight = FontManager.to.getDefaultWeight(
                       font.id,
                     );
                     if (defaultWeight != null) {
-                      // _fontWeight = defaultWeight.styleName;
+                      _fontWeight = _weightToStyleName(defaultWeight.weight);
                     }
                     _updateModel();
                   });
@@ -275,17 +397,18 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                       );
                     },
                   );
-
                   // 字体准备成功后，更新选中状态
                   if (mounted) {
+                    // 使用GetX更新选中状态
+                    logic.selectedFontId.value = font.id;
                     setState(() {
-                      // _fontFamily = meta.displayFamilyName;
+                      _fontFamily = meta.familyKey;
                       // 获取默认字重
                       final defaultWeight = FontManager.to.getDefaultWeight(
                         font.id,
                       );
                       if (defaultWeight != null) {
-                        // _fontWeight = defaultWeight.styleName;
+                        _fontWeight = _weightToStyleName(defaultWeight.weight);
                       }
                       _updateModel();
                     });
@@ -312,17 +435,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                 ),
                 child: Stack(
                   children: [
-                    Positioned.fill(
-                      child: CachedNetworkImage(
-                        imageUrl: font.image,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => CAssetImage(
-                          imgUrl:
-                              'assets/images/canvals/text_property_download.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
+                    Positioned.fill(child: _buildFontPreviewImage(font.image)),
 
                     // 下载/安装中的加载指示器
                     if (isDownloading || isInstalling)
@@ -385,155 +498,247 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
     });
   }
 
+  /// 构建字体预览图片（修复URI错误）
+  Widget _buildFontPreviewImage(String imageUrl) {
+    // 验证URL是否有效
+    if (imageUrl.isEmpty) {
+      return CAssetImage(
+        imgUrl: 'assets/images/canvals/text_property_download.png',
+        fit: BoxFit.cover,
+      );
+    }
+
+    // 检查URL格式
+    final isValidUrl =
+        imageUrl.startsWith('http://') ||
+        imageUrl.startsWith('https://') ||
+        imageUrl.startsWith('assets/');
+
+    if (!isValidUrl) {
+      // 如果URL格式无效，使用占位图
+      return CAssetImage(
+        imgUrl: 'assets/images/canvals/text_property_download.png',
+        fit: BoxFit.cover,
+      );
+    }
+
+    // 如果是网络图片，使用CachedNetworkImage
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return CachedNetworkImage(
+        imageUrl: imageUrl,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => CAssetImage(
+          imgUrl: 'assets/images/canvals/text_property_download.png',
+          fit: BoxFit.cover,
+        ),
+        errorWidget: (context, url, error) {
+          // 修复URI错误：当图片加载失败时显示占位图
+          debugPrint('字体预览图片加载失败: $url, 错误: $error');
+          return CAssetImage(
+            imgUrl: 'assets/images/canvals/text_property_download.png',
+            fit: BoxFit.cover,
+          );
+        },
+      );
+    }
+
+    // 如果是本地资源，使用CAssetImage
+    return CAssetImage(imgUrl: imageUrl, fit: BoxFit.cover);
+  }
+
   /// 构建字重和字号区域
   /// 构建字重和字号区域（修复：Row 内无限宽/约束问题）
-  Widget _buildFontWeightAndSizeSection() {
+  Widget _buildFontWeightAndSizeSection(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Expanded(
-            child: _LabeledField(
-              title: '字重',
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12.w),
-                onTap: () {
-                  // _showFontWeightDialog(context);
-                },
-                child: Container(
-                  height: 42.w,
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12.w),
-                    border: Border.all(color: "#FFE6E6E6".color, width: 1.w),
+          Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _LabeledField(
+                      title: '字重',
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12.w),
+                        onTap: () {
+                          // 先收起键盘
+                          FocusManager.instance.primaryFocus?.unfocus();
+                          logic.getCurrentFontIdWeight();
+                          setState(() {
+                            _showFontWeightDropdown = !_showFontWeightDropdown;
+                          });
+                        },
+                        child: Container(
+                          height: 42.w,
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12.w),
+                            border: Border.all(
+                              color: "#FFE6E6E6".color,
+                              width: 1.w,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _fontWeight,
+                                  style: TextStyle(
+                                    fontSize: 14.w,
+                                    color: "#ff242424".color,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                              SizedBox(
+                                width: 16.w,
+                                height: 16.w,
+                                child: Image.asset(
+                                  'assets/images/canvals/canvals_text_font_down.png',
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _fontWeight,
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: _LabeledField(
+                      title: '字号',
+                      child: Container(
+                        height: 42.w,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12.w),
+                          border: Border.all(
+                            color: "#ffE6E6E6".color,
+                            width: 1.w,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: TextField(
+                          controller: _fontSizeController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: const [
+                            // FilteringTextInputFormatter.digitsOnly,
+                            // LengthLimitingTextInputFormatter(3),
+                          ],
+                          textAlign: TextAlign.left,
+                          textAlignVertical: TextAlignVertical.center,
                           style: TextStyle(
                             fontSize: 14.w,
                             color: "#ff242424".color,
                             fontWeight: FontWeight.w600,
+                            height: 1.2,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
+                          onChanged: (_) => _updateModel(),
+                          onTap: () {
+                            // 点击字号输入框时关闭字重下拉菜单
+                            if (_showFontWeightDropdown) {
+                              setState(() {
+                                _showFontWeightDropdown = false;
+                              });
+                            }
+                          },
+                          decoration: InputDecoration(
+                            isDense: true,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                            ),
+                          ),
                         ),
                       ),
-
-                      SizedBox(
-                        width: 16.w,
-                        height: 16.w,
-                        child: Image.asset(
-                          'assets/images/canvals/canvals_text_font_down.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ),
+
+              if (_showFontWeightDropdown) SizedBox(height: 80.w),
+              if (!_showFontWeightDropdown) SizedBox(height: 20.w),
+              // 删除文本按钮
+              _buildDeleteButton(),
+              SizedBox(height: ScreenTools.bottomBarHeight + 15.w),
+            ],
           ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: _LabeledField(
-              title: '字号',
+
+          // 字重下拉菜单
+          if (_showFontWeightDropdown)
+            Positioned(
+              left: 11.w,
+              top: 42.w + 15.w,
               child: Container(
-                height: 42.w,
+                width: 125.w,
+                height: 154.w,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12.w),
-                  border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-                ),
-                alignment: Alignment.center,
-                child: TextField(
-                  controller: _fontSizeController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: const [
-                    // FilteringTextInputFormatter.digitsOnly,
-                    // LengthLimitingTextInputFormatter(3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFCDE4FF), // 外阴影颜色
+                      offset: const Offset(0, 1), // Offset X=0, Y=1
+                      blurRadius: 5, // Effect blur=5
+                      spreadRadius: 0, // Effect spread=0
+                    ),
                   ],
-                  textAlign: TextAlign.left,
-                  textAlignVertical: TextAlignVertical.center,
-                  style: TextStyle(
-                    fontSize: 14.w,
-                    color: "#ff242424".color,
-                    fontWeight: FontWeight.w600,
-                    height: 1.2,
-                  ),
-                  onChanged: (_) => _updateModel(),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
+                ),
+                padding: EdgeInsets.only(
+                  left: 7.w,
+                  right: 10.w,
+                  top: 10.w,
+                  bottom: 5.w,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: logic.fontWeights.map((weight) {
+                      final isSelected = _fontWeight == weight;
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            _fontWeight = weight;
+                            _showFontWeightDropdown = false;
+                            _updateModel();
+                          });
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(vertical: 12.w),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? "#DCEDFE".color.withValues(alpha: 0.6)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(8.w),
+                          ),
+                          child: Text(
+                            weight,
+                            style: TextStyle(
+                              fontSize: 14.w,
+                              color: isSelected
+                                  ? "#3C7BFF".color
+                                  : "#242424".color,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
               ),
             ),
-          ),
         ],
-      ),
-    );
-  }
-
-  /// 显示字重选择对话框
-  void _showFontWeightDialog(BuildContext buildContext) {
-    if (!mounted) return;
-    showModalBottomSheet<dynamic>(
-      context: buildContext,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext dialogContext) => Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20.w)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 16.w),
-              child: Text(
-                '选择字重',
-                style: TextStyle(
-                  fontSize: 16.w,
-                  fontWeight: FontWeight.w600,
-                  color: "#242424".color,
-                ),
-              ),
-            ),
-            Divider(height: 1.w),
-            ..._fontWeights.map(
-              (weight) => ListTile(
-                title: Text(
-                  weight,
-                  style: TextStyle(
-                    fontSize: 14.w,
-                    color: _fontWeight == weight
-                        ? "#3C7BFF".color
-                        : "#242424".color,
-                    fontWeight: _fontWeight == weight
-                        ? FontWeight.w600
-                        : FontWeight.w400,
-                  ),
-                ),
-                onTap: () {
-                  setState(() {
-                    _fontWeight = weight;
-                    _updateModel();
-                  });
-                  Navigator.pop(dialogContext);
-                },
-              ),
-            ),
-            SizedBox(height: ScreenTools.bottomBarHeight),
-          ],
-        ),
       ),
     );
   }
