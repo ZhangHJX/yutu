@@ -76,3 +76,8 @@ String flutterFontWeight(int w) {
   if (w > 850) return '黑体/重';
   return '系统默认';
 }
+
+/// 字体相关配置
+const String defaultConfigFamliy = "AlibabaPuHuiTi";
+const double defaultConfigFontSize = 16;
+const FontWeight defaultConfigFontWeight = FontWeight.w400;

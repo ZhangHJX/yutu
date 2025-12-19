@@ -27,7 +27,7 @@ class FontManager extends GetxController {
   final RxMap<int, FontFamilyMeta> allFonts = <int, FontFamilyMeta>{}.obs;
 
   /// 推荐字体（模板字体 + 最近使用）
-  final RxList<FontFamilyMeta> recommendedFonts = <FontFamilyMeta>[].obs;
+  RxList<FontFamilyMeta> recommendedFonts = <FontFamilyMeta>[].obs;
 
   /// fontId -> 正在进行的“安装”任务（下载 + 解压 + 解析 + 落盘）
   final Map<int, Future<FontFamilyMeta>> _installingTasks = {};
@@ -43,6 +43,9 @@ class FontManager extends GetxController {
 
   /// 判断是否有有值
   bool get isInstallingTasks => _installingTasks.isNotEmpty;
+
+  /// 是否正在执行“温和后台更新”
+  bool _isWarmUpdating = false;
 
   /// 初始化：扫描本地已安装字体
   Future<void> initFromDisk() async {
@@ -106,7 +109,7 @@ class FontManager extends GetxController {
     if (localMeta != null && localMeta.version == version) {
       allFonts[fontId] = localMeta;
       fontStatus[fontId] = FontStatus.ready;
-      _markUsed(fontId);
+      markUsed(fontId);
       return localMeta;
     }
 
@@ -171,7 +174,7 @@ class FontManager extends GetxController {
       // 6. 使用内部 familyKey + FontLoader 注册到 Flutter 引擎
       await _registerFontFamily(result.meta);
 
-      _markUsed(fontId);
+      markUsed(fontId);
       onProgress?.call(1.0);
 
       // 安装成功后清理备份目录，避免磁盘占用和干扰后续安装
@@ -210,6 +213,57 @@ class FontManager extends GetxController {
     }
   }
 
+  /// 温和后台更新：只更新“本地已安装且有新版本”的字体
+  ///
+  /// - 仅当 [fontStatus] 为 ready 时才尝试更新
+  /// - 通过比对本地 meta.version 和接口返回的 version 判断是否有更新
+  /// - 串行执行，避免并发爆流量，也避免频繁触发 FontLoader
+  Future<void> warmUpdateInstalledFonts(List<FontInfoModel> remoteFonts) async {
+    // 避免重复进入同一个后台更新流程
+    if (_isWarmUpdating) return;
+
+    _isWarmUpdating = true;
+    try {
+      for (final info in remoteFonts) {
+        final status = fontStatus[info.id];
+        if (status != FontStatus.ready) {
+          // 只更新“本地已安装”的字体
+          continue;
+        }
+
+        final localMeta = allFonts[info.id];
+        if (localMeta == null) continue;
+
+        // 没有新版本则跳过
+        if (localMeta.version == info.version) {
+          continue;
+        }
+
+        debugPrint(
+          'FontManager: warm update fontId=${info.id}, '
+          'localVersion=${localMeta.version}, remoteVersion=${info.version}',
+        );
+
+        try {
+          // 串行：一旦 await，这里就保证一次只更新一个字体
+          await prepareFont(
+            fontId: info.id,
+            version: info.version,
+            url: info.url,
+            // 后台更新，不需要精细进度，简单占位即可
+            onProgress: (_) {},
+          );
+        } catch (e) {
+          debugPrint(
+            'FontManager: warm update failed for fontId=${info.id}, error=$e',
+          );
+        }
+      }
+    } finally {
+      _isWarmUpdating = false;
+    }
+  }
+
   /// UI：获取某个字体可用字重（下拉框用）
   List<FontWeightMeta> getWeights(int fontId) {
     final meta = allFonts[fontId];
@@ -231,7 +285,7 @@ class FontManager extends GetxController {
   }
 
   /// 记录“最近使用”，用于推荐字体
-  void _markUsed(int fontId) {
+  void markUsed(int fontId) {
     _recentUsed.remove(fontId);
     _recentUsed.insert(0, fontId);
     if (_recentUsed.length > 20) {

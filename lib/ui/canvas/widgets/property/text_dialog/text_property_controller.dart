@@ -22,8 +22,9 @@ class TextPropertyController extends GetxController {
   final RxString fontSize = '16'.obs;
   final RxString fontWeight = '系统默认'.obs;
 
-  // /// 获取推荐字体列表（从 FontManager 获取，并转换为 FontInfoModel）
-  // /// 使用 Obx 监听 FontManager 的推荐字体变化
+  Worker? _countWorker;
+
+  /// 获取推荐字体列表 使用 Obx 监听 FontManager 的推荐字体变化
   // List<FontInfoModel> get recommendedFonts {
   //   // 监听 FontManager 的推荐字体变化
   //   final recommendedMetaList = FontManager.to.recommendedFonts;
@@ -44,25 +45,40 @@ class TextPropertyController extends GetxController {
 
   // 字重列表
   List<String> fontWeights = [];
-
   RxBool get isFontEdit => FontManager.to.isInstallingTasks.obs;
 
   @override
   void onInit() {
     super.onInit();
-    debugPrint("-获取字体列表中数据----onInit------");
     getFontListData();
-    // _initFromElement();
+    // 监听每一次变化
+
+    _countWorker = ever(FontManager.to.recommendedFonts, (value) {
+      debugPrint("-监听每一次变化---");
+
+      final recommendedList = <FontInfoModel>[];
+      final fontMap = {for (var font in fontList) font.id: font};
+      // 按照推荐顺序添加
+      for (final meta in value) {
+        final font = fontMap[meta.fontId];
+        if (font != null) {
+          recommendedList.add(font);
+        }
+      }
+      recommendedFonts.value = recommendedList;
+    });
   }
 
   /// 获取字体列表pop数据
   void getCurrentFontIdWeight() {
     final weightList = FontManager.to.getWeights(selectedFontId.value ?? 1);
     weightList.sort((FontWeightMeta a, FontWeightMeta b) {
-      return a.weight.compareTo(b.weight);
+      // return a.weight.compareTo(b.weight);
+      return 400;
     });
     fontWeights = weightList.map((FontWeightMeta meta) {
-      return flutterFontWeight(meta.weight);
+      // return flutterFontWeight(meta.weight);
+      return "常规";
     }).toList();
   }
 
@@ -79,8 +95,8 @@ class TextPropertyController extends GetxController {
         // 更新字体列表
         fontList.assignAll(result.data as List<FontInfoModel>);
         // 将字体 ID 列表传递给 FontManager，用于推荐字体
-        final fontIds = fontList.map((f) => f.id).toList();
-        FontManager.to.setTemplateUsedFonts(fontIds);
+        // final fontIds = fontList.map((f) => f.id).toList();
+        // FontManager.to.setTemplateUsedFonts(fontIds);
         debugPrint("-获取字体列表中数据成功--数量: ${fontList.length}");
       }
     } catch (e) {
@@ -88,66 +104,9 @@ class TextPropertyController extends GetxController {
     }
   }
 
-  /// 从 element 初始化当前 UI 状态
-  // void _initFromElement() {
-  //   if (element == null) return;
-
-  //   try {
-  //     fontFamily.value = element.fontFamily ?? '系统默认';
-  //   } catch (_) {}
-
-  //   try {
-  //     final size = element.fontSize;
-  //     fontSize.value =
-  //         (size is num ? size.toDouble() : double.tryParse('$size') ?? 16)
-  //             .toInt()
-  //             .toString();
-  //   } catch (_) {}
-
-  //   try {
-  //     fontWeight.value = _fontWeightToString(element.fontWeight);
-  //   } catch (_) {}
-  // }
-
-  /// 选中某个字体
-  // void selectFont(FontItem font) {
-  //   fontFamily.value = font.fontFamily;
-  //   _applyToElement();
-  // }
-
-  /// 更新字号
-  void updateFontSize(String value) {
-    if (value.isEmpty) return;
-    fontSize.value = value;
-    _applyToElement();
-  }
-
-  /// 更新字重
-  void updateFontWeight(String value) {
-    fontWeight.value = value;
-    _applyToElement();
-  }
-
-  /// 将当前 controller 状态写回到 element（不触发外部回调，由外部决定何时通知）
-  void _applyToElement() {
-    // if (element == null) return;
-    // try {
-    //   element.fontFamily = fontFamily.value == '系统默认'
-    //       ? 'Courier'
-    //       : fontFamily.value;
-    // } catch (_) {}
-
-    // try {
-    //   element.fontSize = double.tryParse(fontSize.value) ?? 16.0;
-    // } catch (_) {}
-
-    // try {
-    //   element.fontWeight = _stringToFontWeight(fontWeight.value);
-    // } catch (_) {}
-  }
-
   @override
   void onClose() {
+    _countWorker?.dispose();
     debugPrint("-获取字体列表中数据----onClose------");
     super.onClose();
   }

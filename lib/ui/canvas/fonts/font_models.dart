@@ -16,38 +16,30 @@ class FontWeightMeta {
   /// familyName
   final String familyName;
 
+  /// familyName
+  final String styleName;
+
   /// OS/2 表中的 usWeightClass（100~900）
   final int weight;
 
   const FontWeightMeta({
     required this.relativePath,
     required this.familyName,
-    required this.weight,
+    required this.styleName,
+    this.weight = 400,
   });
-
-  String get flutterFontWeight {
-    final w = weight;
-    if (w <= 150) return '极细';
-    if (w <= 250) return '特细';
-    if (w <= 350) return '细体';
-    if (w <= 450) return '常规';
-    if (w <= 550) return '中等';
-    if (w <= 650) return '半粗';
-    if (w <= 750) return '粗体';
-    if (w <= 850) return '特粗';
-    if (w > 850) return '黑体/重';
-    return '常规';
-  }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'relativePath': relativePath,
     'familyName': familyName,
+    'styleName': styleName,
     'weight': weight,
   };
 
   factory FontWeightMeta.fromJson(Map<String, dynamic> json) => FontWeightMeta(
     relativePath: json['relativePath'] as String,
     familyName: json['familyName'] as String,
+    styleName: json['styleName'] as String,
     weight: json['weight'] as int,
   );
 }

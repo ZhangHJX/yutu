@@ -211,6 +211,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   // 使用GetX更新选中状态
                   logic.selectedFontId.value = font.id;
                   logic.familyKey.value = 'font_${font.id}_v${font.version}';
+                  FontManager.to.markUsed(font.id);
                   setState(() {
                     _updateModel();
                   });

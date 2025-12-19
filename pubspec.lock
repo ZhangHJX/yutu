@@ -1145,14 +1145,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.6"
-  ttf_metadata:
-    dependency: transitive
-    description:
-      name: ttf_metadata
-      sha256: "7b123dbaedcee85297bf8af32a31316b812af814fc92d5c4d229a90ad4ed0ff7"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.6"
   typed_data:
     dependency: transitive
     description:
