@@ -34,6 +34,8 @@ dependencies:
   cached_network_image: ^3.4.1
   flutter_archive: ^6.0.4
   background_downloader: ^9.4.1
+  ttf_metadata: ^0.0.6
+
 
 dev_dependencies:
   flutter_test:

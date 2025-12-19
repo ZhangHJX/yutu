@@ -20,3 +20,4 @@ export 'package:flutter_archive/flutter_archive.dart';
 export 'package:background_downloader/background_downloader.dart'
     hide PermissionStatus;
 export 'package:permission_handler/permission_handler.dart';
+export 'package:ttf_metadata/ttf_metadata.dart';
