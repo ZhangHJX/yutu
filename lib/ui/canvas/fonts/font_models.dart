@@ -13,27 +13,27 @@ class FontWeightMeta {
   /// 字体文件相对目录（相对于 font 安装目录）
   final String relativePath;
 
-  /// familyName
-  // final String styleName;
+  /// Font Subfamily name（nameID=2）
+  final String styleName;
 
   /// OS/2 表中的 usWeightClass（100~900）
   final int weight;
 
   const FontWeightMeta({
     required this.relativePath,
-    // required this.styleName,
-    this.weight = 400,
+    required this.styleName,
+    required this.weight,
   });
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'relativePath': relativePath,
-    // 'styleName': styleName,
+    'styleName': styleName,
     'weight': weight,
   };
 
   factory FontWeightMeta.fromJson(Map<String, dynamic> json) => FontWeightMeta(
     relativePath: json['relativePath'] as String,
-    // styleName: json['styleName'] as String,
+    styleName: json['styleName'] as String,
     weight: json['weight'] as int,
   );
 }

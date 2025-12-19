@@ -20,28 +20,9 @@ class TextPropertyController extends GetxController {
   final RxString familyKey = 'AlibabaPuHuiTi'.obs; // 注册字体名称
   final RxnInt selectedFontId = RxnInt();
   final RxString fontSize = '16'.obs;
-  final RxString fontWeight = '系统默认'.obs;
+  final RxString styleName = '系统默认'.obs;
 
   Worker? _countWorker;
-
-  /// 获取推荐字体列表 使用 Obx 监听 FontManager 的推荐字体变化
-  // List<FontInfoModel> get recommendedFonts {
-  //   // 监听 FontManager 的推荐字体变化
-  //   final recommendedMetaList = FontManager.to.recommendedFonts;
-  //   // 从全部字体列表中筛选出推荐字体，保持推荐顺序
-  //   final recommendedList = <FontInfoModel>[];
-  //   final fontMap = {for (var font in fontList) font.id: font};
-
-  //   // 按照推荐顺序添加
-  //   for (final meta in recommendedMetaList) {
-  //     final font = fontMap[meta.fontId];
-  //     if (font != null) {
-  //       recommendedList.add(font);
-  //     }
-  //   }
-  //   // 如果推荐列表为空，返回全部字体列表（兜底）
-  //   return recommendedList.isEmpty ? fontList.toList() : recommendedList;
-  // }
 
   // 字重列表
   List<String> fontWeights = [];
@@ -73,12 +54,10 @@ class TextPropertyController extends GetxController {
   void getCurrentFontIdWeight() {
     final weightList = FontManager.to.getWeights(selectedFontId.value ?? 1);
     weightList.sort((FontWeightMeta a, FontWeightMeta b) {
-      // return a.weight.compareTo(b.weight);
-      return 400;
+      return a.weight.compareTo(b.weight);
     });
     fontWeights = weightList.map((FontWeightMeta meta) {
-      // return flutterFontWeight(meta.weight);
-      return "常规";
+      return meta.styleName;
     }).toList();
   }
 

@@ -56,7 +56,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
     }
     // 初始化字号
     _fontSizeController.text = data.fontSize?.toInt().toString() ?? '14';
-    logic.fontWeight.value = flutterFontWeight(data.fontWeight);
+    // logic.fontWeight.value = flutterFontWeight(data.fontWeight);
     logic.familyKey.value = data.familyKey;
   }
 
@@ -80,7 +80,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
     widget.onFontChanged(
       logic.familyKey.value,
       _fontSizeController.text,
-      getNumberFontWeight(logic.fontWeight.value),
+      400,
+      // getNumberFontWeight(logic.fontWeight.value),
     );
     widget.onPropertyChanged?.call(notify);
   }
@@ -205,6 +206,9 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                 if (FontManager.to.isInstallingTasks) {
                   showToast("已有字体在下载，请稍后操作");
                   return;
+                }
+                if (_showFontWeightDropdown) {
+                  _showFontWeightDropdown = false;
                 }
                 // 如果字体已准备好，直接选中
                 if (isReady && fontMeta != null) {
@@ -390,7 +394,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                             children: [
                               Expanded(
                                 child: Text(
-                                  logic.fontWeight.value,
+                                  logic.styleName.value,
                                   style: TextStyle(
                                     fontSize: 14.w,
                                     color: "#ff242424".color,
@@ -507,12 +511,12 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                 ),
                 child: SingleChildScrollView(
                   child: Column(
-                    children: logic.fontWeights.map((weight) {
-                      final isSelected = logic.fontWeight.value == weight;
+                    children: logic.fontWeights.map((value) {
+                      final isSelected = logic.styleName.value == value;
                       return InkWell(
                         onTap: () {
                           setState(() {
-                            logic.fontWeight.value = weight;
+                            logic.styleName.value = value;
                             _showFontWeightDropdown = false;
                             _updateModel();
                           });
@@ -527,7 +531,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                             borderRadius: BorderRadius.circular(8.w),
                           ),
                           child: Text(
-                            weight,
+                            value,
                             style: TextStyle(
                               fontSize: 14.w,
                               color: isSelected

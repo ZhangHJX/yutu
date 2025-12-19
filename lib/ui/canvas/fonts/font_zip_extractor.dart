@@ -98,8 +98,10 @@ class FontZipExtractor {
       try {
         final meta = await TTfMetadataPlus.fromFile(file.path);
         final relativePath = p.relative(file.path, from: rootDir.path);
+
         final weightMeta = FontWeightMeta(
           relativePath: relativePath,
+          styleName: meta.styleName ?? "",
           weight: meta.weight,
         );
         parsedWeights.add(weightMeta);
