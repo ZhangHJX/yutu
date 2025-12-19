@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
 import '../model/index.dart';
 import '../pages/canvals/canvals_controller.dart';
 import '../../utils/file/canvals_file_manager.dart';
+import '../../../file/index.dart';
 
 /// 草稿管理类
 /// - 负责自动保存和加载画布草稿（全局单例，整个应用只有一份草稿）
@@ -86,19 +85,16 @@ class DraftManager {
       final jsonData = snapshot.toJson();
       final jsonString = jsonEncode(jsonData);
 
-      // 获取保存路径（固定路径，不依赖canvasId）
-      final draftPath = await _getDraftPath();
-
-      // 确保目录存在
-      final draftFile = File(draftPath);
-      final draftDir = draftFile.parent;
-      if (!await draftDir.exists()) {
-        await draftDir.create(recursive: true);
-      }
+      // 获取保存目录（固定路径，不依赖canvasId）
+      final draftDir = await _getDraftDirectory();
 
       // 写入文件
-      await draftFile.writeAsString(jsonString);
-      debugPrint('DraftManager: 草稿已保存到 $draftPath');
+      await FileManager.writeTextFile(
+        directory: draftDir,
+        fileName: 'draft.json',
+        content: jsonString,
+      );
+      debugPrint('DraftManager: 草稿已保存到 ${draftDir.path}/draft.json');
     } catch (e, stackTrace) {
       debugPrint('DraftManager: 保存草稿失败: $e\n$stackTrace');
     } finally {
@@ -110,21 +106,23 @@ class DraftManager {
   /// 返回画布模型，如果不存在则返回null
   Future<CanvasModel?> loadDraft() async {
     try {
-      final draftPath = await _getDraftPath();
-      final draftFile = File(draftPath);
+      final draftDir = await _getDraftDirectory();
 
-      if (!await draftFile.exists()) {
-        debugPrint('DraftManager: 草稿文件不存在: $draftPath');
+      // 读取文件内容
+      final jsonString = await FileManager.readTextFile(
+        directory: draftDir,
+        fileName: 'draft.json',
+      );
+
+      if (jsonString == null) {
+        debugPrint('DraftManager: 草稿文件不存在: ${draftDir.path}/draft.json');
         return null;
       }
 
-      // 读取文件内容
-      final jsonString = await draftFile.readAsString();
-      final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
-
       // 解析为画布模型
+      final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
       final canvasModel = CanvasModel.fromJson(jsonData);
-      debugPrint('DraftManager: 草稿已加载: $draftPath');
+      debugPrint('DraftManager: 草稿已加载: ${draftDir.path}/draft.json');
       return canvasModel;
     } catch (e, stackTrace) {
       debugPrint('DraftManager: 加载草稿失败: $e\n$stackTrace');
@@ -135,16 +133,11 @@ class DraftManager {
   /// 删除草稿
   Future<bool> deleteDraft() async {
     try {
-      final draftPath = await _getDraftPath();
-      final draftFile = File(draftPath);
+      final draftDir = await _getDraftDirectory();
 
-      if (!await draftFile.exists()) {
-        debugPrint('DraftManager: 草稿文件不存在: $draftPath');
-        return false;
-      }
-
-      await draftFile.delete();
-      debugPrint('DraftManager: 草稿已删除: $draftPath');
+      // 删除文件
+      await FileManager.deleteFile(directory: draftDir, fileName: 'draft.json');
+      debugPrint('DraftManager: 草稿已删除: ${draftDir.path}/draft.json');
 
       CanvalsFileManager.deleteAllImagesInCavals();
 
@@ -158,19 +151,20 @@ class DraftManager {
   /// 检查草稿是否存在
   Future<bool> hasDraft() async {
     try {
-      final draftPath = await _getDraftPath();
-      final draftFile = File(draftPath);
-      return await draftFile.exists();
+      final draftDir = await _getDraftDirectory();
+      return await FileManager.isFileExists(
+        directory: draftDir,
+        fileName: 'draft.json',
+      );
     } catch (e) {
       debugPrint('DraftManager: 检查草稿失败: $e');
       return false;
     }
   }
 
-  /// 获取草稿文件路径（固定路径）
-  Future<String> _getDraftPath() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
-    return p.join(documentsDirectory.path, 'cavals', 'draft.json');
+  /// 获取草稿目录（固定路径）
+  Future<Directory> _getDraftDirectory() async {
+    return await DirectoryManager.getDocumentsSubDirectory('cavals');
   }
 
   /// 通知画布属性已变更

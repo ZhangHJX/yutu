@@ -4,6 +4,7 @@ import '../widgets/index.dart';
 import '../canvas/draft/index.dart';
 import '../../app/routes/index.dart';
 import '../utils/file/canvals_file_manager.dart';
+import '../canvas/fonts/font_manager.dart';
 
 class HomeLogic extends GetxController {
   // Tab 索引
@@ -21,6 +22,7 @@ class HomeLogic extends GetxController {
   void onInit() {
     super.onInit();
     showDraftDialog();
+    FontManager.to.initFromDisk();
   }
 
   void showDraftDialog() async {

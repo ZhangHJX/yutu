@@ -22,7 +22,7 @@ CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
           ?.map((e) => CanvasElement.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
-  version: json['version'] as String? ?? '',
+  version: (json['version'] as num?)?.toDouble() ?? 1.0,
   timestamp: (json['timestamp'] as num?)?.toInt() ?? 0,
 );
 

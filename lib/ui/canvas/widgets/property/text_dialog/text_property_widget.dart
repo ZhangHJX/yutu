@@ -231,6 +231,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                     },
                   );
                   logic.isFontEdit.value = true;
+                  FontManager.to.markUsed(font.id);
                   // 字体准备成功后，更新选中状态
                   if (mounted) {
                     logic.selectedFontId.value = font.id;
@@ -243,6 +244,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   }
                 } catch (e) {
                   logic.isFontEdit.value = true;
+                  FontManager.to.fontStatus[font.id] == FontStatus.failed;
                   debugPrint('字体准备失败: $e');
                   showToast('字体下载失败，请重试');
                 }

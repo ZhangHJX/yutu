@@ -109,7 +109,7 @@ class FontManager extends GetxController {
     if (localMeta != null && localMeta.version == version) {
       allFonts[fontId] = localMeta;
       fontStatus[fontId] = FontStatus.ready;
-      markUsed(fontId);
+      // markUsed(fontId);
       return localMeta;
     }
 
@@ -174,7 +174,7 @@ class FontManager extends GetxController {
       // 6. 使用内部 familyKey + FontLoader 注册到 Flutter 引擎
       await _registerFontFamily(result.meta);
 
-      markUsed(fontId);
+      // markUsed(fontId);
       onProgress?.call(1.0);
 
       // 安装成功后清理备份目录，避免磁盘占用和干扰后续安装
@@ -218,6 +218,7 @@ class FontManager extends GetxController {
   /// - 仅当 [fontStatus] 为 ready 时才尝试更新
   /// - 通过比对本地 meta.version 和接口返回的 version 判断是否有更新
   /// - 串行执行，避免并发爆流量，也避免频繁触发 FontLoader
+  /// - 无状态下载：不更新 fontStatus、allFonts，不触发 UI 响应式更新
   Future<void> warmUpdateInstalledFonts(List<FontInfoModel> remoteFonts) async {
     // 避免重复进入同一个后台更新流程
     if (_isWarmUpdating) return;
@@ -245,13 +246,11 @@ class FontManager extends GetxController {
         );
 
         try {
-          // 串行：一旦 await，这里就保证一次只更新一个字体
-          await prepareFont(
+          // 使用静默安装方法，不触发 UI 更新
+          await _prepareFontSilent(
             fontId: info.id,
             version: info.version,
             url: info.url,
-            // 后台更新，不需要精细进度，简单占位即可
-            onProgress: (_) {},
           );
         } catch (e) {
           debugPrint(
@@ -261,6 +260,109 @@ class FontManager extends GetxController {
       }
     } finally {
       _isWarmUpdating = false;
+    }
+  }
+
+  /// 静默安装字体（用于后台更新，不触发 UI 状态更新）
+  ///
+  /// - 不更新 fontStatus（避免触发 UI 响应式更新）
+  /// - 静默更新 allFonts（直接赋值，不触发响应式更新，但数据会是最新的）
+  /// - 不调用 markUsed（避免触发推荐列表更新）
+  /// - 不加入 _installingTasks（避免被 UI 检测到）
+  /// - 静默下载、安装、注册字体
+  Future<FontFamilyMeta> _prepareFontSilent({
+    required int fontId,
+    required String version,
+    required String url,
+  }) async {
+    // 1. 如果本地已有且版本一致，直接返回（静默，不更新状态）
+    final localMeta = await FontMetaStore.instance.readMeta(fontId);
+    if (localMeta != null && localMeta.version == version) {
+      return localMeta;
+    }
+
+    // 2. 静默下载 zip（不更新 fontStatus）
+    final zipFile = await FontDownloadManager.instance.downloadFontZip(
+      fontId: fontId,
+      url: url,
+      onProgress: (_) {}, // 静默，不报告进度
+    );
+
+    // 3. 解压到临时安装目录
+    final installTmpDir = await DirectoryManager.getTempSubDirectory(
+      'fonts_install/$fontId',
+    );
+
+    final result = await FontZipExtractor.extractAndParse(
+      zipPath: zipFile.path,
+      tempInstallDir: installTmpDir.path,
+      fontId: fontId,
+      version: version,
+      url: url,
+    );
+
+    // 4. 原子替换到最终目录
+    final targetDir = await FontMetaStore.instance.fontDir(fontId);
+    Directory? backup;
+    try {
+      if (await targetDir.exists()) {
+        backup = Directory('${targetDir.path}_backup');
+        if (await backup.exists()) {
+          await backup.delete(recursive: true);
+        }
+        await targetDir.rename(backup.path);
+      }
+
+      if (await targetDir.exists()) {
+        await targetDir.delete(recursive: true);
+      }
+
+      final sourceDir = Directory(result.installDir);
+      await sourceDir.rename(targetDir.path);
+
+      // 5. 写 meta.json
+      await FontMetaStore.instance.writeMeta(result.meta);
+
+      // 6. 静默更新 allFonts（直接赋值，不触发响应式更新）
+      // 注意：在 GetX 中，直接赋值 allFonts[fontId] = newMeta 不会触发响应式更新
+      // 但数据会是最新的，下次 UI 读取时会拿到新数据
+      allFonts[fontId] = result.meta;
+
+      // 7. 使用内部 familyKey + FontLoader 注册到 Flutter 引擎（静默）
+      await _registerFontFamily(result.meta);
+
+      // 安装成功后清理备份目录
+      if (backup != null && await backup.exists()) {
+        try {
+          await backup.delete(recursive: true);
+        } catch (e) {
+          debugPrint('FontManager cleanup backup error: $e');
+        }
+      }
+      return result.meta;
+    } catch (e) {
+      debugPrint('FontManager silent install error: $e');
+      // 回滚：恢复旧目录
+      if (backup != null && await backup.exists()) {
+        if (await targetDir.exists()) {
+          await targetDir.delete(recursive: true);
+        }
+        await backup.rename(targetDir.path);
+      }
+      rethrow;
+    } finally {
+      // 清理临时目录
+      if (await installTmpDir.exists()) {
+        await installTmpDir.delete(recursive: true);
+      }
+      // 清理下载的 zip 文件
+      if (await zipFile.exists()) {
+        try {
+          await zipFile.delete();
+        } catch (e) {
+          debugPrint('FontManager delete zip error: $e');
+        }
+      }
     }
   }
 
@@ -286,10 +388,9 @@ class FontManager extends GetxController {
 
   /// 记录“最近使用”，用于推荐字体
   void markUsed(int fontId) {
-    _recentUsed.remove(fontId);
-    _recentUsed.insert(0, fontId);
-    if (_recentUsed.length > 20) {
-      _recentUsed.removeRange(20, _recentUsed.length);
+    debugPrint('markUsed====$_recentUsed recommendedFonts=$recommendedFonts');
+    if (!_recentUsed.contains(fontId)) {
+      _recentUsed.add(fontId);
     }
     _rebuildRecommended();
   }
@@ -330,7 +431,6 @@ class FontManager extends GetxController {
   }
 
   /// 使用内部 familyKey 注册字体到 Flutter 引擎
-  ///
   /// - 不依赖 ttf/otf 内部的 familyName
   /// - 一个 familyKey 下可能有多个字重文件，全部用 FontLoader 加载
   Future<void> _registerFontFamily(FontFamilyMeta meta) async {

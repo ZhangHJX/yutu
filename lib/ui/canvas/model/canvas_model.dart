@@ -20,7 +20,7 @@ class CanvasModel {
   bool isSelected;
 
   /// 版本号
-  String version;
+  double version;
 
   ///时间戳
   int timestamp;
@@ -42,7 +42,7 @@ class CanvasModel {
     this.locked = false,
     this.isSelected = false,
     this.elements = const [],
-    this.version = '',
+    this.version = 1.0,
     this.timestamp = 0,
   });
 

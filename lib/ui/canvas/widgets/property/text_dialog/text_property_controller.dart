@@ -93,11 +93,13 @@ class TextPropertyController extends GetxController {
       );
       if (result.code == 0 && result.data != null) {
         // 更新字体列表
-        fontList.assignAll(result.data as List<FontInfoModel>);
+        final modelArray = result.data as List<FontInfoModel>;
+        fontList.assignAll(modelArray);
         // 将字体 ID 列表传递给 FontManager，用于推荐字体
         // final fontIds = fontList.map((f) => f.id).toList();
         // FontManager.to.setTemplateUsedFonts(fontIds);
         debugPrint("-获取字体列表中数据成功--数量: ${fontList.length}");
+        await FontManager.to.warmUpdateInstalledFonts(modelArray);
       }
     } catch (e) {
       debugPrint("-获取字体列表中数据异常: $e");
