@@ -17,10 +17,10 @@ class TextPropertyController extends GetxController {
   List<FontInfoModel> get allRecommendedFonts => recommendedFonts.toList();
 
   /// 字体相关属性
-  final RxString familyKey = 'AlibabaPuHuiTi'.obs; // 注册字体名称
+  final RxString familyKey = 'AlibabaPuHuiTi'.obs;
+  final RxString styleName = defaultConfigStyleName.obs;
   final RxnInt selectedFontId = RxnInt();
   final RxString fontSize = '16'.obs;
-  final RxString styleName = '系统默认'.obs;
 
   Worker? _countWorker;
 

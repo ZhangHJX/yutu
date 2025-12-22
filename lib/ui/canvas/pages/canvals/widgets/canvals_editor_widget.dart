@@ -202,7 +202,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         text: text,
         fontSize: 16.w,
         fontFamily: 'AlibabaPuHuiTi', // 默认字体
-        fontWeight: 400, // 默认字重
         letterSpacing: 0, // 默认字间距
         lineHeight: 1.0, // 默认行高
       );
@@ -323,7 +322,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
                 text: newText,
                 fontSize: box.fontSize,
                 fontFamily: box.familyKey,
-                fontWeight: box.fontWeight,
                 letterSpacing: box.fontSpace,
                 lineHeight: box.lineHeight,
                 maxWidth: box.width,

@@ -93,90 +93,70 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
 
   // ⭐ 新增方法：根据当前索引返回对应的内容
   Widget _buildCurrentTabContent(BuildContext context) {
-    switch (_tabController.index) {
-      case 0:
-        return SingleChildScrollView(
-          child: TextPropertyWidget(
-            element: widget.element,
-            onPropertyChanged: widget.onPropertyChanged,
-            onDeleteText: widget.onDeleteText,
-            onFontChanged: (familyKey, fontSize, fontWeight) {
-              final data = widget.element;
-              data.familyKey = familyKey;
-              data.fontSize = double.tryParse(fontSize) ?? 16.0;
-              data.fontWeight = fontWeight;
-              widget.onPropertyChanged?.call(true);
-            },
-            onColorChanged: (color) {
-              // 这个回调在 TextPropertyWidget 中暂时不需要，因为颜色在颜色效果标签页
-            },
-          ),
-        );
-      case 1:
-        return SingleChildScrollView(
-          child: ColorEffectWidget(
-            element: widget.element,
-            onPropertyChanged: widget.onPropertyChanged,
-            onColorEffectChanged:
-                (
-                  textColor,
-                  textAlpha,
-                  borderColor,
-                  borderWidth,
-                  borderAlpha,
-                  shadowEnabled,
-                  shadowColor,
-                  shadowX,
-                  shadowY,
-                  shadowBlur,
-                  shawAlpha,
-                ) {
-                  final data = widget.element;
-                  data.textColor = textColor;
-                  data.textAlpha = textAlpha;
-                  data.borderColor = borderColor;
-                  data.borderWidth = borderWidth;
-                  data.borderAlpha = borderAlpha;
-                  data.isShawOpen = shadowEnabled;
-                  data.shawColor = shadowColor;
-                  data.shawX = shadowX;
-                  data.shawY = shadowY;
-                  data.blurValue = shadowBlur;
-                  data.shawAlpha = shawAlpha;
-                  widget.onPropertyChanged?.call(true);
-                },
-          ),
-        );
-      case 2:
-        return SingleChildScrollView(
-          child: SpacingAlignmentWidget(
-            element: widget.element,
-            onPropertyChanged: widget.onPropertyChanged,
-            onSpacingAlignmentChanged: (lineHeight, letterSpacing, textAlign) {
-              final data = widget.element;
-              data.lineHeight = lineHeight;
-              data.fontSpace = letterSpacing;
-              data.align = textAlign;
-              widget.onPropertyChanged?.call(true);
-            },
-          ),
-        );
-      default:
-        return SingleChildScrollView(
-          child: TextPropertyWidget(
-            element: widget.element,
-            onPropertyChanged: widget.onPropertyChanged,
-            onDeleteText: widget.onDeleteText,
-            onFontChanged: (familyKey, fontSize, fontWeight) {
-              final data = widget.element;
-              data.familyKey = familyKey;
-              data.fontSize = double.tryParse(fontSize) ?? 16.0;
-              data.fontWeight = fontWeight;
-              widget.onPropertyChanged?.call(true);
-            },
-            onColorChanged: (color) {},
-          ),
-        );
+    if (_tabController.index == 0) {
+      return SingleChildScrollView(
+        child: TextPropertyWidget(
+          element: widget.element,
+          onPropertyChanged: widget.onPropertyChanged,
+          onDeleteText: widget.onDeleteText,
+          onFontChanged: (familyKey, fontSize, styleName) {
+            final data = widget.element;
+            data.familyKey = familyKey;
+            data.fontSize = fontSize;
+            data.styleName = styleName;
+            widget.onPropertyChanged?.call(true);
+          },
+        ),
+      );
+    } else if (_tabController.index == 1) {
+      return SingleChildScrollView(
+        child: ColorEffectWidget(
+          element: widget.element,
+          onPropertyChanged: widget.onPropertyChanged,
+          onColorEffectChanged:
+              (
+                textColor,
+                textAlpha,
+                borderColor,
+                borderWidth,
+                borderAlpha,
+                shadowEnabled,
+                shadowColor,
+                shadowX,
+                shadowY,
+                shadowBlur,
+                shawAlpha,
+              ) {
+                final data = widget.element;
+                data.textColor = textColor;
+                data.textAlpha = textAlpha;
+                data.borderColor = borderColor;
+                data.borderWidth = borderWidth;
+                data.borderAlpha = borderAlpha;
+                data.isShawOpen = shadowEnabled;
+                data.shawColor = shadowColor;
+                data.shawX = shadowX;
+                data.shawY = shadowY;
+                data.blurValue = shadowBlur;
+                data.shawAlpha = shawAlpha;
+                widget.onPropertyChanged?.call(true);
+              },
+        ),
+      );
+    } else {
+      return SingleChildScrollView(
+        child: SpacingAlignmentWidget(
+          element: widget.element,
+          onPropertyChanged: widget.onPropertyChanged,
+          onSpacingAlignmentChanged: (lineHeight, letterSpacing, textAlign) {
+            final data = widget.element;
+            data.lineHeight = lineHeight;
+            data.fontSpace = letterSpacing;
+            data.align = textAlign;
+            widget.onPropertyChanged?.call(true);
+          },
+        ),
+      );
     }
   }
 

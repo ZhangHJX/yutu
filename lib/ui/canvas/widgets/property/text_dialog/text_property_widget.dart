@@ -12,8 +12,7 @@ class TextPropertyWidget extends StatefulWidget {
   final dynamic element;
   final Function(bool notify)? onPropertyChanged;
   final VoidCallback? onDeleteText;
-  final Function(String, String, int) onFontChanged;
-  final Function(String) onColorChanged;
+  final Function(String, double, String) onFontChanged;
 
   const TextPropertyWidget({
     super.key,
@@ -21,7 +20,6 @@ class TextPropertyWidget extends StatefulWidget {
     this.onPropertyChanged,
     this.onDeleteText,
     required this.onFontChanged,
-    required this.onColorChanged,
   });
 
   @override
@@ -48,16 +46,13 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   /// 从模型初始化UI状态
   void _initializeFromModel() {
     if (widget.element == null) return;
-
     final data = widget.element;
     // 初始化字体ID（用于字体选择状态）
-    if (data.fontId != null) {
-      logic.selectedFontId.value = data.fontId;
-    }
+    logic.selectedFontId.value = data.fontId;
+    logic.styleName.value = data.styleName;
+    logic.familyKey.value = data.familyKey;
     // 初始化字号
     _fontSizeController.text = data.fontSize?.toInt().toString() ?? '14';
-    // logic.fontWeight.value = flutterFontWeight(data.fontWeight);
-    logic.familyKey.value = data.familyKey;
   }
 
   @override
@@ -68,20 +63,13 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   }
 
   void _updateModel({bool notify = true}) {
-    final data = widget.element;
-    // 更新字体ID和字体家族名
-    if (logic.selectedFontId.value != null) {
-      data.fontId = logic.selectedFontId.value;
-    }
-    // 更新字号
+    // 更新字号 - 保持为 double 类型以匹配 CanvasElement.fontSize
     final fontSize = double.tryParse(_fontSizeController.text) ?? 16.0;
-    data.fontSize = fontSize;
     // 调用回调
     widget.onFontChanged(
-      logic.familyKey.value,
-      _fontSizeController.text,
-      400,
-      // getNumberFontWeight(logic.fontWeight.value),
+      logic.familyKey.value, // ✅ 使用找到的 familyKey
+      fontSize,
+      logic.styleName.value, // ✅ 使用找到的 styleName
     );
     widget.onPropertyChanged?.call(notify);
   }
@@ -203,6 +191,9 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
           Expanded(
             child: GestureDetector(
               onTap: () async {
+                if (logic.selectedFontId.value == font.id) {
+                  return;
+                }
                 if (FontManager.to.isInstallingTasks) {
                   showToast("已有字体在下载，请稍后操作");
                   return;
@@ -214,7 +205,12 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                 if (isReady && fontMeta != null) {
                   // 使用GetX更新选中状态
                   logic.selectedFontId.value = font.id;
-                  logic.familyKey.value = 'font_${font.id}_v${font.version}';
+                  final meta = FontManager.to.allFonts[font.id];
+                  if (meta != null && meta.weights.isNotEmpty) {
+                    logic.familyKey.value = meta.weights.first.familyKey;
+                    logic.styleName.value = meta.weights.first.styleName;
+                  }
+
                   FontManager.to.markUsed(font.id);
                   setState(() {
                     _updateModel();
@@ -228,21 +224,21 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
 
                 // 如果字体未准备好，调用 FontManager 准备字体
                 try {
-                  await FontManager.to.prepareFontByInfo(
+                  final meta = await FontManager.to.prepareFontByInfo(
                     font,
                     onProgress: (progress) {
                       debugPrint('字体 ${font.name} 下载进度: $progress');
                     },
                   );
+
                   logic.isFontEdit.value = true;
                   FontManager.to.markUsed(font.id);
                   // 字体准备成功后，更新选中状态
                   if (mounted) {
                     logic.selectedFontId.value = font.id;
-                    logic.familyKey.value = 'font_${font.id}_v${font.version}';
+                    logic.familyKey.value = meta.weights.first.familyKey;
+                    logic.styleName.value = meta.weights.first.styleName;
                     setState(() {
-                      // 获取默认字重
-                      FontManager.to.getDefaultWeight(font.id);
                       _updateModel();
                     });
                   }
@@ -515,8 +511,17 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                       final isSelected = logic.styleName.value == value;
                       return InkWell(
                         onTap: () {
+                          final meta = FontManager
+                              .to
+                              .allFonts[logic.selectedFontId.value];
+                          if (meta != null) {
+                            final weight = meta.weights
+                                .where((u) => u.styleName == value)
+                                .firstOrNull;
+                            logic.familyKey.value = weight?.familyKey ?? '';
+                          }
+                          logic.styleName.value = value;
                           setState(() {
-                            logic.styleName.value = value;
                             _showFontWeightDropdown = false;
                             _updateModel();
                           });

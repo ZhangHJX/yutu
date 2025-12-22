@@ -6,21 +6,18 @@ class TextMeasureUtil {
   /// [text] 要测量的文本
   /// [fontSize] 字体大小
   /// [fontFamily] 字体
-  /// [fontWeight] 字重
   /// [letterSpacing] 字间距（字符之间的间距）
   /// [lineHeight] 行高（相对于字体大小的倍数，如 1.5 表示 1.5 倍行高）
   static Size measureText({
     required String text,
     required double fontSize,
     required String? fontFamily,
-    required int fontWeight,
     required double? letterSpacing,
     required double? lineHeight,
   }) {
     final textStyle = TextStyle(
       fontSize: fontSize,
-      fontFamily: fontFamily,
-      fontWeight: getTextFontWeight(fontWeight),
+      fontFamily: fontFamily, // ✅ 使用 familyKey（postScriptName）精确匹配字体文件
       letterSpacing: letterSpacing,
       height: lineHeight,
     );
@@ -32,7 +29,6 @@ class TextMeasureUtil {
   /// [text] 要测量的文本
   /// [fontSize] 字体大小
   /// [fontFamily] 字体
-  /// [fontWeight] 字重
   /// [letterSpacing] 字间距
   /// [lineHeight] 行高（相对于字体大小的倍数）
   /// [maxWidth] 最大宽度限制
@@ -40,15 +36,13 @@ class TextMeasureUtil {
     required String text,
     required double fontSize,
     required String? fontFamily,
-    required int fontWeight,
     required double? letterSpacing,
     required double? lineHeight,
     required double maxWidth,
   }) {
     final textStyle = TextStyle(
       fontSize: fontSize,
-      fontFamily: fontFamily,
-      fontWeight: getTextFontWeight(fontWeight),
+      fontFamily: fontFamily, // ✅ 使用 familyKey（postScriptName）精确匹配字体文件
       letterSpacing: letterSpacing,
       height: lineHeight,
     );

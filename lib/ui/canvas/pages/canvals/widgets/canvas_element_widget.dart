@@ -136,7 +136,6 @@ class CanvasElementWidget extends StatelessWidget {
             textStyle: TextStyle(
               fontFamily: data.familyKey,
               fontSize: data.fontSize,
-              fontWeight: getTextFontWeight(data.fontWeight),
               color: data.textColor.color.withValues(alpha: data.textAlpha),
               height: data.lineHeight,
               letterSpacing: data.fontSpace,

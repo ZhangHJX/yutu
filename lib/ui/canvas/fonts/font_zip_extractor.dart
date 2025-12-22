@@ -99,9 +99,19 @@ class FontZipExtractor {
         final meta = await TTfMetadataPlus.fromFile(file.path);
         final relativePath = p.relative(file.path, from: rootDir.path);
 
+        // ✅ 生成 familyKey：优先使用 postScriptName，否则从文件名生成
+        final familyKey =
+            meta.postScriptName ??
+            _generateFamilyKeyFromPath(
+              relativePath,
+              params.fontId,
+              params.version,
+            );
+
         final weightMeta = FontWeightMeta(
           relativePath: relativePath,
-          styleName: meta.styleName ?? "",
+          familyKey: familyKey,
+          styleName: meta.styleName ?? "系统默认",
           weight: meta.weight,
         );
         parsedWeights.add(weightMeta);
@@ -120,7 +130,6 @@ class FontZipExtractor {
     final familyMeta = FontFamilyMeta(
       fontId: params.fontId,
       version: params.version,
-      familyKey: 'font_${params.fontId}_v${params.version}',
       weights: parsedWeights,
     );
 
@@ -166,6 +175,20 @@ class FontZipExtractor {
       results.add(entity);
     }
     return results;
+  }
+
+  /// 从文件路径生成唯一的 familyKey（当 postScriptName 不可用时）
+  static String _generateFamilyKeyFromPath(
+    String relativePath,
+    int fontId,
+    String version,
+  ) {
+    // 从文件名提取（去掉扩展名）
+    final fileName = p.basenameWithoutExtension(relativePath);
+    // 清理文件名，只保留字母、数字、连字符
+    final sanitized = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9\-]'), '-');
+    // 生成唯一标识：font_{fontId}_v{version}_{sanitizedFileName}
+    return 'font_${fontId}_v${version}_$sanitized';
   }
 
   /// 清除本地解压后的垃圾文件

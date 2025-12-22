@@ -13,6 +13,9 @@ class FontWeightMeta {
   /// 字体文件相对目录（相对于 font 安装目录）
   final String relativePath;
 
+  /// 这个是用来注册的字体来用的
+  final String familyKey;
+
   /// Font Subfamily name（nameID=2）
   final String styleName;
 
@@ -21,18 +24,21 @@ class FontWeightMeta {
 
   const FontWeightMeta({
     required this.relativePath,
+    required this.familyKey,
     required this.styleName,
     required this.weight,
   });
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'relativePath': relativePath,
+    'familyKey': familyKey,
     'styleName': styleName,
     'weight': weight,
   };
 
   factory FontWeightMeta.fromJson(Map<String, dynamic> json) => FontWeightMeta(
     relativePath: json['relativePath'] as String,
+    familyKey: json['familyKey'] as String,
     styleName: json['styleName'] as String,
     weight: json['weight'] as int,
   );
@@ -47,30 +53,24 @@ class FontFamilyMeta {
   /// 业务侧版本号，避免旧 zip 叠加
   final String version;
 
-  /// 推荐展示的系列名  font_fontId_v$version
-  final String familyKey;
-
   /// 已解析的所有字重
   final List<FontWeightMeta> weights;
 
   const FontFamilyMeta({
     required this.fontId,
     required this.version,
-    required this.familyKey,
     required this.weights,
   });
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'fontId': fontId,
     'version': version,
-    'familyKey': familyKey,
     'weights': weights.map((e) => e.toJson()).toList(),
   };
 
   factory FontFamilyMeta.fromJson(Map<String, dynamic> json) => FontFamilyMeta(
     fontId: json['fontId'] as int,
     version: json['version'] as String,
-    familyKey: json['familyKey'] as String,
     weights: (json['weights'] as List<dynamic>)
         .map((e) => FontWeightMeta.fromJson(e as Map<String, dynamic>))
         .toList(growable: false),

@@ -81,3 +81,4 @@ String flutterFontWeight(int w) {
 const String defaultConfigFamliy = "AlibabaPuHuiTi";
 const double defaultConfigFontSize = 16;
 const FontWeight defaultConfigFontWeight = FontWeight.w400;
+const String defaultConfigStyleName = '系统默认';

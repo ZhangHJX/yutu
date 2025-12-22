@@ -313,17 +313,6 @@ mixin CanvasEditorUndoRedoMixin<T extends StatefulWidget> on State<T> {
       );
     }
 
-    if (old.fontWeight != current.fontWeight) {
-      historyManager.executeCommand(
-        UpdateTextPropertiesCommand(
-          boxes: boxes,
-          elementId: current.id,
-          oldProperties: {'fontWeight': old.fontWeight},
-          newProperties: {'fontWeight': current.fontWeight},
-        ),
-      );
-    }
-
     if (old.textColor != current.textColor) {
       historyManager.executeCommand(
         UpdateTextPropertiesCommand(

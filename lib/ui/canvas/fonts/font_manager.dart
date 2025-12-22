@@ -373,19 +373,6 @@ class FontManager extends GetxController {
     return meta.weights;
   }
 
-  /// UI：获取默认字重（正常是 Regular / 400）
-  FontWeightMeta? getDefaultWeight(int fontId) {
-    final meta = allFonts[fontId];
-    if (meta == null) return null;
-    //找 weight 400，最后兜底第一个
-    return meta.weights.firstWhere(
-      (w) => w.weight == 400,
-      orElse: () {
-        return meta.weights.first;
-      },
-    );
-  }
-
   /// 记录“最近使用”，用于推荐字体
   void markUsed(int fontId) {
     debugPrint('markUsed====$_recentUsed recommendedFonts=$recommendedFonts');
@@ -430,20 +417,29 @@ class FontManager extends GetxController {
     _rebuildRecommended();
   }
 
-  /// 使用内部 familyKey 注册字体到 Flutter 引擎
-  /// - 不依赖 ttf/otf 内部的 familyName
-  /// - 一个 familyKey 下可能有多个字重文件，全部用 FontLoader 加载
+  /// 使用 FontWeightMeta 中的 familyKey 单独注册每个字体文件到 Flutter 引擎
+  /// - 每个字体文件使用自己的 familyKey（通常是 postScriptName）单独注册
+  /// - 这样可以精确匹配每个字体文件，避免 weight 冲突问题
   Future<void> _registerFontFamily(FontFamilyMeta meta) async {
-    // 已注册过的 familyKey 不再重复 load，避免性能浪费和潜在异常
-    if (_registeredFamilyKeys.contains(meta.familyKey)) {
-      return;
-    }
-
     final dir = await FontMetaStore.instance.fontDir(meta.fontId);
-    final loader = FontLoader(meta.familyKey);
 
-    var addedCount = 0;
+    var registeredCount = 0;
     for (final weightMeta in meta.weights) {
+      // 使用每个文件自己的 familyKey
+      final familyKey = weightMeta.familyKey;
+
+      if (familyKey.isEmpty) {
+        debugPrint(
+          'FontManager: familyKey is empty for path=${weightMeta.relativePath}',
+        );
+        continue;
+      }
+
+      // 如果已注册过，跳过
+      if (_registeredFamilyKeys.contains(familyKey)) {
+        continue;
+      }
+
       final filePath = p.join(dir.path, weightMeta.relativePath);
       final file = File(filePath);
       if (!await file.exists()) {
@@ -455,31 +451,29 @@ class FontManager extends GetxController {
 
       try {
         final bytes = await file.readAsBytes();
+        final loader = FontLoader(familyKey);
         loader.addFont(Future.value(ByteData.view(bytes.buffer)));
-        addedCount++;
+        await loader.load();
+
+        _registeredFamilyKeys.add(familyKey);
+        registeredCount++;
+        debugPrint(
+          'FontManager: registered familyKey=$familyKey for fontId=${meta.fontId}',
+        );
       } catch (e) {
         debugPrint(
-          'FontManager: failed to load font file for fontId=${meta.fontId}, path=$filePath, error=$e',
+          'FontManager: failed to register familyKey=$familyKey for fontId=${meta.fontId}, path=$filePath, error=$e',
         );
       }
     }
 
-    if (addedCount == 0) {
+    if (registeredCount == 0) {
       debugPrint(
-        'FontManager: no valid font files to register for fontId=${meta.fontId}, familyKey=${meta.familyKey}',
+        'FontManager: no valid font files to register for fontId=${meta.fontId}',
       );
-      return;
-    }
-
-    try {
-      await loader.load();
-      _registeredFamilyKeys.add(meta.familyKey);
+    } else {
       debugPrint(
-        'FontManager: registered familyKey=${meta.familyKey} with $addedCount font files',
-      );
-    } catch (e) {
-      debugPrint(
-        'FontManager: FontLoader.load failed for familyKey=${meta.familyKey}, error=$e',
+        'FontManager: registered $registeredCount font files for fontId=${meta.fontId}',
       );
     }
   }

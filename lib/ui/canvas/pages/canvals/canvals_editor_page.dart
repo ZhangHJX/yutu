@@ -103,7 +103,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
       needRecalculateSize =
           old.fontSize != box.fontSize ||
           old.familyKey != box.familyKey ||
-          old.fontWeight != box.fontWeight ||
           old.lineHeight != box.lineHeight ||
           old.fontSpace != box.fontSpace;
     } else {
@@ -123,7 +122,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
           text: box.text,
           fontSize: box.fontSize,
           fontFamily: box.familyKey,
-          fontWeight: box.fontWeight,
           letterSpacing: box.fontSpace,
           lineHeight: box.lineHeight,
         );
@@ -139,7 +137,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
             text: box.text,
             fontSize: box.fontSize,
             fontFamily: box.familyKey,
-            fontWeight: box.fontWeight,
             letterSpacing: box.fontSpace,
             lineHeight: box.lineHeight,
             maxWidth: savedWidth,

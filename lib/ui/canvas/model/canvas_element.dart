@@ -34,7 +34,7 @@ class CanvasElement {
   double fontSize;
   int fontId;
   String familyKey; // 字体家族名
-  int fontWeight;
+  String styleName; // 自重名字
 
   @JsonKey(
     fromJson: CanvasElement._textAlignFromJson,
@@ -86,8 +86,9 @@ class CanvasElement {
     this.text = '',
     this.fontId = 0,
     this.familyKey = defaultConfigFamliy,
+    this.styleName = defaultConfigStyleName,
+
     this.fontSize = 16,
-    this.fontWeight = 400,
     this.lineHeight = 1.0,
     this.fontSpace = 0,
     this.align = TextAlign.left,
