@@ -16,8 +16,7 @@ dependencies:
   path_provider: ^2.1.5
   path: ^1.9.1
   
-
-  pull_to_refresh: ^2.0.0
+  
   flutter_hooks: ^0.21.3+1
   dio: ^5.9.0
   get: ^4.7.2
@@ -34,6 +33,7 @@ dependencies:
   cached_network_image: ^3.4.1
   flutter_archive: ^6.0.4
   background_downloader: ^9.4.1
+  easy_refresh: ^3.4.0
 
 
 dev_dependencies:

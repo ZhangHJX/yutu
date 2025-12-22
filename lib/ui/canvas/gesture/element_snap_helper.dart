@@ -5,7 +5,7 @@ import 'dart:math' as math;
 /// 元素吸附辅助类：检测元素移动时与其他元素边缘的吸附
 class ElementSnapHelper {
   /// 是否启用元素吸附功能
-  static bool enabled = false;
+  static bool enabled = true;
 
   /// 吸附阈值（像素距离）
   static const double snapThreshold = 5.0;

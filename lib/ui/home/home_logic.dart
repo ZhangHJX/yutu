@@ -22,7 +22,12 @@ class HomeLogic extends GetxController {
   void onInit() {
     super.onInit();
     showDraftDialog();
+  }
+
+  @override
+  void onReady() {
     FontManager.to.initFromDisk();
+    super.onReady();
   }
 
   void showDraftDialog() async {
