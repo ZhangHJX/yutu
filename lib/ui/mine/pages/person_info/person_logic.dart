@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:voicetemplate/file/file_manager.dart';
 import 'package:voicetemplate/stores/global.dart';
 import '../model/person_oss_model.dart';
 import './utils/index.dart';
@@ -170,6 +171,7 @@ class PersonLogic extends GetxController {
         SmartDialog.dismiss();
       }
     } catch (e) {
+      PickerImageManager.deleteTempFile(filePath);
       // 上传失败，恢复原始头像
       SmartDialog.dismiss();
     }
@@ -202,10 +204,12 @@ class PersonLogic extends GetxController {
         fileId = ossModel.resourceId;
         avatar.value = filePath;
       }
+      PickerImageManager.deleteTempFile(filePath);
       SmartDialog.dismiss();
     } catch (e) {
       showToast("图片上传失败");
       debugPrint('======出错了===== $e ');
+      PickerImageManager.deleteTempFile(filePath);
       SmartDialog.dismiss();
     }
   }

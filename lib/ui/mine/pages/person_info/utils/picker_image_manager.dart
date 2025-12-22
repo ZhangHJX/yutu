@@ -2,6 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'image_camera_utils.dart';
+import 'dart:io';
 
 class PickerImageManager {
   static const int maxSizeBites = 10 * 1024 * 1024;
@@ -60,5 +61,17 @@ class PickerImageManager {
         textDelegate: const AssetPickerTextDelegate(),
       ),
     );
+  }
+
+  /// 删除临时目录下的图片
+  static void deleteTempFile(String filePath) async {
+    if (filePath.isEmpty) {
+      return;
+    }
+    final File file = File(filePath);
+    if (!await file.exists()) {
+      return;
+    }
+    await file.delete();
   }
 }

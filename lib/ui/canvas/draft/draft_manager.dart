@@ -164,7 +164,7 @@ class DraftManager {
 
   /// 获取草稿目录（固定路径）
   Future<Directory> _getDraftDirectory() async {
-    return await DirectoryManager.getDocumentsSubDirectory('cavals');
+    return await DirectoryManager.getDocumentsSubDirectory('cavals/draft');
   }
 
   /// 通知画布属性已变更
