@@ -1,6 +1,11 @@
+import 'package:voicetemplate/ui/widgets/index.dart';
+import 'package:voicetemplate/ui/utils/file/index.dart';
+import 'package:voicetemplate/ui/model/upload_oss_model.dart';
 import 'package:common/common.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'image_model.dart';
+import 'dart:io';
 
 class ImageLogic extends GetxController {
   // 图片列表
@@ -21,11 +26,17 @@ class ImageLogic extends GetxController {
   // 是否正在刷新
   final RxBool isRefreshing = false.obs;
 
+  // 图片相关信息
+  String imagePath = ''; // 文件的路径
+  int filemeMemorySize = 0; // 单位字节 b
+  int fileId = 0; // resource_id
+
   @override
   void onInit() {
     super.onInit();
     // 初始化时加载第一页数据
     loadImageList(refresh: true);
+    debugPrint("-选择图片----onInit------");
   }
 
   /// 加载图片列表
@@ -43,11 +54,11 @@ class ImageLogic extends GetxController {
     }
 
     try {
-      final result = await http.post(
-        '/your/image/list/endpoint', // 替换为实际的接口地址
+      // 替换为实际的接口地址
+      final result = await http.get(
+        '/user/material/index?page=1&limit=10',
         withToken: true,
         showErrorToast: false,
-        data: {'pageNum': currentPage, 'pageSize': pageSize},
         converter: pageConverter<ImageModel>(
           (json) => ImageModel.fromJson(json),
         ),
@@ -85,5 +96,120 @@ class ImageLogic extends GetxController {
   /// 上拉加载更多
   Future<void> onLoad() async {
     await loadImageList(refresh: false);
+  }
+
+  @override
+  void onClose() {
+    debugPrint("-选择图片----onClose------");
+    super.onClose();
+  }
+
+  /// 上传图片 BuildContext context
+  Future<void> handlePickerCanvalsImage(BuildContext context) async {
+    try {
+      final res = await PermissionUtil.requestPhotoAlbumPermission();
+      if (!res) {
+        showPermissionView("打开相册选图片以便更改头像");
+        return;
+      }
+      if (!context.mounted) {
+        return;
+      }
+      PickerImageManager.pickerPhotos(
+        context: context,
+        onSuccess:
+            (String filePath, double width, double height, int fileSize) {
+              filemeMemorySize = fileSize;
+              getUploadInfo(filePath);
+            },
+      );
+    } catch (e, stackTrace) {
+      showToast('读取照片路径报错，请重试');
+      debugPrint('从相册选择😟😟😟😟: $e $stackTrace');
+    }
+  }
+
+  void getUploadInfo(String filePath) async {
+    try {
+      showLoading("上传中");
+
+      final fileType = ImageCameraUtils.getFileExtensionFromPath(filePath);
+      final result = await http.post<UploadOssModel>(
+        '/upload/generateUploadUrl',
+        data: {"type": "user", "file_type": fileType, "field_type": "avatar"},
+        converter: UploadOssModel.fromJson,
+        showErrorToast: false,
+        withToken: true,
+      );
+      if (result.code == 0) {
+        String mimeType = mimeTypeMap[fileType] ?? "";
+        imagePath = result.data?.file ?? "";
+        await uploadFile(result.data!, filePath, mimeType);
+      } else {
+        await PickerImageManager.deleteDirectory();
+        SmartDialog.dismiss();
+      }
+    } catch (e) {
+      await PickerImageManager.deleteDirectory();
+      // 上传失败，恢复原始头像
+      SmartDialog.dismiss();
+    }
+  }
+
+  Future<void> uploadFile(
+    UploadOssModel ossModel,
+    String filePath,
+    String mimeType,
+  ) async {
+    try {
+      debugPrint('======res===== 开始${ossModel.signUrl} ');
+      final file = File(filePath);
+      final bytes = await file.readAsBytes();
+      final res = await http.put(
+        ossModel.signUrl,
+        data: bytes,
+        options: Options(
+          contentType: mimeType, // ✅ 正常 MIME
+          headers: {
+            Headers.contentLengthHeader: bytes.length, // 很多存储要求带上
+          },
+        ),
+        useBaseUrl: false,
+        withToken: true,
+        isNake: true,
+      );
+
+      /// 上传成功
+      if (res.isSuccess) {
+        fileId = ossModel.resourceId;
+      }
+      await PickerImageManager.deleteDirectory();
+      SmartDialog.dismiss();
+    } catch (e) {
+      showToast("图片上传失败");
+      debugPrint('======出错了===== $e ');
+      await PickerImageManager.deleteDirectory();
+      SmartDialog.dismiss();
+    }
+  }
+
+  void showPermissionView(String content) {
+    SmartDialog.show(
+      builder: (context) => ConfirmPopWidget(
+        title: '提示',
+        subTitle: '打开相册选图片以上传图片',
+        sureTitle: "同意",
+        sureAction: () {
+          AppSettings.openAppSettings(type: AppSettingsType.settings);
+        },
+      ),
+      alignment: Alignment.center,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: "#000000".color.withValues(alpha: 0.5),
+      clickMaskDismiss: false,
+      useAnimation: true,
+      usePenetrate: false,
+    );
   }
 }

@@ -1,11 +1,10 @@
 import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'package:voicetemplate/file/file_manager.dart';
 import 'package:voicetemplate/stores/global.dart';
-import '../model/person_oss_model.dart';
-import './utils/index.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
+import 'package:voicetemplate/ui/utils/file/index.dart';
+import 'package:voicetemplate/ui/model/upload_oss_model.dart';
 
 class PersonLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
@@ -75,6 +74,7 @@ class PersonLogic extends GetxController {
         onSuccess:
             (String filePath, double width, double height, int fileSize) {
               filemeMemorySize = fileSize;
+              debugPrint('从相册选择成功了: $filePath');
               getUploadInfo(filePath);
             },
       );
@@ -156,10 +156,10 @@ class PersonLogic extends GetxController {
       showLoading("上传中");
 
       final fileType = ImageCameraUtils.getFileExtensionFromPath(filePath);
-      final result = await http.post<PersonOssModel>(
+      final result = await http.post<UploadOssModel>(
         '/upload/generateUploadUrl',
         data: {"type": "user", "file_type": fileType, "field_type": "avatar"},
-        converter: PersonOssModel.fromJson,
+        converter: UploadOssModel.fromJson,
         showErrorToast: false,
         withToken: true,
       );
@@ -168,17 +168,18 @@ class PersonLogic extends GetxController {
         fileAvarPath = result.data?.file ?? "";
         await uploadFile(result.data!, filePath, mimeType);
       } else {
+        await PickerImageManager.deleteDirectory();
         SmartDialog.dismiss();
       }
     } catch (e) {
-      PickerImageManager.deleteTempFile(filePath);
+      await PickerImageManager.deleteDirectory();
       // 上传失败，恢复原始头像
       SmartDialog.dismiss();
     }
   }
 
   Future<void> uploadFile(
-    PersonOssModel ossModel,
+    UploadOssModel ossModel,
     String filePath,
     String mimeType,
   ) async {
@@ -204,12 +205,12 @@ class PersonLogic extends GetxController {
         fileId = ossModel.resourceId;
         avatar.value = filePath;
       }
-      PickerImageManager.deleteTempFile(filePath);
+      await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss();
     } catch (e) {
       showToast("图片上传失败");
       debugPrint('======出错了===== $e ');
-      PickerImageManager.deleteTempFile(filePath);
+      await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss();
     }
   }

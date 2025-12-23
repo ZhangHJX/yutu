@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import '../model/index.dart';
 import '../pages/canvals/canvals_controller.dart';
-import '../../utils/file/canvals_file_manager.dart';
 import '../../../file/index.dart';
 
 /// 草稿管理类
@@ -139,7 +139,8 @@ class DraftManager {
       await FileManager.deleteFile(directory: draftDir, fileName: 'draft.json');
       debugPrint('DraftManager: 草稿已删除: ${draftDir.path}/draft.json');
 
-      CanvalsFileManager.deleteAllImagesInCavals();
+      final directory = await _getDraftDirectory();
+      await FileManager.deleteDirectory(directory, deleteDirectory: true);
 
       return true;
     } catch (e, stackTrace) {
@@ -164,7 +165,7 @@ class DraftManager {
 
   /// 获取草稿目录（固定路径）
   Future<Directory> _getDraftDirectory() async {
-    return await DirectoryManager.getDocumentsSubDirectory('cavals/draft');
+    return await DirectoryManager.getDocumentsSubDirectory('cavals');
   }
 
   /// 通知画布属性已变更

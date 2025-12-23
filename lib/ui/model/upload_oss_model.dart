@@ -1,9 +1,9 @@
 import 'package:common/common.dart';
 
-part 'person_oss_model.g.dart';
+part 'upload_oss_model.g.dart';
 
 @JsonSerializable()
-class PersonOssModel {
+class UploadOssModel {
   @JsonKey(name: 'sign_url')
   String signUrl;
   String endpoint;
@@ -13,7 +13,7 @@ class PersonOssModel {
   @JsonKey(name: 'resource_id')
   int resourceId;
 
-  PersonOssModel({
+  UploadOssModel({
     this.signUrl = '',
     this.endpoint = '',
     this.bucket = '',
@@ -22,8 +22,8 @@ class PersonOssModel {
     this.resourceId = 0,
   });
 
-  factory PersonOssModel.fromJson(Map<String, dynamic> json) =>
-      _$PersonOssModelFromJson(json);
+  factory UploadOssModel.fromJson(Map<String, dynamic> json) =>
+      _$UploadOssModelFromJson(json);
 
-  Map<String, dynamic> toJson() => _$PersonOssModelToJson(this);
+  Map<String, dynamic> toJson() => _$UploadOssModelToJson(this);
 }

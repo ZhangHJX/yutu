@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:voicetemplate/file/index.dart';
 import 'package:path/path.dart' as p;
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -30,22 +31,25 @@ class ImageCameraUtils {
 
   ///2、获取相册图片的路径
   static Future<String> getAssetImageFilePath(AssetEntity asset) async {
-    try {
-      // 优先拿原图
-      File? originalFile = await asset.originFile;
+    // 优先拿原图
+    File? originalFile = await asset.originFile;
 
-      /// 有些情况下 originFile 为 null，可以尝试 file
-      originalFile ??= await asset.file;
-
-      if (originalFile == null) {
-        debugPrint('getAssetImageFilePath: 无法获取本地文件, asset id = ${asset.id}');
-        return "";
-      }
-      return originalFile.path;
-    } catch (error, stackTrace) {
-      debugPrint('getAssetImageFilePath: 异常 = $error == $stackTrace');
+    /// 有些情况下 originFile 为 null，可以尝试 file
+    originalFile ??= await asset.file;
+    if (originalFile == null) {
       return "";
     }
+    final fileName = p.basenameWithoutExtension(originalFile.path);
+    final ext = getFileExtensionFromPath(originalFile.path);
+    final tempDir = await DirectoryManager.getTempSubDirectory("images");
+
+    final fullPath = p.join(tempDir.path, '$fileName.$ext');
+
+    debugPrint(
+      '文件路径---${originalFile.path}---扩展名---$ext---文档路径---${tempDir.path}---文件名---$fileName---',
+    );
+
+    return fullPath;
   }
 
   ///3、获取 AssetEntity 对应文件的大小（单位：byte）
@@ -75,9 +79,7 @@ class ImageCameraUtils {
     try {
       final fileName = p.basenameWithoutExtension(filePath);
       final ext = getFileExtensionFromPath(filePath);
-
-      // 生成临时压缩文件路径
-      final tempDir = Directory.systemTemp;
+      final tempDir = await DirectoryManager.getTempSubDirectory("images");
       final compressedPath = p.join(tempDir.path, '${fileName}_compressed$ext');
 
       // 根据文件扩展名选择压缩格式

@@ -1,9 +1,9 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:voicetemplate/ui/utils/file/index.dart';
 import 'canvas_text_widget.dart';
 import '../../../model/index.dart';
 import 'dart:io';
-import '../../../../utils/file/canvals_file_manager.dart';
 
 class CanvasElementWidget extends StatelessWidget {
   final CanvasElement data;
@@ -28,15 +28,20 @@ class CanvasElementWidget extends StatelessWidget {
   Widget _buildContent() {
     switch (data.type) {
       case ElementType.image:
-        return Opacity(
-          opacity: data.fileAlpha,
-          child: Image.file(
-            File(CanvalsFileManager.getImageFullPathByFileName(data.fileName)),
-            width: data.width,
-            height: data.height,
-            fit: BoxFit.cover,
-          ),
-        );
+        // return Opacity(
+        //   opacity: data.fileAlpha,
+        //   child: Image.file(
+        //     File(PickerImageManager.(data.filePath)),
+
+        //     File(CanvalsFileManager.getImageFullPathByFileName(data.filePath)),
+        //     width: data.width,
+        //     height: data.height,
+        //     fit: BoxFit.cover,
+        //   ),
+        // );
+
+        return Container(color: Colors.red);
+
       case ElementType.rectangle:
         return Opacity(
           opacity: data.fillAlpha,

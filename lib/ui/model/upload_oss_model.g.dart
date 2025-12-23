@@ -1,13 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'person_oss_model.dart';
+part of 'upload_oss_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-PersonOssModel _$PersonOssModelFromJson(Map<String, dynamic> json) =>
-    PersonOssModel(
+UploadOssModel _$UploadOssModelFromJson(Map<String, dynamic> json) =>
+    UploadOssModel(
       signUrl: json['sign_url'] as String? ?? '',
       endpoint: json['endpoint'] as String? ?? '',
       bucket: json['bucket'] as String? ?? '',
@@ -16,7 +16,7 @@ PersonOssModel _$PersonOssModelFromJson(Map<String, dynamic> json) =>
       resourceId: (json['resource_id'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$PersonOssModelToJson(PersonOssModel instance) =>
+Map<String, dynamic> _$UploadOssModelToJson(UploadOssModel instance) =>
     <String, dynamic>{
       'sign_url': instance.signUrl,
       'endpoint': instance.endpoint,

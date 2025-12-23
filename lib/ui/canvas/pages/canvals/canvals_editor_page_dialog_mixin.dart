@@ -6,6 +6,7 @@ import '../../model/index.dart';
 import '../../utils/index.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
 import '../../draft/index.dart';
+import '../../widgets/dialog/image/canvals_image_dialog.dart';
 
 /// Dialog 管理功能 Mixin
 ///
@@ -195,6 +196,49 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
       useAnimation: true,
       usePenetrate: false,
     );
+  }
+
+  // 增加图片
+  void pickImageDialog(BuildContext context) async {
+    toggleLayerDialog(false);
+    final res = await PermissionUtil.requestPhotoAlbumPermission();
+    if (!res) {
+      showPermissionDialog(
+        title: '提示',
+        subTitle: '打开相册以上传图片到编辑器\n中进行进一步编辑',
+        sureTitle: "同意",
+        sureAction: () {
+          AppSettings.openAppSettings(type: AppSettingsType.settings);
+        },
+      );
+      return;
+    }
+    if (!context.mounted) {
+      return;
+    }
+
+    SmartDialog.show(
+      builder: (context) => CanvalsImageDialog(),
+      alignment: Alignment.bottomCenter,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: Colors.black.withValues(alpha: 0.6),
+      clickMaskDismiss: false,
+      useAnimation: true,
+      usePenetrate: false,
+    );
+
+    // ImageStorageManager.chooseImages(
+    //   context: context,
+    //   onSuccess: (String fileName, double width, double height) {
+    //     _canvalsController.addNewImage(
+    //       fileName,
+    //       width,
+    //       height,
+    //       targetCenter: getCanvasCenter(),
+    //     );
+    //   },
+    // );
   }
 
   /// 显示文本输入对话框

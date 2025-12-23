@@ -539,17 +539,17 @@ mixin CanvasEditorUndoRedoMixin<T extends StatefulWidget> on State<T> {
       );
     }
 
-    if (old.fileName != current.fileName) {
+    if (old.filePath != current.filePath) {
       historyManager.executeCommand(
         UpdateImagePropertiesCommand(
           boxes: boxes,
           elementId: current.id,
           oldWidth: null,
           oldHeight: null,
-          oldImagePath: old.fileName,
+          oldImagePath: old.filePath,
           newWidth: null,
           newHeight: null,
-          newImagePath: current.fileName,
+          newImagePath: current.filePath,
         ),
       );
     }

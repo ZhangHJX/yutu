@@ -39,7 +39,7 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
   void _initializeFromModel() {
     _widthController.text = widget.element?.width.toInt().toString() ?? "200";
     _heightController.text = widget.element?.height.toInt().toString() ?? "200";
-    _imagePath = widget.element?.fileName;
+    _imagePath = widget.element?.filePath;
     _imageWidth = widget.element?.width;
     _imageHeight = widget.element?.height;
     _imageAlpha = widget.element?.fileAlpha ?? 1.0;
@@ -50,7 +50,7 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
     widget.element?.height = _imageHeight ?? 0.0;
     widget.element?.fileAlpha = _imageAlpha;
     if (_imagePath != null && _imagePath!.isNotEmpty) {
-      widget.element?.fileName = basename(_imagePath!);
+      widget.element?.filePath = basename(_imagePath!);
     }
     widget.onValueChanged?.call(notify);
   }

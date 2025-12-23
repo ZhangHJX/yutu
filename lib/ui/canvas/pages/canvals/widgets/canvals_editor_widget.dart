@@ -177,7 +177,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     required ElementType type,
     required Offset center,
     String text = '',
-    String fileName = '',
+    String filePath = '',
   }) async {
     final newId = _selectionController.generateId();
 
@@ -219,7 +219,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       x: centerX,
       y: centerY,
       type: type,
-      fileName: fileName.isEmpty ? '' : basename(fileName),
+      filePath: filePath,
       width: finalWidth,
       height: finalHeight,
     );
@@ -426,7 +426,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
           addBox(
             type: ElementType.image,
             center: _selectionController.center,
-            fileName: _selectionController.fileName,
+            filePath: _selectionController.filePath,
           );
           _selectionController.clearAddImageFlag();
         });

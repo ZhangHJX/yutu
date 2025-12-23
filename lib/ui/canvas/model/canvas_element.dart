@@ -22,7 +22,7 @@ class CanvasElement {
   bool selected; // 是否被选中
 
   // 图片相关属性
-  String fileName;
+  String filePath;
   double fileAlpha;
 
   // 形状相关属性
@@ -77,7 +77,7 @@ class CanvasElement {
     this.locked = false,
     this.selected = false,
 
-    this.fileName = '',
+    this.filePath = '',
     this.fileAlpha = 1.0,
 
     this.fillAlpha = 1.0,

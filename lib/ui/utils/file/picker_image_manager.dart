@@ -1,6 +1,8 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import 'package:voicetemplate/file/index.dart';
 import 'image_camera_utils.dart';
 import 'dart:io';
 
@@ -25,6 +27,10 @@ class PickerImageManager {
       if (result != null) {
         AssetEntity asset = result.last;
         String filePath = await ImageCameraUtils.getAssetImageFilePath(asset);
+        if (filePath.isEmpty) {
+          showToast("未选到图片，请重试");
+          return;
+        }
         int fileSize = await ImageCameraUtils.getAssetFileSize(asset);
         if (fileSize > maxSizeBites) {
           final imgInfo = await ImageCameraUtils.getCompressFilePath(
@@ -63,15 +69,20 @@ class PickerImageManager {
     );
   }
 
-  /// 删除临时目录下的图片
-  static void deleteTempFile(String filePath) async {
-    if (filePath.isEmpty) {
-      return;
-    }
-    final File file = File(filePath);
-    if (!await file.exists()) {
-      return;
-    }
-    await file.delete();
+  /// 获取本地目录下的图片
+  static Future<void> deleteDirectory() async {
+    final tempDir = await DirectoryManager.getTempSubDirectory("images");
+    FileManager.deleteDirectory(tempDir);
+  }
+
+  ///获取图片存储的绝对路径
+  Future<Directory> getImageRelative() async {
+    return await DirectoryManager.getDocumentsSubDirectory('localAsset');
+  }
+
+  // 从模型的相对路径拿到可用的绝对路径
+  Future<String> getImageFromRelative(String imagePath) async {
+    final docDir = await getImageRelative();
+    return p.join(docDir.path, imagePath);
   }
 }

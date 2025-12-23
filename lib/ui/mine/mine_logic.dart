@@ -14,7 +14,7 @@ class MineLogic extends GetxController {
 
   /// 个人资料
   void onTapPersonInfo() {
-    global.removeUserInfo();
+    // global.removeUserInfo();
 
     if (!global.isLogin) return;
     Get.toNamed(AppRoutes.personInfo);

@@ -26,7 +26,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
     with SingleTickerProviderStateMixin {
   // TabController
   late TabController _tabController;
-  final logic = Get.put(TextPropertyController(), tag: dialog);
+  final logic = Get.put(TextPropertyController(), tag: fontDialog);
 
   @override
   void initState() {
@@ -37,8 +37,8 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
   @override
   void dispose() {
     _tabController.dispose();
-    if (Get.isRegistered<TextPropertyController>(tag: dialog)) {
-      Get.delete<TextPropertyController>(tag: dialog, force: true);
+    if (Get.isRegistered<TextPropertyController>(tag: fontDialog)) {
+      Get.delete<TextPropertyController>(tag: fontDialog, force: true);
     }
     super.dispose();
   }

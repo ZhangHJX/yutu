@@ -4,13 +4,28 @@ import 'image_logic.dart';
 import 'image_model.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 
-class CanvalsImageDialog extends StatelessWidget {
-  CanvalsImageDialog({super.key});
-  final logic = Get.put(ImageLogic());
+class CanvalsImageDialog extends StatefulWidget {
+  const CanvalsImageDialog({super.key});
+
+  @override
+  State<CanvalsImageDialog> createState() => _CanvalsImageDialogState();
+}
+
+class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
+  final logic = Get.put(ImageLogic(), tag: imageDialog);
+
+  @override
+  void dispose() {
+    if (Get.isRegistered<ImageLogic>(tag: imageDialog)) {
+      Get.delete<ImageLogic>(tag: imageDialog, force: true);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 372.w + ScreenTools.bottomBarHeight,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -61,7 +76,8 @@ class CanvalsImageDialog extends StatelessWidget {
             ),
           ),
 
-          Padding(
+          Container(
+            width: ScreenTools.screenWidth,
             padding: EdgeInsets.symmetric(horizontal: 19.w),
             child: Text(
               "我的素材",
@@ -70,6 +86,7 @@ class CanvalsImageDialog extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 color: "#3E3E3E".color.withValues(alpha: 0.6),
               ),
+              textAlign: TextAlign.left,
             ),
           ),
 
@@ -255,6 +272,7 @@ class CanvalsImageDialog extends StatelessWidget {
 
           CButton(
             height: 45.w,
+            width: 148.w,
             textColor: Colors.white,
             text: Text(
               '确认',

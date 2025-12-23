@@ -48,6 +48,27 @@ class FileManager {
     }
     await file.delete();
   }
+
+  /// 清空目录内容（默认保留目录本身）
+  /// - [deleteDirItself] 为 true 时：连目录一起删除
+  static Future<void> deleteDirectory(
+    Directory directory, {
+    bool deleteDirectory = false,
+  }) async {
+    if (!await directory.exists()) return;
+
+    if (deleteDirectory) {
+      await directory.delete(recursive: true);
+      return;
+    }
+
+    await for (final entity in directory.list(
+      recursive: false,
+      followLinks: false,
+    )) {
+      await entity.delete(recursive: true);
+    }
+  }
 }
 
 

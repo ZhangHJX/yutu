@@ -12,7 +12,6 @@ import '../../model/index.dart';
 import 'widgets/transform_canvas.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
 import 'canvals_editor_page_dialog_mixin.dart';
-import '../../../utils/file/canvals_file_manager.dart';
 import '../../draft/index.dart';
 
 class CanvasEditorPage extends StatefulWidget {
@@ -303,7 +302,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                 _toggleLayerDialog(true);
               },
               onAddImage: () {
-                _addImageDialog(context);
+                pickImageDialog(context);
               },
               onAddShape: showShapeDialog,
               onAddText: () {
@@ -365,14 +364,14 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   /// 删除图片
   @override
   void deleteImage() {
-    if (activeElement != null) {
-      final fullPath = CanvalsFileManager.getImageFullPathByFileName(
-        activeElement!.fileName,
-      );
-      CanvalsFileManager.deleteFileByPath(fullPath);
-      _canvasKey.currentState?.deleteBox(activeElement!.id);
-      SmartDialog.dismiss();
-    }
+    // if (activeElement != null) {
+    //   final fullPath = CanvalsFileManager.getImageFullPathByFileName(
+    //     activeElement!.fileName,
+    //   );
+    //   CanvalsFileManager.deleteFileByPath(fullPath);
+    //   _canvasKey.currentState?.deleteBox(activeElement!.id);
+    //   SmartDialog.dismiss();
+    // }
   }
 
   /// 替换图片
@@ -385,49 +384,18 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
     if (!context.mounted) {
       return;
     }
-    ImageStorageManager.chooseImages(
-      context: context,
-      onSuccess: (String fileName, double width, double height) {
-        final oldPath = CanvalsFileManager.getImageFullPathByFileName(
-          activeElement!.fileName,
-        );
-        CanvalsFileManager.deleteFileByPath(oldPath);
-        setState(() {
-          activeElement!.fileName = basename(fileName);
-        });
-      },
-    );
-  }
-
-  // 增加图片
-  void _addImageDialog(BuildContext context) async {
-    toggleLayerDialog(false);
-    final res = await PermissionUtil.requestPhotoAlbumPermission();
-    if (!res) {
-      showPermissionDialog(
-        title: '提示',
-        subTitle: '打开相册以上传图片到编辑器\n中进行进一步编辑',
-        sureTitle: "同意",
-        sureAction: () {
-          AppSettings.openAppSettings(type: AppSettingsType.settings);
-        },
-      );
-      return;
-    }
-    if (!context.mounted) {
-      return;
-    }
-    ImageStorageManager.chooseImages(
-      context: context,
-      onSuccess: (String fileName, double width, double height) {
-        _canvalsController.addNewImage(
-          fileName,
-          width,
-          height,
-          targetCenter: getCanvasCenter(),
-        );
-      },
-    );
+    // ImageStorageManager.chooseImages(
+    //   context: context,
+    //   onSuccess: (String fileName, double width, double height) {
+    //     final oldPath = CanvalsFileManager.getImageFullPathByFileName(
+    //       activeElement!.fileName,
+    //     );
+    //     CanvalsFileManager.deleteFileByPath(oldPath);
+    //     setState(() {
+    //       activeElement!.fileName = basename(fileName);
+    //     });
+    //   },
+    // );
   }
 
   /// 显示图层弹框

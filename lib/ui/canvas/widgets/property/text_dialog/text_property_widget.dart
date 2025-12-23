@@ -28,7 +28,7 @@ class TextPropertyWidget extends StatefulWidget {
 
 class _TextPropertyWidgetState extends State<TextPropertyWidget>
     with SingleTickerProviderStateMixin {
-  final logic = Get.put(TextPropertyController(), tag: dialog);
+  final logic = Get.put(TextPropertyController(), tag: fontDialog);
 
   final TextEditingController _fontSizeController = TextEditingController();
   // Tab控制器
