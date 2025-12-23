@@ -1,11 +1,13 @@
+import 'package:path/path.dart' as p;
 import 'package:voicetemplate/ui/widgets/index.dart';
 import 'package:voicetemplate/ui/utils/file/index.dart';
 import 'package:voicetemplate/ui/model/upload_oss_model.dart';
 import 'package:common/common.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'image_model.dart';
 import 'dart:io';
+
+//  SmartDialog.dismiss(status: SmartStatus.loading);
 
 class ImageLogic extends GetxController {
   // 图片列表
@@ -27,9 +29,8 @@ class ImageLogic extends GetxController {
   final RxBool isRefreshing = false.obs;
 
   // 图片相关信息
-  String imagePath = ''; // 文件的路径
-  int filemeMemorySize = 0; // 单位字节 b
-  int fileId = 0; // resource_id
+  double imageWidth = 0.0; // 图片宽度
+  double imageHeight = 0.0; // 图片高度
 
   @override
   void onInit() {
@@ -105,8 +106,9 @@ class ImageLogic extends GetxController {
   }
 
   /// 上传图片 BuildContext context
-  Future<void> handlePickerCanvalsImage(BuildContext context) async {
+  Future<void> pickerCanvalsImage(BuildContext context) async {
     try {
+      // 权限请求
       final res = await PermissionUtil.requestPhotoAlbumPermission();
       if (!res) {
         showPermissionView("打开相册选图片以便更改头像");
@@ -119,8 +121,9 @@ class ImageLogic extends GetxController {
         context: context,
         onSuccess:
             (String filePath, double width, double height, int fileSize) {
-              filemeMemorySize = fileSize;
-              getUploadInfo(filePath);
+              imageWidth = width;
+              imageHeight = height;
+              getUploadInfo(filePath, fileSize);
             },
       );
     } catch (e, stackTrace) {
@@ -129,10 +132,9 @@ class ImageLogic extends GetxController {
     }
   }
 
-  void getUploadInfo(String filePath) async {
+  void getUploadInfo(String filePath, int fileSize) async {
     try {
       showLoading("上传中");
-
       final fileType = ImageCameraUtils.getFileExtensionFromPath(filePath);
       final result = await http.post<UploadOssModel>(
         '/upload/generateUploadUrl',
@@ -143,16 +145,14 @@ class ImageLogic extends GetxController {
       );
       if (result.code == 0) {
         String mimeType = mimeTypeMap[fileType] ?? "";
-        imagePath = result.data?.file ?? "";
-        await uploadFile(result.data!, filePath, mimeType);
+        await uploadFile(result.data!, filePath, mimeType, fileSize);
       } else {
         await PickerImageManager.deleteDirectory();
-        SmartDialog.dismiss();
+        SmartDialog.dismiss(status: SmartStatus.loading);
       }
     } catch (e) {
       await PickerImageManager.deleteDirectory();
-      // 上传失败，恢复原始头像
-      SmartDialog.dismiss();
+      SmartDialog.dismiss(status: SmartStatus.loading);
     }
   }
 
@@ -160,9 +160,9 @@ class ImageLogic extends GetxController {
     UploadOssModel ossModel,
     String filePath,
     String mimeType,
+    int fileSize,
   ) async {
     try {
-      debugPrint('======res===== 开始${ossModel.signUrl} ');
       final file = File(filePath);
       final bytes = await file.readAsBytes();
       final res = await http.put(
@@ -181,15 +181,60 @@ class ImageLogic extends GetxController {
 
       /// 上传成功
       if (res.isSuccess) {
-        fileId = ossModel.resourceId;
+        await requestImage(filePath, ossModel.resourceId, fileSize);
+      } else {
+        showToast("上传失败"); // 上传失败
+        await PickerImageManager.deleteDirectory();
+        SmartDialog.dismiss(status: SmartStatus.loading);
       }
-      await PickerImageManager.deleteDirectory();
-      SmartDialog.dismiss();
     } catch (e) {
       showToast("图片上传失败");
-      debugPrint('======出错了===== $e ');
       await PickerImageManager.deleteDirectory();
-      SmartDialog.dismiss();
+      SmartDialog.dismiss(status: SmartStatus.loading);
+    }
+  }
+
+  /// 把获取到的信息传给后台
+  Future<void> requestImage(
+    String filePath,
+    int resourceId,
+    int fileSize,
+  ) async {
+    try {
+      final result = await http.post(
+        '/user/material/store',
+        data: {"img_id": '$resourceId', "img_file_size": '$fileSize'},
+      );
+      if (result.code == 0) {
+        await savePickerImage(filePath);
+      } else {
+        await PickerImageManager.deleteDirectory();
+        SmartDialog.dismiss(status: SmartStatus.loading);
+      }
+    } catch (e) {
+      await PickerImageManager.deleteDirectory();
+      SmartDialog.dismiss(status: SmartStatus.loading);
+    }
+  }
+
+  Future<void> savePickerImage(String filePath) async {
+    try {
+      final fileName = p.basenameWithoutExtension(filePath);
+      final ext = ImageCameraUtils.getFileExtensionFromPath(filePath);
+      final directory = await PickerImageManager.getCaoGaoRelative();
+      final fileFormat = '$fileName.$ext';
+      final fullPath = p.join(directory.path, fileFormat);
+
+      /// 将临时保存的图片，保存到这新的路径下
+      await copyImageFilePath(fromPath: filePath, toPath: fullPath);
+
+      debugPrint('========>>>流程支撑完成=====$fullPath');
+      await PickerImageManager.deleteDirectory();
+      SmartDialog.dismiss(status: SmartStatus.loading);
+    } catch (e) {
+      showToast("图片保存失败");
+      await PickerImageManager.deleteDirectory();
+      SmartDialog.dismiss(status: SmartStatus.loading);
     }
   }
 
@@ -211,5 +256,23 @@ class ImageLogic extends GetxController {
       useAnimation: true,
       usePenetrate: false,
     );
+  }
+
+  Future<File> copyImageFilePath({
+    required String fromPath,
+    required String toPath, // 目标“完整文件路径”（包含文件名）
+    bool overwrite = true,
+  }) async {
+    final src = File(fromPath);
+    if (!await src.exists()) {
+      throw FileSystemException('Source file not found', fromPath);
+    }
+    // 确保目标目录存在
+    await Directory(p.dirname(toPath)).create(recursive: true);
+    final dst = File(toPath);
+    if (overwrite && await dst.exists()) {
+      await dst.delete();
+    }
+    return src.copy(toPath);
   }
 }

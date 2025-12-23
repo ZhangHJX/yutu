@@ -24,6 +24,7 @@ class PickerImageManager {
       final List<AssetEntity>? result = await PickerImageManager.common(
         context,
       );
+      debugPrint('PickerImageManager---$result--');
       if (result != null) {
         AssetEntity asset = result.last;
         String filePath = await ImageCameraUtils.getAssetImageFilePath(asset);
@@ -69,20 +70,27 @@ class PickerImageManager {
     );
   }
 
-  /// 获取本地目录下的图片
+  /// 删除在相册中选中的图片的临时保存路径
   static Future<void> deleteDirectory() async {
     final tempDir = await DirectoryManager.getTempSubDirectory("images");
-    FileManager.deleteDirectory(tempDir);
+    await FileManager.deleteDirectory(tempDir);
   }
 
-  ///获取图片存储的绝对路径
-  Future<Directory> getImageRelative() async {
+  /// 我的素材的绝对路径
+  static Future<Directory> getSuCaiRelative() async {
     return await DirectoryManager.getDocumentsSubDirectory('localAsset');
   }
 
+  /// 我的草稿的绝对路径
+  static Future<Directory> getCaoGaoRelative() async {
+    return await DirectoryManager.getDocumentsSubDirectory('caval/images');
+  }
+
   // 从模型的相对路径拿到可用的绝对路径
-  Future<String> getImageFromRelative(String imagePath) async {
-    final docDir = await getImageRelative();
-    return p.join(docDir.path, imagePath);
+  static Future<String> getImageFromRelative(
+    Directory directory,
+    String imagePath,
+  ) async {
+    return p.join(directory.path, imagePath);
   }
 }

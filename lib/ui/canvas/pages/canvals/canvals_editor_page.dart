@@ -7,7 +7,6 @@ import '../../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
 import '../../history/index.dart';
 import '../../gesture/index.dart';
-import '../../utils/index.dart';
 import '../../model/index.dart';
 import 'widgets/transform_canvas.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
@@ -302,7 +301,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                 _toggleLayerDialog(true);
               },
               onAddImage: () {
-                pickImageDialog(context);
+                addImageDialog(context);
               },
               onAddShape: showShapeDialog,
               onAddText: () {

@@ -5,8 +5,17 @@ import 'image_model.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 
 class CanvalsImageDialog extends StatefulWidget {
-  const CanvalsImageDialog({super.key});
+  final Function(String imageUrl, double? width, double? height)?
+  onImageSelected;
+  final Function()? photosCallBack;
+  final BuildContext currentContext;
 
+  const CanvalsImageDialog(
+    this.currentContext, {
+    super.key,
+    this.onImageSelected,
+    this.photosCallBack,
+  });
   @override
   State<CanvalsImageDialog> createState() => _CanvalsImageDialogState();
 }
@@ -92,7 +101,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
 
           Expanded(child: _buildListMaterial()),
           // 按钮区域
-          _buildBottomButtons(),
+          _buildBottomButtons(context),
         ],
       ),
     );
@@ -157,8 +166,18 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
   Widget _buildImageItem(ImageModel image) {
     return GestureDetector(
       onTap: () {
-        // TODO: 处理图片选择逻辑
+        // 处理图片选择逻辑
         debugPrint('选中图片: ${image.url}');
+        // 调用回调，将图片添加到画布
+        if (widget.onImageSelected != null) {
+          widget.onImageSelected!(
+            image.url,
+            image.width?.toDouble(),
+            image.height?.toDouble(),
+          );
+          // 关闭对话框
+          SmartDialog.dismiss();
+        }
       },
       child: Container(
         decoration: BoxDecoration(
@@ -211,7 +230,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
     );
   }
 
-  Widget _buildBottomButtons() {
+  Widget _buildBottomButtons(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
         left: 27.w,
@@ -223,7 +242,9 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () {},
+            onTap: () {
+              logic.pickerCanvalsImage(widget.currentContext);
+            },
             child: SelectItemGradientBorder(
               isSelected: true,
               radius: 24.5.w,
@@ -248,7 +269,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
                     children: [
                       // 替换按钮
                       Image.asset(
-                        'assets/images/canvals/canvals_replace_icon.png',
+                        'assets/images/canvals/canval_picker_image.png',
                         width: 17.5.w,
                         height: 14.w,
                         fit: BoxFit.cover,

@@ -7,6 +7,7 @@ import '../../utils/index.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
 import '../../draft/index.dart';
 import '../../widgets/dialog/image/canvals_image_dialog.dart';
+import 'canvals_controller.dart';
 
 /// Dialog 管理功能 Mixin
 ///
@@ -199,26 +200,24 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
   }
 
   // 增加图片
-  void pickImageDialog(BuildContext context) async {
+  void addImageDialog(BuildContext canvalsContext) async {
     toggleLayerDialog(false);
-    final res = await PermissionUtil.requestPhotoAlbumPermission();
-    if (!res) {
-      showPermissionDialog(
-        title: '提示',
-        subTitle: '打开相册以上传图片到编辑器\n中进行进一步编辑',
-        sureTitle: "同意",
-        sureAction: () {
-          AppSettings.openAppSettings(type: AppSettingsType.settings);
-        },
-      );
-      return;
-    }
-    if (!context.mounted) {
-      return;
-    }
 
     SmartDialog.show(
-      builder: (context) => CanvalsImageDialog(),
+      builder: (context) => CanvalsImageDialog(
+        canvalsContext,
+        onImageSelected: (String imageUrl, double? width, double? height) {
+          // 将图片添加到画布
+          final canvalsController = Get.find<CanvalsController>();
+          canvalsController.addNewImage(
+            imageUrl,
+            width ?? 200.0,
+            height ?? 200.0,
+            targetCenter: getCanvasCenter(),
+          );
+        },
+        photosCallBack: () async {},
+      ),
       alignment: Alignment.bottomCenter,
       animationType: SmartAnimationType.centerFade_otherSlide,
       animationTime: Duration(milliseconds: 250),
@@ -227,18 +226,6 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
       useAnimation: true,
       usePenetrate: false,
     );
-
-    // ImageStorageManager.chooseImages(
-    //   context: context,
-    //   onSuccess: (String fileName, double width, double height) {
-    //     _canvalsController.addNewImage(
-    //       fileName,
-    //       width,
-    //       height,
-    //       targetCenter: getCanvasCenter(),
-    //     );
-    //   },
-    // );
   }
 
   /// 显示文本输入对话框

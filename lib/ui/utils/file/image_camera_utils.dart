@@ -42,13 +42,10 @@ class ImageCameraUtils {
     final fileName = p.basenameWithoutExtension(originalFile.path);
     final ext = getFileExtensionFromPath(originalFile.path);
     final tempDir = await DirectoryManager.getTempSubDirectory("images");
-
     final fullPath = p.join(tempDir.path, '$fileName.$ext');
 
-    debugPrint(
-      '文件路径---${originalFile.path}---扩展名---$ext---文档路径---${tempDir.path}---文件名---$fileName---',
-    );
-
+    ///copy到新的路径下
+    await originalFile.copy(fullPath);
     return fullPath;
   }
 
@@ -65,7 +62,8 @@ class ImageCameraUtils {
         return 0;
       }
       final int length = await file.length(); // 单位：byte
-      return length;
+      final kbCeil = (length / 1024).ceil(); // 向上取整
+      return kbCeil;
     } catch (e, s) {
       debugPrint('getAssetFileSize: 异常: $e');
       debugPrint('$s');

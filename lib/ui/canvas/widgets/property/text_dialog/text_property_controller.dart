@@ -4,7 +4,6 @@ import 'model/font_info_model.dart';
 import '../../../fonts/font_manager.dart';
 import 'package:voicetemplate/ui/canvas/fonts/font_models.dart';
 
-// const String dialog = 'TextPropertyDialogController';
 
 /// 文本属性（字体相关）控制器
 class TextPropertyController extends GetxController {
