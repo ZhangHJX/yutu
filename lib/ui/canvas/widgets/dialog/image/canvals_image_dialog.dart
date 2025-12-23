@@ -1,20 +1,18 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'image_logic.dart';
-import 'image_model.dart';
+import 'model/image_list_models.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 
 class CanvalsImageDialog extends StatefulWidget {
   final Function(String imageUrl, double? width, double? height)?
   onImageSelected;
-  final Function()? photosCallBack;
   final BuildContext currentContext;
 
   const CanvalsImageDialog(
     this.currentContext, {
     super.key,
     this.onImageSelected,
-    this.photosCallBack,
   });
   @override
   State<CanvalsImageDialog> createState() => _CanvalsImageDialogState();
@@ -29,6 +27,17 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
       Get.delete<ImageLogic>(tag: imageDialog, force: true);
     }
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    logic.onUploadSuccess = (String imagePath, double width, double height) {
+      if (widget.onImageSelected != null) {
+        widget.onImageSelected!(imagePath, width, height);
+      }
+      SmartDialog.dismiss();
+    };
   }
 
   @override
@@ -116,11 +125,9 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
           onRefresh: () async {
             await logic.onRefresh();
           },
-          onLoad: logic.hasMore
-              ? () async {
-                  await logic.onLoad();
-                }
-              : null,
+          onLoad: () async {
+            await logic.onLoad();
+          },
           child: logic.imageList.isEmpty && !logic.isRefreshing.value
               ? Center(
                   child: Text(
@@ -139,7 +146,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
                     mainAxisSpacing: 8.w,
                     childAspectRatio: 1.0, // 正方形
                   ),
-                  itemCount: logic.imageList.length + (logic.hasMore ? 1 : 0),
+                  itemCount: logic.imageList.length,
                   itemBuilder: (context, index) {
                     // 加载更多指示器
                     if (index == logic.imageList.length) {
@@ -153,8 +160,8 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
                         ),
                       );
                     }
-                    final image = logic.imageList[index];
-                    return _buildImageItem(image);
+                    final model = logic.imageList[index];
+                    return _buildImageItem(model);
                   },
                 ),
         );
@@ -163,18 +170,14 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
   }
 
   /// 构建单个图片item
-  Widget _buildImageItem(ImageModel image) {
+  Widget _buildImageItem(ImageModel model) {
     return GestureDetector(
       onTap: () {
         // 处理图片选择逻辑
-        debugPrint('选中图片: ${image.url}');
+        debugPrint('选中图片: ${model.image}');
         // 调用回调，将图片添加到画布
         if (widget.onImageSelected != null) {
-          widget.onImageSelected!(
-            image.url,
-            image.width?.toDouble(),
-            image.height?.toDouble(),
-          );
+          // widget.onImageSelected!(model.image, model.width, model.height);
           // 关闭对话框
           SmartDialog.dismiss();
         }
@@ -191,7 +194,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
             children: [
               // 图片
               CachedNetworkImage(
-                imageUrl: image.thumbnail ?? image.url,
+                imageUrl: model.image,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
                   color: "#F5F5F5".color,

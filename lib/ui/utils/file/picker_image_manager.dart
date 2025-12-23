@@ -9,6 +9,15 @@ import 'dart:io';
 class PickerImageManager {
   static const int maxSizeBites = 10 * 1024 * 1024;
 
+  static late String cavalsPath;
+
+  static Future<void> init() async {
+    final cavals = await DirectoryManager.getDocumentsSubDirectory(
+      'cavals/images',
+    );
+    cavalsPath = cavals.path;
+  }
+
   // 只从相册获取数据
   static void pickerPhotos({
     required BuildContext context,
@@ -70,27 +79,19 @@ class PickerImageManager {
     );
   }
 
+  /// 我的素材的绝对路径
+  static Future<Directory> getSuCaiRelative() async {
+    return await DirectoryManager.getDocumentsSubDirectory('localAsset');
+  }
+
   /// 删除在相册中选中的图片的临时保存路径
   static Future<void> deleteDirectory() async {
     final tempDir = await DirectoryManager.getTempSubDirectory("images");
     await FileManager.deleteDirectory(tempDir);
   }
 
-  /// 我的素材的绝对路径
-  static Future<Directory> getSuCaiRelative() async {
-    return await DirectoryManager.getDocumentsSubDirectory('localAsset');
-  }
-
-  /// 我的草稿的绝对路径
-  static Future<Directory> getCaoGaoRelative() async {
-    return await DirectoryManager.getDocumentsSubDirectory('caval/images');
-  }
-
-  // 从模型的相对路径拿到可用的绝对路径
-  static Future<String> getImageFromRelative(
-    Directory directory,
-    String imagePath,
-  ) async {
-    return p.join(directory.path, imagePath);
+  /// 加载画布中的图片
+  static String loadCanvalsImage(String imagePath) {
+    return p.join(cavalsPath, imagePath);
   }
 }

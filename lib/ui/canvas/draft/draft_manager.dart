@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
 import '../model/index.dart';
 import '../pages/canvals/canvals_controller.dart';
 import '../../../file/index.dart';

@@ -63,6 +63,9 @@ class ImageCameraUtils {
       }
       final int length = await file.length(); // 单位：byte
       final kbCeil = (length / 1024).ceil(); // 向上取整
+
+      debugPrint('getAssetFileSize: 文件为 null, asset id = ${asset.id}');
+
       return kbCeil;
     } catch (e, s) {
       debugPrint('getAssetFileSize: 异常: $e');

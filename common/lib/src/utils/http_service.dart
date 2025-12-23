@@ -156,7 +156,7 @@ class HttpService {
         );
       }
 
-      debugPrint('response=========: ${response.data}');
+      // debugPrint('response=========: ${response.data}');
 
       if (isNake) {
         return BaseModel.fromJson(

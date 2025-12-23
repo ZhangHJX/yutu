@@ -4,6 +4,7 @@ import '../widgets/index.dart';
 import '../canvas/draft/index.dart';
 import '../../app/routes/index.dart';
 import '../canvas/fonts/font_manager.dart';
+import 'package:voicetemplate/ui/utils/file/index.dart';
 
 class HomeLogic extends GetxController {
   // Tab 索引
@@ -26,6 +27,7 @@ class HomeLogic extends GetxController {
   @override
   void onReady() {
     FontManager.to.initFromDisk();
+    PickerImageManager.init();
     super.onReady();
   }
 

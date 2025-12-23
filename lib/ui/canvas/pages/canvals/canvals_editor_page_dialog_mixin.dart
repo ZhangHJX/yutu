@@ -206,23 +206,21 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
     SmartDialog.show(
       builder: (context) => CanvalsImageDialog(
         canvalsContext,
-        onImageSelected: (String imageUrl, double? width, double? height) {
+        onImageSelected: (String imagePath, double? width, double? height) {
           // 将图片添加到画布
           final canvalsController = Get.find<CanvalsController>();
           canvalsController.addNewImage(
-            imageUrl,
+            imagePath,
             width ?? 200.0,
             height ?? 200.0,
             targetCenter: getCanvasCenter(),
           );
         },
-        photosCallBack: () async {},
       ),
       alignment: Alignment.bottomCenter,
       animationType: SmartAnimationType.centerFade_otherSlide,
       animationTime: Duration(milliseconds: 250),
       maskColor: Colors.black.withValues(alpha: 0.6),
-      clickMaskDismiss: false,
       useAnimation: true,
       usePenetrate: false,
     );

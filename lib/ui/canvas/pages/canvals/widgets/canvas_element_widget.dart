@@ -28,20 +28,15 @@ class CanvasElementWidget extends StatelessWidget {
   Widget _buildContent() {
     switch (data.type) {
       case ElementType.image:
-        // return Opacity(
-        //   opacity: data.fileAlpha,
-        //   child: Image.file(
-        //     File(PickerImageManager.(data.filePath)),
-
-        //     File(CanvalsFileManager.getImageFullPathByFileName(data.filePath)),
-        //     width: data.width,
-        //     height: data.height,
-        //     fit: BoxFit.cover,
-        //   ),
-        // );
-
-        return Container(color: Colors.red);
-
+        return Opacity(
+          opacity: data.fileAlpha,
+          child: Image.file(
+            File(PickerImageManager.loadCanvalsImage(data.filePath)),
+            width: data.width,
+            height: data.height,
+            fit: BoxFit.cover,
+          ),
+        );
       case ElementType.rectangle:
         return Opacity(
           opacity: data.fillAlpha,

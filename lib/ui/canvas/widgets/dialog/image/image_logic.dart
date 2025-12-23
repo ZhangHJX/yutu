@@ -1,17 +1,17 @@
 import 'package:path/path.dart' as p;
+import 'package:common/common.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import 'package:voicetemplate/ui/utils/file/index.dart';
-import 'package:voicetemplate/ui/model/upload_oss_model.dart';
-import 'package:common/common.dart';
+import 'package:voicetemplate/ui/model/index.dart';
 import 'package:flutter/material.dart';
-import 'image_model.dart';
+import './model/image_list_models.dart';
 import 'dart:io';
 
 //  SmartDialog.dismiss(status: SmartStatus.loading);
 
 class ImageLogic extends GetxController {
-  // 图片列表
-  final RxList<ImageModel> imageList = <ImageModel>[].obs;
+  //上传成功
+  Function(String imagePath, double width, double height)? onUploadSuccess;
 
   // 当前页码
   int currentPage = 1;
@@ -19,8 +19,8 @@ class ImageLogic extends GetxController {
   // 每页数量
   final int pageSize = 20;
 
-  // 是否还有更多数据
-  bool hasMore = true;
+  // 图片列表
+  final RxList<ImageModel> imageList = <ImageModel>[].obs;
 
   // 是否正在加载
   final RxBool isLoading = false.obs;
@@ -28,65 +28,11 @@ class ImageLogic extends GetxController {
   // 是否正在刷新
   final RxBool isRefreshing = false.obs;
 
-  // 图片相关信息
-  double imageWidth = 0.0; // 图片宽度
-  double imageHeight = 0.0; // 图片高度
-
   @override
   void onInit() {
     super.onInit();
     // 初始化时加载第一页数据
     loadImageList(refresh: true);
-    debugPrint("-选择图片----onInit------");
-  }
-
-  /// 加载图片列表
-  /// [refresh] 是否为刷新操作（重置到第一页）
-  Future<void> loadImageList({bool refresh = false}) async {
-    if (refresh) {
-      currentPage = 1;
-      hasMore = true;
-      isRefreshing.value = true;
-    } else {
-      if (!hasMore || isLoading.value) {
-        return;
-      }
-      isLoading.value = true;
-    }
-
-    try {
-      // 替换为实际的接口地址
-      final result = await http.get(
-        '/user/material/index?page=1&limit=10',
-        withToken: true,
-        showErrorToast: false,
-        converter: pageConverter<ImageModel>(
-          (json) => ImageModel.fromJson(json),
-        ),
-      );
-
-      if (result.code == 0 && result.data != null) {
-        final pageData = result.data!;
-
-        if (refresh) {
-          imageList.clear();
-        }
-
-        imageList.addAll(pageData.list);
-
-        // 判断是否还有更多数据
-        hasMore = !pageData.isLastPage;
-
-        if (hasMore) {
-          currentPage++;
-        }
-      }
-    } catch (e) {
-      debugPrint('加载图片列表失败: $e');
-    } finally {
-      isLoading.value = false;
-      isRefreshing.value = false;
-    }
   }
 
   /// 下拉刷新
@@ -97,6 +43,45 @@ class ImageLogic extends GetxController {
   /// 上拉加载更多
   Future<void> onLoad() async {
     await loadImageList(refresh: false);
+  }
+
+  /// 加载图片列表
+  /// [refresh] 是否为刷新操作（重置到第一页）
+  Future<void> loadImageList({bool refresh = false}) async {
+    if (refresh) {
+      currentPage = 1;
+      isRefreshing.value = true;
+    } else {
+      if (isLoading.value) {
+        return;
+      }
+      isLoading.value = true;
+    }
+
+    try {
+      final result = await http.get(
+        '/user/material/index?page=1&limit=10',
+        withToken: true,
+        showErrorToast: false,
+      );
+      debugPrint('获取到的图片列表地址==${result.code}====${result.data}');
+
+      if (result.code == 0 && result.data != null) {
+        final listModel = ImageListModels.fromJson(result.data);
+        if (currentPage == 1) {
+          imageList.clear();
+        }
+        if (listModel.items.isNotEmpty) {
+          imageList.addAll(listModel.items);
+          currentPage++;
+        }
+      }
+    } catch (e) {
+      debugPrint('加载图片列表失败: $e');
+    } finally {
+      isLoading.value = false;
+      isRefreshing.value = false;
+    }
   }
 
   @override
@@ -121,9 +106,7 @@ class ImageLogic extends GetxController {
         context: context,
         onSuccess:
             (String filePath, double width, double height, int fileSize) {
-              imageWidth = width;
-              imageHeight = height;
-              getUploadInfo(filePath, fileSize);
+              getUploadInfo(filePath, fileSize, width, height);
             },
       );
     } catch (e, stackTrace) {
@@ -132,20 +115,36 @@ class ImageLogic extends GetxController {
     }
   }
 
-  void getUploadInfo(String filePath, int fileSize) async {
+  void getUploadInfo(
+    String filePath,
+    int fileSize,
+    double width,
+    double height,
+  ) async {
     try {
       showLoading("上传中");
       final fileType = ImageCameraUtils.getFileExtensionFromPath(filePath);
       final result = await http.post<UploadOssModel>(
         '/upload/generateUploadUrl',
-        data: {"type": "user", "file_type": fileType, "field_type": "avatar"},
+        data: {
+          "type": "material_user",
+          "file_type": fileType,
+          "field_type": "material_user_img",
+        },
         converter: UploadOssModel.fromJson,
         showErrorToast: false,
         withToken: true,
       );
       if (result.code == 0) {
         String mimeType = mimeTypeMap[fileType] ?? "";
-        await uploadFile(result.data!, filePath, mimeType, fileSize);
+        await uploadFile(
+          result.data!,
+          filePath,
+          mimeType,
+          fileSize,
+          width,
+          height,
+        );
       } else {
         await PickerImageManager.deleteDirectory();
         SmartDialog.dismiss(status: SmartStatus.loading);
@@ -161,6 +160,8 @@ class ImageLogic extends GetxController {
     String filePath,
     String mimeType,
     int fileSize,
+    double width,
+    double height,
   ) async {
     try {
       final file = File(filePath);
@@ -181,7 +182,13 @@ class ImageLogic extends GetxController {
 
       /// 上传成功
       if (res.isSuccess) {
-        await requestImage(filePath, ossModel.resourceId, fileSize);
+        await requestImage(
+          filePath,
+          ossModel.resourceId,
+          fileSize,
+          width,
+          height,
+        );
       } else {
         showToast("上传失败"); // 上传失败
         await PickerImageManager.deleteDirectory();
@@ -199,14 +206,17 @@ class ImageLogic extends GetxController {
     String filePath,
     int resourceId,
     int fileSize,
+    double width,
+    double height,
   ) async {
     try {
       final result = await http.post(
         '/user/material/store',
         data: {"img_id": '$resourceId', "img_file_size": '$fileSize'},
+        showErrorToast: false,
       );
       if (result.code == 0) {
-        await savePickerImage(filePath);
+        await savePickerImage(filePath, width, height);
       } else {
         await PickerImageManager.deleteDirectory();
         SmartDialog.dismiss(status: SmartStatus.loading);
@@ -217,16 +227,23 @@ class ImageLogic extends GetxController {
     }
   }
 
-  Future<void> savePickerImage(String filePath) async {
+  Future<void> savePickerImage(
+    String filePath,
+    double width,
+    double height,
+  ) async {
     try {
       final fileName = p.basenameWithoutExtension(filePath);
       final ext = ImageCameraUtils.getFileExtensionFromPath(filePath);
-      final directory = await PickerImageManager.getCaoGaoRelative();
       final fileFormat = '$fileName.$ext';
-      final fullPath = p.join(directory.path, fileFormat);
+      final fullPath = p.join(PickerImageManager.cavalsPath, fileFormat);
 
       /// 将临时保存的图片，保存到这新的路径下
       await copyImageFilePath(fromPath: filePath, toPath: fullPath);
+
+      if (onUploadSuccess != null) {
+        onUploadSuccess!(fileFormat, width, height);
+      }
 
       debugPrint('========>>>流程支撑完成=====$fullPath');
       await PickerImageManager.deleteDirectory();
