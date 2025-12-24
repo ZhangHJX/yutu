@@ -4,7 +4,6 @@ import 'package:voicetemplate/ui/widgets/index.dart';
 import 'package:voicetemplate/ui/utils/file/index.dart';
 import 'package:voicetemplate/ui/model/index.dart';
 import 'package:flutter/material.dart';
-import './model/image_list_models.dart';
 import 'dart:io';
 
 //  SmartDialog.dismiss(status: SmartStatus.loading);
@@ -27,6 +26,9 @@ class ImageLogic extends GetxController {
 
   // 是否正在刷新
   final RxBool isRefreshing = false.obs;
+
+  // 是否还有更多
+  final RxBool hasMore = false.obs;
 
   @override
   void onInit() {
@@ -60,11 +62,11 @@ class ImageLogic extends GetxController {
 
     try {
       final result = await http.get(
-        '/user/material/index?page=1&limit=10',
+        '/user/material/index',
+        query: {'page': currentPage, 'limit': 10},
         withToken: true,
         showErrorToast: false,
       );
-      debugPrint('获取到的图片列表地址==${result.code}====${result.data}');
 
       if (result.code == 0 && result.data != null) {
         final listModel = ImageListModels.fromJson(result.data);
@@ -74,9 +76,13 @@ class ImageLogic extends GetxController {
         if (listModel.items.isNotEmpty) {
           imageList.addAll(listModel.items);
           currentPage++;
+          hasMore.value = true;
+        } else {
+          hasMore.value = false;
         }
       }
     } catch (e) {
+      hasMore.value = false;
       debugPrint('加载图片列表失败: $e');
     } finally {
       isLoading.value = false;
@@ -135,7 +141,7 @@ class ImageLogic extends GetxController {
         showErrorToast: false,
         withToken: true,
       );
-      if (result.code == 0) {
+      if (result.code == 0 && result.data != null) {
         String mimeType = mimeTypeMap[fileType] ?? "";
         await uploadFile(
           result.data!,
@@ -177,6 +183,7 @@ class ImageLogic extends GetxController {
         ),
         useBaseUrl: false,
         withToken: true,
+        showErrorToast: false,
         isNake: true,
       );
 
@@ -190,7 +197,7 @@ class ImageLogic extends GetxController {
           height,
         );
       } else {
-        showToast("上传失败"); // 上传失败
+        showToast("图片上传失败"); // 上传失败
         await PickerImageManager.deleteDirectory();
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
@@ -215,13 +222,15 @@ class ImageLogic extends GetxController {
         data: {"img_id": '$resourceId', "img_file_size": '$fileSize'},
         showErrorToast: false,
       );
-      if (result.code == 0) {
+      debugPrint('========>>>把获取到的信息传给后台=${result.code}==');
+      if (result.code == 0 || result.code == 200) {
         await savePickerImage(filePath, width, height);
       } else {
         await PickerImageManager.deleteDirectory();
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
     } catch (e) {
+      showToast("图片上传失败");
       await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss(status: SmartStatus.loading);
     }
@@ -249,7 +258,7 @@ class ImageLogic extends GetxController {
       await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {
-      showToast("图片保存失败");
+      showToast("图片上传失败");
       await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss(status: SmartStatus.loading);
     }

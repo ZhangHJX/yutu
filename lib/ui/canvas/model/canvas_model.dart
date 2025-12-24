@@ -9,6 +9,9 @@ part 'canvas_model.g.dart';
 @JsonSerializable(explicitToJson: true)
 class CanvasModel {
   String id;
+  String ratio;
+  String clarity;
+
   double x;
   double y;
   double scale;
@@ -32,10 +35,12 @@ class CanvasModel {
 
   CanvasModel({
     this.id = '',
-    this.width = 1080,
-    this.height = 1080,
+    this.ratio = '',
+    this.clarity = '1',
     this.x = 0.0,
     this.y = 0.0,
+    this.width = 1080,
+    this.height = 1080,
     this.scale = 1.0,
     this.fillColor = '#FFFFFF',
     this.fillAlpha = 1.0,

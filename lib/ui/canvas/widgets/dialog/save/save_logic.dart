@@ -1,16 +1,42 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:voicetemplate/ui/canvas/pages/canvals/canvals_controller.dart';
+import 'dart:typed_data';
+import 'package:voicetemplate/ui/model/index.dart';
 
 class SaveLogic extends GetxController {
+  // 创建一个回调
+  Function()? handleImageCallBack;
+
+  // 获取画布控制器
+  final canvalsLogic = Get.find<CanvalsController>();
+
+  /// 画布的图片信息
+  late final Uint8List? canvalsImage;
+  int imageMemorySize = 0; // 单位字节 kb
+  int imageResourceId = 0; // 图片的id
+
+  /// 本地文件相关信息
+  int fileMemorySize = 0; // 单位字节 kb
+  int fileResourceId = 0; // 文件的id
+
+  //
+  final tempTitle = ''.obs;
+  final descript = ''.obs;
+
   // 文本控制器
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
   final scenarioDropdownKey = GlobalKey();
 
-  // 状态
-  final selectedTags = <String>[].obs;
+  /// 展开和关闭弹框
   final showScenarioDropdown = false.obs;
+
+  ///应用场景
   final selectedScenario = '房间宣传'.obs;
+
+  ///风格标签
+  final selectedTags = <String>[].obs;
 
   // 常量数据
   List<String> scenarios = [
@@ -35,8 +61,9 @@ class SaveLogic extends GetxController {
 
   @override
   void onClose() {
-    titleController.dispose();
-    descriptionController.dispose();
+    // titleController.dispose();
+    // descriptionController.dispose();
+    debugPrint("-保存模版----onClose------");
     super.onClose();
   }
 
@@ -70,37 +97,173 @@ class SaveLogic extends GetxController {
     showScenarioDropdown.value = false;
   }
 
-  /// 保存为草稿
-  void saveAsDraft() {
-    debugPrint("保存为草稿");
-    // TODO: 实现保存为草稿的逻辑
-  }
-
   /// 保存模版
-  void saveTemplate() {
+  void saveTemplate() async {
     if (titleController.text.trim().isEmpty) {
-      SmartDialog.showToast('请输入模版标题');
+      showToast('请输入模版标题');
       return;
     }
-
     if (descriptionController.text.trim().isEmpty) {
-      SmartDialog.showToast('请输入模版描述');
+      showToast('请输入模版描述');
       return;
     }
-
     if (selectedTags.isEmpty) {
       SmartDialog.showToast('请至少选择一个风格标签');
       return;
     }
 
-    // TODO: 实现保存逻辑
-    debugPrint('保存模版:');
-    debugPrint('标题: ${titleController.text}');
-    debugPrint('描述: ${descriptionController.text}');
-    debugPrint('场景: ${selectedScenario.value}');
-    debugPrint('标签: ${selectedTags.toList()}');
+    final canvalsModel = canvalsLogic.buildSnapshot();
+    if (canvalsModel == null) {
+      showToast('画布信息不存在');
+      return;
+    }
 
-    SmartDialog.showToast('模版保存成功');
-    SmartDialog.dismiss();
+    if (canvalsImage == null) {
+      showToast('画布截图未成功');
+      return;
+    }
+
+    showLoading("上传中");
+    // 获取图片的的上传路径
+    final result = await http.post<UploadOssModel>(
+      '/upload/generateUploadUrl',
+      data: {
+        "type": "material_user",
+        "file_type": 'png',
+        "field_type": "material_user_img",
+      },
+      converter: UploadOssModel.fromJson,
+      showErrorToast: false,
+      withToken: true,
+    );
+    if (result.code == 0 && result.data != null) {
+      await uploadImageFile(result.data!, canvalsImage!);
+    }
+  }
+
+  /// 上传图片到服务器
+  Future<void> uploadImageFile(UploadOssModel ossModel, Uint8List bytes) async {
+    try {
+      String mimeType = mimeTypeMap["png"] ?? "";
+      final res = await http.put(
+        ossModel.signUrl,
+        data: bytes,
+        options: Options(
+          contentType: mimeType, // ✅ 正常 MIME
+          headers: {
+            Headers.contentLengthHeader: bytes.length, // 很多存储要求带上
+          },
+        ),
+        useBaseUrl: false,
+        withToken: true,
+        showErrorToast: false,
+        isNake: true,
+      );
+
+      /// 上传成功
+      if (res.isSuccess) {
+        imageMemorySize = (bytes.length / 1024).ceil(); // 向上取整
+        imageResourceId = ossModel.resourceId;
+        await handleZipResource();
+      } else {
+        debugPrint('图片上传失败----${res.code}');
+        showToast("保存失败");
+        SmartDialog.dismiss(status: SmartStatus.loading);
+      }
+    } catch (e) {
+      showToast("保存失败");
+      debugPrint('图片上传失败---$e');
+      SmartDialog.dismiss(status: SmartStatus.loading);
+    }
+  }
+
+  /// 处理压缩包资源
+  Future<void> handleZipResource() async {
+    final result = await http.post<UploadOssModel>(
+      '/upload/generateUploadUrl',
+      data: {
+        "type": "material_user",
+        "file_type": 'zip',
+        "field_type": "material_user_img",
+      },
+      converter: UploadOssModel.fromJson,
+      showErrorToast: false,
+      withToken: true,
+    );
+  }
+
+  /// 上传资源压缩包到服务器
+  Future<void> uploadZipFile(UploadOssModel ossModel, Uint8List bytes) async {
+    try {
+      String mimeType = mimeTypeMap["zip"] ?? "";
+      final res = await http.put(
+        ossModel.signUrl,
+        data: bytes,
+        options: Options(
+          contentType: mimeType, // ✅ 正常 MIME
+          headers: {
+            Headers.contentLengthHeader: bytes.length, // 很多存储要求带上
+          },
+        ),
+        useBaseUrl: false,
+        withToken: true,
+        showErrorToast: false,
+        isNake: true,
+      );
+
+      /// 上传成功
+      if (res.isSuccess) {
+        // await requestImage(ossModel.resourceId, fileSize, width, height);
+      } else {
+        showToast("文件上传失败");
+        debugPrint('文件上传失败"');
+        SmartDialog.dismiss(status: SmartStatus.loading);
+      }
+    } catch (e) {
+      showToast("文件上传失败");
+      debugPrint('图片上传失败---$e');
+      SmartDialog.dismiss(status: SmartStatus.loading);
+    }
+  }
+
+  Future<void> saveTempCavals(UploadOssModel ossModel, Uint8List bytes) async {
+    try {
+      final canvalsModel = canvalsLogic.buildSnapshot();
+      final result = await http.post(
+        '/design/store',
+        data: {
+          "uuid": canvalsModel?.id,
+          "edit_time": '${canvalsModel?.timestamp}',
+          "title": tempTitle.value,
+          "desc": descript.value,
+          "canvas": canvalsModel?.ratio,
+          "canvas_size": '${canvalsModel?.width}:${canvalsModel?.height}',
+          "is_clear": canvalsModel?.clarity,
+          "scene_id": '1.0',
+          "tag_ids": ['1.0', '1.0', '1.0'],
+          "img_id": '$imageResourceId',
+          "zip_id": '$fileResourceId',
+          "img_file_size": '$imageMemorySize',
+          "zip_file_size": "$fileMemorySize",
+        },
+        showErrorToast: false,
+      );
+      debugPrint('========>>>把获取到的信息传给后台=${result.code}==');
+      if (result.code == 0) {
+      } else {
+        showToast("模版保存失败");
+        debugPrint('模版保存失败');
+      }
+      SmartDialog.dismiss(status: SmartStatus.loading);
+    } catch (e) {
+      showToast("模版保存失败");
+      debugPrint('模版保存失败--$e');
+      SmartDialog.dismiss(status: SmartStatus.loading);
+    }
+  }
+
+  /// 保存为草稿
+  void saveAsDraft() {
+    debugPrint("保存为草稿");
   }
 }

@@ -33,4 +33,5 @@ const String defaultConfigStyleName = '系统默认';
 const String fontDialog = 'TextPropertyDialogController';
 
 /// 图片相关全局变量
-const String imageDialog = 'CanvalsImageLogic';
+const String imageDialog = 'CanvalsImageDialog';
+const String saveDialog = 'CanvalsSaveTemplateDialog';

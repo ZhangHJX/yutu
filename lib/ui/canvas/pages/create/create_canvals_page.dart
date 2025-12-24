@@ -137,6 +137,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
           : result["hdH"].toDouble();
       CanvasModel canvalsModel = CanvasModel(
         id: uuid.v4(),
+        ratio: ratio,
+        clarity: _selectedClarity == 0 ? '1' : '2',
         width: width,
         height: height,
       );
@@ -157,6 +159,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
       double height = double.parse(_heightController.text);
       CanvasModel canvalsModel = CanvasModel(
         id: uuid.v4(),
+        ratio: '$width:$height',
         width: width,
         height: height,
       );

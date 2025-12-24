@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/index.dart';
@@ -439,6 +441,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
         },
       );
     }
+  }
+
+  @override
+  Future<Uint8List?> getCurrentCanvals() async {
+    final imageBytes = await _screenshotController.capture(pixelRatio: 3.0);
+    return imageBytes;
   }
 
   /// 构建缩放控制浮框（当缩放比例不是100%时显示）

@@ -2,11 +2,39 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../../../../widgets/gradient_text.dart';
+import 'dart:typed_data';
 import 'save_logic.dart';
 
-class CanvalsSaveTemplateDialog extends StatelessWidget {
-  CanvalsSaveTemplateDialog({super.key});
-  final logic = Get.put(SaveLogic());
+class CanvalsSaveTemplateDialog extends StatefulWidget {
+  final Future<Uint8List?> Function()? handleImageCallBack;
+
+  const CanvalsSaveTemplateDialog({super.key, this.handleImageCallBack});
+
+  @override
+  State<CanvalsSaveTemplateDialog> createState() =>
+      _CanvalsSaveTemplateDialogState();
+}
+
+class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
+  final logic = Get.put(SaveLogic(), tag: saveDialog);
+
+  @override
+  void initState() {
+    super.initState();
+    logic.handleImageCallBack = () async {
+      if (widget.handleImageCallBack != null) {
+        logic.canvalsImage = await widget.handleImageCallBack!();
+      }
+    };
+  }
+
+  @override
+  void dispose() {
+    if (Get.isRegistered<SaveLogic>(tag: saveDialog)) {
+      Get.delete<SaveLogic>(tag: saveDialog, force: true);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -166,13 +194,14 @@ class CanvalsSaveTemplateDialog extends StatelessWidget {
                                                 vertical: 12.w,
                                               ),
                                               decoration: BoxDecoration(
-                                                color:
-                                                    logic
-                                                            .selectedScenario
-                                                            .value ==
-                                                        scenario
-                                                    ? "#DCEDFE".color
-                                                    : Colors.white,
+                                                // color:
+                                                //     logic
+                                                //             .selectedScenario
+                                                //             .value ==
+                                                //         scenario
+                                                //     ? "#DCEDFE".color
+                                                //     : Colors.white,
+                                                color: Colors.red,
                                                 borderRadius:
                                                     BorderRadius.circular(8.w),
                                               ),

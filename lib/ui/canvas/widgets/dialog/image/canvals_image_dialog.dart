@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'image_logic.dart';
 import 'model/image_list_models.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'manager/canvals_image_manager.dart';
 
 class CanvalsImageDialog extends StatefulWidget {
   final Function(String imageUrl, double? width, double? height)?
   onImageSelected;
   final BuildContext currentContext;
-
   const CanvalsImageDialog(
     this.currentContext, {
     super.key,
@@ -21,8 +22,13 @@ class CanvalsImageDialog extends StatefulWidget {
 class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
   final logic = Get.put(ImageLogic(), tag: imageDialog);
 
+  /// 当前选中的素材索引（单选）
+  int? _selectedIndex;
+  late EasyRefreshController _controller;
+
   @override
   void dispose() {
+    _controller.dispose();
     if (Get.isRegistered<ImageLogic>(tag: imageDialog)) {
       Get.delete<ImageLogic>(tag: imageDialog, force: true);
     }
@@ -32,6 +38,10 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
   @override
   void initState() {
     super.initState();
+    _controller = EasyRefreshController(
+      controlFinishRefresh: true,
+      controlFinishLoad: true,
+    );
     logic.onUploadSuccess = (String imagePath, double width, double height) {
       if (widget.onImageSelected != null) {
         widget.onImageSelected!(imagePath, width, height);
@@ -117,70 +127,88 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
   }
 
   Widget _buildListMaterial() {
-    return Container(
-      padding: EdgeInsets.only(top: 8.w, bottom: 5.w, left: 19.w, right: 19.w),
-      height: 231.w,
-      child: Obx(() {
-        return EasyRefresh(
+    return Obx(() {
+      return Container(
+        padding: EdgeInsets.only(
+          top: 8.w,
+          bottom: 5.w,
+          left: 19.w,
+          right: 19.w,
+        ),
+        height: 231.w,
+        child: EasyRefresh(
+          clipBehavior: Clip.none,
+          controller: _controller,
+          header: ClassicHeader(
+            showMessage: false,
+            triggerWhenReach: true,
+            dragText: '松开刷新',
+            readyText: '记载中...',
+            processingText: '记载中...',
+            processedText: '刷新完成',
+          ),
+          footer: ClassicFooter(
+            showMessage: false,
+            triggerWhenReach: true,
+            dragText: '上拉加载',
+            processingText: '加载中...',
+            processedText: '加载完成',
+            noMoreText: '没有更多了',
+          ),
+
           onRefresh: () async {
             await logic.onRefresh();
           },
-          onLoad: () async {
-            await logic.onLoad();
-          },
-          child: logic.imageList.isEmpty && !logic.isRefreshing.value
-              ? Center(
-                  child: Text(
-                    '暂无素材',
-                    style: TextStyle(fontSize: 14.w, color: "#999999".color),
-                  ),
-                )
-              : GridView.builder(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 8.w,
-                  ),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3, // 一排3个
-                    crossAxisSpacing: 8.w,
-                    mainAxisSpacing: 8.w,
-                    childAspectRatio: 1.0, // 正方形
-                  ),
-                  itemCount: logic.imageList.length,
-                  itemBuilder: (context, index) {
-                    // 加载更多指示器
-                    if (index == logic.imageList.length) {
-                      return Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(8.w),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.w,
-                            color: "#9082FF".color,
-                          ),
-                        ),
-                      );
-                    }
-                    final model = logic.imageList[index];
-                    return _buildImageItem(model);
+          onLoad: logic.hasMore.value
+              ? () async {
+                  await logic.onLoad();
+                }
+              : null,
+          child: Obx(() {
+            final list = logic.imageList;
+
+            return MasonryGridView.count(
+              crossAxisCount: 3, // 两列瀑布流
+              mainAxisSpacing: 12.w,
+              crossAxisSpacing: 9.w,
+              padding: EdgeInsets.zero,
+              itemCount: list.length,
+              itemBuilder: (context, index) {
+                final model = list[index];
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    // 根据模型中的原始宽高比例，计算当前 item 的高度
+                    final originWidth = double.tryParse(model.width) ?? 1;
+                    final originHeight = double.tryParse(model.height) ?? 1;
+                    final safeWidth = originWidth <= 0 ? 1 : originWidth;
+                    final safeHeight = originHeight <= 0 ? 1 : originHeight;
+                    final itemWidth = constraints.maxWidth;
+                    final ratio = safeHeight / safeWidth; // 高 / 宽
+                    final itemHeight = itemWidth * ratio;
+                    return SizedBox(
+                      height: itemHeight,
+                      child: _buildImageItem(model, index),
+                    );
                   },
-                ),
-        );
-      }),
-    );
+                );
+              },
+            );
+          }),
+        ),
+      );
+    });
   }
 
-  /// 构建单个图片item
-  Widget _buildImageItem(ImageModel model) {
+  /// 构建单个图片 item
+  Widget _buildImageItem(ImageModel model, int index) {
+    final bool isSelected = _selectedIndex == index;
+
     return GestureDetector(
       onTap: () {
-        // 处理图片选择逻辑
-        debugPrint('选中图片: ${model.image}');
-        // 调用回调，将图片添加到画布
-        if (widget.onImageSelected != null) {
-          // widget.onImageSelected!(model.image, model.width, model.height);
-          // 关闭对话框
-          SmartDialog.dismiss();
-        }
+        // 更新单选选中状态
+        setState(() {
+          _selectedIndex = index;
+        });
       },
       child: Container(
         decoration: BoxDecoration(
@@ -215,17 +243,18 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
                 ),
               ),
 
-              //选中状态
-              Positioned(
-                right: 4.w,
-                top: 6.w,
-                child: Image.asset(
-                  'assets/images/canvals/image_item_select.png',
-                  width: 16.w,
-                  height: 16.w,
-                  fit: BoxFit.cover,
+              // 选中状态（如果后续有选中逻辑，可以在这里控制显示）
+              if (isSelected)
+                Positioned(
+                  right: 4.w,
+                  top: 6.w,
+                  child: Image.asset(
+                    'assets/images/canvals/image_item_select.png',
+                    width: 16.w,
+                    height: 16.w,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -312,7 +341,40 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
               colors: ['#C86CFF'.color, '#5B98FF'.color],
             ),
             borderRadius: 22.5.w,
-            onPressed: () {},
+            onPressed: () async {
+              final index = _selectedIndex;
+              final list = logic.imageList;
+
+              if (index == null || index < 0 || index >= list.length) {
+                showToast('请选择一张图片');
+                return;
+              }
+
+              final model = list[index];
+              final double width = double.tryParse(model.width) ?? 200.0;
+              final double height = double.tryParse(model.height) ?? 200.0;
+
+              try {
+                showLoading('正在添加图片');
+
+                // 统一由管理器处理“是否已下载 + 拷贝到 cavals/images”
+                final String fileName = await CanvalsImageManager.instance
+                    .ensureImageInCanvasImages(model.image);
+
+                // 回调到外部，在画布中新增图片
+                if (widget.onImageSelected != null) {
+                  widget.onImageSelected!(fileName, width, height);
+                }
+
+                // 关闭当前图片选择弹窗
+                SmartDialog.dismiss();
+              } catch (e, stackTrace) {
+                debugPrint('添加图片到画布失败: $e\n$stackTrace');
+                showToast('添加图片失败，请稍后重试');
+              } finally {
+                SmartDialog.dismiss(status: SmartStatus.loading);
+              }
+            },
           ),
         ],
       ),
