@@ -20,11 +20,14 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
   @override
   void initState() {
     super.initState();
-    logic.handleImageCallBack = () async {
-      if (widget.handleImageCallBack != null) {
-        logic.canvalsImage = await widget.handleImageCallBack!();
-      }
-    };
+    loadCanvalsImage();
+  }
+
+  void loadCanvalsImage() async {
+    if (widget.handleImageCallBack != null) {
+      logic.canvalsImage = await widget.handleImageCallBack!();
+      debugPrint("-----吼吼吼吼----${logic.canvalsImage}-----");
+    }
   }
 
   @override
@@ -164,8 +167,6 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                                   elevation: 8.w,
                                   borderRadius: BorderRadius.circular(12.w),
                                   child: Container(
-                                    color: Colors.white,
-
                                     constraints: BoxConstraints(
                                       maxHeight: 200.w, // 限制最大高度
                                     ),
@@ -295,38 +296,40 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
 
         SizedBox(height: 2.w),
 
-        GestureDetector(
-          onTap: logic.toggleScenarioDropdown,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18.w),
-              border: Border.all(color: "#FFE6E6E6".color, width: 1.w),
-            ),
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 13.w),
-            margin: EdgeInsets.only(right: 8.w),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  logic.sceneName.value,
-                  style: TextStyle(
-                    fontSize: 14.w,
-                    color: "#FF242424".color,
-                    fontWeight: FontWeight.w600,
+        Obx(() {
+          return GestureDetector(
+            onTap: logic.toggleScenarioDropdown,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18.w),
+                border: Border.all(color: "#FFE6E6E6".color, width: 1.w),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 13.w),
+              margin: EdgeInsets.only(right: 8.w),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    logic.sceneName.value,
+                    style: TextStyle(
+                      fontSize: 14.w,
+                      color: "#FF242424".color,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                Icon(
-                  logic.showScenarioDropdown.value
-                      ? Icons.keyboard_arrow_up
-                      : Icons.keyboard_arrow_down,
-                  size: 20.w,
-                  color: "#ff111111 ".color,
-                ),
-              ],
+                  Icon(
+                    logic.showScenarioDropdown.value
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    size: 20.w,
+                    color: "#ff111111 ".color,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }
@@ -359,37 +362,42 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
         SizedBox(height: 10.w),
 
         // 建议标签
-        Wrap(
-          spacing: 8.w,
-          runSpacing: 8.w,
-          children: logic.suggestedTags.map((model) {
-            return GestureDetector(
-              onTap: () => logic.toggleTag(model),
-              child: Container(
-                padding: EdgeInsets.only(
-                  left: 9.5.w,
-                  right: 9.w,
-                  top: 5.w,
-                  bottom: 5.w,
+        Obx(() {
+          return Wrap(
+            spacing: 8.w,
+            runSpacing: 8.w,
+            children: logic.suggestedTags.map((model) {
+              return GestureDetector(
+                onTap: () => logic.toggleTag(model),
+                child: Container(
+                  padding: EdgeInsets.only(
+                    left: 9.5.w,
+                    right: 9.w,
+                    top: 5.w,
+                    bottom: 5.w,
+                  ),
+                  decoration: BoxDecoration(
+                    color: "#FFF0F0F0".color,
+                    borderRadius: BorderRadius.circular(12.w),
+                  ),
+                  child: GradientText(
+                    model.name,
+                    colors: [
+                      Color(0xFFC86CFF), // #C86CFF
+                      Color(0xFF5B98FF), // #5B98FF
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    style: TextStyle(
+                      fontSize: 12.w,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-                decoration: BoxDecoration(
-                  color: "#FFF0F0F0".color,
-                  borderRadius: BorderRadius.circular(12.w),
-                ),
-                child: GradientText(
-                  model.name,
-                  colors: [
-                    Color(0xFFC86CFF), // #C86CFF
-                    Color(0xFF5B98FF), // #5B98FF
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  style: TextStyle(fontSize: 12.w, fontWeight: FontWeight.w500),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
+              );
+            }).toList(),
+          );
+        }),
 
         SizedBox(height: 13.w),
 

@@ -10,9 +10,6 @@ import 'package:voicetemplate/file/index.dart';
 import './model/screen_model.dart';
 
 class SaveLogic extends GetxController {
-  // 创建一个回调
-  Function()? handleImageCallBack;
-
   // 获取画布控制器
   final canvalsLogic = Get.find<CanvalsController>();
 
@@ -25,14 +22,9 @@ class SaveLogic extends GetxController {
   int fileMemorySize = 0; // 单位字节 kb
   int fileResourceId = 0; // 文件的id
 
-  //
-  final tempTitle = ''.obs;
-  final descript = ''.obs;
-
   // 文本控制器
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
-  final scenarioDropdownKey = GlobalKey();
 
   ///应用场景
   final scenarios = <ScreenItemModel>[].obs;
@@ -45,8 +37,8 @@ class SaveLogic extends GetxController {
 
   @override
   void onClose() {
-    // titleController.dispose();
-    // descriptionController.dispose();
+    titleController.dispose();
+    descriptionController.dispose();
     debugPrint("-保存模版----onClose------");
     super.onClose();
   }
@@ -135,6 +127,10 @@ class SaveLogic extends GetxController {
       showToast('请输入模版描述');
       return;
     }
+    if (sceneName.isEmpty) {
+      SmartDialog.showToast('应用场景不能为空');
+      return;
+    }
     if (selectedTags.isEmpty) {
       SmartDialog.showToast('请至少选择一个风格标签');
       return;
@@ -145,23 +141,32 @@ class SaveLogic extends GetxController {
       showToast('画布信息不存在');
       return;
     }
-
     if (canvalsImage == null) {
       showToast('画布截图未成功');
       return;
     }
-
     showLoading("上传中");
-    // 获取图片的的上传路径
-    final result = await http.post<UploadOssModel>(
-      '/upload/generateUploadUrl',
-      data: {"type": "design", "file_type": 'png', "field_type": "design_img"},
-      converter: UploadOssModel.fromJson,
-      showErrorToast: false,
-      withToken: true,
-    );
-    if (result.code == 0 && result.data != null) {
-      await uploadImageFile(result.data!, canvalsImage!);
+    try {
+      // 获取图片的的上传路径
+      final result = await http.post<UploadOssModel>(
+        '/upload/generateUploadUrl',
+        data: {
+          "type": "design",
+          "file_type": 'png',
+          "field_type": "design_img",
+        },
+        converter: UploadOssModel.fromJson,
+        showErrorToast: false,
+        withToken: true,
+      );
+      if (result.code == 0 && result.data != null) {
+        await uploadImageFile(result.data!, canvalsImage!);
+      } else {
+        SmartDialog.dismiss(status: SmartStatus.loading);
+      }
+    } catch (e) {
+      debugPrint('获取图片信息报错---$e');
+      SmartDialog.dismiss(status: SmartStatus.loading);
     }
   }
 
@@ -258,29 +263,35 @@ class SaveLogic extends GetxController {
 
   Future<void> saveTempCavals(String filePath) async {
     try {
+      final screenModel = scenarios.firstWhere(
+        (e) => e.name == sceneName.value,
+      );
       final canvalsModel = canvalsLogic.buildSnapshot();
       final result = await http.post(
         '/design/store',
         data: {
           "uuid": canvalsModel?.id,
           "edit_time": '${canvalsModel?.timestamp}',
-          "title": tempTitle.value,
-          "desc": descript.value,
+          "title": titleController.text.trim(),
+          "desc": descriptionController.text.trim(),
           "canvas": canvalsModel?.ratio,
           "canvas_size": '${canvalsModel?.width}:${canvalsModel?.height}',
           "is_clear": canvalsModel?.clarity,
-          "scene_id": '${123456}',
-          "tag_ids": ['1.0', '1.0', '1.0'],
+          "scene_id": '${screenModel.id}',
+          "tag_ids": selectedTags.isEmpty
+              ? ''
+              : selectedTags.map((e) => e.id).join(','),
           "img_id": '$imageResourceId',
           "zip_id": '$fileResourceId',
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
         },
         showErrorToast: false,
+        withToken: true,
       );
-      debugPrint('========>>>把获取到的信息传给后台=${result.code}==');
       if (result.code == 0) {
         showToast("模版保存成功");
+        Get.back();
         FileManager.deleteFileByPath(filePath);
       } else {
         showToast("模版保存失败");

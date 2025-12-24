@@ -141,7 +141,7 @@ class ImageLogic extends GetxController {
         showErrorToast: false,
         withToken: true,
       );
-      if (result.code == 0 && result.data != null) {
+      if ((result.code == 0 || result.code == 200) && result.data != null) {
         String mimeType = mimeTypeMap[fileType] ?? "";
         await uploadFile(
           result.data!,
