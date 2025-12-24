@@ -28,6 +28,7 @@ class SaveLogic extends GetxController {
 
   ///应用场景
   final scenarios = <ScreenItemModel>[].obs;
+  List<String> itemArray = <String>[];
   final showScenarioDropdown = false.obs;
   RxString sceneName = ''.obs;
 
@@ -60,9 +61,10 @@ class SaveLogic extends GetxController {
       );
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
-        scenarios.value = listModel.items;
         if (listModel.items.isNotEmpty) {
+          scenarios.value = listModel.items;
           sceneName.value = listModel.items.first.name;
+          itemArray = scenarios.map((e) => e.name).toList();
         }
       }
     } catch (e) {

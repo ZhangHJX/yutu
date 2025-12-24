@@ -1,6 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
+
 import '../../../../widgets/gradient_text.dart';
 import 'dart:typed_data';
 import 'save_logic.dart';
@@ -17,6 +18,9 @@ class CanvalsSaveTemplateDialog extends StatefulWidget {
 
 class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
   final logic = Get.put(SaveLogic(), tag: saveDialog);
+  // 用于定位下拉列表的目标组件
+  final GlobalKey _scenarioDropdownKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +52,7 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
           // 键盘弹出时关闭下拉列表
           if (isKeyboardVisible && logic.showScenarioDropdown.value) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
+              SmartDialog.dismiss(tag: 'scenario_dropdown');
               logic.closeScenarioDropdown();
             });
           }
@@ -109,119 +114,50 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
 
                 // 可滚动的内容区域
                 Expanded(
-                  child: Stack(
-                    children: [
-                      NotificationListener<ScrollNotification>(
-                        onNotification: (notification) {
-                          // 滚动时关闭下拉列表
-                          if (notification is ScrollUpdateNotification &&
-                              logic.showScenarioDropdown.value) {
-                            logic.closeScenarioDropdown();
-                          }
-                          return false;
-                        },
-                        child: SingleChildScrollView(
-                          padding: EdgeInsets.only(left: 16.w, right: 16.w),
-                          child: Column(
-                            children: [
-                              // 模版标题
-                              _buildInputField(
-                                label: '*模版标题',
-                                controller: logic.titleController,
-                                hintText: '输入模版标题',
-                              ),
-
-                              SizedBox(height: 12.w),
-
-                              // 模版描述
-                              _buildInputField(
-                                label: '*模版描述',
-                                controller: logic.descriptionController,
-                                hintText: '输入模版描述',
-                              ),
-
-                              SizedBox(height: 12.w),
-
-                              // 应用场景
-                              _buildScenarioDropdown(),
-
-                              SizedBox(height: 12.w),
-
-                              // 风格标签
-                              _buildTagsSection(),
-
-                              SizedBox(height: 9.w),
-                            ],
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      // 滚动时关闭下拉列表
+                      if (notification is ScrollUpdateNotification &&
+                          logic.showScenarioDropdown.value) {
+                        SmartDialog.dismiss(tag: 'scenario_dropdown');
+                        logic.closeScenarioDropdown();
+                      }
+                      return false;
+                    },
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.only(left: 16.w, right: 16.w),
+                      child: Column(
+                        children: [
+                          // 模版标题
+                          _buildInputField(
+                            label: '*模版标题',
+                            controller: logic.titleController,
+                            hintText: '输入模版标题',
                           ),
-                        ),
-                      ),
 
-                      // 下拉列表 - 浮动在弹框上方
-                      Obx(() {
-                        return logic.showScenarioDropdown.value
-                            ? Positioned(
-                                left: 16.w,
-                                right: 16.w,
-                                top: 250.w, // 应用场景输入框下方位置
-                                child: Material(
-                                  elevation: 8.w,
-                                  borderRadius: BorderRadius.circular(12.w),
-                                  child: Container(
-                                    constraints: BoxConstraints(
-                                      maxHeight: 200.w, // 限制最大高度
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8.w),
-                                      border: Border.all(
-                                        color: Colors.grey.shade300,
-                                      ),
-                                    ),
-                                    child: SingleChildScrollView(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: logic.scenarios.map((model) {
-                                          return GestureDetector(
-                                            onTap: () {
-                                              logic.selectScenario(model.name);
-                                            },
-                                            child: Container(
-                                              width: double.infinity,
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 12.w,
-                                                vertical: 12.w,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color:
-                                                    logic.sceneName.value ==
-                                                        model.name
-                                                    ? "#DCEDFE".color
-                                                    : Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(8.w),
-                                              ),
-                                              child: Text(
-                                                model.name,
-                                                style: TextStyle(
-                                                  fontSize: 14.w,
-                                                  color:
-                                                      logic.sceneName.value ==
-                                                          model.name
-                                                      ? "#3C7BFF".color
-                                                      : "#727272".color,
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : const SizedBox.shrink();
-                      }),
-                    ],
+                          SizedBox(height: 12.w),
+
+                          // 模版描述
+                          _buildInputField(
+                            label: '*模版描述',
+                            controller: logic.descriptionController,
+                            hintText: '输入模版描述',
+                          ),
+
+                          SizedBox(height: 12.w),
+
+                          // 应用场景
+                          _buildScenarioDropdown(),
+
+                          SizedBox(height: 12.w),
+
+                          // 风格标签
+                          _buildTagsSection(),
+
+                          SizedBox(height: 9.w),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
 
@@ -298,7 +234,8 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
 
         Obx(() {
           return GestureDetector(
-            onTap: logic.toggleScenarioDropdown,
+            key: _scenarioDropdownKey,
+            onTap: () => _showScenarioDropdown(),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -332,6 +269,92 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
         }),
       ],
     );
+  }
+
+  /// 使用 SmartDialog.showAttach 显示下拉列表
+  void _showScenarioDropdown() {
+    FocusManager.instance.primaryFocus?.unfocus(); // 先收起键盘
+
+    if (logic.showScenarioDropdown.value) {
+      // 如果已经显示，则关闭
+      SmartDialog.dismiss(tag: 'scenario_dropdown');
+      logic.closeScenarioDropdown();
+    } else {
+      // 显示下拉列表
+      logic.showScenarioDropdown.value = true;
+
+      SmartDialog.showAttach(
+        targetContext: _scenarioDropdownKey.currentContext!,
+        alignment: Alignment.bottomCenter,
+        animationType: SmartAnimationType.centerFade_otherSlide,
+        animationTime: Duration(milliseconds: 200),
+        maskColor: Colors.transparent,
+        clickMaskDismiss: true,
+        tag: 'scenario_dropdown',
+        builder: (dialogContext) => Padding(
+          padding: const EdgeInsets.all(3.0),
+          child: Container(
+            width: ScreenTools.screenWidth - 32.w,
+            constraints: BoxConstraints(
+              maxHeight: 200.w, // 限制最大高度
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.w),
+              boxShadow: [
+                BoxShadow(
+                  color: "#CDE4FF".color,
+                  blurRadius: 5.w,
+                  spreadRadius: 0,
+                  offset: Offset(0, 1.w),
+                ),
+              ],
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: logic.scenarios.map((model) {
+                  return GestureDetector(
+                    onTap: () {
+                      logic.selectScenario(model.name);
+                      SmartDialog.dismiss(tag: 'scenario_dropdown');
+                    },
+                    child: Obx(
+                      () => Container(
+                        margin: EdgeInsets.symmetric(horizontal: 12.w),
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 12.w,
+                        ),
+                        decoration: BoxDecoration(
+                          color: logic.sceneName.value == model.name
+                              ? "#DCEDFE".color
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(8.w),
+                        ),
+                        child: Text(
+                          model.name,
+                          style: TextStyle(
+                            fontSize: 14.w,
+                            color: logic.sceneName.value == model.name
+                                ? "#3C7BFF".color
+                                : "#727272".color,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ),
+      ).then((_) {
+        // 当对话框关闭时，更新状态
+        logic.closeScenarioDropdown();
+      });
+    }
   }
 
   Widget _buildTagsSection() {

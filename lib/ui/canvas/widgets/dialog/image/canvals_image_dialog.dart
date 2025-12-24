@@ -128,13 +128,13 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
 
   Widget _buildListMaterial() {
     return Obx(() {
-      return Container(
-        padding: EdgeInsets.only(
-          top: 8.w,
-          bottom: 5.w,
-          left: 19.w,
-          right: 19.w,
-        ),
+      return SizedBox(
+        // padding: EdgeInsets.only(
+        //   top: 8.w,
+        //   bottom: 5.w,
+        //   left: 19.w,
+        //   right: 19.w,
+        // ),
         height: 231.w,
         child: EasyRefresh(
           clipBehavior: Clip.none,
@@ -164,6 +164,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
                   await logic.onLoad();
                 }
               : null,
+
           child: Obx(() {
             final list = logic.imageList;
 
@@ -171,7 +172,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
               crossAxisCount: 3, // 两列瀑布流
               mainAxisSpacing: 12.w,
               crossAxisSpacing: 9.w,
-              padding: EdgeInsets.zero,
+              padding: EdgeInsets.only(top: 10),
               itemCount: list.length,
               itemBuilder: (context, index) {
                 final model = list[index];
