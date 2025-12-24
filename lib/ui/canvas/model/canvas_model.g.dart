@@ -8,10 +8,12 @@ part of 'canvas_model.dart';
 
 CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
   id: json['id'] as String? ?? '',
-  width: (json['width'] as num?)?.toDouble() ?? 1080,
-  height: (json['height'] as num?)?.toDouble() ?? 1080,
+  ratio: json['ratio'] as String? ?? '',
+  clarity: json['clarity'] as String? ?? '1',
   x: (json['x'] as num?)?.toDouble() ?? 0.0,
   y: (json['y'] as num?)?.toDouble() ?? 0.0,
+  width: (json['width'] as num?)?.toDouble() ?? 1080,
+  height: (json['height'] as num?)?.toDouble() ?? 1080,
   scale: (json['scale'] as num?)?.toDouble() ?? 1.0,
   fillColor: json['fillColor'] as String? ?? '#FFFFFF',
   fillAlpha: (json['fillAlpha'] as num?)?.toDouble() ?? 1.0,
@@ -29,6 +31,8 @@ CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
 Map<String, dynamic> _$CanvasModelToJson(CanvasModel instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'ratio': instance.ratio,
+      'clarity': instance.clarity,
       'x': instance.x,
       'y': instance.y,
       'scale': instance.scale,

@@ -36,6 +36,23 @@ class FileManager {
     return file.exists();
   }
 
+  /// 根据文件路径删除文件
+  static Future<void> deleteFileByPath(String filePath) async {
+    final entityType = await FileSystemEntity.type(filePath);
+
+    if (entityType == FileSystemEntityType.notFound) return;
+
+    if (entityType == FileSystemEntityType.file) {
+      await File(filePath).delete();
+      return;
+    }
+
+    // 如果你也想支持传进来是目录，就用下面这句（不想支持就删掉）
+    if (entityType == FileSystemEntityType.directory) {
+      await Directory(filePath).delete(recursive: true);
+    }
+  }
+
   /// 删除文件（如不存在则直接返回）
   static Future<void> deleteFile({
     required Directory directory,

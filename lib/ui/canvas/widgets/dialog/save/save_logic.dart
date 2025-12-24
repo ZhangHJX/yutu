@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:voicetemplate/ui/canvas/pages/canvals/canvals_controller.dart';
 import 'dart:typed_data';
 import 'package:voicetemplate/ui/model/index.dart';
+import 'package:voicetemplate/file/index.dart';
+import './model/screen_model.dart';
 
 class SaveLogic extends GetxController {
   // 创建一个回调
@@ -29,35 +34,14 @@ class SaveLogic extends GetxController {
   final descriptionController = TextEditingController();
   final scenarioDropdownKey = GlobalKey();
 
-  /// 展开和关闭弹框
-  final showScenarioDropdown = false.obs;
-
   ///应用场景
-  final selectedScenario = '房间宣传'.obs;
+  final scenarios = <ScreenItemModel>[].obs;
+  final showScenarioDropdown = false.obs;
+  RxString sceneName = ''.obs;
 
   ///风格标签
-  final selectedTags = <String>[].obs;
-
-  // 常量数据
-  List<String> scenarios = [
-    '房间宣传',
-    '活动公告',
-    '歌单展示',
-    '名片模板',
-    '节日氛围',
-    '冠歌卡',
-    '冠名卡',
-  ];
-
-  final List<String> suggestedTags = [
-    '二次元',
-    '恋爱',
-    '简约',
-    '炫彩',
-    '可爱',
-    '赛博',
-    '复古',
-  ];
+  final suggestedTags = <ScreenItemModel>[].obs;
+  final selectedTags = <ScreenItemModel>[].obs;
 
   @override
   void onClose() {
@@ -67,17 +51,61 @@ class SaveLogic extends GetxController {
     super.onClose();
   }
 
+  @override
+  void onInit() async {
+    super.onInit();
+    await getSceneResource();
+    await getSuggestedTags();
+  }
+
+  /// 应用场景接口
+  Future<void> getSceneResource() async {
+    try {
+      final result = await http.post(
+        '/scene/index',
+        withToken: true,
+        showErrorToast: false,
+      );
+      if (result.code == 0 && result.data != null) {
+        final listModel = ScreenModel.fromJson(result.data);
+        scenarios.value = listModel.items;
+        if (listModel.items.isNotEmpty) {
+          sceneName.value = listModel.items.first.name;
+        }
+      }
+    } catch (e) {
+      debugPrint('获取场景数据失败: $e');
+    }
+  }
+
+  /// 风格标签
+  Future<void> getSuggestedTags() async {
+    try {
+      final result = await http.post(
+        '/tag/index',
+        withToken: true,
+        showErrorToast: false,
+      );
+      if (result.code == 0 && result.data != null) {
+        final listModel = ScreenModel.fromJson(result.data);
+        suggestedTags.value = listModel.items;
+      }
+    } catch (e) {
+      debugPrint('获取场景数据失败: $e');
+    }
+  }
+
   /// 切换标签选择状态
-  void toggleTag(String tag) {
-    if (!selectedTags.contains(tag)) {
-      selectedTags.add(tag);
+  void toggleTag(ScreenItemModel model) {
+    if (!selectedTags.contains(model)) {
+      selectedTags.add(model);
     }
   }
 
   /// 移除标签
-  void removeTag(String tag) {
+  void removeTag(ScreenItemModel model) {
     debugPrint("--移除标签---");
-    selectedTags.remove(tag);
+    selectedTags.remove(model);
   }
 
   /// 切换场景下拉框显示状态
@@ -92,8 +120,8 @@ class SaveLogic extends GetxController {
   }
 
   /// 选择场景
-  void selectScenario(String scenario) {
-    selectedScenario.value = scenario;
+  void selectScenario(String name) {
+    sceneName.value = name;
     showScenarioDropdown.value = false;
   }
 
@@ -127,11 +155,7 @@ class SaveLogic extends GetxController {
     // 获取图片的的上传路径
     final result = await http.post<UploadOssModel>(
       '/upload/generateUploadUrl',
-      data: {
-        "type": "material_user",
-        "file_type": 'png',
-        "field_type": "material_user_img",
-      },
+      data: {"type": "design", "file_type": 'png', "field_type": "design_img"},
       converter: UploadOssModel.fromJson,
       showErrorToast: false,
       withToken: true,
@@ -181,19 +205,21 @@ class SaveLogic extends GetxController {
   Future<void> handleZipResource() async {
     final result = await http.post<UploadOssModel>(
       '/upload/generateUploadUrl',
-      data: {
-        "type": "material_user",
-        "file_type": 'zip',
-        "field_type": "material_user_img",
-      },
+      data: {"type": "design", "file_type": 'zip', "field_type": "design_zip"},
       converter: UploadOssModel.fromJson,
       showErrorToast: false,
       withToken: true,
     );
+    if (result.code == 0 && result.data != null) {
+      await uploadZipFile(result.data!);
+    }
   }
 
   /// 上传资源压缩包到服务器
-  Future<void> uploadZipFile(UploadOssModel ossModel, Uint8List bytes) async {
+  Future<void> uploadZipFile(UploadOssModel ossModel) async {
+    final zipPath = await zipCavalsInDocuments();
+    final file = File(zipPath);
+    final bytes = await file.readAsBytes();
     try {
       String mimeType = mimeTypeMap["zip"] ?? "";
       final res = await http.put(
@@ -213,20 +239,24 @@ class SaveLogic extends GetxController {
 
       /// 上传成功
       if (res.isSuccess) {
-        // await requestImage(ossModel.resourceId, fileSize, width, height);
+        fileMemorySize = (bytes.length / 1024).ceil(); // 向上取整
+        fileResourceId = ossModel.resourceId;
+        await saveTempCavals(zipPath);
       } else {
         showToast("文件上传失败");
         debugPrint('文件上传失败"');
+        FileManager.deleteFileByPath(zipPath);
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
     } catch (e) {
       showToast("文件上传失败");
       debugPrint('图片上传失败---$e');
+      FileManager.deleteFileByPath(zipPath);
       SmartDialog.dismiss(status: SmartStatus.loading);
     }
   }
 
-  Future<void> saveTempCavals(UploadOssModel ossModel, Uint8List bytes) async {
+  Future<void> saveTempCavals(String filePath) async {
     try {
       final canvalsModel = canvalsLogic.buildSnapshot();
       final result = await http.post(
@@ -239,7 +269,7 @@ class SaveLogic extends GetxController {
           "canvas": canvalsModel?.ratio,
           "canvas_size": '${canvalsModel?.width}:${canvalsModel?.height}',
           "is_clear": canvalsModel?.clarity,
-          "scene_id": '1.0',
+          "scene_id": '${123456}',
           "tag_ids": ['1.0', '1.0', '1.0'],
           "img_id": '$imageResourceId',
           "zip_id": '$fileResourceId',
@@ -250,16 +280,41 @@ class SaveLogic extends GetxController {
       );
       debugPrint('========>>>把获取到的信息传给后台=${result.code}==');
       if (result.code == 0) {
+        showToast("模版保存成功");
+        FileManager.deleteFileByPath(filePath);
       } else {
         showToast("模版保存失败");
+        FileManager.deleteFileByPath(filePath);
         debugPrint('模版保存失败');
       }
       SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {
       showToast("模版保存失败");
       debugPrint('模版保存失败--$e');
+      FileManager.deleteFileByPath(filePath);
       SmartDialog.dismiss(status: SmartStatus.loading);
     }
+  }
+
+  Future<String> zipCavalsInDocuments() async {
+    final docsDir = await getApplicationDocumentsDirectory();
+    final sourceDir = await DirectoryManager.getDocumentsSubDirectory('cavals');
+    final zipPath = p.join(
+      docsDir.path,
+      'cavals_${DateTime.now().millisecondsSinceEpoch}.zip',
+    );
+    final zipFile = File(zipPath);
+    if (await zipFile.exists()) {
+      await zipFile.delete();
+    }
+    await ZipFile.createFromDirectory(
+      sourceDir: sourceDir,
+      zipFile: zipFile,
+      recurseSubDirs: true,
+      includeBaseDirectory: true,
+    );
+
+    return zipFile.path; // ✅ 压缩后的zip完整路径
   }
 
   /// 保存为草稿

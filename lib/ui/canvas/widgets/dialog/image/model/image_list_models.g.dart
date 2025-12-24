@@ -24,9 +24,9 @@ Map<String, dynamic> _$ImageListModelsToJson(ImageListModels instance) =>
 
 ImageModel _$ImageModelFromJson(Map<String, dynamic> json) => ImageModel(
   image: json['image'] as String,
-  fileSize: (json['file_size'] as String).toString(),
-  width: (json['width'] as String).toString(),
-  height: (json['height'] as String).toString(),
+  fileSize: json['file_size'] as String,
+  width: json['width'] as String,
+  height: json['height'] as String,
 );
 
 Map<String, dynamic> _$ImageModelToJson(ImageModel instance) =>

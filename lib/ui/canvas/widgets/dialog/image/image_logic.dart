@@ -219,7 +219,12 @@ class ImageLogic extends GetxController {
     try {
       final result = await http.post(
         '/user/material/store',
-        data: {"img_id": '$resourceId', "img_file_size": '$fileSize'},
+        data: {
+          "img_id": '$resourceId',
+          "img_file_size": '$fileSize',
+          "width": '$width',
+          "height": '$height',
+        },
         showErrorToast: false,
       );
       debugPrint('========>>>把获取到的信息传给后台=${result.code}==');
@@ -253,8 +258,6 @@ class ImageLogic extends GetxController {
       if (onUploadSuccess != null) {
         onUploadSuccess!(fileFormat, width, height);
       }
-
-      debugPrint('========>>>流程支撑完成=====$fullPath');
       await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {

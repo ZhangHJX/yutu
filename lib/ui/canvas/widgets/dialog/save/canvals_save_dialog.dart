@@ -17,7 +17,6 @@ class CanvalsSaveTemplateDialog extends StatefulWidget {
 
 class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
   final logic = Get.put(SaveLogic(), tag: saveDialog);
-
   @override
   void initState() {
     super.initState();
@@ -180,12 +179,10 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                                     child: SingleChildScrollView(
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
-                                        children: logic.scenarios.map((
-                                          scenario,
-                                        ) {
+                                        children: logic.scenarios.map((model) {
                                           return GestureDetector(
                                             onTap: () {
-                                              logic.selectScenario(scenario);
+                                              logic.selectScenario(model.name);
                                             },
                                             child: Container(
                                               width: double.infinity,
@@ -194,26 +191,21 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                                                 vertical: 12.w,
                                               ),
                                               decoration: BoxDecoration(
-                                                // color:
-                                                //     logic
-                                                //             .selectedScenario
-                                                //             .value ==
-                                                //         scenario
-                                                //     ? "#DCEDFE".color
-                                                //     : Colors.white,
-                                                color: Colors.red,
+                                                color:
+                                                    logic.sceneName.value ==
+                                                        model.name
+                                                    ? "#DCEDFE".color
+                                                    : Colors.white,
                                                 borderRadius:
                                                     BorderRadius.circular(8.w),
                                               ),
                                               child: Text(
-                                                scenario,
+                                                model.name,
                                                 style: TextStyle(
                                                   fontSize: 14.w,
                                                   color:
-                                                      logic
-                                                              .selectedScenario
-                                                              .value ==
-                                                          scenario
+                                                      logic.sceneName.value ==
+                                                          model.name
                                                       ? "#3C7BFF".color
                                                       : "#727272".color,
                                                 ),
@@ -317,7 +309,7 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  logic.selectedScenario.value,
+                  logic.sceneName.value,
                   style: TextStyle(
                     fontSize: 14.w,
                     color: "#FF242424".color,
@@ -370,9 +362,9 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
         Wrap(
           spacing: 8.w,
           runSpacing: 8.w,
-          children: logic.suggestedTags.map((tag) {
+          children: logic.suggestedTags.map((model) {
             return GestureDetector(
-              onTap: () => logic.toggleTag(tag),
+              onTap: () => logic.toggleTag(model),
               child: Container(
                 padding: EdgeInsets.only(
                   left: 9.5.w,
@@ -385,7 +377,7 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                   borderRadius: BorderRadius.circular(12.w),
                 ),
                 child: GradientText(
-                  tag,
+                  model.name,
                   colors: [
                     Color(0xFFC86CFF), // #C86CFF
                     Color(0xFF5B98FF), // #5B98FF
@@ -420,9 +412,9 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                     child: Wrap(
                       spacing: 10.w,
                       runSpacing: 10.w,
-                      children: logic.selectedTags.map((tag) {
+                      children: logic.selectedTags.map((model) {
                         return GestureDetector(
-                          onTap: () => logic.removeTag(tag),
+                          onTap: () => logic.removeTag(model),
                           child: Stack(
                             clipBehavior: Clip.none,
                             children: [
@@ -438,7 +430,7 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                                   borderRadius: BorderRadius.circular(12.w),
                                 ),
                                 child: GradientText(
-                                  tag,
+                                  model.name,
                                   colors: [
                                     Color(0xFFC86CFF), // #C86CFF
                                     Color(0xFF5B98FF), // #5B98FF

@@ -23,6 +23,7 @@ Map<String, String> mimeTypeMap = {
   "svg": "image/svg+xml",
   "webp": "image/webp",
   "bmp": "image/bmp",
+  "zip": "application/zip",
 };
 
 /// 字体相关配置
