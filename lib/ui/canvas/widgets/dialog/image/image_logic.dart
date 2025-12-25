@@ -15,9 +15,6 @@ class ImageLogic extends GetxController {
   // 当前页码
   int currentPage = 1;
 
-  // 每页数量
-  final int pageSize = 20;
-
   // 图片列表
   final RxList<ImageModel> imageList = <ImageModel>[].obs;
 

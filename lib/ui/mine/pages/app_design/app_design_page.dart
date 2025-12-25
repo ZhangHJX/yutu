@@ -57,7 +57,7 @@ class AppDesignPage extends StatelessWidget {
                 child: Obx(() {
                   final isBatch = logic.isBatchMode.value;
 
-                  if (logic.drafts.isEmpty) {
+                  if (logic.designList.isEmpty) {
                     return Container(
                       color: Colors.transparent,
                       padding: EdgeInsets.only(top: 89.w),
@@ -97,12 +97,12 @@ class AppDesignPage extends StatelessWidget {
                       mainAxisSpacing: 12.w,
                       crossAxisSpacing: 9.w,
                       padding: EdgeInsetsDirectional.zero,
-                      itemCount: logic.drafts.length,
+                      itemCount: 10,
                       itemBuilder: (context, index) {
-                        final item = logic.drafts[index];
+                        final item = logic.designList[index];
                         return Obx(() {
                           final isSelected = logic.selectedIds.contains(
-                            item.id,
+                            item.uuid,
                           );
                           return DesiginPageItem(
                             item: item,
@@ -110,7 +110,7 @@ class AppDesignPage extends StatelessWidget {
                             isSelected: isSelected,
                             onTap: () {
                               if (isBatch) {
-                                logic.toggleItemSelection(item.id);
+                                logic.toggleItemSelection(item.uuid);
                               } else {
                                 // 非批量模式下可以进入详情 / 编辑
                                 // Get.to(...);

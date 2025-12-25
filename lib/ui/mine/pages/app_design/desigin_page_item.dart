@@ -1,9 +1,9 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'desigin_model.dart';
+import '../../model/design_model.dart';
 
 class DesiginPageItem extends StatelessWidget {
-  final DesiginModel item;
+  final DesignItemModel item;
   final bool isSelected;
   final bool showCheck;
   final VoidCallback onTap;
@@ -98,7 +98,7 @@ class DesiginPageItem extends StatelessWidget {
                           height: 22.w,
                           textColor: Colors.white,
                           text: Text(
-                            '${item.likeCount}',
+                            '${item.favoriteTotal}',
                             style: TextStyle(
                               fontSize: 12.w,
                               color: "#A7AFBD".color,

@@ -18,7 +18,6 @@ class MinePage extends StatelessWidget {
           SafeArea(
             child: Obx(() {
               final bool isLogin = logic.global.isLogin;
-
               return Column(
                 children: [
                   _buildHeaderBar(),
@@ -123,7 +122,6 @@ class MinePage extends StatelessWidget {
     final avatar = icon.isEmpty
         ? "assets/images/mine/mine_info_empty.png"
         : icon;
-
     return Padding(
       padding: EdgeInsets.only(left: 22.w, top: 9.w, right: 20.w),
       child: Row(
@@ -219,7 +217,6 @@ class MinePage extends StatelessWidget {
   }
 
   Widget _buildDesignBlock() {
-    final designs = [];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -227,8 +224,8 @@ class MinePage extends StatelessWidget {
           onTap: logic.onTapMyDesign,
           child: SizedBox(
             height: 39.w,
+            width: double.infinity,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(width: 13.w),
                 Image.asset(
@@ -246,7 +243,7 @@ class MinePage extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                Spacer(),
+                Expanded(child: Container(color: Colors.transparent)),
                 Image.asset(
                   "assets/images/mine/mine_item_row.png",
                   width: 20.w,
@@ -259,64 +256,67 @@ class MinePage extends StatelessWidget {
           ),
         ),
 
-        Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.all(Radius.circular(12.w)),
-            ),
-            child: designs.isEmpty
-                ? _buildMyDesignCard()
-                : Padding(
-                    padding: EdgeInsets.only(
-                      left: 13.w,
-                      top: 18.w,
-                      bottom: 19.w,
-                    ),
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      itemCount: designs.length,
-                      separatorBuilder: (context, index) {
-                        return SizedBox(width: 5.w);
-                      },
-                      itemBuilder: (_, index) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            designs[index],
-                            height: 86.w,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, progress) {
-                              if (progress == null) return child;
-                              return Container(
-                                width: 110,
-                                height: 90,
-                                alignment: Alignment.center,
-                                color: Colors.white24,
-                                child: const CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              );
-                            },
-                            errorBuilder: (_, __, ___) => Container(
-                              width: 110,
-                              height: 90,
-                              color: Colors.white24,
-                              child: const Icon(
-                                Icons.broken_image,
-                                color: Colors.white70,
+        Obx(() {
+          return Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.all(Radius.circular(12.w)),
+              ),
+              child: logic.designList.isEmpty
+                  ? _buildMyDesignCard()
+                  : Padding(
+                      padding: EdgeInsets.only(
+                        left: 13.w,
+                        top: 18.w,
+                        bottom: 19.w,
+                      ),
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: logic.designList.length,
+                        separatorBuilder: (context, index) {
+                          return SizedBox(width: 5.w);
+                        },
+                        itemBuilder: (_, index) {
+                          final item = logic.designList[index];
+                          final parts = item.canvasSize.split(':');
+                          final ratio =
+                              double.parse(parts[0]) / double.parse(parts[1]);
+                          return Material(
+                            color: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.w),
+                              side: BorderSide(
+                                width: 1,
+                                color: "#E8EBFF".color,
                               ),
                             ),
-                          ),
-                        );
-                      },
+                            child: SizedBox(
+                              height: 86.w,
+                              width: 86.w * ratio,
+                              child: CachedNetworkImage(
+                                imageUrl:
+                                    '${item.originalImage}${item.thumbnail}',
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  color: "#F5F5F5".color,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.w,
+                                      color: "#9082FF".color,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  ),
-          ),
-        ),
+            ),
+          );
+        }),
       ],
     );
   }
