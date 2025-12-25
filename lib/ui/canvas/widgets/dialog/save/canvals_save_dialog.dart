@@ -1,7 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-
 import '../../../../widgets/gradient_text.dart';
 import 'dart:typed_data';
 import 'save_logic.dart';

@@ -1,8 +1,12 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../model/design_model.dart';
+import 'package:voicetemplate/ui/model/index.dart';
 
 class AppDesiginLogic extends GetxController {
+  /// 头部的tab
+  final screenList = <ScreenItemModel>[].obs;
+
   /// 图片列表
   final RxList<DesignItemModel> designList = <DesignItemModel>[].obs;
 
@@ -36,6 +40,25 @@ class AppDesiginLogic extends GetxController {
     //   ),
     // );
     loadDesignList(refresh: true);
+  }
+
+  /// 风格标签
+  Future<void> getSuggestedTags() async {
+    try {
+      final result = await http.post(
+        '/tag/index',
+        withToken: true,
+        showErrorToast: false,
+      );
+      if (result.code == 0 && result.data != null) {
+        final listModel = ScreenModel.fromJson(result.data);
+        final model = ScreenItemModel(id: 0, name: '全部');
+        listModel.items.insert(0, model);
+        screenList.value = listModel.items;
+      }
+    } catch (e) {
+      debugPrint('获取场景数据失败: $e');
+    }
   }
 
   /// 下拉刷新

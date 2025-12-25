@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -7,7 +6,6 @@ import 'package:voicetemplate/ui/canvas/pages/canvals/canvals_controller.dart';
 import 'dart:typed_data';
 import 'package:voicetemplate/ui/model/index.dart';
 import 'package:voicetemplate/file/index.dart';
-import './model/screen_model.dart';
 import 'package:voicetemplate/ui/canvas/model/index.dart';
 
 class SaveLogic extends GetxController {
