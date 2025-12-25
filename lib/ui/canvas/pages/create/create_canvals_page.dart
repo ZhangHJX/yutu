@@ -139,6 +139,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
         id: uuid.v4(),
         ratio: ratio,
         clarity: _selectedClarity == 0 ? '1' : '2',
+        isCreate: true,
         width: width,
         height: height,
       );
@@ -160,6 +161,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
       CanvasModel canvalsModel = CanvasModel(
         id: uuid.v4(),
         ratio: '$width:$height',
+        isCreate: true,
         width: width,
         height: height,
       );

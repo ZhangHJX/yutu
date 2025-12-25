@@ -22,7 +22,6 @@ class _TextInputDialogState extends State<TextInputDialog>
   @override
   void initState() {
     super.initState();
-
     // ⭐ 设置初始文本
     if (widget.initialText != null) {
       _textController.text = widget.initialText!;
