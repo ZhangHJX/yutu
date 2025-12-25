@@ -92,7 +92,6 @@ class _TextInputDialogState extends State<TextInputDialog>
           hintStyle: TextStyle(
             fontSize: 14.w,
             color: "#9E9E9E".color,
-            fontWeight: defaultConfigFontWeight,
             fontFamily: defaultConfigFamliy,
           ),
           isDense: true,

@@ -60,7 +60,7 @@ class ImageLogic extends GetxController {
     try {
       final result = await http.get(
         '/user/material/index',
-        query: {'page': currentPage, 'limit': 10},
+        query: {'page': '$currentPage', 'limit': globalPageSize},
         withToken: true,
         showErrorToast: false,
       );
@@ -85,12 +85,6 @@ class ImageLogic extends GetxController {
       isLoading.value = false;
       isRefreshing.value = false;
     }
-  }
-
-  @override
-  void onClose() {
-    debugPrint("-选择图片----onClose------");
-    super.onClose();
   }
 
   /// 上传图片 BuildContext context
@@ -138,6 +132,7 @@ class ImageLogic extends GetxController {
         showErrorToast: false,
         withToken: true,
       );
+      debugPrint('===${result.code}=====获取图片上传url报错====${result.data}===');
       if ((result.code == 0 || result.code == 200) && result.data != null) {
         String mimeType = mimeTypeMap[fileType] ?? "";
         await uploadFile(
@@ -153,6 +148,7 @@ class ImageLogic extends GetxController {
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
     } catch (e) {
+      debugPrint('========获取图片上传url报错=====$e==');
       await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss(status: SmartStatus.loading);
     }
@@ -219,8 +215,7 @@ class ImageLogic extends GetxController {
         data: {
           "img_id": '$resourceId',
           "img_file_size": '$fileSize',
-          "width": '$width',
-          "height": '$height',
+          "canvas_size": '$width:$height',
         },
         showErrorToast: false,
       );

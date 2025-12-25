@@ -18,16 +18,18 @@ class DesiginPageItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final itemWidth = (ScreenTools.screenWidth - 30.w - 9.w) / 2;
+    final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize);
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12.w),
+        borderRadius: BorderRadius.circular(14.w),
         child: Stack(
           children: [
             Column(
               children: [
                 // 上半部分可以换成你的缩略图
-                Container(height: 140, color: Colors.red),
+                Container(height: itemHeight, color: Colors.red),
                 Container(height: 47.w, color: Colors.white),
               ],
             ),
@@ -110,7 +112,7 @@ class DesiginPageItem extends StatelessWidget {
                             "assets/images/mine/app_design_like.png",
                             width: 13.w,
                             height: 10.w,
-                            fit: BoxFit.fill,
+                            fit: BoxFit.cover,
                           ),
                           onPressed: () {},
                         ),

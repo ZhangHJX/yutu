@@ -22,6 +22,12 @@ class AppDesiginLogic extends GetxController {
   /// 是否处于批量模式
   final RxBool isBatchMode = false.obs;
 
+  /// 是否还有更多数据
+  final RxBool hasMore = true.obs;
+
+  /// 当前选中的 tab 索引
+  final RxInt selectedTabIndex = 0.obs;
+
   // bool get isAllSelected =>
   //     drafts.isNotEmpty && selectedIds.length == drafts.length;
 
@@ -29,16 +35,16 @@ class AppDesiginLogic extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // drafts.addAll(
-    //   List.generate(
-    //     6,
-    //     (index) => DesiginModel(
-    //       id: index + 1,
-    //       title: '新文件 ${index + 1}',
-    //       likeCount: 100,
-    //     ),
-    //   ),
-    // );
+    // 初始化时获取 tab 数据
+    getSuggestedTags();
+    loadDesignList(refresh: true);
+  }
+
+  /// 切换 tab
+  void switchTab(int index) {
+    if (selectedTabIndex.value == index) return;
+    selectedTabIndex.value = index;
+    // 切换 tab 时重新加载数据
     loadDesignList(refresh: true);
   }
 
@@ -82,9 +88,24 @@ class AppDesiginLogic extends GetxController {
     }
     isLoading.value = true;
     try {
+      // 获取当前选中的 tab id
+      int? tagId;
+      if (screenList.isNotEmpty && selectedTabIndex.value < screenList.length) {
+        final selectedTab = screenList[selectedTabIndex.value];
+        tagId = selectedTab.id == 0 ? null : selectedTab.id;
+      }
+
+      final query = <String, dynamic>{
+        'page': '$currentPage',
+        'limit': globalPageSize,
+      };
+      if (tagId != null) {
+        query['tag_id'] = tagId;
+      }
+
       final result = await http.get(
         '/design/index',
-        query: {'page': currentPage, 'limit': globalPageSize},
+        query: query,
         withToken: true,
         showErrorToast: false,
       );
@@ -96,6 +117,9 @@ class AppDesiginLogic extends GetxController {
         if (listModel.items.isNotEmpty) {
           designList.addAll(listModel.items);
           currentPage++;
+          hasMore.value = true;
+        } else {
+          hasMore.value = false;
         }
       }
       isLoading.value = false;

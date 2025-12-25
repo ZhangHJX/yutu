@@ -128,13 +128,13 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
 
   Widget _buildListMaterial() {
     return Obx(() {
-      return SizedBox(
-        // padding: EdgeInsets.only(
-        //   top: 8.w,
-        //   bottom: 5.w,
-        //   left: 19.w,
-        //   right: 19.w,
-        // ),
+      return Container(
+        padding: EdgeInsets.only(
+          top: 8.w,
+          bottom: 5.w,
+          left: 19.w,
+          right: 19.w,
+        ),
         height: 231.w,
         child: EasyRefresh(
           clipBehavior: Clip.none,
@@ -178,14 +178,10 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
                 final model = list[index];
                 return LayoutBuilder(
                   builder: (context, constraints) {
-                    // 根据模型中的原始宽高比例，计算当前 item 的高度
-                    final originWidth = double.tryParse(model.width) ?? 1;
-                    final originHeight = double.tryParse(model.height) ?? 1;
-                    final safeWidth = originWidth <= 0 ? 1 : originWidth;
-                    final safeHeight = originHeight <= 0 ? 1 : originHeight;
-                    final itemWidth = constraints.maxWidth;
-                    final ratio = safeHeight / safeWidth; // 高 / 宽
-                    final itemHeight = itemWidth * ratio;
+                    final itemHeight = calculateAspectRatio(
+                      constraints.maxWidth,
+                      model.canvasSize,
+                    );
                     return SizedBox(
                       height: itemHeight,
                       child: _buildImageItem(model, index),
@@ -352,8 +348,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
               }
 
               final model = list[index];
-              final double width = double.tryParse(model.width) ?? 200.0;
-              final double height = double.tryParse(model.height) ?? 200.0;
+              final result = getCanvasSizeWH(model.canvasSize);
 
               try {
                 showLoading('正在添加图片');
@@ -364,7 +359,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
 
                 // 回调到外部，在画布中新增图片
                 if (widget.onImageSelected != null) {
-                  widget.onImageSelected!(fileName, width, height);
+                  widget.onImageSelected!(fileName, result.$1, result.$2);
                 }
 
                 // 关闭当前图片选择弹窗

@@ -6,10 +6,31 @@ import 'desigin_page_item.dart';
 import '../../../widgets/app_status_bar.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
-class AppDesignPage extends StatelessWidget {
+class AppDesignPage extends StatefulWidget {
   AppDesignPage({super.key});
 
+  @override
+  State<AppDesignPage> createState() => _AppDesignPageState();
+}
+
+class _AppDesignPageState extends State<AppDesignPage> {
   final logic = Get.put(AppDesiginLogic());
+  late EasyRefreshController _refreshController;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshController = EasyRefreshController(
+      controlFinishRefresh: true,
+      controlFinishLoad: true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,15 +73,17 @@ class AppDesignPage extends StatelessWidget {
                 ],
               ),
 
+              /// Tab 选择器
+              _buildTabBar(),
+
               /// 1. 中间可滚动列表（用 Expanded 包起来）
               Expanded(
                 child: Obx(() {
                   final isBatch = logic.isBatchMode.value;
-
-                  if (logic.designList.isEmpty) {
+                  if (logic.designList.isEmpty && !logic.isLoading.value) {
                     return Container(
                       color: Colors.transparent,
-                      padding: EdgeInsets.only(top: 89.w),
+                      padding: EdgeInsets.only(top: 89.w + 44.w),
                       child: Stack(
                         children: [
                           Image.asset(
@@ -89,36 +112,72 @@ class AppDesignPage extends StatelessWidget {
                       ),
                     );
                   }
+
                   return Container(
                     color: Colors.transparent,
                     margin: EdgeInsets.symmetric(horizontal: 15.w),
-                    child: MasonryGridView.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12.w,
-                      crossAxisSpacing: 9.w,
-                      padding: EdgeInsetsDirectional.zero,
-                      itemCount: 10,
-                      itemBuilder: (context, index) {
-                        final item = logic.designList[index];
-                        return Obx(() {
-                          final isSelected = logic.selectedIds.contains(
-                            item.uuid,
-                          );
-                          return DesiginPageItem(
-                            item: item,
-                            showCheck: isBatch,
-                            isSelected: isSelected,
-                            onTap: () {
-                              if (isBatch) {
-                                logic.toggleItemSelection(item.uuid);
-                              } else {
-                                // 非批量模式下可以进入详情 / 编辑
-                                // Get.to(...);
-                              }
-                            },
-                          );
-                        });
+                    child: EasyRefresh(
+                      controller: _refreshController,
+                      header: ClassicHeader(
+                        showMessage: false,
+                        triggerWhenReach: true,
+                        dragText: '松开刷新',
+                        readyText: '加载中...',
+                        processingText: '加载中...',
+                        processedText: '刷新完成',
+                      ),
+                      footer: ClassicFooter(
+                        showMessage: false,
+                        triggerWhenReach: true,
+                        dragText: '上拉加载',
+                        processingText: '加载中...',
+                        processedText: '加载完成',
+                        noMoreText: '没有更多了',
+                      ),
+                      onRefresh: () async {
+                        await logic.onRefresh();
+                        _refreshController.finishRefresh();
                       },
+                      onLoad: logic.hasMore.value
+                          ? () async {
+                              await logic.onLoad();
+                              _refreshController.finishLoad(
+                                logic.hasMore.value
+                                    ? IndicatorResult.success
+                                    : IndicatorResult.noMore,
+                              );
+                            }
+                          : null,
+                      child: Obx(() {
+                        return MasonryGridView.count(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12.w,
+                          crossAxisSpacing: 9.w,
+                          padding: EdgeInsetsDirectional.zero,
+                          itemCount: logic.designList.length,
+                          itemBuilder: (context, index) {
+                            final item = logic.designList[index];
+                            return Obx(() {
+                              final isSelected = logic.selectedIds.contains(
+                                item.uuid,
+                              );
+                              return DesiginPageItem(
+                                item: item,
+                                showCheck: isBatch,
+                                isSelected: isSelected,
+                                onTap: () {
+                                  if (isBatch) {
+                                    logic.toggleItemSelection(item.uuid);
+                                  } else {
+                                    // 非批量模式下可以进入详情 / 编辑
+                                    // Get.to(...);
+                                  }
+                                },
+                              );
+                            });
+                          },
+                        );
+                      }),
                     ),
                   );
                 }),
@@ -144,6 +203,54 @@ class AppDesignPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// 构建 Tab 选择器
+  Widget _buildTabBar() {
+    return Container(
+      height: 44.w,
+      color: Colors.transparent,
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: Obx(() {
+        if (logic.screenList.isEmpty) {
+          return SizedBox.shrink();
+        }
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(
+              logic.screenList.length,
+              (index) => GestureDetector(
+                onTap: () => logic.switchTab(index),
+                child: Container(
+                  clipBehavior: Clip.antiAlias,
+                  margin: EdgeInsets.only(right: 8.w),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 6.w,
+                  ),
+                  decoration: BoxDecoration(
+                    color: logic.selectedTabIndex.value == index
+                        ? "#DCEDFE".color
+                        : '#E9F2F7'.color,
+                    borderRadius: BorderRadius.circular(24.w),
+                  ),
+                  child: Text(
+                    logic.screenList[index].name,
+                    style: TextStyle(
+                      fontSize: 14.w,
+                      color: logic.selectedTabIndex.value == index
+                          ? "#007BFE".color
+                          : "#2A6181".color,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

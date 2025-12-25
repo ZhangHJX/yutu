@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:common/common.dart';
 
 /// 登录token的key
 String tokenKey = 'app_token_key';
@@ -29,7 +29,6 @@ Map<String, String> mimeTypeMap = {
 /// 字体相关配置
 const String defaultConfigFamliy = "AlibabaPuHuiTi";
 const double defaultConfigFontSize = 16;
-const FontWeight defaultConfigFontWeight = FontWeight.w400;
 const String defaultConfigStyleName = '系统默认';
 const String fontDialog = 'TextPropertyDialogController';
 
@@ -38,4 +37,18 @@ const String imageDialog = 'CanvalsImageDialog';
 const String saveDialog = 'CanvalsSaveTemplateDialog';
 
 ///全局的分页数据管理
-const double globalPageSize = 20;
+const String globalPageSize = '20';
+
+double calculateAspectRatio(double width, String canvasSize) {
+  final parts = canvasSize.split(':');
+  final ratio = double.parse(parts[0]) / double.parse(parts[1]);
+  final double itemHeight = width * ratio;
+  return itemHeight;
+}
+
+(double, double) getCanvasSizeWH(String canvasSize) {
+  final parts = canvasSize.split(':');
+  final width = double.parse(parts[0]);
+  final height = double.parse(parts[1]);
+  return (width, height);
+}

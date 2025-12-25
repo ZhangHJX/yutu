@@ -22,20 +22,21 @@ class ImageListModels {
 
 @JsonSerializable()
 class ImageModel {
+  final int id;
+
   final String image;
 
   @JsonKey(name: 'file_size')
   final String fileSize;
 
-  final String width;
-
-  final String height;
+  @JsonKey(name: 'canvas_size')
+  final String canvasSize;
 
   ImageModel({
+    required this.id,
     required this.image,
     required this.fileSize,
-    required this.width,
-    required this.height,
+    required this.canvasSize,
   });
 
   factory ImageModel.fromJson(Map<String, dynamic> json) =>

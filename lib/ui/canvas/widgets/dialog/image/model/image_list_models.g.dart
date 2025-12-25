@@ -23,16 +23,16 @@ Map<String, dynamic> _$ImageListModelsToJson(ImageListModels instance) =>
     };
 
 ImageModel _$ImageModelFromJson(Map<String, dynamic> json) => ImageModel(
+  id: (json['id'] as num).toInt(),
   image: json['image'] as String,
   fileSize: json['file_size'] as String,
-  width: json['width'] as String,
-  height: json['height'] as String,
+  canvasSize: json['canvas_size'] as String,
 );
 
 Map<String, dynamic> _$ImageModelToJson(ImageModel instance) =>
     <String, dynamic>{
+      'id': instance.id,
       'image': instance.image,
       'file_size': instance.fileSize,
-      'width': instance.width,
-      'height': instance.height,
+      'canvas_size': instance.canvasSize,
     };
