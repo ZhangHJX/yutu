@@ -2,13 +2,13 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../../model/design_model.dart';
 
-class DesiginPageItem extends StatelessWidget {
+class CollectionPageItem extends StatelessWidget {
   final DesignItemModel item;
   final bool isSelected;
   final bool showCheck;
   final VoidCallback onTap;
 
-  const DesiginPageItem({
+  const CollectionPageItem({
     super.key,
     required this.item,
     required this.isSelected,
@@ -19,7 +19,10 @@ class DesiginPageItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final itemWidth = (ScreenTools.screenWidth - 30.w - 9.w) / 2;
-    final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize);
+    final itemHeight = calculateAspectRatio(
+      itemWidth,
+      item.canvasSize ?? '1:1',
+    );
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
@@ -29,7 +32,30 @@ class DesiginPageItem extends StatelessWidget {
             Column(
               children: [
                 // 上半部分可以换成你的缩略图
-                Container(height: itemHeight, color: Colors.red),
+                SizedBox(
+                  height: itemHeight,
+                  child: CachedNetworkImage(
+                    imageUrl: '${item.originalImage}${item.thumbnail}',
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: "#F5F5F5".color,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.w,
+                          color: "#9082FF".color,
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: "#F5F5F5".color,
+                      child: Icon(
+                        Icons.broken_image,
+                        color: "#CCCCCC".color,
+                        size: 24.w,
+                      ),
+                    ),
+                  ),
+                ),
                 Container(height: 47.w, color: Colors.white),
               ],
             ),
@@ -53,7 +79,7 @@ class DesiginPageItem extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          item.title,
+                          item.title ?? '',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -86,7 +112,7 @@ class DesiginPageItem extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8.w),
                           ),
                           child: Text(
-                            "设计",
+                            "收藏",
                             style: TextStyle(
                               fontSize: 12.w,
                               color: "#007BFE".color,

@@ -16,29 +16,38 @@ class DesignModel {
 
 @JsonSerializable()
 class DesignItemModel {
-  final String uuid;
-  final String title;
-  final String canvas;
+  final int? id;
+  final String? uuid;
+  final String? title;
+  final String? desc;
+  final String? canvas;
   @JsonKey(name: 'canvas_size')
-  final String canvasSize;
+  final String? canvasSize;
   @JsonKey(name: 'original_image')
-  final String originalImage;
+  final String? originalImage;
 
   @JsonKey(name: 'ordinary_image')
-  final String ordinaryImage;
-  final String thumbnail;
+  final String? ordinaryImage;
+  final String? thumbnail;
 
   @JsonKey(name: 'favorite_total')
-  final int favoriteTotal;
+  final int? favoriteTotal;
+
+  @JsonKey(name: 'is_favorite')
+  final int? isFavorite;
+
   DesignItemModel({
-    required this.uuid,
-    required this.title,
-    required this.canvas,
-    required this.canvasSize,
-    required this.originalImage,
-    required this.ordinaryImage,
-    required this.thumbnail,
-    required this.favoriteTotal,
+    this.id,
+    this.uuid,
+    this.title,
+    this.desc,
+    this.canvas,
+    this.canvasSize,
+    this.originalImage,
+    this.ordinaryImage,
+    this.thumbnail,
+    this.favoriteTotal,
+    this.isFavorite,
   });
 
   factory DesignItemModel.fromJson(Map<String, dynamic> json) =>

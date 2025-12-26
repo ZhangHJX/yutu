@@ -61,7 +61,6 @@ class ImageLogic extends GetxController {
       final result = await http.get(
         '/user/material/index',
         query: {'page': '$currentPage', 'limit': globalPageSize},
-        withToken: true,
         showErrorToast: false,
       );
 
@@ -130,7 +129,6 @@ class ImageLogic extends GetxController {
         },
         converter: UploadOssModel.fromJson,
         showErrorToast: false,
-        withToken: true,
       );
       debugPrint('===${result.code}=====获取图片上传url报错====${result.data}===');
       if ((result.code == 0 || result.code == 200) && result.data != null) {
@@ -175,7 +173,6 @@ class ImageLogic extends GetxController {
           },
         ),
         useBaseUrl: false,
-        withToken: true,
         showErrorToast: false,
         isNake: true,
       );

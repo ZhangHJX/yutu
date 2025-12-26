@@ -29,7 +29,6 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
   void loadCanvalsImage() async {
     if (widget.handleImageCallBack != null) {
       logic.canvalsImage = await widget.handleImageCallBack!();
-      debugPrint("-----吼吼吼吼----${logic.canvalsImage}-----");
     }
   }
 
@@ -476,10 +475,11 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                               Positioned(
                                 right: -2.5.w,
                                 top: -2.5.w,
-                                child: Container(
+                                child: Image.asset(
+                                  'assets/images/canvals/canvals_fenge_close.png',
                                   width: 10.w,
                                   height: 10.w,
-                                  color: "#ff909090".color,
+                                  fit: BoxFit.contain,
                                 ),
                               ),
                             ],

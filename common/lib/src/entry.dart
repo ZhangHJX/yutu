@@ -26,9 +26,10 @@ export 'package:pull_to_refresh/pull_to_refresh.dart';
 export 'package:scrollview_observer/scrollview_observer.dart';
 export 'package:webview_flutter/webview_flutter.dart' hide ProgressCallback;
 
-// export 'package:easy_refresh/easy_refresh.dart';
-export 'package:cached_network_image/cached_network_image.dart';
-export 'package:flutter_archive/flutter_archive.dart';
+///我自己添加的库
+export 'package:event_bus/event_bus.dart';
+export 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 export 'package:background_downloader/background_downloader.dart'
     hide PermissionStatus;
-export 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
+export 'package:cached_network_image/cached_network_image.dart';
+export 'package:flutter_archive/flutter_archive.dart';

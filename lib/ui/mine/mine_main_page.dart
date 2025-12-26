@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import 'mine_logic.dart';
 import './pages/widgets/created_works_text.dart';
 
-class MinePage extends StatelessWidget {
-  MinePage({super.key});
+class MinePage extends StatefulWidget {
+  const MinePage({super.key});
 
+  @override
+  State<MinePage> createState() => _MinePageState();
+}
+
+class _MinePageState extends State<MinePage> {
   final logic = Get.put(MineLogic());
 
   @override
@@ -280,7 +285,11 @@ class MinePage extends StatelessWidget {
                         },
                         itemBuilder: (_, index) {
                           final item = logic.designList[index];
-                          final parts = item.canvasSize.split(':');
+                          List<String> parts =
+                              item.canvasSize?.split(':') ?? [];
+                          if (parts.isEmpty) {
+                            parts = ["1", "1"];
+                          }
                           final ratio =
                               double.parse(parts[0]) / double.parse(parts[1]);
                           return Material(

@@ -4,7 +4,6 @@ import 'model/font_info_model.dart';
 import '../../../fonts/font_manager.dart';
 import 'package:voicetemplate/ui/canvas/fonts/font_models.dart';
 
-
 /// 文本属性（字体相关）控制器
 class TextPropertyController extends GetxController {
   /// 全部字体列表（从接口获取的数据）
@@ -65,7 +64,6 @@ class TextPropertyController extends GetxController {
     try {
       final result = await http.post(
         '/front/index',
-        withToken: true,
         showErrorToast: false,
         converter: listConverter(FontInfoModel.fromJson),
       );

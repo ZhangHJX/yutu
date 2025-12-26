@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:voicetemplate/stores/global.dart';
 import '../../ui/home/page.dart';
 import '../../ui/mine/mine_main_page.dart';
+import '../../ui/mine/mine_logic.dart';
 
 class MainLogic extends GetxController {
   final globalLogic = Get.put(GlobalLogic(), permanent: true);
@@ -13,18 +14,27 @@ class MainLogic extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
     loadPage(globalLogic.tabIndex.value);
-
     globalLogic.tabIndex.listen(changeTabIndex);
   }
 
   void changeTabIndex(int index) {
-    debugPrint('changeTabIndex:$index');
+    //切换到 mine 页面
+    if (index == 1) {
+      _onMinePageEnter();
+    }
+
     if (pages[index] == null) {
       loadPage(index);
     }
     globalLogic.tabIndex.value = index;
+  }
+
+  void _onMinePageEnter() {
+    if (Get.isRegistered<MineLogic>()) {
+      final mineLogic = Get.find<MineLogic>();
+      mineLogic.updatePersonInfo();
+    }
   }
 
   void loadPage(int index) {
@@ -36,7 +46,6 @@ class MainLogic extends GetxController {
       debugPrint("HomePage-------");
       return HomePage();
     }
-
     debugPrint("MinePage-------");
     return MinePage();
   }

@@ -12,8 +12,6 @@ class AppDesignPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 创建TabController，与logic.selectedTabIndex同步
-    // 注意：Hook必须在每次build时以相同顺序调用，所以放在Obx外面
     final tabController = useSyncedTabController(
       length: logic.screenList.length,
       currentIndex: logic.selectedTabIndex,
@@ -44,19 +42,8 @@ class AppDesignPage extends HookWidget {
             Expanded(
               child: TabBarView(
                 controller: tabController,
-                // TabBarView的children数量必须与TabController.length匹配
-                // 生成maxTabCount个children，但只有前screenList.length个是有效的
                 children: List.generate(logic.screenList.length, (index) {
-                  // 如果索引超出实际screenList范围，返回空容器
-                  if (index >= logic.screenList.length) {
-                    return Container();
-                  }
-                  return CKeepAlive(
-                    child: DesignTabPage(
-                      tagId: logic.screenList[index].id,
-                      tabIndex: index,
-                    ),
-                  );
+                  return CKeepAlive(child: DesignTabPage());
                 }),
               ),
             ),
@@ -103,6 +90,7 @@ class AppDesignPage extends HookWidget {
                     height: 26.w,
                   ),
                   onPressed: () {
+                    EventBusManager.share.emit(AppEventType.mineRefresh);
                     Get.back();
                   },
                 ),

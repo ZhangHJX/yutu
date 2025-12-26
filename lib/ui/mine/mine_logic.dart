@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/routes/index.dart';
 import '../../stores/global.dart';
 import './model/design_model.dart';
+import 'dart:async';
 
 class MineLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
@@ -10,11 +11,14 @@ class MineLogic extends GetxController {
   // 图片列表
   RxList<DesignItemModel> designList = <DesignItemModel>[].obs;
 
+  late final StreamSubscription _sub;
+
   Worker? _countWorker;
 
   @override
   void onClose() {
     super.onClose();
+    _sub.cancel();
     _countWorker?.dispose();
   }
 
@@ -26,19 +30,27 @@ class MineLogic extends GetxController {
     _countWorker = ever(global.accessToken, (token) {
       loadDesignList();
     });
+    _sub = EventBusManager.share.listenAll((e) {
+      debugPrint('EventBusManager 我进来了');
+      if (e.type == AppEventType.mineRefresh) {
+        updatePersonInfo();
+      }
+    });
   }
 
   /// 加载图片列表
-  /// [refresh] 是否为刷新操作（重置到第一页）
   Future<void> loadDesignList({bool refresh = false}) async {
     try {
       final result = await http.get(
         '/design/index',
         query: {'page': 1, 'limit': globalPageSize},
-        withToken: true,
         showErrorToast: false,
       );
+
       if (result.code == 0 && result.data != null) {
+        if (designList.isNotEmpty) {
+          designList.clear();
+        }
         final listModel = DesignModel.fromJson(result.data);
         if (listModel.items.isNotEmpty) {
           designList.addAll(listModel.items);
@@ -63,14 +75,16 @@ class MineLogic extends GetxController {
   }
 
   ///我的设计
-  void onTapMyDesign() => Get.toNamed(AppRoutes.designPage);
+  void onTapMyDesign() {
+    Get.toNamed(AppRoutes.design);
+  }
 
   ///我的草稿
   void onTapMyDraft() =>
       Get.toNamed(AppRoutes.resourcePage, arguments: "draft");
 
   ///我的收藏
-  void onTapMyFavorite() => _showComingSoon('我的收藏');
+  void onTapMyFavorite() => Get.toNamed(AppRoutes.collection);
 
   ///我的素材
   void onTapMyResource() =>
@@ -97,5 +111,11 @@ class MineLogic extends GetxController {
       duration: const Duration(milliseconds: 1100),
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
     );
+  }
+
+  Future<void> updatePersonInfo() async {
+    // 调接口刷新
+    global.fetchUserInfo();
+    loadDesignList();
   }
 }

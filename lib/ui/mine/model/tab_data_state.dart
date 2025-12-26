@@ -1,5 +1,5 @@
 import 'package:common/common.dart';
-import '../../../model/design_model.dart';
+import 'design_model.dart';
 
 class TabDataState {
   /// 图片列表

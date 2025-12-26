@@ -161,7 +161,6 @@ class PersonLogic extends GetxController {
         data: {"type": "user", "file_type": fileType, "field_type": "avatar"},
         converter: UploadOssModel.fromJson,
         showErrorToast: false,
-        withToken: true,
       );
       if (result.code == 0) {
         String mimeType = mimeTypeMap[fileType] ?? "";
@@ -197,7 +196,6 @@ class PersonLogic extends GetxController {
           },
         ),
         useBaseUrl: false,
-        withToken: true,
         isNake: true,
       );
       if (res.isSuccess) {
@@ -244,7 +242,6 @@ class PersonLogic extends GetxController {
       final result = await http.post(
         '/user/edit',
         data: data,
-        withToken: true,
         showErrorToast: true,
       );
       SmartDialog.dismiss();

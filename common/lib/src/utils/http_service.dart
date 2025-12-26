@@ -30,7 +30,9 @@ class HttpService {
       InterceptorsWrapper(
         onRequest: (RequestOptions options, RequestInterceptorHandler handler) {
           if (kDebugMode) {
-            print('👶👶👶----请求方式: ${options.method} ${options.path}');
+            print(
+              '👶👶👶----请求方式:${options.method} ${options.baseUrl}  ${options.path}',
+            );
             print('👧👧👧请求头: ${options.headers}');
             if (options.data != null) {
               print('👩👩👩请求参数: ${options.data}');
@@ -149,8 +151,6 @@ class HttpService {
           onReceiveProgress: onReceiveProgress,
         );
       }
-
-      debugPrint('👧👧👧获取到的数据是多少: ${response.data}');
 
       if (isNake) {
         return BaseModel.fromJson(

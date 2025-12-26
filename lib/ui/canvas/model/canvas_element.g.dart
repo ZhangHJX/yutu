@@ -1,5 +1,4 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-import 'package:common/common.dart';
 
 part of 'canvas_element.dart';
 

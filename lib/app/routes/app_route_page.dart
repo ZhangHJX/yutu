@@ -10,9 +10,10 @@ import 'package:voicetemplate/ui/login/password/password_page.dart';
 
 /// 我的模块
 import 'package:voicetemplate/ui/mine/pages/person_info/person_info_page.dart';
-import 'package:voicetemplate/ui/mine/pages/app_info/app_info_page.dart';
+import 'package:voicetemplate/ui/mine/pages/info/app_info_page.dart';
 import 'package:voicetemplate/ui/mine/pages/resource/resource_page.dart';
-import 'package:voicetemplate/ui/mine/pages/app_design/app_design_page.dart';
+import 'package:voicetemplate/ui/mine/pages/design/app_design_page.dart';
+import 'package:voicetemplate/ui/mine/pages/collection/app_collection_page.dart';
 import 'package:voicetemplate/common/web/page.dart';
 
 final List<GetPage> getPages = [
@@ -45,7 +46,8 @@ final List<GetPage> getPages = [
   GetPage(name: AppRoutes.personInfo, page: PersonInfoPage.new),
 
   GetPage(name: AppRoutes.resourcePage, page: AppResourcePage.new),
-  GetPage(name: AppRoutes.designPage, page: AppDesignPage.new),
+  GetPage(name: AppRoutes.design, page: AppDesignPage.new),
+  GetPage(name: AppRoutes.collection, page: AppCollectionPage.new),
 
   GetPage(name: AppRoutes.web, page: WebPage.new),
 ];

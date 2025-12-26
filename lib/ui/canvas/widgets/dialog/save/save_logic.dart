@@ -55,11 +55,7 @@ class SaveLogic extends GetxController {
   /// 应用场景接口
   Future<void> getSceneResource() async {
     try {
-      final result = await http.post(
-        '/scene/index',
-        withToken: true,
-        showErrorToast: false,
-      );
+      final result = await http.post('/scene/index', showErrorToast: false);
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
         if (listModel.items.isNotEmpty) {
@@ -76,11 +72,7 @@ class SaveLogic extends GetxController {
   /// 风格标签
   Future<void> getSuggestedTags() async {
     try {
-      final result = await http.post(
-        '/tag/index',
-        withToken: true,
-        showErrorToast: false,
-      );
+      final result = await http.post('/tag/index', showErrorToast: false);
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
         suggestedTags.value = listModel.items;
@@ -177,7 +169,6 @@ class SaveLogic extends GetxController {
         },
         converter: UploadOssModel.fromJson,
         showErrorToast: false,
-        withToken: true,
       );
       if (result.code == 0 && result.data != null) {
         await uploadImageFile(result.data!, canvalsImage!, model);
@@ -208,7 +199,6 @@ class SaveLogic extends GetxController {
           },
         ),
         useBaseUrl: false,
-        withToken: true,
         showErrorToast: false,
         isNake: true,
       );
@@ -241,7 +231,6 @@ class SaveLogic extends GetxController {
       },
       converter: UploadOssModel.fromJson,
       showErrorToast: false,
-      withToken: true,
     );
     if (result.code == 0 && result.data != null) {
       await uploadZipFile(result.data!, model);
@@ -286,7 +275,6 @@ class SaveLogic extends GetxController {
           },
         ),
         useBaseUrl: false,
-        withToken: true,
         showErrorToast: false,
         isNake: true,
       );
@@ -347,7 +335,6 @@ class SaveLogic extends GetxController {
           "zip_file_size": "$fileMemorySize",
         },
         showErrorToast: false,
-        withToken: true,
       );
       if (result.code == 0) {
         showToast("模版保存成功");
@@ -392,7 +379,6 @@ class SaveLogic extends GetxController {
           "zip_file_size": "$fileMemorySize",
         },
         showErrorToast: false,
-        withToken: true,
       );
       if (result.code == 0) {
         showToast("草稿保存成功");

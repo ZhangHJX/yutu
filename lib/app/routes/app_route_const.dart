@@ -20,7 +20,8 @@ class AppRoutes {
   /// 我的模块页面
   static const appInfoPage = '/app_info_page';
   static const resourcePage = '/resource_page';
-  static const designPage = '/design_page';
+  static const design = '/design_page';
+  static const collection = '/collection_page';
   static const personInfo = '/person_info_page';
   static const appLogin = '/app_login';
   static const password = '/get_password';

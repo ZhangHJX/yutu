@@ -3,6 +3,7 @@ import 'dart:io';
 import '../utils/index.dart';
 
 import 'server_page_model.dart';
+import '../../zmj/utils/index.dart';
 
 typedef FutureListModel<T> = Future<BaseModel<ServerPageModel<T>>>;
 
@@ -27,14 +28,19 @@ class BaseModel<T> {
 
     T? data;
 
+    /// 退出登陆处理
+    if (code == -1) {
+      EventBusManager.share.emit(AppEventType.logout);
+    }
+
+    if (showErrorToast && message.isNotEmpty) {
+      showToast(message);
+    }
+
     if (rawData is Map) {
       data = fromJsonT(rawData as Map<String, dynamic>);
     } else {
       data = fromJsonT({dstValueKey: rawData});
-    }
-
-    if (showErrorToast && code != HttpStatus.ok) {
-      showToast(message);
     }
 
     return BaseModel(code: code, message: message, data: data);
@@ -57,14 +63,18 @@ T Function(Map<String, dynamic>) primitiveConverter<T>() =>
 ServerPageModel<T> Function(Map<String, dynamic>) pageConverter<T>(
   T Function(Map<String, dynamic>) fromJsonT,
 ) {
-  return (json) =>
-      ServerPageModel<T>.fromJson(json, (item) => fromJsonT(item as Map<String, dynamic>));
+  return (json) => ServerPageModel<T>.fromJson(
+    json,
+    (item) => fromJsonT(item as Map<String, dynamic>),
+  );
 }
 
 List<T> Function(Map<String, dynamic>) listConverter<T>(
   T Function(Map<String, dynamic>) fromJsonT, [
   String? field,
 ]) {
-  return (json) =>
-      JsonHelper.fromMapList(field == null ? json[dstValueKey] : json[field], fromJsonT);
+  return (json) => JsonHelper.fromMapList(
+    field == null ? json[dstValueKey] : json[field],
+    fromJsonT,
+  );
 }

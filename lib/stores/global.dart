@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:common/common.dart';
 import 'package:flutter/widgets.dart';
 import 'login_response.dart';
@@ -31,6 +32,8 @@ class GlobalLogic extends GetxController {
 
   /// 是否为验证码登录
   bool get isSmsLogin => loginMode.value == LoginMode.sms;
+
+  late final StreamSubscription _sub;
 
   /// 切换登录方式
   void toggleLoginMode() {
@@ -75,15 +78,27 @@ class GlobalLogic extends GetxController {
     if (accessToken.value.isNotEmpty) {
       updateUserToken();
     }
+
+    _sub = EventBusManager.share.listenAll((e) {
+      if (e.type == AppEventType.logout) {
+        removeUserInfo();
+      }
+    });
+  }
+
+  @override
+  void onClose() {
+    _sub.cancel();
+    super.onClose();
   }
 
   /// 获取用户信息
-  void fetchUserInfo({bool isLaunch = false}) async {
+  Future<void> fetchUserInfo({bool isLaunch = false}) async {
     try {
       final result = await http.post<UserModel>(
         '/homePage/user/index',
         converter: UserModel.fromJson,
-        withToken: true,
+        showErrorToast: false,
       );
       userInfo.value = result.data ?? UserModel();
       if (result.code == 0 && !isLaunch) {
@@ -100,7 +115,6 @@ class GlobalLogic extends GetxController {
       final result = await http.post<LoginResponse>(
         '/homePage/user/refreshUserToken',
         converter: LoginResponse.fromJson,
-        withToken: true,
       );
       if (result.code == 0) {}
       debugPrint(
@@ -124,7 +138,6 @@ class GlobalLogic extends GetxController {
   void logout() async {
     final result = await http.post(
       '/homePage/user/logout',
-      withToken: true,
       showErrorToast: true,
     );
     if (result.code == 0) {
@@ -133,6 +146,9 @@ class GlobalLogic extends GetxController {
   }
 
   void removeUserInfo() {
+    if (accessToken.value.isEmpty) {
+      return;
+    }
     accessToken.value = '';
     userInfo.value = UserModel();
   }

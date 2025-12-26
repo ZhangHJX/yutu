@@ -37,12 +37,14 @@ dependencies:
   map_launcher: ^4.4.2
   flutter_swipe_action_cell: ^3.1.6
   pixel_snap: ^0.1.5
-  easy_refresh: ^3.4.0
   flutter_archive: ^6.0.4
   background_downloader: ^9.4.1
   cached_network_image: ^3.4.1
   device_info_plus: ^12.2.0
+  event_bus: ^2.0.1
+
   
+
 
 dev_dependencies:
   flutter_test:

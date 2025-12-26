@@ -39,7 +39,7 @@ const String globalPageSize = '20';
 
 double calculateAspectRatio(double width, String canvasSize) {
   final parts = canvasSize.split(':');
-  final ratio = double.parse(parts[0]) / double.parse(parts[1]);
+  final ratio = double.parse(parts[1]) / double.parse(parts[0]);
   final double itemHeight = width * ratio;
   return itemHeight;
 }
