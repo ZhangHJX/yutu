@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
 /// 获取指定方向的安全区padding
@@ -10,7 +9,7 @@ EdgeInsets getSafePadding(
   bool right = false,
   bool top = false,
   bool bottom = true,
-  EdgeInsets minimum = EdgeInsets.zero,
+  EdgeInsets minimum = .zero,
 }) {
   final MediaQueryData? mediaQuery = MediaQuery.maybeOf(context);
   var padding = EdgeInsets.zero;
@@ -22,7 +21,7 @@ EdgeInsets getSafePadding(
       bottom: bottom ? null : 0,
     );
   }
-  if (minimum != EdgeInsets.zero) {
+  if (minimum != .zero) {
     padding = padding.copyWith(
       top: max(minimum.top, padding.top),
       bottom: max(minimum.bottom, padding.bottom),
@@ -32,5 +31,3 @@ EdgeInsets getSafePadding(
   }
   return padding;
 }
-
-final hairline = 1 / Get.pixelRatio;

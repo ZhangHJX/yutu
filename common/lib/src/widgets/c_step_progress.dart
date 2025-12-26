@@ -16,27 +16,27 @@ class CStepProgress extends StatelessWidget {
   final double? margin;
 
   String imgPath(CStepItem step) => switch (step.status) {
-    CStepStatus.done => 'assets/images/common/ic_circle_s.png',
-    CStepStatus.active => 'assets/images/order/ic_in_progress.png',
-    CStepStatus.todo => 'assets/images/order/ic_not_reach.png',
-    CStepStatus.error => 'assets/images/common/ic_circle_e.png',
+    .done => 'assets/images/common/ic_circle_s.png',
+    .active => 'assets/images/order/ic_in_progress.png',
+    .todo => 'assets/images/order/ic_not_reach.png',
+    .error => 'assets/images/common/ic_circle_e.png',
   };
 
   TextStyle textStyle(CStepItem step) {
     final isSpecial = [CStepStatus.active, CStepStatus.error].contains(step.status);
-    return TextStyle(
+    return .new(
       fontSize: 13.w,
       height: 19 / 13,
       color: isSpecial ? cff333333 : cff545454,
-      fontWeight: isSpecial ? FontWeight.w500 : FontWeight.normal,
+      fontWeight: isSpecial ? .w500 : .normal,
       fontFamily: 'NotoSansSC',
     );
   }
 
   Widget _buildStep(CStepItem step) {
     return Stack(
-      clipBehavior: Clip.none,
-      alignment: AlignmentDirectional.center,
+      clipBehavior: .none,
+      alignment: .center,
       children: [
         Image.asset(imgPath(step), width: 18.w, height: 18.w),
         Positioned(
@@ -50,8 +50,8 @@ class CStepProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: margin ?? 24.w),
-      alignment: Alignment.topCenter,
+      margin: .symmetric(horizontal: margin ?? 24.w),
+      alignment: .topCenter,
       height: 46.w,
       child: Row(
         spacing: 3.w,
@@ -63,8 +63,8 @@ class CStepProgress extends StatelessWidget {
                 child: Container(
                   height: 2.w,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2.w),
-                    color: steps[i].status == CStepStatus.done ? Colors.orange : '#FFD1D1D1'.color,
+                    borderRadius: .circular(2.w),
+                    color: steps[i].status == .done ? Colors.orange : '#FFD1D1D1'.color,
                   ),
                 ),
               ),

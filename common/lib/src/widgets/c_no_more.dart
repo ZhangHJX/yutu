@@ -10,9 +10,9 @@ class CNoMore extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.only(top: gap),
+        padding: .only(top: gap),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: .center,
           children: [Text('没有更多数据了', style: text989897())],
         ),
       ),

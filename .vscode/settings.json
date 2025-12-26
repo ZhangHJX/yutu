@@ -1,5 +1,5 @@
 {
-  "dart.flutterSdkPath": ".fvm/versions/3.35.6",
+  "dart.flutterSdkPath": ".fvm/versions/3.38.5",
   "cmake.sourceDirectory": "/Users/zhangmj/Desktop/voicetemplate/windows/runner",
   "cursor.general.disableHttp2": true,
   "http.proxy": "http://127.0.0.1:7897",

@@ -1,17 +1,20 @@
 import 'dart:async';
 
 import 'package:common/common.dart';
+import 'package:flutter/material.dart';
 
 class LoadingHelper {
   LoadingHelper({
-    required this.message,
+    this.message,
+    this.onLoadingChanged,
     this.delay = const Duration(milliseconds: 250),
     this.minDuration = const Duration(milliseconds: 1000),
   });
 
   final Duration delay;
   final Duration minDuration;
-  final String message;
+  final String? message;
+  final ValueChanged<bool>? onLoadingChanged;
 
   Future<T> runWithLoading<T>(
     AsyncFunc<T> func, {
@@ -33,18 +36,30 @@ class LoadingHelper {
 
     try {
       delayTimer = Timer(delay, () {
-        showLoading(message);
+        if (onLoadingChanged == null) {
+          showLoading(message ?? '加载中...');
+        } else {
+          onLoadingChanged!.call(true);
+        }
         loadingShown = true;
         showTime = DateTime.now();
       });
 
       final result = await func();
       await ensureMinDuration();
-      SmartDialog.dismiss(status: SmartStatus.loading);
+      if (onLoadingChanged == null) {
+        SmartDialog.dismiss(status: SmartStatus.loading);
+      } else {
+        onLoadingChanged!.call(false);
+      }
       onSuccess?.call(result);
       return result;
     } catch (e, stack) {
-      SmartDialog.dismiss(status: SmartStatus.loading);
+      if (onLoadingChanged == null) {
+        SmartDialog.dismiss(status: SmartStatus.loading);
+      } else if (loadingShown) {
+        onLoadingChanged!.call(false);
+      }
       onError?.call(e, stack);
       rethrow;
     } finally {
@@ -54,14 +69,16 @@ class LoadingHelper {
 }
 
 Future<T> performWithLoading<T>(
-  String message,
   AsyncFunc<T> func, {
+  String? message,
   Duration delay = const Duration(milliseconds: 250),
   Duration minDuration = const Duration(milliseconds: 1000),
+  void Function(bool loading)? onLoadingChanged,
   void Function(T result)? onSuccess,
   void Function(Object error, StackTrace stack)? onError,
 }) {
   return LoadingHelper(
+    onLoadingChanged: onLoadingChanged,
     message: message,
     delay: delay,
     minDuration: minDuration,

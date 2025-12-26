@@ -1,11 +1,11 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'design_logic.dart';
+import '../design_logic.dart';
 import 'package:voicetemplate/ui/widgets/confirm_pop_widget.dart';
 
 class DesignBottomBar extends StatelessWidget {
-  final AppDesiginLogic controller;
-  const DesignBottomBar({super.key, required this.controller});
+  final logic = Get.find<AppDesiginLogic>();
+  DesignBottomBar({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class DesignBottomBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: controller.clearSelection,
+            onTap: logic.clearSelection,
             child: Image.asset(
               "assets/images/mine/app_resource_cancel.png",
               width: 153.w,
@@ -31,7 +31,7 @@ class DesignBottomBar extends StatelessWidget {
                 builder: (context) => ConfirmPopWidget(
                   title: '温馨提示',
                   subTitle: '确定要删除选中的设计吗？',
-                  sureAction: controller.deleteSelected,
+                  sureAction: logic.deleteSelected,
                 ),
                 alignment: Alignment.center,
                 animationType: SmartAnimationType.centerFade_otherSlide,

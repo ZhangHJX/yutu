@@ -1,6 +1,7 @@
-import 'package:common/common.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart';
+import 'package:common/common.dart';
 import 'canvas_element.dart';
 import 'dart:math' as math;
 

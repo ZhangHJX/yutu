@@ -35,7 +35,7 @@ class CCountDown extends HookWidget {
       return () => timer.value?.cancel();
     }, [seconds]);
 
-    final defaultStyle = TextStyle(color: '#FFEA3A45'.color, fontSize: 14.w);
+    final TextStyle defaultStyle = .new(color: '#FFEA3A45'.color, fontSize: 14.w);
 
     return DefaultTextStyle(
       style: defaultStyle.merge(textStyle),

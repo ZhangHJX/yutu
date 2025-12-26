@@ -10,11 +10,6 @@ enum LoginMode {
   password, //
 }
 
-// import '../app/app_route.dart';
-// import '../models/list_item.dart';
-// import '../models/user_model.dart';
-// import '../utils/apis/address.dart';
-
 class GlobalLogic extends GetxController {
   /// TabBarController 索引
   final tabIndex = 0.obs;
@@ -58,28 +53,6 @@ class GlobalLogic extends GetxController {
   // /// 个性签名
   String? get sign => userInfo.value.sign;
 
-  // /// 生日
-  // String? get birthday => userInfo.value.birthday;
-
-  // /// 性别, 1为女, 2为男, 3为未知
-  // int get gender => userInfo.value.gender;
-  // String get genderText => switch (gender) {
-  //   1 => '女',
-  //   2 => '男',
-  //   _ => '',
-  // };
-
-  // String? get authId => userInfo.value.authId;
-
-  // /// 会员编号
-  // String get memberNo => '${userInfo.value.memberNo}';
-
-  // /// 是否开启了通知
-  // bool get isNotify => userInfo.value.notify == 1;
-
-  // /// 是否已认证
-  // bool get isVerified => userInfo.value.authStatus == 2;
-
   final box = GetStorage();
 
   @override
@@ -88,6 +61,8 @@ class GlobalLogic extends GetxController {
 
     accessToken.value = box.read(tokenKey) ?? '';
     userInfo.value = UserModel.fromJson(box.read(userInfoKey) ?? {});
+
+    addInterceptor();
 
     ever(accessToken, (token) {
       box.write(tokenKey, token);
@@ -162,44 +137,17 @@ class GlobalLogic extends GetxController {
     userInfo.value = UserModel();
   }
 
-  // /// 获取配置的客服类型
-  // /// 客服类型, 2为微信, 其他为应用内客服
-  // void fetchServiceType() {
-  //   http.get('/ds-applet/message/getCustomerService').then((value) {
-  //     serviceType.value = value.data ?? '2';
-  //   });
-  // }
+  void addInterceptor() {
+    http.addInterceptor(
+      InterceptorsWrapper(
+        onRequest: (RequestOptions options, RequestInterceptorHandler handler) {
+          final token = box.read(tokenKey);
+          if (options.extra[withTokenKey] && token != null) {
+            options.headers['token'] = token;
+          }
+          return handler.next(options);
+        },
+      ),
+    );
+  }
 }
-
-/// 获取验证码
-// Future<String> getVerifyCode() async {
-//   final globalLogic = Get.find<GlobalLogic>();
-//   showLoading('获取验证码中...');
-//   final completer = Completer<String>();
-//   try {
-//     final codeId =
-//         (await http.get(
-//           '/ds-applet/member/sendSetPassCode',
-//           query: {'phone': globalLogic.phone},
-//           converter: primitiveConverter<String>(),
-//         )).data ??
-//         '';
-//     showToast('验证码已发送');
-//     completer.complete(codeId);
-//   } catch (e) {
-//     completer.completeError(e);
-//   } finally {
-//     SmartDialog.dismiss(status: SmartStatus.loading);
-//   }
-//   return completer.future;
-// }
-
-
-/*
-final data = await http.post(
-      '/ds-app/appletDynamic/discoveryList/${globalLogic.memberId}',
-      data: {'labelList': [], 'discoveryBoardDTOList': discoveryBoardDTOList},
-     converter: listConverter(DiscoveryModel.fromJson),
-);
-*/ 
-

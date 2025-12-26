@@ -12,11 +12,11 @@ class CButton extends StatelessWidget {
     this.icon,
     this.iconSize,
     this.iconColor,
-    this.iconPosition = CIconPosition.left,
+    this.iconPosition = .left,
     this.spacing = 0,
-    this.mainAxisSize = MainAxisSize.min,
-    this.mainAxisAlignment = MainAxisAlignment.center,
-    this.crossAxisAlignment = CrossAxisAlignment.center,
+    this.mainAxisSize = .min,
+    this.mainAxisAlignment = .center,
+    this.crossAxisAlignment = .center,
     this.backgroundColor,
     this.textColor,
     this.fontSize,
@@ -33,8 +33,8 @@ class CButton extends StatelessWidget {
     this.height,
     this.gradient,
     this.useDefaultGradient = false,
-    this.margin = EdgeInsets.zero,
-    this.padding = EdgeInsets.zero,
+    this.margin = .zero,
+    this.padding = .zero,
     this.disabled = false,
     this.disabledOpacity = 0.6,
     this.ghost = false,
@@ -42,7 +42,7 @@ class CButton extends StatelessWidget {
     this.lineHeight,
     this.decoration,
     this.iconOffset,
-    this.behavior = HitTestBehavior.opaque,
+    this.behavior = .opaque,
   }) : assert(text != null || icon != null, '文本和图标至少需要设置一个');
 
   factory CButton.icon({
@@ -60,9 +60,7 @@ class CButton extends StatelessWidget {
     bool? useDefaultGradient,
     bool ghost = false,
   }) {
-    final Color primaryColor = context != null
-        ? Theme.of(context).primaryColor
-        : Colors.blue;
+    final Color primaryColor = context != null ? Theme.of(context).primaryColor : Colors.blue;
 
     return CButton(
       key: key,
@@ -73,7 +71,7 @@ class CButton extends StatelessWidget {
       borderRadius: borderRadius ?? 4.0,
       onPressed: onPressed,
       disabled: disabled,
-      padding: padding ?? EdgeInsets.zero,
+      padding: padding ?? .zero,
       gradient: gradient,
       useDefaultGradient: useDefaultGradient,
       ghost: ghost,
@@ -84,7 +82,7 @@ class CButton extends StatelessWidget {
     required String text,
     Key? key,
     Widget? icon,
-    CIconPosition iconPosition = CIconPosition.left,
+    CIconPosition iconPosition = .left,
     double spacing = 8.0,
     VoidCallback? onPressed,
     Color? textColor,
@@ -109,7 +107,7 @@ class CButton extends StatelessWidget {
       fontSize: fontSize,
       onPressed: onPressed,
       disabled: disabled,
-      padding: padding ?? EdgeInsets.zero,
+      padding: padding ?? .zero,
       gradient: gradient,
       useDefaultGradient: useDefaultGradient,
       ghost: ghost,
@@ -195,14 +193,13 @@ class CButton extends StatelessWidget {
         ((useDefaultGradient ?? false)
             ? LinearGradient(
                 colors: [Color(0xFFFFAD2B), Color(0xFFFAC209)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+                begin: .topCenter,
+                end: .bottomCenter,
               )
             : defaultGradient);
 
     // 文本组件
-    // final TextStyle defaultTextStyle = textStyle ?? Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
-    final TextStyle defaultTextStyle = textStyle ?? const TextStyle();
+    final TextStyle defaultTextStyle = textStyle ?? const .new();
     final TextStyle finalTextStyle = defaultTextStyle.copyWith(
       color: textColor,
       fontSize: fontSize,
@@ -211,11 +208,7 @@ class CButton extends StatelessWidget {
 
     final Widget? textWidget = text is String
         ? ghost
-              ? CGradientText(
-                  text,
-                  style: finalTextStyle,
-                  gradient: effectiveGradient,
-                )
+              ? CGradientText(text, style: finalTextStyle, gradient: effectiveGradient)
               : Text(text, style: finalTextStyle, textAlign: TextAlign.center)
         : text is Widget
         ? text
@@ -251,12 +244,8 @@ class CButton extends StatelessWidget {
         children: [textWidget],
       );
     } else {
-      final bool isIconFirst =
-          iconPosition == CIconPosition.left ||
-          iconPosition == CIconPosition.top;
-      final bool isHorizontal =
-          iconPosition == CIconPosition.left ||
-          iconPosition == CIconPosition.right;
+      final bool isIconFirst = iconPosition == .left || iconPosition == .top;
+      final bool isHorizontal = iconPosition == .left || iconPosition == .right;
       final firstWidget = isIconFirst ? iconWidget : textWidget;
       final secondWidget = isIconFirst ? textWidget : iconWidget;
 
@@ -267,10 +256,7 @@ class CButton extends StatelessWidget {
         crossAxisAlignment: crossAxisAlignment,
         children: [
           firstWidget,
-          SizedBox(
-            width: isHorizontal ? spacing : 0,
-            height: isHorizontal ? 0 : spacing,
-          ),
+          SizedBox(width: isHorizontal ? spacing : 0, height: isHorizontal ? 0 : spacing),
           secondWidget,
         ],
       );
@@ -285,20 +271,10 @@ class CButton extends StatelessWidget {
         padding: padding,
         decoration:
             decoration ??
-            BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(borderRadius),
-            ),
+            BoxDecoration(color: Colors.transparent, borderRadius: .circular(borderRadius)),
         child: CustomPaint(
-          painter: CGradientBorderPainter(
-            gradient: effectiveGradient,
-            borderRadius: borderRadius,
-          ),
-          child: Container(
-            padding: padding,
-            alignment: Alignment.center,
-            child: content,
-          ),
+          painter: CGradientBorderPainter(gradient: effectiveGradient, borderRadius: borderRadius),
+          child: Container(padding: padding, alignment: .center, child: content),
         ),
       );
     } else {
@@ -306,9 +282,7 @@ class CButton extends StatelessWidget {
         width: width,
         height: height,
         padding: padding,
-        decoration:
-            decoration?.copyWith(gradient: gradient) ??
-            fallbackDecoration(shadows()),
+        decoration: decoration?.copyWith(gradient: gradient) ?? fallbackDecoration(shadows()),
         child: content,
       );
     }
@@ -324,11 +298,7 @@ class CButton extends StatelessWidget {
       padding: margin,
       child: onPressed == null
           ? buttonChild
-          : GestureDetector(
-              behavior: behavior,
-              onTap: onPressed,
-              child: buttonChild,
-            ),
+          : GestureDetector(behavior: behavior, onTap: onPressed, child: buttonChild),
     );
   }
 
@@ -355,16 +325,14 @@ class CButton extends StatelessWidget {
           ((useDefaultGradient ?? false)
               ? LinearGradient(
                   colors: [Color(0xFFFFAD2B), Color(0xFFFAC209)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+                  begin: .topCenter,
+                  end: .bottomCenter,
                 )
               : null),
-      borderRadius: BorderRadius.circular(borderRadius),
+      borderRadius: .circular(borderRadius),
       border:
           border ??
-          (borderColor != null
-              ? Border.all(color: borderColor!, width: borderWidth ?? 1.0)
-              : null),
+          (borderColor != null ? Border.all(color: borderColor!, width: borderWidth ?? 1.0) : null),
       boxShadow: shadows,
     );
     return fallbackDecoration;

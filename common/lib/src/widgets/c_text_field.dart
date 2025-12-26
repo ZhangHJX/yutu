@@ -153,7 +153,7 @@ class CTextField extends HookWidget {
     final suffixIcon = useMemoized(() {
       if (isFocused.value && text.isNotEmpty) {
         return Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             if (showClearButton) clearButton(),
             if (extraSuffixIcon != null) extraSuffixIcon!,

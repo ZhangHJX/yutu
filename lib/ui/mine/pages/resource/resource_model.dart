@@ -1,6 +1,4 @@
-import 'package:common/common.dart';
-
-// part 'resource_model.g.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 @JsonSerializable(explicitToJson: true)
 class ResourceModel {

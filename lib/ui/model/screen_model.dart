@@ -1,4 +1,4 @@
-import 'package:common/common.dart';
+import 'package:json_annotation/json_annotation.dart';
 part 'screen_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)

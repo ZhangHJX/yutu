@@ -51,7 +51,7 @@ class CTitleInputBar extends HookWidget {
             children: [
               Text(
                 '*',
-                style: TextStyle(fontSize: 10.w, height: 1, color: '#FFEA3A45'.color),
+                style: .new(fontSize: 10.w, height: 1, color: '#FFEA3A45'.color),
               ),
               Text(
                 title,
@@ -71,11 +71,11 @@ class CTitleInputBar extends HookWidget {
               textAlign: TextAlign.right,
               onChanged: onChanged,
               onTap: onTap,
-              hintStyle: TextStyle(
+              hintStyle: .new(
                 fontSize: 16.w,
                 height: 22 / 16,
                 color: '#FFBDBDBD'.color,
-                fontWeight: FontWeight.w400,
+                fontWeight: .w400,
               ),
               inputFormatters: inputFormatters,
             ),

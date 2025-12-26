@@ -27,7 +27,7 @@ class CDivider extends StatelessWidget {
   CDivider({
     super.key,
     this.color,
-    this.type = CDividerType.horizontal,
+    this.type = .horizontal,
     double? thickness,
     this.length,
     this.dashed = false,
@@ -35,11 +35,11 @@ class CDivider extends StatelessWidget {
     this.dashWidth = 5.0,
     this.title,
     this.titleColor,
-    this.titlePlacement = CDividerTitlePlacement.center,
+    this.titlePlacement = .center,
     this.titleOffset = 0.0,
     this.titleStyle,
     this.titleSpacing = 8.0,
-    this.padding = EdgeInsets.zero,
+    this.padding = .zero,
     this.gradient,
     this.borderRadius,
   }) : thickness = thickness ?? hairline;
@@ -54,12 +54,12 @@ class CDivider extends StatelessWidget {
     double dashGap = 3.0,
     double dashWidth = 5.0,
     dynamic title,
-    CDividerTitlePlacement titlePlacement = CDividerTitlePlacement.center,
+    CDividerTitlePlacement titlePlacement = .center,
     double titleOffset = 0.0,
     TextStyle? titleStyle,
     double titleSpacing = 8.0,
     Color? titleColor,
-    EdgeInsetsGeometry padding = EdgeInsets.zero,
+    EdgeInsetsGeometry padding = .zero,
     BorderRadius? borderRadius,
   }) {
     return CDivider(
@@ -91,19 +91,19 @@ class CDivider extends StatelessWidget {
     double dashGap = 3.0,
     double dashWidth = 5.0,
     dynamic title,
-    CDividerTitlePlacement titlePlacement = CDividerTitlePlacement.center,
+    CDividerTitlePlacement titlePlacement = .center,
     double titleOffset = 0.0,
     TextStyle? titleStyle,
     double titleSpacing = 8.0,
     Color? titleColor,
-    EdgeInsetsGeometry padding = EdgeInsets.zero,
+    EdgeInsetsGeometry padding = .zero,
     Gradient? gradient,
     BorderRadius? borderRadius,
   }) {
     return CDivider(
       key: key,
       color: color,
-      type: CDividerType.vertical,
+      type: .vertical,
       thickness: thickness,
       length: height,
       dashed: dashed,
@@ -196,11 +196,10 @@ class CDivider extends StatelessWidget {
     if (title is Widget) {
       titleWidget = title;
     } else if (title is String) {
-      final TextStyle defaultTitleStyle =
-          Theme.of(context).textTheme.bodySmall ?? const TextStyle();
+      final TextStyle defaultTitleStyle = Theme.of(context).textTheme.bodySmall ?? const .new();
 
       final finalTitleStyle = defaultTitleStyle.merge(
-        titleStyle != null ? titleStyle!.copyWith(color: titleColor) : TextStyle(color: titleColor),
+        titleStyle != null ? titleStyle!.copyWith(color: titleColor) : .new(color: titleColor),
       );
       titleWidget = Text(title as String, style: finalTitleStyle);
     } else {
@@ -211,7 +210,7 @@ class CDivider extends StatelessWidget {
     }
 
     // 根据类型返回不同布局的分割线
-    if (type == CDividerType.horizontal) {
+    if (type == .horizontal) {
       return _buildHorizontalLineWithTitle(context, lineColor, titleWidget);
     } else {
       return _buildVerticalLineWithTitle(context, lineColor, titleWidget);
@@ -220,7 +219,7 @@ class CDivider extends StatelessWidget {
 
   /// 构建没有标题的基础分割线
   Widget _buildLine(BuildContext context, Color lineColor) {
-    if (type == CDividerType.horizontal) {
+    if (type == .horizontal) {
       return Container(
         padding: padding,
         width: length,
@@ -262,7 +261,7 @@ class CDivider extends StatelessWidget {
 
         return Flex(
           direction: isHorizontal ? Axis.horizontal : Axis.vertical,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: .spaceBetween,
           children: List.generate(dashCount, (index) {
             return Container(
               width: isHorizontal ? dashWidth : thickness,
@@ -287,7 +286,7 @@ class CDivider extends StatelessWidget {
 
     // 根据标题位置和偏移量计算
     switch (titlePlacement) {
-      case CDividerTitlePlacement.left:
+      case .left:
         // 左侧布局: [空白][标题][线]
         return Container(
           padding: padding,
@@ -306,7 +305,7 @@ class CDivider extends StatelessWidget {
           ),
         );
 
-      case CDividerTitlePlacement.right:
+      case .right:
         // 右侧布局: [线][标题][空白]
         return Container(
           padding: padding,
@@ -321,7 +320,7 @@ class CDivider extends StatelessWidget {
           ),
         );
 
-      case CDividerTitlePlacement.center:
+      case .center:
         // 中间布局: [线][标题][线]
         return Container(
           padding: padding,
@@ -331,7 +330,7 @@ class CDivider extends StatelessWidget {
               Expanded(child: dashed ? dashedDividerLine : dividerLine),
               SizedBox(width: titleSpacing),
               Padding(
-                padding: EdgeInsets.only(left: titleOffset),
+                padding: .only(left: titleOffset),
                 child: titleWidget,
               ),
               SizedBox(width: titleSpacing),
@@ -354,7 +353,7 @@ class CDivider extends StatelessWidget {
 
     // 根据标题位置和偏移量计算
     switch (titlePlacement) {
-      case CDividerTitlePlacement.left:
+      case .left:
         // 顶部布局: [空白][标题][线]
         return Container(
           padding: padding,
@@ -373,7 +372,7 @@ class CDivider extends StatelessWidget {
           ),
         );
 
-      case CDividerTitlePlacement.right:
+      case .right:
         // 底部布局: [线][标题][空白]
         return Container(
           padding: padding,
@@ -388,7 +387,7 @@ class CDivider extends StatelessWidget {
           ),
         );
 
-      case CDividerTitlePlacement.center:
+      case .center:
         // 中间布局: [线][标题][线]
         return Container(
           padding: padding,
@@ -398,7 +397,7 @@ class CDivider extends StatelessWidget {
               Expanded(child: dashed ? dashedDividerLine : dividerLine),
               SizedBox(height: titleSpacing),
               Padding(
-                padding: EdgeInsets.only(top: titleOffset),
+                padding: .only(top: titleOffset),
                 child: titleWidget,
               ),
               SizedBox(height: titleSpacing),

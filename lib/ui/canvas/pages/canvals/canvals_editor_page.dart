@@ -169,7 +169,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false, // 防止键盘弹出时底部工具栏上移
-      backgroundColor: cfff6f2fb,
+      backgroundColor: "#F6F2FB".color,
       body: Stack(
         children: [
           Positioned(
@@ -187,7 +187,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                     ScreenTools.statusBarHeight -
                     ScreenTools.bottomBarHeight -
                     117.w,
-                color: cfff6f2fb,
+                color: "#F6F2FB".color,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     _canvalsController.getCanvalsSize(

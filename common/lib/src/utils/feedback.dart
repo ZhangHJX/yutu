@@ -1,29 +1,23 @@
 import 'dart:math';
+
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
 Future<void> showToast(
   String msg, {
-  Alignment? alignment = Alignment.center,
-  SmartToastType? type = SmartToastType.onlyRefresh,
+  Alignment? alignment = .center,
+  SmartToastType? type = .onlyRefresh,
 }) {
   return SmartDialog.showToast(
     msg,
     displayType: type,
     alignment: alignment,
     builder: (context) => Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.w),
-      decoration: BoxDecoration(
-        color: Colors.black.withAlpha(153),
-        borderRadius: BorderRadius.circular(8.w),
-      ),
+      padding: .symmetric(horizontal: 16.w, vertical: 12.w),
+      decoration: BoxDecoration(color: Colors.black.withAlpha(153), borderRadius: .circular(8.w)),
       child: Text(
         msg,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 14.w,
-          fontWeight: FontWeight.w500,
-        ),
+        style: .new(color: Colors.white, fontSize: 14.w, fontWeight: .w500),
       ),
     ),
   );
@@ -35,13 +29,10 @@ Future<void> showLoading(String msg, {bool showMask = true}) {
     maskColor: showMask ? null : Colors.transparent,
     builder: (context) => Center(
       child: Container(
-        padding: EdgeInsets.all(20.w),
-        decoration: BoxDecoration(
-          color: Colors.black.withAlpha(153),
-          borderRadius: BorderRadius.circular(8.w),
-        ),
+        padding: .all(20.w),
+        decoration: BoxDecoration(color: Colors.black.withAlpha(153), borderRadius: .circular(8.w)),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             SizedBox(
               width: 30.w,
@@ -51,11 +42,7 @@ Future<void> showLoading(String msg, {bool showMask = true}) {
             SizedBox(height: 12.w),
             Text(
               msg,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14.w,
-                fontWeight: FontWeight.w500,
-              ),
+              style: .new(color: Colors.white, fontSize: 14.w, fontWeight: .w500),
             ),
           ],
         ),
@@ -113,21 +100,13 @@ Future<bool> showMyDialog(
   await SmartDialog.show(
     tag: tag,
     maskColor: Colors.black.withValues(alpha: 0.4),
-    alignment: Alignment.center,
+    alignment: .center,
     builder: (context) => Container(
-      margin: EdgeInsets.symmetric(horizontal: 26.w),
-      padding: EdgeInsets.only(
-        left: 12.w,
-        right: 12.w,
-        top: 22.w,
-        bottom: 16.w,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14.w),
-      ),
+      margin: .symmetric(horizontal: 26.w),
+      padding: .only(left: 12.w, right: 12.w, top: 22.w, bottom: 16.w),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: .circular(14.w)),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           Text(
             msg,
@@ -136,20 +115,12 @@ Future<bool> showMyDialog(
           ),
           SizedBox(height: 28.w),
           DefaultTextStyle(
-            style: TextStyle(
-              fontSize: 16.w,
-              height: 1,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
+            style: .new(fontSize: 16.w, height: 1, color: Colors.white, fontWeight: .w500),
             child: Row(
-              textDirection: isConfirmRight
-                  ? TextDirection.ltr
-                  : TextDirection.rtl,
+              textDirection: isConfirmRight ? TextDirection.ltr : TextDirection.rtl,
               spacing: 15.w,
               children: [
-                if (!isConfirmOnly)
-                  _buildCancelWidget(cancelTap, cancelWidget, cancelText),
+                if (!isConfirmOnly) _buildCancelWidget(cancelTap, cancelWidget, cancelText),
                 _buildConfirmWidget(confirmTap, confirmWidget, confirmText),
               ],
             ),
@@ -161,11 +132,7 @@ Future<bool> showMyDialog(
   return isConfirm;
 }
 
-Widget _buildConfirmWidget(
-  VoidCallback confirmTap,
-  Widget? confirmWidget,
-  String? confirmText,
-) {
+Widget _buildConfirmWidget(VoidCallback confirmTap, Widget? confirmWidget, String? confirmText) {
   return Expanded(
     child: GestureDetector(
       onTap: confirmTap,
@@ -176,7 +143,7 @@ Widget _buildConfirmWidget(
             textColor: Colors.white,
             text: Text(
               confirmText ?? '确定',
-              style: TextStyle(fontSize: 16.w, height: 24 / 16),
+              style: .new(fontSize: 16.w, height: 24 / 16),
             ),
             gradient: defaultGradient,
             borderRadius: 44.w,
@@ -186,11 +153,7 @@ Widget _buildConfirmWidget(
   );
 }
 
-Widget _buildCancelWidget(
-  VoidCallback cancelTap,
-  Widget? cancelWidget,
-  String? cancelText,
-) {
+Widget _buildCancelWidget(VoidCallback cancelTap, Widget? cancelWidget, String? cancelText) {
   return Expanded(
     child: GestureDetector(
       onTap: cancelTap,
@@ -225,24 +188,24 @@ Future<void> showMyBottomSheet(
   return SmartDialog.show(
     tag: tag,
     maskColor: Colors.black.withValues(alpha: 0.4),
-    alignment: Alignment.bottomCenter,
+    alignment: .bottomCenter,
     builder: (context) => Container(
       constraints: BoxConstraints(maxHeight: 300.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12.w)),
+        borderRadius: .vertical(top: Radius.circular(12.w)),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           if (title != null) title,
           Flexible(
             child: ListView.separated(
-              padding: EdgeInsets.zero,
+              padding: .zero,
               shrinkWrap: true,
               itemBuilder: (context, index) => CButton(
                 text: Text(items[index].title),
-                height: 44.w,
+                height: 50.w,
                 onPressed: () {
                   items[index].onPressed();
                   SmartDialog.dismiss(tag: tag);
@@ -259,7 +222,7 @@ Future<void> showMyBottomSheet(
             child: CButton(
               height: 44.w,
               text: Text('取消'),
-              width: double.infinity,
+              width: .infinity,
               onPressed: () {
                 onCancel?.call();
                 SmartDialog.dismiss(tag: tag);

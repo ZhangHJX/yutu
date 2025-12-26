@@ -13,7 +13,7 @@ class CMoney extends StatelessWidget {
     double? fractionSize,
     this.lineHeight,
     this.color = const Color(0xFFEA3A45),
-    this.fontWeight = FontWeight.w500,
+    this.fontWeight = .w500,
     this.size,
     this.hideSymbol = false,
     this.isGoldWeight = false,
@@ -46,7 +46,7 @@ class CMoney extends StatelessWidget {
   /// 文本颜色, 默认为[Color(0xFFEA3A45)]
   final Color color;
 
-  /// 文本字体粗细, 默认为[FontWeight.w500]
+  /// 文本字体粗细, 默认为[.w500]
   final FontWeight fontWeight;
 
   /// 是否隐藏符号, 默认为false
@@ -63,7 +63,7 @@ class CMoney extends StatelessWidget {
     if (money == null) {
       return Text(
         tip ?? '暂无定价',
-        style: TextStyle(fontWeight: fontWeight, height: lineHeight, color: color),
+        style: .new(fontWeight: fontWeight, height: lineHeight, color: color),
       );
     }
     // 如果是num类型, 则要先转为String类型, 之后小数点分割, 小数点归为小数部分, 其余归为整数部分
@@ -75,21 +75,20 @@ class CMoney extends StatelessWidget {
         : (isGoldWeight ? '.000' : '.00');
 
     return DefaultTextStyle(
-      style: TextStyle(fontWeight: fontWeight, height: lineHeight, color: color),
+      style: .new(fontWeight: fontWeight, height: lineHeight, color: color),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         textBaseline: TextBaseline.alphabetic,
-        crossAxisAlignment: CrossAxisAlignment.baseline,
+        crossAxisAlignment: .baseline,
         children: [
           if (!hideSymbol && !isGoldWeight)
             Text(
               '￥',
-              style: TextStyle(fontSize: size ?? symbolSize, fontWeight: fontWeight, color: color),
+              style: .new(fontSize: size ?? symbolSize, fontWeight: fontWeight, color: color),
             ),
-          Text(integer, style: TextStyle(fontSize: size ?? integerSize)),
-          Text(fraction, style: TextStyle(fontSize: size ?? fractionSize)),
-          if (!hideSymbol && isGoldWeight)
-            Text('g', style: TextStyle(fontSize: size ?? fractionSize)),
+          Text(integer, style: .new(fontSize: size ?? integerSize)),
+          Text(fraction, style: .new(fontSize: size ?? fractionSize)),
+          if (!hideSymbol && isGoldWeight) Text('g', style: .new(fontSize: size ?? fractionSize)),
         ],
       ),
     );

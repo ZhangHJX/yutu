@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
-
 import '../utils/index.dart';
 
 import 'server_page_model.dart';
@@ -25,20 +23,18 @@ class BaseModel<T> {
   ) {
     final rawData = json[dataKey];
     final code = json[codeKey];
-    final String message = json[messageKey] as String? ?? '';
+    final message = json[messageKey];
 
     T? data;
-
-    debugPrint('BaseModel===$rawData======${HttpStatus.ok}');
-
-    if (showErrorToast && message.isNotEmpty) {
-      showToast(message);
-    }
 
     if (rawData is Map) {
       data = fromJsonT(rawData as Map<String, dynamic>);
     } else {
       data = fromJsonT({dstValueKey: rawData});
+    }
+
+    if (showErrorToast && code != HttpStatus.ok) {
+      showToast(message);
     }
 
     return BaseModel(code: code, message: message, data: data);
@@ -61,18 +57,14 @@ T Function(Map<String, dynamic>) primitiveConverter<T>() =>
 ServerPageModel<T> Function(Map<String, dynamic>) pageConverter<T>(
   T Function(Map<String, dynamic>) fromJsonT,
 ) {
-  return (json) => ServerPageModel<T>.fromJson(
-    json,
-    (item) => fromJsonT(item as Map<String, dynamic>),
-  );
+  return (json) =>
+      ServerPageModel<T>.fromJson(json, (item) => fromJsonT(item as Map<String, dynamic>));
 }
 
 List<T> Function(Map<String, dynamic>) listConverter<T>(
   T Function(Map<String, dynamic>) fromJsonT, [
   String? field,
 ]) {
-  return (json) => JsonHelper.fromMapList(
-    field == null ? json[dstValueKey] : json[field],
-    fromJsonT,
-  );
+  return (json) =>
+      JsonHelper.fromMapList(field == null ? json[dstValueKey] : json[field], fromJsonT);
 }

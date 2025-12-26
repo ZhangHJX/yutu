@@ -22,9 +22,7 @@ class CVirtualBack extends StatelessWidget {
 }
 
 class _HandleVirtualBack {
-  static const MethodChannel channel = MethodChannel(
-    'com.beefighting.mall/toBackground',
-  );
+  static const MethodChannel channel = MethodChannel('com.beefighting.mall/toBackground');
 
   static Future<bool> back() async {
     try {

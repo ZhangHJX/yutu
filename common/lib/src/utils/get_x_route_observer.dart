@@ -5,6 +5,7 @@ class GetXRouteObserver extends NavigatorObserver {
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     RouterReportManager.reportCurrentRoute(route);
+    debugPrint('didPush: ${route.settings.name}');
     history.add(route);
   }
 

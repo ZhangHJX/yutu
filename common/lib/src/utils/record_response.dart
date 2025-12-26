@@ -68,9 +68,8 @@ class RecordResponse {
       } else {
         _logSuccess('已创建新文件: $fileName');
       }
-    } catch (e) {
-      _logError('😵‍💫😵‍💫😵‍💫😵‍💫😵‍💫😵‍💫保存响应数据失败: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   Future<void> clearMockData() async {

@@ -61,7 +61,7 @@ class CSafeBottom extends StatelessWidget {
         top: false,
         minimum:
             minimum ??
-            EdgeInsets.only(
+            .only(
               top: minTop ?? minVertical ?? 0,
               bottom: minBottom ?? minVertical ?? 0,
               left: minLeft ?? minHorizontal ?? 0,

@@ -26,7 +26,7 @@ class CGradientText extends StatelessWidget {
   Widget build(BuildContext context) {
     final textChild = Text(
       text,
-      style: (style ?? const TextStyle()).copyWith(color: Colors.white),
+      style: (style ?? const .new()).copyWith(color: Colors.white),
       textAlign: textAlign,
     );
     return ShaderMask(

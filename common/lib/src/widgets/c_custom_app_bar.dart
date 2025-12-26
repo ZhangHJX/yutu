@@ -46,8 +46,8 @@ class CCustomAppBar extends HookWidget implements PreferredSizeWidget {
         if (title != null)
           Expanded(
             child: Container(
-              alignment: Alignment.center,
-              margin: EdgeInsets.symmetric(horizontal: 8),
+              alignment: .center,
+              margin: .symmetric(horizontal: 8),
               child: DefaultTextStyle(style: finalTitleTextStyle!, child: title!),
             ),
           ),

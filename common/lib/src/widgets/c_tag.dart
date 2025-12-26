@@ -34,7 +34,7 @@ class CTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      alignment: Alignment.center,
+      alignment: .center,
       width: width,
       height: height,
       padding: padding,
@@ -49,7 +49,7 @@ class CTag extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(color: color, fontSize: fontSize, height: lineHeight),
+        style: .new(color: color, fontSize: fontSize, height: lineHeight),
       ),
     );
   }

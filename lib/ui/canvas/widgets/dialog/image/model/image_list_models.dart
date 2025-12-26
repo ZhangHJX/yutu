@@ -1,4 +1,5 @@
-import 'package:common/common.dart';
+import 'package:json_annotation/json_annotation.dart';
+
 part 'image_list_models.g.dart';
 
 @JsonSerializable(explicitToJson: true)

@@ -13,7 +13,7 @@ TextStyle text333333({
   FontStyle? fontStyle,
   double? letterSpacing,
   bool ellipsis = false,
-}) => TextStyle(
+}) => .new(
   color: cff333333,
   fontSize: fontSize,
   fontWeight: fontWeight,
@@ -34,7 +34,7 @@ TextStyle text474747({
   FontStyle? fontStyle,
   double? letterSpacing,
   bool ellipsis = false,
-}) => TextStyle(
+}) => .new(
   color: cff474747,
   fontSize: fontSize,
   fontWeight: fontWeight,
@@ -57,7 +57,7 @@ TextStyle text54545D({
   FontStyle? fontStyle,
   double? letterSpacing,
   bool ellipsis = false,
-}) => TextStyle(
+}) => .new(
   color: cff545454,
   fontSize: fontSize,
   fontWeight: fontWeight,
@@ -80,7 +80,7 @@ TextStyle text989897({
   FontStyle? fontStyle,
   double? letterSpacing,
   bool ellipsis = false,
-}) => TextStyle(
+}) => .new(
   color: cff989897,
   fontSize: fontSize,
   fontWeight: fontWeight,

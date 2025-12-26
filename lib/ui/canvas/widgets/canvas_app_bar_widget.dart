@@ -25,10 +25,13 @@ class CanvasAppBar extends StatelessWidget {
       height: 51.w + ScreenTools.statusBarHeight,
       child: Column(
         children: [
-          Container(height: ScreenTools.statusBarHeight, color: cfff6f2fb),
+          Container(
+            height: ScreenTools.statusBarHeight,
+            color: Color(0xfff6f2fb),
+          ),
           Container(
             height: 51.w,
-            color: cfff6f2fb,
+            color: Color(0xfff6f2fb),
             child: Row(
               children: [
                 SizedBox(width: 19),

@@ -41,7 +41,7 @@ class CExpandableText extends HookWidget {
           children: [
             TextSpan(text: text, style: textStyle),
             WidgetSpan(
-              alignment: PlaceholderAlignment.middle,
+              alignment: .middle,
               child: GestureDetector(onTap: () => expanded.value = false, child: collapseWidget),
             ),
           ],
@@ -84,7 +84,7 @@ class CExpandableText extends HookWidget {
               children: [
                 TextSpan(text: '$visibleText...', style: textStyle),
                 WidgetSpan(
-                  alignment: PlaceholderAlignment.middle,
+                  alignment: .middle,
                   child: CMeasureSize(
                     onChange: (size, _) {
                       expandButtonWidth.value = size.width;
@@ -142,25 +142,45 @@ class CExpandableText extends HookWidget {
       return fullText;
     }
 
-    // 获取剩余文本
-    final remainingText = fullText.substring(endOffset);
+    final fullTextChars = fullText.characters;
+    String prefixString;
+    try {
+      prefixString = fullText.substring(0, endOffset);
+      prefixString.characters;
+    } catch (e) {
+      int safeOffset = endOffset;
+      while (safeOffset > 0) {
+        try {
+          prefixString = fullText.substring(0, safeOffset);
+          prefixString.characters;
+          break;
+        } catch (e) {
+          safeOffset--;
+        }
+      }
+      prefixString = fullText.substring(0, safeOffset);
+    }
 
-    // 计算最后一行可以显示多少剩余文本
+    final prefixChars = prefixString.characters;
+    final charCount = prefixChars.length;
+
+    final remainingText = fullTextChars.skip(charCount).string;
+
     final lastLineText = _getTextForWidth(remainingText, style, lastLineAvailableWidth);
 
-    // 组合前面几行的文本和最后一行可显示的文本
-    return fullText.substring(0, endOffset) + lastLineText;
+    return fullTextChars.take(charCount).string + lastLineText;
   }
 
   // 计算在给定宽度下可以显示的最大文本
   String _getTextForWidth(String text, TextStyle style, double maxWidth) {
-    // 二分查找法找出适合宽度的文本长度
+    final textChars = text.characters;
+
     int low = 0;
-    int high = text.length;
+    int high = textChars.length;
 
     while (low < high) {
       final mid = (low + high) ~/ 2;
-      final subText = text.substring(0, mid);
+      final subText = textChars.take(mid).string;
       final width = _calculateTextWidth(subText, style);
 
       if (width <= maxWidth) {
@@ -170,7 +190,7 @@ class CExpandableText extends HookWidget {
       }
     }
 
-    // 确保不会返回空字符串
-    return text.substring(0, low > 0 ? low - 1 : 0);
+    final resultLength = low > 0 ? low - 1 : 0;
+    return textChars.take(resultLength).string;
   }
 }

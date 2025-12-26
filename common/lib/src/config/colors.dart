@@ -39,3 +39,6 @@ const cImg = Color(0xffd8d8d8);
 
 /// 分割线颜色
 const cDivider = Color(0xffeaeaea);
+
+/// 获取随机颜色
+Color get randomColor => Color(Random().nextInt(0xFFFFFFFF));

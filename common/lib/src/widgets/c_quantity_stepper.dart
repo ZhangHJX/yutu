@@ -10,18 +10,18 @@ class CQuantityStepper extends StatelessWidget {
       height: 24.w,
       decoration: BoxDecoration(
         border: Border.all(color: '#FFD1D1D1'.color, width: hairline),
-        borderRadius: BorderRadius.circular(6.w),
+        borderRadius: .circular(6.w),
       ),
       child: Row(
         children: [
           CButton(
             icon: Image.asset('assets/images/shop_cart/ic_minus.png'),
             width: 20.w,
-            height: double.infinity,
+            height: .infinity,
             border: Border(right: borderSide),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6.w),
+            padding: .symmetric(horizontal: 6.w),
             child: CText(
               '88',
               style: text333333(fontSize: 13.w),
@@ -32,7 +32,7 @@ class CQuantityStepper extends StatelessWidget {
           CButton(
             icon: Image.asset('assets/images/shop_cart/ic_add.png'),
             width: 20.w,
-            height: double.infinity,
+            height: .infinity,
             border: Border(left: borderSide),
           ),
         ],

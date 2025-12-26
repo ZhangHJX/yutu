@@ -47,21 +47,13 @@ class CBadgeNumber extends StatelessWidget {
   Widget build(BuildContext context) {
     final padding = isSingleDigit ? lowPadding : highPadding ?? lowPadding;
     return Container(
-      alignment: Alignment.center,
+      alignment: .center,
       height: height,
       padding: padding,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
+      decoration: BoxDecoration(color: backgroundColor, borderRadius: .circular(borderRadius)),
       child: Text(
         displayText,
-        style: TextStyle(
-          color: color,
-          fontSize: fontSize.w,
-          height: 1,
-          fontWeight: FontWeight.w500,
-        ),
+        style: .new(color: color, fontSize: fontSize.w, height: 1, fontWeight: .w500),
       ),
     );
   }

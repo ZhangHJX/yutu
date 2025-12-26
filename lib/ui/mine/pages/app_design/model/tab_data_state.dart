@@ -1,0 +1,19 @@
+import 'package:common/common.dart';
+import '../../../model/design_model.dart';
+
+class TabDataState {
+  /// 图片列表
+  final RxList<DesignItemModel> designList = <DesignItemModel>[].obs;
+
+  /// 当前页码
+  int currentPage = 1;
+
+  /// 是否正在加载
+  final RxBool isLoading = false.obs;
+
+  /// 是否还有更多数据
+  final RxBool hasMore = true.obs;
+
+  /// 是否已初始化（用于懒加载）
+  bool isInitialized = false;
+}

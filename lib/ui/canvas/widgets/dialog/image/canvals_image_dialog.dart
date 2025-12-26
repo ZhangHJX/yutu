@@ -24,11 +24,9 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
 
   /// 当前选中的素材索引（单选）
   int? _selectedIndex;
-  late EasyRefreshController _controller;
 
   @override
   void dispose() {
-    _controller.dispose();
     if (Get.isRegistered<ImageLogic>(tag: imageDialog)) {
       Get.delete<ImageLogic>(tag: imageDialog, force: true);
     }
@@ -38,10 +36,6 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
   @override
   void initState() {
     super.initState();
-    _controller = EasyRefreshController(
-      controlFinishRefresh: true,
-      controlFinishLoad: true,
-    );
     logic.onUploadSuccess = (String imagePath, double width, double height) {
       if (widget.onImageSelected != null) {
         widget.onImageSelected!(imagePath, width, height);
@@ -136,62 +130,31 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
           right: 19.w,
         ),
         height: 231.w,
-        child: EasyRefresh(
-          clipBehavior: Clip.none,
-          controller: _controller,
-          header: ClassicHeader(
-            showMessage: false,
-            triggerWhenReach: true,
-            dragText: '松开刷新',
-            readyText: '记载中...',
-            processingText: '记载中...',
-            processedText: '刷新完成',
-          ),
-          footer: ClassicFooter(
-            showMessage: false,
-            triggerWhenReach: true,
-            dragText: '上拉加载',
-            processingText: '加载中...',
-            processedText: '加载完成',
-            noMoreText: '没有更多了',
-          ),
-
-          onRefresh: () async {
-            await logic.onRefresh();
-          },
-          onLoad: logic.hasMore.value
-              ? () async {
-                  await logic.onLoad();
-                }
-              : null,
-
-          child: Obx(() {
-            final list = logic.imageList;
-
-            return MasonryGridView.count(
-              crossAxisCount: 3, // 两列瀑布流
-              mainAxisSpacing: 12.w,
-              crossAxisSpacing: 9.w,
-              padding: EdgeInsets.only(top: 10),
-              itemCount: list.length,
-              itemBuilder: (context, index) {
-                final model = list[index];
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final itemHeight = calculateAspectRatio(
-                      constraints.maxWidth,
-                      model.canvasSize,
-                    );
-                    return SizedBox(
-                      height: itemHeight,
-                      child: _buildImageItem(model, index),
-                    );
-                  },
-                );
-              },
-            );
-          }),
-        ),
+        child: Obx(() {
+          final list = logic.imageList;
+          return MasonryGridView.count(
+            crossAxisCount: 3, // 两列瀑布流
+            mainAxisSpacing: 12.w,
+            crossAxisSpacing: 9.w,
+            padding: EdgeInsets.only(top: 10),
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              final model = list[index];
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final itemHeight = calculateAspectRatio(
+                    constraints.maxWidth,
+                    model.canvasSize,
+                  );
+                  return SizedBox(
+                    height: itemHeight,
+                    child: _buildImageItem(model, index),
+                  );
+                },
+              );
+            },
+          );
+        }),
       );
     });
   }

@@ -10,9 +10,9 @@ class CBorderImage extends StatelessWidget {
     super.key,
     this.borderRadius,
     double? borderWidth,
-    this.isShowBorder = true,
+    this.showBorder = true,
     this.isCircle = false,
-    this.showGrayBg = true,
+    this.isGreyBg = true,
     this.size,
     this.fit = BoxFit.cover,
     this.canPreview = false,
@@ -29,9 +29,9 @@ class CBorderImage extends StatelessWidget {
 
   final double borderWidth;
 
-  final bool isShowBorder;
+  final bool showBorder;
 
-  final bool showGrayBg;
+  final bool isGreyBg;
 
   final bool isCircle;
 
@@ -47,17 +47,18 @@ class CBorderImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final finalBorderRadius = isCircle
-        ? BorderRadius.circular(size ?? width! / 2)
-        : (borderRadius ?? BorderRadius.zero);
+    final BorderRadius finalBorderRadius = isCircle
+        ? .circular(size ?? width! / 2)
+        : (borderRadius ?? .zero);
 
     Widget image = switch (imgUrl) {
       final String url when url.startsWith('http') => Image.network(
-        url,
+        url.contains('oss-cn-') ? '$url?x-oss-process=image/quality,q_80' : url,
         fit: fit,
         width: width,
         height: height,
         color: color,
+        gaplessPlayback: true,
       ),
       final String url when url.startsWith('assets/') => Image.asset(
         url,
@@ -65,6 +66,7 @@ class CBorderImage extends StatelessWidget {
         width: width,
         height: height,
         color: color,
+        gaplessPlayback: true,
       ),
       final String url when url.startsWith('/') => Image.file(
         File.fromUri(Uri.file(url)),
@@ -72,6 +74,7 @@ class CBorderImage extends StatelessWidget {
         width: width,
         height: height,
         color: color,
+        gaplessPlayback: true,
       ),
       _ => SizedBox(width: width, height: height),
     };
@@ -87,8 +90,8 @@ class CBorderImage extends StatelessWidget {
       width: size ?? width,
       height: size ?? height,
       decoration: BoxDecoration(
-        color: showGrayBg ? cImg : null,
-        border: isShowBorder ? Border.all(color: cImg, width: borderWidth) : null,
+        color: isGreyBg ? cImg : null,
+        border: showBorder ? Border.all(color: cImg, width: borderWidth) : null,
         borderRadius: finalBorderRadius,
       ),
       child: (isCircle || borderRadius != null)
@@ -110,8 +113,8 @@ class CAssetImage extends CBorderImage {
     super.width,
     super.height,
     super.borderRadius,
-    super.isShowBorder = false,
-    super.showGrayBg = false,
+    super.showBorder = false,
+    super.isGreyBg = false,
     super.isCircle,
     super.size,
     super.fit,

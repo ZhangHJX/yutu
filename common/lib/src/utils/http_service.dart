@@ -29,13 +29,8 @@ class HttpService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (RequestOptions options, RequestInterceptorHandler handler) {
-          final token = _box.read(tokenKey);
-          if (options.extra[withTokenKey] == true && token != null) {
-            options.headers['token'] = token;
-          }
-
           if (kDebugMode) {
-            print('👶👶👶----请求方式: ${options.baseUrl}${options.path}');
+            print('👶👶👶----请求方式: ${options.method} ${options.path}');
             print('👧👧👧请求头: ${options.headers}');
             if (options.data != null) {
               print('👩👩👩请求参数: ${options.data}');
@@ -43,7 +38,6 @@ class HttpService {
             print('👨👨👨查询参数: ${options.queryParameters}');
             print('🔥🔥🔥额外数据: ${options.extra}');
           }
-
           return handler.next(options);
         },
 
@@ -66,8 +60,6 @@ class HttpService {
     );
   }
 
-  final _box = GetStorage();
-
   static HttpService? _instance;
   late Dio _dio;
 
@@ -80,18 +72,18 @@ class HttpService {
 
     if (errorMessage == null) {
       switch (error.type) {
-        case DioExceptionType.connectionTimeout:
+        case .connectionTimeout:
           errorMessage = '连接超时';
-        case DioExceptionType.sendTimeout:
+        case .sendTimeout:
           errorMessage = '请求超时';
-        case DioExceptionType.receiveTimeout:
+        case .receiveTimeout:
           errorMessage = '响应超时';
-        case DioExceptionType.badResponse:
+        case .badResponse:
           // 服务器错误
           errorMessage = '服务器错误：${error.response?.statusCode}';
-        case DioExceptionType.cancel:
+        case .cancel:
           errorMessage = '请求取消';
-        case DioExceptionType.unknown:
+        case .unknown:
           errorMessage = '网络错误，请检查网络连接';
         default:
           errorMessage = '发生错误: ${error.message}';
@@ -100,7 +92,7 @@ class HttpService {
 
     // 显示错误信息
     if (kDebugMode) {
-      print('😩😩😩网络请求发生错误: ${error.type}---${error.message}');
+      print('😩😩😩网络请求发生错误: ${error.message}');
     }
 
     final shouldShowToast = showErrorToast ?? autoShowErrorToast;
@@ -113,10 +105,12 @@ class HttpService {
     String path, {
     dynamic data,
     Options? options,
+
+    /// 处理后台直接返回data这种裸数据的情况
     bool isNake = false,
     bool? showErrorToast,
     String method = 'GET',
-    bool? withToken = true,
+    bool withToken = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? query,
     ProgressCallback? onSendProgress,
@@ -156,7 +150,7 @@ class HttpService {
         );
       }
 
-      // debugPrint('response=========: ${response.data}');
+      debugPrint('👧👧👧获取到的数据是多少: ${response.data}');
 
       if (isNake) {
         return BaseModel.fromJson(
@@ -165,14 +159,12 @@ class HttpService {
           showErrorToast ?? autoShowErrorToast,
         );
       }
-
       return BaseModel.fromJson(
         response.data,
         converter ?? (j) => j as T,
         showErrorToast ?? autoShowErrorToast,
       );
     } on DioException catch (e) {
-      debugPrint('response====error======: $e');
       _handleError(e, showErrorToast: showErrorToast);
       rethrow;
     }
@@ -183,7 +175,7 @@ class HttpService {
     Options? options,
     bool isNake = false,
     bool? showErrorToast,
-    bool? withToken = true,
+    bool withToken = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? query,
     ProgressCallback? onReceiveProgress,
@@ -206,7 +198,7 @@ class HttpService {
     Options? options,
     bool isNake = false,
     bool? showErrorToast,
-    bool? withToken = true,
+    bool withToken = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? query,
     ProgressCallback? onSendProgress,
@@ -233,7 +225,7 @@ class HttpService {
     Options? options,
     bool isNake = false,
     bool? showErrorToast,
-    bool? withToken = true,
+    bool withToken = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? query,
     ProgressCallback? onSendProgress,
@@ -262,7 +254,7 @@ class HttpService {
     Options? options,
     bool isNake = false,
     bool? showErrorToast,
-    bool? withToken = true,
+    bool withToken = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? query,
   }) => request<T>(
@@ -284,7 +276,7 @@ class HttpService {
     Options? options,
     bool isNake = false,
     bool? showErrorToast,
-    bool? withToken = true,
+    bool withToken = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? query,
     ProgressCallback? onSendProgress,
@@ -305,6 +297,29 @@ class HttpService {
     onReceiveProgress: onReceiveProgress,
   );
 
+  Future<BaseModel<T>> uploadFile<T>(
+    String path, {
+    required FormData formData,
+    T Function(Map<String, dynamic>)? converter,
+    Map<String, dynamic>? query,
+    Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    bool? showErrorToast,
+    bool withToken = true,
+  }) => request<T>(
+    path,
+    converter: converter,
+    method: 'POST',
+    data: formData,
+    query: query,
+    options: options?.copyWith(contentType: 'multipart/form-data'),
+    cancelToken: cancelToken,
+    onSendProgress: onSendProgress,
+    showErrorToast: showErrorToast,
+    withToken: withToken,
+  );
+
   Future<Response> downloadFile(
     String url, {
     required String savePath,
@@ -313,15 +328,17 @@ class HttpService {
     CancelToken? cancelToken,
     ProgressCallback? onReceiveProgress,
     bool? showErrorToast,
-    bool? withToken = true,
+    bool withToken = true,
   }) async {
     try {
       return await _dio.download(
         url,
         savePath,
         queryParameters: query,
-        options: options?.copyWith(responseType: ResponseType.bytes)
-          ?..extra?[withTokenKey] = withToken,
+        options:
+            (options?.copyWith(responseType: ResponseType.bytes) ??
+                    Options(responseType: ResponseType.bytes))
+                .copyWith(extra: {withTokenKey: withToken}),
         cancelToken: cancelToken,
         onReceiveProgress: onReceiveProgress,
       );
@@ -379,6 +396,14 @@ class HttpService {
 
   set setBaseUrl(String baseUrl) {
     _dio.options.baseUrl = baseUrl;
+  }
+
+  void addInterceptor(Interceptor interceptor) {
+    _dio.interceptors.insert(0, interceptor);
+  }
+
+  void removeInterceptor(Interceptor interceptor) {
+    _dio.interceptors.remove(interceptor);
   }
 }
 

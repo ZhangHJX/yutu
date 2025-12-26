@@ -85,11 +85,11 @@ class CAppBar extends StatelessWidget implements PreferredSizeWidget {
         leadingWidget = SizedBox.fromSize(
           size: Size(40.w, 44.w),
           child: IconButton(
-            padding: EdgeInsets.only(right: zeroLeadingPadding ? 0 : 5.w),
+            padding: .only(right: zeroLeadingPadding ? 0 : 5.w),
             icon: Image.asset(
-              'assets/images/global/ic_black_back.png',
-              width: 20.w,
-              height: 20.w,
+              'assets/images/mall/ic_black_back.png',
+              width: 40.w,
+              height: 44.w,
               color: leadingIconColor ?? color,
             ),
             onPressed: () {
@@ -106,24 +106,17 @@ class CAppBar extends StatelessWidget implements PreferredSizeWidget {
       }
     }
 
-    final finalTextStyle = Theme.of(context).appBarTheme.titleTextStyle
-        ?.merge(titleTextStyle)
-        .merge(TextStyle(color: color));
+    final finalTextStyle = Theme.of(
+      context,
+    ).appBarTheme.titleTextStyle?.merge(titleTextStyle).merge(TextStyle(color: color));
 
     return AppBar(
-      title:
-          title ??
-          (titleText != null ? Text(titleText!, style: finalTextStyle) : null),
+      title: title ?? (titleText != null ? Text(titleText!, style: finalTextStyle) : null),
       centerTitle: centerTitle,
       backgroundColor: backgroundColor,
       leading: appendLeading == null
           ? leadingWidget
-          : Row(
-              children: [
-                if (leadingWidget != null) leadingWidget,
-                appendLeading!,
-              ],
-            ),
+          : Row(children: [if (leadingWidget != null) leadingWidget, appendLeading!]),
       automaticallyImplyLeading: false,
       actions: actions,
       elevation: elevation,

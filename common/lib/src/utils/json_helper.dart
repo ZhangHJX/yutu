@@ -23,7 +23,10 @@ class JsonHelper {
   }
 
   /// 将List类型转换为指定模型类型的List
-  static List<T> fromMapList<T>(List<dynamic> list, T Function(Map<String, dynamic>) fromJson) {
+  static List<T> fromMapList<T>(List<dynamic>? list, T Function(Map<String, dynamic>) fromJson) {
+    if (list == null) {
+      return [];
+    }
     return list.map((item) => fromJson(item as Map<String, dynamic>)).toList();
   }
 

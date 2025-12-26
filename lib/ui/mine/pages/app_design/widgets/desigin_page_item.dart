@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../model/design_model.dart';
+import '../../../model/design_model.dart';
 
 class DesiginPageItem extends StatelessWidget {
   final DesignItemModel item;

@@ -1,4 +1,4 @@
-import 'package:common/common.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'user_model.dart';
 
 part 'login_response.g.dart';

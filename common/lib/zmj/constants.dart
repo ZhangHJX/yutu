@@ -1,5 +1,3 @@
-import 'package:common/common.dart';
-
 /// 登录token的key
 String tokenKey = 'app_token_key';
 
