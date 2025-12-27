@@ -4,7 +4,7 @@ import '../../model/design_model.dart';
 import 'package:voicetemplate/ui/model/index.dart';
 import '../../model/tab_data_state.dart';
 
-class AppDesiginLogic extends GetxController {
+class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
   /// 头部的tab
   final screenList = <ScreenItemModel>[].obs;
   // 当前选中的 tab 索引
@@ -12,11 +12,15 @@ class AppDesiginLogic extends GetxController {
   // 每个 tab 的数据状态（使用 tagId 作为 key，0 表示全部）
   final Map<int, TabDataState> tabDataMap = {};
 
+  /// TabController
+  final Rxn<TabController> tabController = Rxn<TabController>();
+
   /// 选中的草稿 id 集合
   final RxSet<String> selectedIds = <String>{}.obs;
 
   /// 是否处于批量模式
   final RxBool isBatchMode = false.obs;
+  final RxBool tabIsLoading = false.obs;
 
   /// 获取当前 tab 的数据列表
   RxList<DesignItemModel> get designList {
@@ -48,9 +52,78 @@ class AppDesiginLogic extends GetxController {
     getTabTags();
   }
 
+  @override
+  void onClose() {
+    // 清理 TabController
+    tabController.value?.removeListener(_onTabControllerChanged);
+    tabController.value?.dispose();
+    tabController.value = null;
+    super.onClose();
+  }
+
+  /// 创建或更新 TabController
+  void createTabController() {
+    final newLength = screenList.length;
+    if (newLength == 0) return;
+    // 创建新的 TabController
+    final newController = TabController(
+      length: newLength,
+      vsync: this,
+      initialIndex: 0,
+    );
+    newController.addListener(_onTabControllerChanged);
+    tabController.value = newController;
+    selectedTabIndex.value = 0;
+  }
+
+  /// TabController 切换监听
+  void _onTabControllerChanged() {
+    final controller = tabController.value;
+    if (controller == null) return;
+
+    if (!controller.indexIsChanging) {
+      final index = controller.index;
+      // 避免循环调用：只有当索引不同时才更新
+      if (index != selectedTabIndex.value) {
+        // 直接更新索引，避免再次触发 TabController 的 animateTo
+        selectedTabIndex.value = index;
+        // 切换 tab 时，如果该 tab 未初始化，则加载数据
+        final tagId = _getCurrentTagId();
+        final tabData = _getOrCreateTabData(tagId);
+        if (!tabData.isInitialized) {
+          loadDesignList(refresh: true);
+        }
+      }
+    }
+  }
+
+  /// 切换 tab（由外部调用，如点击 Tab 按钮）
+  void switchTab(int index) {
+    if (index < 0 || screenList.isEmpty || index >= screenList.length) {
+      return;
+    }
+    if (selectedTabIndex.value == index) return;
+    // 更新选中索引
+    selectedTabIndex.value = index;
+
+    // 同步 TabController 的索引（如果不同步）
+    final controller = tabController.value;
+    if (controller != null && controller.index != index) {
+      controller.animateTo(index);
+    }
+
+    // 切换 tab 时，如果该 tab 未初始化，则加载数据
+    final tagId = _getCurrentTagId();
+    final tabData = _getOrCreateTabData(tagId);
+    if (!tabData.isInitialized) {
+      loadDesignList(refresh: true);
+    }
+  }
+
   /// 风格标签
   Future<void> getTabTags() async {
     try {
+      tabIsLoading.value = true;
       final result = await http.post('/tag/index', showErrorToast: false);
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
@@ -58,10 +131,15 @@ class AppDesiginLogic extends GetxController {
         listModel.items.insert(0, model);
         screenList.value = listModel.items;
 
+        // 创建 TabController
+        createTabController();
+
         /// 刚进来的时候传全部
         await onRefresh();
       }
+      tabIsLoading.value = false;
     } catch (e) {
+      tabIsLoading.value = false;
       debugPrint('获取场景数据失败: $e');
     }
   }
@@ -127,27 +205,12 @@ class AppDesiginLogic extends GetxController {
         } else {
           tabData.hasMore.value = false;
         }
+        tabData.isInitialized = true;
       }
       tabData.isLoading.value = false;
     } catch (e) {
       tabData.isLoading.value = false;
       debugPrint('列表数据请求错误: $e');
-    }
-  }
-
-  /// 切换 tab
-  void switchTab(int index) {
-    // 边界检查：确保 index 在有效范围内
-    if (index < 0 || screenList.isEmpty || index >= screenList.length) {
-      return;
-    }
-    if (selectedTabIndex.value == index) return;
-    selectedTabIndex.value = index;
-    // 切换 tab 时，如果该 tab 未初始化，则加载数据
-    final tagId = _getCurrentTagId();
-    final tabData = _getOrCreateTabData(tagId);
-    if (!tabData.isInitialized) {
-      loadDesignList(refresh: true);
     }
   }
 

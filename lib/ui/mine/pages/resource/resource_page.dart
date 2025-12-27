@@ -5,7 +5,6 @@ import 'resource_bottom_bar.dart';
 import 'resource_page_item.dart';
 import '../widgets/storage_space_card.dart';
 import '../../../widgets/app_status_bar.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class AppResourcePage extends StatelessWidget {
   AppResourcePage({super.key});

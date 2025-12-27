@@ -1,70 +1,68 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'collection_logic.dart';
-import 'collection_tab_page.dart';
-import 'widgets/collection_bottom_bar.dart';
+import '../widgets/operation_bottom_bar.dart';
 import '../widgets/page_navigation_bar.dart';
+import '../widgets/page_empty_state.dart';
+import 'package:voicetemplate/ui/widgets/index.dart';
+import '../widgets/tab_item_widget.dart';
+import 'collection_tab_page.dart';
 
-class AppCollectionPage extends HookWidget {
+class AppCollectionPage extends StatelessWidget {
   AppCollectionPage({super.key});
-
   final logic = Get.put(CollectionLogic());
 
   @override
   Widget build(BuildContext context) {
-    final tabController = useSyncedTabController(
-      length: logic.screenList.length,
-      currentIndex: logic.selectedTabIndex,
-      onIndexChanged: (index) {
-        logic.switchTab(index);
-      },
-    );
-
     return Scaffold(
       backgroundColor: '#F5F5F5'.color,
-      body: Obx(() {
-        // 如果screenList为空，显示加载状态
-        if (logic.screenList.isEmpty) {
-          return Column(
-            children: [
-              _buildNavigationBar(),
-              Expanded(child: Center(child: CircularProgressIndicator())),
-            ],
-          );
-        }
+      body: Column(
+        children: [
+          /// 顶部部分
+          _buildNavigationBar(),
 
-        return Column(
-          children: [
-            /// 顶部部分
-            _buildNavigationBar(),
-
-            /// 中间内容区域 - 使用TabBarView显示tab内容
-            Expanded(
-              child: TabBarView(
-                controller: tabController,
+          Expanded(
+            child: Obx(() {
+              // 如果screenList为空或TabController未初始化，显示加载状态
+              if (logic.screenList.isEmpty && logic.tabIsLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              } else {
+                if (logic.tabController.value == null) {
+                  return const PageEmptyState();
+                }
+              }
+              return TabBarView(
+                controller: logic.tabController.value!,
                 children: List.generate(logic.screenList.length, (index) {
-                  return CKeepAlive(child: CollectionTabPage());
+                  final tagId = logic.screenList[index].id;
+                  return KeepAliveWrapper(
+                    child: CollectionTabPage(tagId: tagId),
+                  );
                 }),
-              ),
-            ),
+              );
+            }),
+          ),
 
-            /// 底部操作栏（全选 / 取消 / 删除）
-            Obx(
-              () => Column(
-                children: [
-                  if (logic.isBatchMode.value) CollectionBottomBar(),
-                  if (ScreenTools.bottomBarHeight > 0 &&
-                      logic.isBatchMode.value)
-                    Container(
-                      color: Colors.white,
-                      height: ScreenTools.bottomBarHeight,
-                    ),
-                ],
-              ),
+          /// 底部操作栏（全选 / 取消 / 删除）
+          Obx(
+            () => Column(
+              children: [
+                if (logic.isBatchMode.value)
+                  OperationBottomBar(
+                    cancelEvent: logic.clearSelection,
+                    deleteEvent: logic.deleteSelected,
+                    typeName: "收藏",
+                  ),
+                if (ScreenTools.bottomBarHeight > 0 && logic.isBatchMode.value)
+                  Container(
+                    color: Colors.white,
+                    height: ScreenTools.bottomBarHeight,
+                  ),
+              ],
             ),
-          ],
-        );
-      }),
+          ),
+        ],
+      ),
     );
   }
 
@@ -144,41 +142,20 @@ class AppCollectionPage extends HookWidget {
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Obx(() {
         if (logic.screenList.isEmpty) {
-          return SizedBox.shrink();
+          return const SizedBox.shrink();
         }
+        // 移除内层嵌套的 Obx，外层 Obx 已经监听了 screenList 和 selectedTabIndex
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: List.generate(
               logic.screenList.length,
-              (index) => GestureDetector(
-                onTap: () {
-                  // 先更新 logic 的状态
+              (index) => TabItemWidget(
+                name: logic.screenList[index].name,
+                tapCallBack: () {
                   logic.switchTab(index);
                 },
-                child: Container(
-                  clipBehavior: Clip.antiAlias,
-                  margin: EdgeInsets.only(right: 8.w),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 6.w,
-                  ),
-                  decoration: BoxDecoration(
-                    color: logic.selectedTabIndex.value == index
-                        ? "#DCEDFE".color
-                        : '#E9F2F7'.color,
-                    borderRadius: BorderRadius.circular(24.w),
-                  ),
-                  child: Text(
-                    logic.screenList[index].name,
-                    style: TextStyle(
-                      fontSize: 14.w,
-                      color: logic.selectedTabIndex.value == index
-                          ? "#007BFE".color
-                          : "#2A6181".color,
-                    ),
-                  ),
-                ),
+                isSelected: logic.selectedTabIndex.value == index,
               ),
             ),
           ),
