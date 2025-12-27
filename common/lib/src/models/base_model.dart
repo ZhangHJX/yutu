@@ -3,7 +3,7 @@ import 'dart:io';
 import '../utils/index.dart';
 
 import 'server_page_model.dart';
-import '../../zmj/utils/index.dart';
+import '../../zmj/index.dart';
 
 typedef FutureListModel<T> = Future<BaseModel<ServerPageModel<T>>>;
 

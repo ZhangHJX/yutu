@@ -1,6 +1,7 @@
 export 'c_app_bar.dart';
 export 'c_auto_widget.dart';
 export 'c_badge_number.dart';
+export 'c_ticker_provider_mixin.dart';
 export 'c_border_image.dart';
 export 'c_button.dart';
 export 'c_count_down.dart';
