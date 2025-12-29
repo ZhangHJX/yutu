@@ -93,19 +93,18 @@ class GlobalLogic extends GetxController {
   }
 
   /// 获取用户信息
-  Future<void> fetchUserInfo({bool isLaunch = false}) async {
+  Future<void> fetchUserInfo() async {
     try {
       final result = await http.post<UserModel>(
         '/homePage/user/index',
         converter: UserModel.fromJson,
         showErrorToast: false,
       );
-      userInfo.value = result.data ?? UserModel();
-      if (result.code == 0 && !isLaunch) {
-        Get.back();
+      if (result.code == 0) {
+        userInfo.value = result.data ?? UserModel();
       }
     } catch (e) {
-      debugPrint('===========  error: $e');
+      debugPrint('===获取用户信息失败===  error: $e');
     }
   }
 

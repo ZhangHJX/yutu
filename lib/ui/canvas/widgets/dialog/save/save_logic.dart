@@ -388,7 +388,7 @@ class SaveLogic extends GetxController {
       } else {
         showToast("草稿保存失败");
         FileManager.deleteFileByPath(filePath);
-        debugPrint('草稿保存失败');
+        debugPrint('草稿保存失败====${result.code}');
       }
       SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {

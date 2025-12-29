@@ -48,7 +48,20 @@ class AppStockPage extends StatelessWidget {
             SizedBox(height: 7.w),
 
             /// 1. 存储空间组件
-            StorageSpaceCard(),
+            Obx(() {
+              final userInfo = logic.global.userInfo.value;
+
+              final designSize = userInfo.designSize;
+              final designSizeLimit = userInfo.designSizeLimit;
+              final usageRatio =
+                  designSize / (designSizeLimit > 0 ? designSizeLimit : 1);
+              return StorageSpaceCard(
+                usageRatio: usageRatio,
+                sizeLimit: designSizeLimit,
+                fileSize: designSize,
+              );
+            }),
+
             SizedBox(height: 10.w),
 
             /// 2. 中间可滚动列表（用 Expanded 包起来）

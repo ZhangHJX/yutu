@@ -1,8 +1,12 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../model/common_model.dart';
+import 'package:voicetemplate/stores/global.dart';
 
 class DraftLogic extends GetxController {
+  /// 全局
+  final global = Get.find<GlobalLogic>();
+
   /// 是否正在请求数据
   final RxBool isLoading = false.obs;
 
@@ -14,15 +18,6 @@ class DraftLogic extends GetxController {
 
   /// 是否还有数据
   final RxBool hasMore = true.obs;
-
-  /// 总空间（这里写死 512MB，可从服务端下发）
-  final int totalSpaceBytes = 512 * 1024 * 1024;
-
-  /// 已用空间
-  final RxInt usedSpaceBytes = (45 * 1024 * 1024).obs;
-
-  /// 草稿列表
-  // final RxList<DraftModel> drafts = <DraftModel>[].obs;
 
   /// 选中的草稿 id 集合
   final RxSet<String> selectedIds = <String>{}.obs;
@@ -36,15 +31,16 @@ class DraftLogic extends GetxController {
   bool get isAllSelected =>
       draftList.isNotEmpty && selectedIds.length == draftList.length;
 
-  double get usedRatio =>
-      totalSpaceBytes == 0 ? 0 : usedSpaceBytes.value / totalSpaceBytes;
-
   /// 初始化一些假数据
   @override
   void onInit() {
     super.onInit();
-    _recalcUsedSpace();
+    refreshUserInfo();
     onRefresh();
+  }
+
+  Future<void> refreshUserInfo() async {
+    await global.fetchUserInfo();
   }
 
   /// 下拉刷新
@@ -142,22 +138,10 @@ class DraftLogic extends GetxController {
         draftList.removeWhere((e) => selectedIds.contains('${e.id}'));
         // 清除选择并退出批量模式
         clearSelection();
-        _recalcUsedSpace();
+        refreshUserInfo();
       }
     } catch (e) {
       debugPrint('删除设计失败: $e');
     }
-  }
-
-  void _recalcUsedSpace() {
-    // usedSpaceBytes.value = draftList.fold(0, (prev, e) => prev + e.sizeBytes);
-  }
-
-  String formatMB(int bytes) {
-    final mb = bytes / (1024 * 1024);
-    if (mb >= 100) {
-      return mb.toStringAsFixed(0);
-    }
-    return mb.toStringAsFixed(1);
   }
 }

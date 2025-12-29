@@ -14,12 +14,13 @@ class AppConfigInit extends StatelessWidget {
     return ScreenUtilInit(
       designSize: const Size(375, 812),
       child: RefreshConfiguration(
-        headerBuilder: () => const ClassicHeader(),
+        footerTriggerDistance: 15,
+        headerBuilder: () => const MaterialClassicHeader(),
         footerBuilder: () => const ClassicFooter(),
-        // springDescription: .new(mass: 1, stiffness: 100, damping: 20),
         maxOverScrollExtent: 100,
         maxUnderScrollExtent: 0,
         enableScrollWhenRefreshCompleted: true,
+        enableLoadingWhenNoData: false,
         child: GetMaterialApp(
           unknownRoute: unknownRoute,
           title: Global.appName,

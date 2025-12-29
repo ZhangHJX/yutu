@@ -1,8 +1,12 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../model/stock_model.dart';
+import 'package:voicetemplate/stores/global.dart';
 
 class StockLogic extends GetxController {
+  /// 全局
+  final global = Get.find<GlobalLogic>();
+
   /// 是否正在请求数据
   final RxBool isLoading = false.obs;
 
@@ -39,8 +43,12 @@ class StockLogic extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _recalcUsedSpace();
+    refreshUserInfo();
     onRefresh();
+  }
+
+  Future<void> refreshUserInfo() async {
+    await global.fetchUserInfo();
   }
 
   /// 下拉刷新
@@ -127,7 +135,7 @@ class StockLogic extends GetxController {
     try {
       // 发送删除请求，将选中的uuid列表作为参数
       final result = await http.post(
-        '/user/material/destroy',
+        '/user/material/destroys',
         data: {'ids': selectedIds.toList().join(',')},
         showErrorToast: true,
       );
@@ -137,22 +145,10 @@ class StockLogic extends GetxController {
         stockList.removeWhere((e) => selectedIds.contains('${e.id}'));
         // 清除选择并退出批量模式
         clearSelection();
-        _recalcUsedSpace();
+        refreshUserInfo();
       }
     } catch (e) {
       debugPrint('删除设计失败: $e');
     }
-  }
-
-  void _recalcUsedSpace() {
-    // usedSpaceBytes.value = drafts.fold(0, (prev, e) => prev + e.sizeBytes);
-  }
-
-  String formatMB(int bytes) {
-    final mb = bytes / (1024 * 1024);
-    if (mb >= 100) {
-      return mb.toStringAsFixed(0);
-    }
-    return mb.toStringAsFixed(1);
   }
 }

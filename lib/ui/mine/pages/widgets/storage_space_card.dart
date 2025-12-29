@@ -1,10 +1,18 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../stock/stock_logic.dart';
 import 'gradient_progress_bar.dart';
 
 class StorageSpaceCard extends StatelessWidget {
-  const StorageSpaceCard({super.key});
+  const StorageSpaceCard({
+    super.key,
+    required this.usageRatio,
+    required this.sizeLimit,
+    required this.fileSize,
+  });
+
+  final double usageRatio;
+  final int sizeLimit;
+  final int fileSize;
 
   @override
   Widget build(BuildContext context) {
@@ -42,35 +50,33 @@ class StorageSpaceCard extends StatelessWidget {
                     color: "#232535".color,
                   ),
                 ),
+
                 const Spacer(),
 
                 Container(
                   color: Colors.white,
-                  // padding: EdgeInsets.only(
-                  //   top: controller.usedRatio >= 1 ? 10.w : 0,
-                  // ),
+                  padding: EdgeInsets.only(top: usageRatio >= 1 ? 10.w : 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        // '${usedMB}MB/${totalMB}MB',
-                        "哈哈哈",
+                        '${fileSize}MB/${sizeLimit}MB',
                         style: TextStyle(
                           fontSize: 13.w,
                           color: "#9E9E9E".color,
                         ),
                       ),
 
-                      // if (controller.usedRatio >= 1)
-                      //   Text(
-                      //     "存储空间已满",
-                      //     style: TextStyle(
-                      //       color: "#FF3838".color,
-                      //       fontSize: 10.w,
-                      //       fontWeight: FontWeight.w400,
-                      //     ),
-                      //     textAlign: TextAlign.end,
-                      //   ),
+                      if (usageRatio >= 1)
+                        Text(
+                          "存储空间已满",
+                          style: TextStyle(
+                            color: "#FF3838".color,
+                            fontSize: 10.w,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          textAlign: TextAlign.end,
+                        ),
                     ],
                   ),
                 ),
@@ -82,8 +88,7 @@ class StorageSpaceCard extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(left: 24.w, right: 16.w),
             child: GradientProgressBar(
-              // value: controller.usedRatio.clamp(0, 1),
-              value: 0.1,
+              value: usageRatio.clamp(0, 1),
               height: 8.w,
               backgroundColor: "#D8D8D8".color,
             ),
@@ -91,23 +96,17 @@ class StorageSpaceCard extends StatelessWidget {
 
           SizedBox(height: 15.w),
 
-          // Obx(() {
-          //   // final usedRatio = controller.usedRatio;
-          //   return usedRatio > 0.9
-          //       ? Padding(
-          //           padding: EdgeInsets.only(left: 10.w),
-          //           child: Text(
-          //             // "素材总容量限制为${totalMB}MB，超出后需要删除旧素材才能上传新素材",
-          //             "素材总容量限制为MB，超出后需要删除旧素材才能上传新素材",
-          //             style: TextStyle(
-          //               color: "#FF3A3A".color,
-          //               fontSize: 11.w,
-          //               fontWeight: FontWeight.w600,
-          //             ),
-          //           ),
-          //         )
-          //       : SizedBox.shrink();
-          // }),
+          Padding(
+            padding: EdgeInsets.only(left: 10.w),
+            child: Text(
+              "素材总容量限制为${sizeLimit}MB，超出后需要删除旧素材才能上传新素材",
+              style: TextStyle(
+                color: "#FF3A3A".color,
+                fontSize: 11.w,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
