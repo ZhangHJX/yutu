@@ -25,15 +25,16 @@ class DraftLogic extends GetxController {
   // final RxList<DraftModel> drafts = <DraftModel>[].obs;
 
   /// 选中的草稿 id 集合
-  final RxSet<int> selectedIds = <int>{}.obs;
+  final RxSet<String> selectedIds = <String>{}.obs;
 
   /// 是否处于批量模式
   final RxBool isBatchMode = false.obs;
 
   int get selectedCount => selectedIds.length;
 
-  // bool get isAllSelected =>
-  //     drafts.isNotEmpty && selectedIds.length == drafts.length;
+  /// 是否全选
+  bool get isAllSelected =>
+      draftList.isNotEmpty && selectedIds.length == draftList.length;
 
   double get usedRatio =>
       totalSpaceBytes == 0 ? 0 : usedSpaceBytes.value / totalSpaceBytes;
@@ -42,7 +43,8 @@ class DraftLogic extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _recalcUsedSpace();
+    // _recalcUsedSpace();
+    loadDataList();
   }
 
   /// 下拉刷新
@@ -104,7 +106,7 @@ class DraftLogic extends GetxController {
   }
 
   /// 单个 item 选中 / 取消
-  void toggleItemSelection(int id) {
+  void toggleItemSelection(String id) {
     if (selectedIds.contains(id)) {
       selectedIds.remove(id);
     } else {
@@ -114,10 +116,10 @@ class DraftLogic extends GetxController {
 
   /// 全选
   void toggleSelectAll() {
-    // if (isAllSelected) return;
-    // selectedIds
-    //   ..clear()
-    //   ..addAll(drafts.map((e) => e.id));
+    if (isAllSelected) return;
+    selectedIds
+      ..clear()
+      ..addAll(draftList.map((e) => '${e.id}'));
   }
 
   /// 取消
@@ -130,7 +132,7 @@ class DraftLogic extends GetxController {
   void deleteSelected() {
     debugPrint("---deleteSelected-111-");
     if (selectedIds.isEmpty) return;
-    // drafts.removeWhere((e) => selectedIds.contains(e.id));
+    draftList.removeWhere((e) => selectedIds.contains('${e.id}'));
     debugPrint("---deleteSelected-222-");
     clearSelection();
     _recalcUsedSpace();

@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../widgets/app_status_bar.dart';
+// import '../../widgets/app_status_bar.dart';
 import 'logic.dart';
 
 class PasswordPage extends StatelessWidget {
@@ -22,7 +22,7 @@ class PasswordPage extends StatelessWidget {
         backgroundColor: Colors.white,
         body: Stack(
           children: [
-            AppStatusBar(),
+            // AppStatusBar(),
             Column(
               children: [
                 CAppBar(

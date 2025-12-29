@@ -70,22 +70,21 @@ class AppDraftPage extends StatelessWidget {
                     itemCount: logic.draftList.length,
                     itemBuilder: (context, index) {
                       final item = logic.draftList[index];
-                      return Obx(() {
-                        final isSelected = logic.selectedIds.contains(item.id);
-                        return DraftPageItem(
-                          item: item,
-                          showCheck: isBatch,
-                          isSelected: isSelected,
-                          onTap: () {
-                            if (isBatch) {
-                              // logic.toggleItemSelection(item.id);
-                            } else {
-                              // 非批量模式下可以进入详情 / 编辑
-                              // Get.to(...);
-                            }
-                          },
-                        );
-                      });
+                      final isSelected = logic.selectedIds.contains(item.id);
+                      return DraftPageItem(
+                        item: item,
+                        showCheck: isBatch,
+                        isSelected: isSelected,
+                        onTap: () {
+                          if (isBatch) {
+                            logic.toggleItemSelection('${item.id}');
+                          } else {
+                            // 非批量模式下可以进入详情 / 编辑
+                            // Get.to(...);
+                          }
+                        },
+                        index: index,
+                      );
                     },
                   ),
                 );

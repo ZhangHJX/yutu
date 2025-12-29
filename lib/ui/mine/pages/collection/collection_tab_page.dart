@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'collection_logic.dart';
-import 'widgets/collection_page_item.dart';
+import 'collection_page_item.dart';
 import '../widgets/page_empty_state.dart';
 import '../../model/common_model.dart';
 

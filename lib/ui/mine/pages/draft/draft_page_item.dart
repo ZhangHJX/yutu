@@ -7,6 +7,7 @@ class DraftPageItem extends StatelessWidget {
   final bool isSelected;
   final bool showCheck;
   final VoidCallback onTap;
+  final int index;
 
   const DraftPageItem({
     super.key,
@@ -14,10 +15,13 @@ class DraftPageItem extends StatelessWidget {
     required this.isSelected,
     required this.showCheck,
     required this.onTap,
+    required this.index,
   });
 
   @override
   Widget build(BuildContext context) {
+    final itemWidth = (ScreenTools.screenWidth - 30.w - 9.w) / 2;
+    final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize ?? '');
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
@@ -27,7 +31,30 @@ class DraftPageItem extends StatelessWidget {
             Column(
               children: [
                 // 上半部分可以换成你的缩略图
-                Container(height: 140, color: Colors.red),
+                SizedBox(
+                  height: itemHeight,
+                  child: CachedNetworkImage(
+                    imageUrl: '${item.originalImage}${item.thumbnail}',
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: "#F5F5F5".color,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.w,
+                          color: "#9082FF".color,
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: "#F5F5F5".color,
+                      child: Icon(
+                        Icons.broken_image,
+                        color: "#CCCCCC".color,
+                        size: 24.w,
+                      ),
+                    ),
+                  ),
+                ),
                 Container(height: 47.w, color: Colors.white),
               ],
             ),
@@ -51,7 +78,7 @@ class DraftPageItem extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          item.title ?? '',
+                          '草稿$index',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

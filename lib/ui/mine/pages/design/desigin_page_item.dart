@@ -1,14 +1,14 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../../model/common_model.dart';
+import '../../model/common_model.dart';
 
-class CollectionPageItem extends StatelessWidget {
+class DesiginPageItem extends StatelessWidget {
   final CommonItemModel item;
   final bool isSelected;
   final bool showCheck;
   final VoidCallback onTap;
 
-  const CollectionPageItem({
+  const DesiginPageItem({
     super.key,
     required this.item,
     required this.isSelected,
@@ -109,7 +109,7 @@ class CollectionPageItem extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8.w),
                           ),
                           child: Text(
-                            "收藏",
+                            "设计",
                             style: TextStyle(
                               fontSize: 12.w,
                               color: "#007BFE".color,
