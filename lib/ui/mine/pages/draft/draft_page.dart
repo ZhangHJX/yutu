@@ -50,7 +50,7 @@ class AppDraftPage extends StatelessWidget {
 
             /// 1. 存储空间组件
             Obx(() {
-              final userInfo = logic.global.userInfo.value;
+              final userInfo = logic.userInfo.value;
               final draftSize = userInfo.draftSize;
               final draftSizeLimit = userInfo.draftSizeLimit;
               final usageRatio =

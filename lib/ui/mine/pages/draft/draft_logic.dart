@@ -2,6 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../model/common_model.dart';
 import 'package:voicetemplate/stores/global.dart';
+import 'package:voicetemplate/stores/user_model.dart';
 
 class DraftLogic extends GetxController {
   /// 全局
@@ -31,12 +32,26 @@ class DraftLogic extends GetxController {
   bool get isAllSelected =>
       draftList.isNotEmpty && selectedIds.length == draftList.length;
 
+  Worker? _countWorker;
+
+  final userInfo = UserModel().obs;
+
+  @override
+  void onClose() {
+    super.onClose();
+    _countWorker?.dispose();
+  }
+
   /// 初始化一些假数据
   @override
   void onInit() {
     super.onInit();
     refreshUserInfo();
     onRefresh();
+
+    _countWorker = ever(global.userInfo, (user) {
+      userInfo.value = user;
+    });
   }
 
   Future<void> refreshUserInfo() async {
@@ -119,8 +134,6 @@ class DraftLogic extends GetxController {
     isBatchMode.value = false;
     selectedIds.clear();
   }
-
-  /// 删除选中的草稿
 
   /// 删除选中的设计
   Future<void> deleteSelected() async {

@@ -2,6 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../model/stock_model.dart';
 import 'package:voicetemplate/stores/global.dart';
+import 'package:voicetemplate/stores/user_model.dart';
 
 class StockLogic extends GetxController {
   /// 全局
@@ -39,12 +40,25 @@ class StockLogic extends GetxController {
   double get usedRatio =>
       totalSpaceBytes == 0 ? 0 : usedSpaceBytes.value / totalSpaceBytes;
 
+  Worker? _countWorker;
+
+  final userInfo = UserModel().obs;
+
+  @override
+  void onClose() {
+    super.onClose();
+    _countWorker?.dispose();
+  }
+
   /// 初始化一些假数据
   @override
   void onInit() {
     super.onInit();
     refreshUserInfo();
     onRefresh();
+    _countWorker = ever(global.userInfo, (user) {
+      userInfo.value = user;
+    });
   }
 
   Future<void> refreshUserInfo() async {

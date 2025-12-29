@@ -100,6 +100,7 @@ class GlobalLogic extends GetxController {
         converter: UserModel.fromJson,
         showErrorToast: false,
       );
+      debugPrint('===来了吗===  ${result.code}');
       if (result.code == 0) {
         userInfo.value = result.data ?? UserModel();
       }
