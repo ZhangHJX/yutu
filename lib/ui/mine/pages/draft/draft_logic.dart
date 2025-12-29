@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'draft_model.dart';
+import '../../model/common_model.dart';
 
 class DraftLogic extends GetxController {
   /// 是否正在请求数据
@@ -9,6 +9,12 @@ class DraftLogic extends GetxController {
   /// 当前页码
   int currentPage = 1;
 
+  /// 列表数据
+  final draftList = <CommonItemModel>[].obs;
+
+  /// 是否还有数据
+  final RxBool hasMore = true.obs;
+
   /// 总空间（这里写死 512MB，可从服务端下发）
   final int totalSpaceBytes = 512 * 1024 * 1024;
 
@@ -16,7 +22,7 @@ class DraftLogic extends GetxController {
   final RxInt usedSpaceBytes = (45 * 1024 * 1024).obs;
 
   /// 草稿列表
-  final RxList<DraftModel> drafts = <DraftModel>[].obs;
+  // final RxList<DraftModel> drafts = <DraftModel>[].obs;
 
   /// 选中的草稿 id 集合
   final RxSet<int> selectedIds = <int>{}.obs;
@@ -26,8 +32,8 @@ class DraftLogic extends GetxController {
 
   int get selectedCount => selectedIds.length;
 
-  bool get isAllSelected =>
-      drafts.isNotEmpty && selectedIds.length == drafts.length;
+  // bool get isAllSelected =>
+  //     drafts.isNotEmpty && selectedIds.length == drafts.length;
 
   double get usedRatio =>
       totalSpaceBytes == 0 ? 0 : usedSpaceBytes.value / totalSpaceBytes;
@@ -36,16 +42,6 @@ class DraftLogic extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    drafts.addAll(
-      List.generate(
-        6,
-        (index) => DraftModel(
-          id: index + 1,
-          title: '新文件 ${index + 1}',
-          sizeBytes: 5 * 1024 * 1024, // 每个草稿 5MB
-        ),
-      ),
-    );
     _recalcUsedSpace();
   }
 
@@ -75,21 +71,19 @@ class DraftLogic extends GetxController {
         showErrorToast: false,
       );
 
-      // if (result.code == 0 && result.data != null) {
-      //   final listModel = DesignModel.fromJson(result.data);
-      //   if (tabData.currentPage == 1) {
-      //     tabData.designList.clear();
-      //   }
-      //   if (listModel.items.isNotEmpty) {
-      //     tabData.designList.addAll(listModel.items);
-      //     tabData.currentPage++;
-      //     tabData.hasMore.value = true;
-      //   } else {
-      //     tabData.hasMore.value = false;
-      //   }
-      //   tabData.isInitialized = true;
-      // }
-
+      if (result.code == 0 && result.data != null) {
+        final listModel = CommonModel.fromJson(result.data);
+        if (currentPage == 1) {
+          draftList.clear();
+        }
+        if (listModel.items.isNotEmpty) {
+          draftList.addAll(listModel.items);
+          currentPage++;
+          hasMore.value = true;
+        } else {
+          hasMore.value = false;
+        }
+      }
       isLoading.value = false;
     } catch (e) {
       isLoading.value = false;
@@ -98,7 +92,7 @@ class DraftLogic extends GetxController {
   }
 
   void _recalcUsedSpace() {
-    usedSpaceBytes.value = drafts.fold(0, (prev, e) => prev + e.sizeBytes);
+    // usedSpaceBytes.value = draftList.fold(0, (prev, e) => prev + e.sizeBytes);
   }
 
   /// 切换批量模式
@@ -136,7 +130,7 @@ class DraftLogic extends GetxController {
   void deleteSelected() {
     debugPrint("---deleteSelected-111-");
     if (selectedIds.isEmpty) return;
-    drafts.removeWhere((e) => selectedIds.contains(e.id));
+    // drafts.removeWhere((e) => selectedIds.contains(e.id));
     debugPrint("---deleteSelected-222-");
     clearSelection();
     _recalcUsedSpace();

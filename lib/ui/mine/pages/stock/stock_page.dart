@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'stock_logic.dart';
 import 'stock_page_item.dart';
 import '../widgets/storage_space_card.dart';
-import '../../../widgets/app_status_bar.dart';
+import '../widgets/app_status_bar.dart';
 import '../widgets/operation_bottom_bar.dart';
 
 class AppStockPage extends StatelessWidget {

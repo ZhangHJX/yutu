@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-import '../../../widgets/app_status_bar.dart';
+import '../widgets/app_status_bar.dart';
 import 'person_info_input.dart';
 import 'person_info_avatar.dart';
 import 'person_logic.dart';

@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../../widgets/app_status_bar.dart';
+import '../widgets/app_status_bar.dart';
 import '../../../utils/app_info/app_info_utils.dart';
 
 class AppInfoPage extends StatefulWidget {

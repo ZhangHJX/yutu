@@ -1,9 +1,9 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'draft_model.dart';
+import '../../model/common_model.dart';
 
 class DraftPageItem extends StatelessWidget {
-  final DraftModel item;
+  final CommonItemModel item;
   final bool isSelected;
   final bool showCheck;
   final VoidCallback onTap;
@@ -51,7 +51,7 @@ class DraftPageItem extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          item.title,
+                          item.title ?? '',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

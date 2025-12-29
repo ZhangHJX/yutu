@@ -1,9 +1,9 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../../model/design_model.dart';
+import '../../../model/common_model.dart';
 
 class CollectionPageItem extends StatelessWidget {
-  final DesignItemModel item;
+  final CommonItemModel item;
   final bool isSelected;
   final bool showCheck;
   final VoidCallback onTap;
