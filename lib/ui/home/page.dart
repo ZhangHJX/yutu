@@ -9,100 +9,79 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusBarHeight = MediaQuery.of(context).padding.top;
-
     return Scaffold(
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFFFFF), Color(0xFFE3EEF7)],
-          ),
+      body: Container(
+        color: Colors.red,
+        child: Column(
+          children: [
+            // 状态栏占位
+            Container(color: Colors.red, height: ScreenTools.statusBarHeight),
+
+            // 搜索框区域
+            SearchBarWidget(
+              hintText: '搜索一下吧~',
+              onSearch: (searchText) {
+                _handleSearch(searchText);
+              },
+              onIconTap: () {
+                _handleIconTap();
+              },
+              onSearchButtonTap: () {
+                _handleSearchButtonTap();
+              },
+            ),
+
+            // Expanded(
+            //   child: DecoratedBox(
+            //     decoration: BoxDecoration(
+            //       gradient: const LinearGradient(
+            //         begin: Alignment.topCenter,
+            //         end: Alignment.bottomCenter,
+            //         colors: [Color(0xFFFFFFFF), Color(0xFFE3EEF7)],
+            //       ),
+            //     ),
+            //     child: CustomScrollView(
+            //       slivers: [
+            //         // 精彩推荐区域
+            //         SliverToBoxAdapter(child: _buildWonderfulRecommendations()),
+
+            //         // Tab 栏（使用 SliverPersistentHeader 实现固定在顶部效果）
+            //         SliverPersistentHeader(
+            //           pinned: true, // 设置为 true 实现固定在顶部效果
+            //           delegate: _TabBarDelegate(
+            //             child: Obx(() => _buildTabBar(context)),
+            //           ),
+            //         ),
+
+            //         // 瀑布流内容列表
+            //         SliverToBoxAdapter(
+            //           child: Padding(
+            //             padding: EdgeInsets.symmetric(horizontal: 16.w),
+            //             child: MasonryGridView.count(
+            //               crossAxisCount: 2,
+            //               mainAxisSpacing: 12.h,
+            //               crossAxisSpacing: 12.w,
+            //               shrinkWrap: true,
+            //               physics: const NeverScrollableScrollPhysics(),
+            //               itemCount: 20, // 示例数据，可以根据实际需求修改
+            //               itemBuilder: (context, index) {
+            //                 return _buildContentItem(index);
+            //               },
+            //             ),
+            //           ),
+            //         ),
+
+            //         // 底部间距
+            //         SliverToBoxAdapter(child: SizedBox(height: 20.h)),
+            //       ],
+            //     ),
+            //   ),
+            // ),
+          ],
         ),
-        child: Container(),
       ),
     );
   }
-
-  /*
-  
-  NestedScrollView(
-          headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-            return [
-              // 状态栏占位
-              SliverToBoxAdapter(child: SizedBox(height: statusBarHeight)),
-
-              // 搜索框区域
-              SliverToBoxAdapter(
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.only(
-                    top: 20.h,
-                    left: 16.w,
-                    right: 16.w,
-                    bottom: 20.h,
-                  ),
-                  child: SearchBarWidget(
-                    hintText: '搜索一下吧~',
-                    onSearch: (searchText) {
-                      _handleSearch(searchText);
-                    },
-                    onIconTap: () {
-                      _handleIconTap();
-                    },
-                    onSearchButtonTap: () {
-                      _handleSearchButtonTap();
-                    },
-                  ),
-                ),
-              ),
-
-              // 精彩推荐区域
-              SliverToBoxAdapter(child: _buildWonderfulRecommendations()),
-
-              // Tab 栏（使用 SliverPersistentHeader 实现悬停效果）
-              SliverPersistentHeader(
-                pinned: true, // 设置为 true 实现悬停效果
-                delegate: _TabBarDelegate(
-                  child: Obx(() => _buildTabBar(context)),
-                ),
-              ),
-            ];
-          },
-          body: Builder(
-            builder: (BuildContext context) {
-              return CustomScrollView(
-                slivers: [
-                  // 内容列表
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12.w,
-                        mainAxisSpacing: 12.h,
-                        childAspectRatio: 0.75,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          return _buildContentItem(index);
-                        },
-                        childCount: 20, // 示例数据，可以根据实际需求修改
-                      ),
-                    ),
-                  ),
-
-                  // 底部间距
-                  SliverToBoxAdapter(child: SizedBox(height: 20.h)),
-                ],
-              );
-            },
-          ),
-        ),
-  
-  
-  */
 
   // 构建精彩推荐区域
   Widget _buildWonderfulRecommendations() {
@@ -257,6 +236,10 @@ class HomePage extends StatelessWidget {
 
   // 构建内容项
   Widget _buildContentItem(int index) {
+    // 为了展示瀑布流效果，使用不同的高度
+    final heights = [180.h, 220.h, 200.h, 240.h, 190.h, 210.h];
+    final imageHeight = heights[index % heights.length];
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -271,22 +254,22 @@ class HomePage extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // 图片区域
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(12.r)),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFE3F2FD), Color(0xFFF3E5F5)],
-                ),
+          Container(
+            width: double.infinity,
+            height: imageHeight,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12.r)),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFE3F2FD), Color(0xFFF3E5F5)],
               ),
-              child: Center(
-                child: Icon(Icons.image, size: 60.sp, color: Colors.grey[400]),
-              ),
+            ),
+            child: Center(
+              child: Icon(Icons.image, size: 60.sp, color: Colors.grey[400]),
             ),
           ),
 
@@ -295,6 +278,7 @@ class HomePage extends StatelessWidget {
             padding: EdgeInsets.all(12.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   '可改字/自带头像/改字体',

@@ -1,21 +1,19 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'resource_model.dart';
+import 'draft_model.dart';
 
-class ResoucePageItem extends StatelessWidget {
-  final ResourceModel item;
+class DraftPageItem extends StatelessWidget {
+  final DraftModel item;
   final bool isSelected;
   final bool showCheck;
   final VoidCallback onTap;
-  final String type;
 
-  const ResoucePageItem({
+  const DraftPageItem({
     super.key,
     required this.item,
     required this.isSelected,
     required this.showCheck,
     required this.onTap,
-    required this.type,
   });
 
   @override
@@ -87,7 +85,7 @@ class ResoucePageItem extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8.w),
                       ),
                       child: Text(
-                        type == "draft" ? "草稿" : "素材",
+                        "草稿",
                         style: TextStyle(
                           fontSize: 12.w,
                           color: "#007BFE".color,

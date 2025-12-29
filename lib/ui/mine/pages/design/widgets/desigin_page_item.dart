@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../model/design_model.dart';
 
 class DesiginPageItem extends StatelessWidget {
-  final DesignItemModel item;
+  final CommonItemModel item;
   final bool isSelected;
   final bool showCheck;
   final VoidCallback onTap;

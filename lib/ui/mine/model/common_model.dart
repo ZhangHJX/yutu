@@ -1,21 +1,21 @@
 import 'package:json_annotation/json_annotation.dart';
-part 'design_model.g.dart';
+part 'common_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
-class DesignModel {
+class CommonModel {
   @JsonKey(name: 'list')
-  final List<DesignItemModel> items;
+  final List<CommonItemModel> items;
 
-  DesignModel({required this.items});
+  CommonModel({required this.items});
 
-  factory DesignModel.fromJson(Map<String, dynamic> json) =>
-      _$DesignModelFromJson(json);
+  factory CommonModel.fromJson(Map<String, dynamic> json) =>
+      _$CommonModelFromJson(json);
 
-  Map<String, dynamic> toJson() => _$DesignModelToJson(this);
+  Map<String, dynamic> toJson() => _$CommonModelToJson(this);
 }
 
 @JsonSerializable()
-class DesignItemModel {
+class CommonItemModel {
   final int? id;
   final String? uuid;
   final String? title;
@@ -36,7 +36,7 @@ class DesignItemModel {
   @JsonKey(name: 'is_favorite')
   final int? isFavorite;
 
-  DesignItemModel({
+  CommonItemModel({
     this.id,
     this.uuid,
     this.title,
@@ -50,7 +50,7 @@ class DesignItemModel {
     this.isFavorite,
   });
 
-  factory DesignItemModel.fromJson(Map<String, dynamic> json) =>
-      _$DesignItemModelFromJson(json);
-  Map<String, dynamic> toJson() => _$DesignItemModelToJson(this);
+  factory CommonItemModel.fromJson(Map<String, dynamic> json) =>
+      _$CommonItemModelFromJson(json);
+  Map<String, dynamic> toJson() => _$CommonItemModelToJson(this);
 }

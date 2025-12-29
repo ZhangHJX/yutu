@@ -1,9 +1,9 @@
 import 'package:common/common.dart';
-import 'design_model.dart';
+import 'common_model.dart';
 
 class TabDataState {
   /// 图片列表
-  final RxList<DesignItemModel> designList = <DesignItemModel>[].obs;
+  final RxList<CommonItemModel> designList = <CommonItemModel>[].obs;
 
   /// 当前页码
   int currentPage = 1;

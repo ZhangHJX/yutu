@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'design_logic.dart';
 import 'widgets/desigin_page_item.dart';
 import '../widgets/page_empty_state.dart';
-import '../../model/design_model.dart';
+import '../../model/common_model.dart';
 
 /// 可保活的 Tab 页面组件
 class DesignTabPage extends StatelessWidget {
@@ -48,7 +48,7 @@ class DesignTabPage extends StatelessWidget {
 
 /// 独立的响应式 Item 组件，避免在 itemBuilder 中嵌套 Obx
 class _DesignItemWidget extends StatelessWidget {
-  final DesignItemModel item;
+  final CommonItemModel item;
   final AppDesiginLogic logic;
 
   const _DesignItemWidget({required this.item, required this.logic});

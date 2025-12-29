@@ -1,11 +1,8 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'resource_model.dart';
+import 'stock_model.dart';
 
-class AppResourceLogic extends GetxController {
-  // 获取到参数
-  String type = Get.arguments is String ? Get.arguments : null;
-
+class StockLogic extends GetxController {
   /// 总空间（这里写死 512MB，可从服务端下发）
   final int totalSpaceBytes = 512 * 1024 * 1024;
 
@@ -13,7 +10,7 @@ class AppResourceLogic extends GetxController {
   final RxInt usedSpaceBytes = (45 * 1024 * 1024).obs;
 
   /// 草稿列表
-  final RxList<ResourceModel> drafts = <ResourceModel>[].obs;
+  final RxList<StockModel> drafts = <StockModel>[].obs;
 
   /// 选中的草稿 id 集合
   final RxSet<int> selectedIds = <int>{}.obs;
@@ -36,7 +33,7 @@ class AppResourceLogic extends GetxController {
     drafts.addAll(
       List.generate(
         6,
-        (index) => ResourceModel(
+        (index) => StockModel(
           id: index + 1,
           title: '新文件 ${index + 1}',
           sizeBytes: 5 * 1024 * 1024, // 每个草稿 5MB
@@ -69,10 +66,10 @@ class AppResourceLogic extends GetxController {
 
   /// 全选
   void toggleSelectAll() {
-    if (isAllSelected) return;
-    selectedIds
-      ..clear()
-      ..addAll(drafts.map((e) => e.id));
+    // if (isAllSelected) return;
+    // selectedIds
+    //   ..clear()
+    //   ..addAll(drafts.map((e) => e.id));
   }
 
   /// 取消

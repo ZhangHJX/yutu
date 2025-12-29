@@ -1,15 +1,16 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'resource_logic.dart';
-import 'resource_bottom_bar.dart';
-import 'resource_page_item.dart';
+import 'draft_logic.dart';
+
+import 'draft_page_item.dart';
 import '../widgets/storage_space_card.dart';
 import '../../../widgets/app_status_bar.dart';
+import '../widgets/operation_bottom_bar.dart';
 
-class AppResourcePage extends StatelessWidget {
-  AppResourcePage({super.key});
+class AppDraftPage extends StatelessWidget {
+  AppDraftPage({super.key});
 
-  final logic = Get.put(AppResourceLogic());
+  final logic = Get.put(DraftLogic());
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +23,7 @@ class AppResourcePage extends StatelessWidget {
             children: [
               CAppBar(
                 title: Text(
-                  logic.type == "draft" ? "我的草稿" : "我的素材",
+                  "我的草稿",
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 backgroundColor: Colors.transparent,
@@ -55,8 +56,7 @@ class AppResourcePage extends StatelessWidget {
               SizedBox(height: 7.w),
 
               /// 1. 存储空间组件
-              StorageSpaceCard(controller: logic),
-
+              // StorageSpaceCard(controller: logic),
               SizedBox(height: 10.w),
 
               /// 2. 中间可滚动列表（用 Expanded 包起来）
@@ -111,7 +111,7 @@ class AppResourcePage extends StatelessWidget {
                           final isSelected = logic.selectedIds.contains(
                             item.id,
                           );
-                          return ResoucePageItem(
+                          return DraftPageItem(
                             item: item,
                             showCheck: isBatch,
                             isSelected: isSelected,
@@ -123,7 +123,6 @@ class AppResourcePage extends StatelessWidget {
                                 // Get.to(...);
                               }
                             },
-                            type: logic.type,
                           );
                         });
                       },
@@ -137,7 +136,11 @@ class AppResourcePage extends StatelessWidget {
                 () => Column(
                   children: [
                     if (logic.isBatchMode.value)
-                      ResourceBottomBar(controller: logic),
+                      OperationBottomBar(
+                        cancelEvent: logic.clearSelection,
+                        deleteEvent: logic.deleteSelected,
+                        typeName: "设计",
+                      ),
 
                     if (ScreenTools.bottomBarHeight > 0 &&
                         logic.isBatchMode.value)

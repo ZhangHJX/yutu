@@ -2,14 +2,14 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../app/routes/index.dart';
 import '../../stores/global.dart';
-import './model/design_model.dart';
+import './model/common_model.dart';
 import 'dart:async';
 
 class MineLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
 
   // 图片列表
-  RxList<DesignItemModel> designList = <DesignItemModel>[].obs;
+  RxList<CommonItemModel> designList = <CommonItemModel>[].obs;
 
   late final StreamSubscription _sub;
 
@@ -51,7 +51,7 @@ class MineLogic extends GetxController {
         if (designList.isNotEmpty) {
           designList.clear();
         }
-        final listModel = DesignModel.fromJson(result.data);
+        final listModel = CommonModel.fromJson(result.data);
         if (listModel.items.isNotEmpty) {
           designList.addAll(listModel.items);
         }
@@ -80,15 +80,13 @@ class MineLogic extends GetxController {
   }
 
   ///我的草稿
-  void onTapMyDraft() =>
-      Get.toNamed(AppRoutes.resourcePage, arguments: "draft");
+  void onTapMyDraft() => Get.toNamed(AppRoutes.draft);
 
   ///我的收藏
   void onTapMyFavorite() => Get.toNamed(AppRoutes.collection);
 
   ///我的素材
-  void onTapMyResource() =>
-      Get.toNamed(AppRoutes.resourcePage, arguments: "resource");
+  void onTapMyResource() => Get.toNamed(AppRoutes.stock);
 
   ///我的客服
   void onTapService() => _showComingSoon('我的客服');

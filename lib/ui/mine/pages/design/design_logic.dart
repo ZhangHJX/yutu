@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../model/design_model.dart';
+import '../../model/common_model.dart';
 import 'package:voicetemplate/ui/model/index.dart';
 import '../../model/tab_data_state.dart';
 
@@ -23,9 +23,9 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
   final RxBool tabIsLoading = false.obs;
 
   /// 获取当前 tab 的数据列表
-  RxList<DesignItemModel> get designList {
+  RxList<CommonItemModel> get designList {
     final tagId = _getCurrentTagId();
-    return tabDataMap[tagId]?.designList ?? <DesignItemModel>[].obs;
+    return tabDataMap[tagId]?.designList ?? <CommonItemModel>[].obs;
   }
 
   /// 获取当前 tab 是否正在加载
@@ -194,7 +194,7 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
       );
 
       if (result.code == 0 && result.data != null) {
-        final listModel = DesignModel.fromJson(result.data);
+        final listModel = CommonModel.fromJson(result.data);
         if (tabData.currentPage == 1) {
           tabData.designList.clear();
         }

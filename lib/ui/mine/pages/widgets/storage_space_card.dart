@@ -1,20 +1,18 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../resource/resource_logic.dart';
+import '../stock/stock_logic.dart';
 import 'gradient_progress_bar.dart';
 
 class StorageSpaceCard extends StatelessWidget {
-  final AppResourceLogic controller;
-
-  const StorageSpaceCard({super.key, required this.controller});
+  const StorageSpaceCard({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final used = controller.usedSpaceBytes.value;
-      final total = controller.totalSpaceBytes;
-      final usedMB = controller.formatMB(used);
-      final totalMB = controller.formatMB(total);
+      // final used = controller.usedSpaceBytes.value;
+      // final total = controller.totalSpaceBytes;
+      // final usedMB = controller.formatMB(used);
+      // final totalMB = controller.formatMB(total);
 
       return Container(
         padding: EdgeInsets.only(top: 8.w, bottom: 10.w),
@@ -54,30 +52,31 @@ class StorageSpaceCard extends StatelessWidget {
 
                   Container(
                     color: Colors.white,
-                    padding: EdgeInsets.only(
-                      top: controller.usedRatio >= 1 ? 10.w : 0,
-                    ),
+                    // padding: EdgeInsets.only(
+                    //   top: controller.usedRatio >= 1 ? 10.w : 0,
+                    // ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '${usedMB}MB/${totalMB}MB',
+                          // '${usedMB}MB/${totalMB}MB',
+                          "哈哈哈",
                           style: TextStyle(
                             fontSize: 13.w,
                             color: "#9E9E9E".color,
                           ),
                         ),
 
-                        if (controller.usedRatio >= 1)
-                          Text(
-                            "存储空间已满",
-                            style: TextStyle(
-                              color: "#FF3838".color,
-                              fontSize: 10.w,
-                              fontWeight: FontWeight.w400,
-                            ),
-                            textAlign: TextAlign.end,
-                          ),
+                        // if (controller.usedRatio >= 1)
+                        //   Text(
+                        //     "存储空间已满",
+                        //     style: TextStyle(
+                        //       color: "#FF3838".color,
+                        //       fontSize: 10.w,
+                        //       fontWeight: FontWeight.w400,
+                        //     ),
+                        //     textAlign: TextAlign.end,
+                        //   ),
                       ],
                     ),
                   ),
@@ -89,7 +88,8 @@ class StorageSpaceCard extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(left: 24.w, right: 16.w),
               child: GradientProgressBar(
-                value: controller.usedRatio.clamp(0, 1),
+                // value: controller.usedRatio.clamp(0, 1),
+                value: 0.1,
                 height: 8.w,
                 backgroundColor: "#D8D8D8".color,
               ),
@@ -97,22 +97,23 @@ class StorageSpaceCard extends StatelessWidget {
 
             SizedBox(height: 15.w),
 
-            Obx(() {
-              final usedRatio = controller.usedRatio;
-              return usedRatio > 0.9
-                  ? Padding(
-                      padding: EdgeInsets.only(left: 10.w),
-                      child: Text(
-                        "素材总容量限制为${totalMB}MB，超出后需要删除旧素材才能上传新素材",
-                        style: TextStyle(
-                          color: "#FF3A3A".color,
-                          fontSize: 11.w,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    )
-                  : SizedBox.shrink();
-            }),
+            // Obx(() {
+            //   // final usedRatio = controller.usedRatio;
+            //   return usedRatio > 0.9
+            //       ? Padding(
+            //           padding: EdgeInsets.only(left: 10.w),
+            //           child: Text(
+            //             // "素材总容量限制为${totalMB}MB，超出后需要删除旧素材才能上传新素材",
+            //             "素材总容量限制为MB，超出后需要删除旧素材才能上传新素材",
+            //             style: TextStyle(
+            //               color: "#FF3A3A".color,
+            //               fontSize: 11.w,
+            //               fontWeight: FontWeight.w600,
+            //             ),
+            //           ),
+            //         )
+            //       : SizedBox.shrink();
+            // }),
           ],
         ),
       );

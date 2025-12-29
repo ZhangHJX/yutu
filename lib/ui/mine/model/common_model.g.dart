@@ -1,22 +1,22 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'design_model.dart';
+part of 'common_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-DesignModel _$DesignModelFromJson(Map<String, dynamic> json) => DesignModel(
+CommonModel _$CommonModelFromJson(Map<String, dynamic> json) => CommonModel(
   items: (json['list'] as List<dynamic>)
-      .map((e) => DesignItemModel.fromJson(e as Map<String, dynamic>))
+      .map((e) => CommonItemModel.fromJson(e as Map<String, dynamic>))
       .toList(),
 );
 
-Map<String, dynamic> _$DesignModelToJson(DesignModel instance) =>
+Map<String, dynamic> _$CommonModelToJson(CommonModel instance) =>
     <String, dynamic>{'list': instance.items.map((e) => e.toJson()).toList()};
 
-DesignItemModel _$DesignItemModelFromJson(Map<String, dynamic> json) =>
-    DesignItemModel(
+CommonItemModel _$CommonItemModelFromJson(Map<String, dynamic> json) =>
+    CommonItemModel(
       id: (json['id'] as num?)?.toInt(),
       uuid: json['uuid'] as String?,
       title: json['title'] as String?,
@@ -30,7 +30,7 @@ DesignItemModel _$DesignItemModelFromJson(Map<String, dynamic> json) =>
       isFavorite: (json['is_favorite'] as num?)?.toInt(),
     );
 
-Map<String, dynamic> _$DesignItemModelToJson(DesignItemModel instance) =>
+Map<String, dynamic> _$CommonItemModelToJson(CommonItemModel instance) =>
     <String, dynamic>{
       'id': instance.id,
       'uuid': instance.uuid,
