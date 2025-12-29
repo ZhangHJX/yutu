@@ -1,7 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'package:voicetemplate/ui/mine/pages/widgets/page_empty_state.dart';
-
+import '../widgets/page_empty_state.dart';
 import '../widgets/operation_bottom_bar.dart';
 import '../widgets/top_navigation_widget.dart';
 import '../widgets/storage_space_card.dart';
@@ -28,7 +27,7 @@ class AppDraftPage extends StatelessWidget {
               Color(0xFFF7F7F7),
               Color(0xFFE3EEF7),
             ],
-            stops: [0.0, 0.2, 0.2, 1.0],
+            stops: [0.0, 0.1, 0.1, 1.0],
           ),
         ),
         child: Column(
@@ -56,9 +55,7 @@ class AppDraftPage extends StatelessWidget {
             /// 2. 中间可滚动列表（用 Expanded 包起来）
             Expanded(
               child: Obx(() {
-                final isBatch = logic.isBatchMode.value;
                 if (logic.draftList.isEmpty) return PageEmptyState();
-
                 return Container(
                   color: Colors.transparent,
                   margin: EdgeInsets.symmetric(horizontal: 15.w),
@@ -66,25 +63,33 @@ class AppDraftPage extends StatelessWidget {
                     crossAxisCount: 2,
                     mainAxisSpacing: 12.w,
                     crossAxisSpacing: 9.w,
-                    padding: EdgeInsetsDirectional.zero,
+                    padding: EdgeInsetsDirectional.only(
+                      bottom: ScreenTools.bottomBarHeight,
+                    ),
                     itemCount: logic.draftList.length,
                     itemBuilder: (context, index) {
                       final item = logic.draftList[index];
-                      final isSelected = logic.selectedIds.contains(item.id);
-                      return DraftPageItem(
-                        item: item,
-                        showCheck: isBatch,
-                        isSelected: isSelected,
-                        onTap: () {
-                          if (isBatch) {
-                            logic.toggleItemSelection('${item.id}');
-                          } else {
-                            // 非批量模式下可以进入详情 / 编辑
-                            // Get.to(...);
-                          }
-                        },
-                        index: index,
-                      );
+                      return Obx(() {
+                        final isBatch = logic.isBatchMode.value;
+                        final isSelected = logic.selectedIds.contains(
+                          '${item.id}',
+                        );
+                        return DraftPageItem(
+                          key: ValueKey(item.id), // ⭐️加上
+                          item: item,
+                          showCheck: isBatch,
+                          isSelected: isSelected,
+                          onTap: () {
+                            if (isBatch) {
+                              logic.toggleItemSelection('${item.id}');
+                            } else {
+                              // 非批量模式下可以进入详情 / 编辑
+                              // Get.to(...);
+                            }
+                          },
+                          index: index,
+                        );
+                      });
                     },
                   ),
                 );

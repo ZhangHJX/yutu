@@ -30,17 +30,22 @@ class DesignTabPage extends StatelessWidget {
         return const PageEmptyState();
       }
       // 将响应式逻辑移到 itemBuilder 外部，使用独立的响应式 item 组件
-      return MasonryGridView.count(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12.w,
-        crossAxisSpacing: 9.w,
-        padding: EdgeInsets.all(15.w),
-        itemCount: designList.length,
-        itemBuilder: (context, index) {
-          final item = designList[index];
-          // 使用独立的响应式组件，避免在 itemBuilder 中嵌套 Obx
-          return _DesignItemWidget(item: item, logic: logic);
-        },
+      return Padding(
+        padding: EdgeInsets.only(left: 15.w, right: 15.w, top: 12.w),
+        child: MasonryGridView.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12.w,
+          crossAxisSpacing: 9.w,
+          padding: EdgeInsetsDirectional.only(
+            bottom: ScreenTools.bottomBarHeight,
+          ),
+          itemCount: designList.length,
+          itemBuilder: (context, index) {
+            final item = designList[index];
+            // 使用独立的响应式组件，避免在 itemBuilder 中嵌套 Obx
+            return _DesignItemWidget(item: item, logic: logic);
+          },
+        ),
       );
     });
   }
@@ -60,6 +65,7 @@ class _DesignItemWidget extends StatelessWidget {
       final isSelected = logic.selectedIds.contains('${item.id}');
       final showCheck = logic.isBatchMode.value;
       return DesiginPageItem(
+        key: ValueKey(item.id), // ⭐️加上
         item: item,
         isSelected: isSelected,
         showCheck: showCheck,

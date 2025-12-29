@@ -8,11 +8,13 @@ class TopNavigationWidget extends StatelessWidget {
     required this.title,
     required this.rightTitle,
     required this.onTap,
+    this.children = const [],
   });
 
   final String title;
   final String rightTitle;
   final VoidCallback? onTap;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +69,8 @@ class TopNavigationWidget extends StatelessWidget {
               ],
             ),
           ),
+
+          ...children,
         ],
       ),
     );

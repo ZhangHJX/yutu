@@ -2,10 +2,10 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'collection_logic.dart';
 import '../widgets/operation_bottom_bar.dart';
-import '../widgets/page_navigation_bar.dart';
 import '../widgets/page_empty_state.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import '../widgets/tab_item_widget.dart';
+import '../widgets/top_navigation_widget.dart';
 import 'collection_tab_page.dart';
 
 class AppCollectionPage extends StatelessWidget {
@@ -16,125 +16,86 @@ class AppCollectionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: '#F5F5F5'.color,
-      body: Column(
-        children: [
-          /// 顶部部分
-          _buildNavigationBar(),
-
-          Expanded(
-            child: Obx(() {
-              // 如果screenList为空或TabController未初始化，显示加载状态
-              if (logic.screenList.isEmpty && logic.tabIsLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              } else {
-                if (logic.tabController.value == null) {
-                  return const PageEmptyState();
-                }
-              }
-              return TabBarView(
-                controller: logic.tabController.value!,
-                children: List.generate(logic.screenList.length, (index) {
-                  final tagId = logic.screenList[index].id;
-                  return KeepAliveWrapper(
-                    child: CollectionTabPage(tagId: tagId),
-                  );
-                }),
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF9ADEFD),
+              Color(0xFFF7F7F7),
+              Color(0xFFF7F7F7),
+              Color(0xFFE3EEF7),
+            ],
+            stops: [0.0, 0.1, 0.1, 1.0],
+          ),
+        ),
+        child: Column(
+          children: [
+            // 顶部
+            Obx(() {
+              return TopNavigationWidget(
+                title: "我的收藏",
+                rightTitle: logic.isBatchMode.value ? "全选" : "批量",
+                onTap: () {
+                  if (logic.isBatchMode.value) {
+                    logic.toggleSelectAll();
+                  } else {
+                    logic.toggleBatchMode();
+                  }
+                },
+                children: [_buildTabBar()],
               );
             }),
-          ),
 
-          /// 底部操作栏（全选 / 取消 / 删除）
-          Obx(
-            () => Column(
-              children: [
-                if (logic.isBatchMode.value)
-                  OperationBottomBar(
-                    cancelEvent: logic.clearSelection,
-                    deleteEvent: logic.deleteSelected,
-                    typeName: "收藏",
-                  ),
-                if (ScreenTools.bottomBarHeight > 0 && logic.isBatchMode.value)
-                  Container(
-                    color: Colors.white,
-                    height: ScreenTools.bottomBarHeight,
-                  ),
-              ],
+            Expanded(
+              child: Obx(() {
+                // 如果screenList为空或TabController未初始化，显示加载状态
+                if (logic.screenList.isEmpty && logic.tabIsLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                } else {
+                  if (logic.tabController.value == null) {
+                    return const PageEmptyState();
+                  }
+                }
+                return TabBarView(
+                  controller: logic.tabController.value!,
+                  children: List.generate(logic.screenList.length, (index) {
+                    final tagId = logic.screenList[index].id;
+                    return KeepAliveWrapper(
+                      child: CollectionTabPage(tagId: tagId),
+                    );
+                  }),
+                );
+              }),
             ),
-          ),
-        ],
+
+            /// 底部操作栏（全选 / 取消 / 删除）
+            Obx(
+              () => Column(
+                children: [
+                  if (logic.isBatchMode.value)
+                    OperationBottomBar(
+                      cancelEvent: logic.clearSelection,
+                      deleteEvent: logic.deleteSelected,
+                      typeName: "收藏",
+                    ),
+                  if (ScreenTools.bottomBarHeight > 0 &&
+                      logic.isBatchMode.value)
+                    Container(
+                      color: Colors.white,
+                      height: ScreenTools.bottomBarHeight,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildNavigationBar() {
-    return PageNavigationBar(
-      child: Column(
-        children: [
-          Container(
-            height: ScreenTools.statusBarHeight,
-            color: Colors.transparent,
-          ),
-
-          SizedBox(
-            height: 44.w,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  padding: EdgeInsets.only(right: 5.w),
-                  icon: Image.asset(
-                    'assets/images/global/ic_black_back.png',
-                    width: 26.w,
-                    height: 26.w,
-                  ),
-                  onPressed: () {
-                    EventBusManager.share.emit(AppEventType.mineRefresh);
-                    Get.back();
-                  },
-                ),
-                Text(
-                  "我的收藏",
-                  style: TextStyle(
-                    fontSize: 16.w,
-                    color: "#232535".color,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                GestureDetector(
-                  onTap: () {
-                    if (logic.isBatchMode.value) {
-                      logic.toggleSelectAll();
-                    } else {
-                      logic.toggleBatchMode();
-                    }
-                  },
-                  child: Padding(
-                    padding: EdgeInsets.only(right: 20.w),
-                    child: Obx(() {
-                      return Text(
-                        logic.isBatchMode.value ? "全选" : "批量",
-                        style: TextStyle(
-                          fontSize: 13.w,
-                          color: "#6C64FF".color,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          /// Tab 选择器
-          _buildTabBar(),
-        ],
-      ),
-    );
-  }
-
-  /// 构建 Tab 选择器
+  // 构建 Tab 选择器
   Widget _buildTabBar() {
     return Container(
       height: 44.w,

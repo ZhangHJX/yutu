@@ -43,8 +43,8 @@ class DraftLogic extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // _recalcUsedSpace();
-    loadDataList();
+    _recalcUsedSpace();
+    onRefresh();
   }
 
   /// 下拉刷新
@@ -93,10 +93,6 @@ class DraftLogic extends GetxController {
     }
   }
 
-  void _recalcUsedSpace() {
-    // usedSpaceBytes.value = draftList.fold(0, (prev, e) => prev + e.sizeBytes);
-  }
-
   /// 切换批量模式
   void toggleBatchMode() {
     isBatchMode.toggle();
@@ -129,13 +125,32 @@ class DraftLogic extends GetxController {
   }
 
   /// 删除选中的草稿
-  void deleteSelected() {
-    debugPrint("---deleteSelected-111-");
+
+  /// 删除选中的设计
+  Future<void> deleteSelected() async {
     if (selectedIds.isEmpty) return;
-    draftList.removeWhere((e) => selectedIds.contains('${e.id}'));
-    debugPrint("---deleteSelected-222-");
-    clearSelection();
-    _recalcUsedSpace();
+    try {
+      // 发送删除请求，将选中的uuid列表作为参数
+      final result = await http.post(
+        '/design/draft/destroys',
+        data: {'ids': selectedIds.toList().join(',')},
+        showErrorToast: true,
+      );
+
+      if (result.code == 0) {
+        // 删除成功，从当前tab的数据列表中移除已删除的项
+        draftList.removeWhere((e) => selectedIds.contains('${e.id}'));
+        // 清除选择并退出批量模式
+        clearSelection();
+        _recalcUsedSpace();
+      }
+    } catch (e) {
+      debugPrint('删除设计失败: $e');
+    }
+  }
+
+  void _recalcUsedSpace() {
+    // usedSpaceBytes.value = draftList.fold(0, (prev, e) => prev + e.sizeBytes);
   }
 
   String formatMB(int bytes) {

@@ -1,12 +1,13 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'stock_model.dart';
+import '../../model/stock_model.dart';
 
 class StockPageItem extends StatelessWidget {
-  final StockModel item;
+  final StockItemModel item;
   final bool isSelected;
   final bool showCheck;
   final VoidCallback onTap;
+  final int index;
 
   const StockPageItem({
     super.key,
@@ -14,10 +15,13 @@ class StockPageItem extends StatelessWidget {
     required this.isSelected,
     required this.showCheck,
     required this.onTap,
+    required this.index,
   });
 
   @override
   Widget build(BuildContext context) {
+    final itemWidth = (ScreenTools.screenWidth - 30.w - 9.w) / 2;
+    final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize ?? '');
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
@@ -27,7 +31,30 @@ class StockPageItem extends StatelessWidget {
             Column(
               children: [
                 // 上半部分可以换成你的缩略图
-                Container(height: 140, color: Colors.red),
+                SizedBox(
+                  height: itemHeight,
+                  child: CachedNetworkImage(
+                    imageUrl: item.image ?? '',
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: "#F5F5F5".color,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.w,
+                          color: "#9082FF".color,
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: "#F5F5F5".color,
+                      child: Icon(
+                        Icons.broken_image,
+                        color: "#CCCCCC".color,
+                        size: 24.w,
+                      ),
+                    ),
+                  ),
+                ),
                 Container(height: 47.w, color: Colors.white),
               ],
             ),
@@ -51,7 +78,7 @@ class StockPageItem extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          item.title,
+                          '新素材${index + 1}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
