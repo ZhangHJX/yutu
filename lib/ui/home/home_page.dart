@@ -48,41 +48,43 @@ class HomePage extends StatelessWidget {
                   // 瀑布流内容列表
                   SliverToBoxAdapter(
                     child: Obx(() {
-                      if (logic.tagList.isEmpty) {
+                      if (logic.tabDataMap.isEmpty) {
                         return const PageEmptyState();
                       }
                       final tagId =
                           logic.tagList[logic.selectedTabIndex.value].id;
                       final tabData = logic.tabDataMap[tagId];
-                      if (tabData == null) {
-                        return const PageEmptyState();
-                      }
-
                       return Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 15.w),
+                        padding: EdgeInsets.only(
+                          left: 15.w,
+                          right: 15.w,
+                          top: 8.w,
+                        ),
                         child: MasonryGridView.count(
                           crossAxisCount: 2,
                           mainAxisSpacing: 14.h,
                           crossAxisSpacing: 9.w,
                           shrinkWrap: true,
+                          padding: EdgeInsets.zero, // 关键：去掉默认 padding
+                          primary: false,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: tabData.dataList.length,
+                          itemCount: tabData?.dataList.length,
                           itemBuilder: (context, index) {
-                            final item = tabData.dataList[index];
+                            final item = tabData?.dataList[index];
                             final itemHeight = calculateAspectRatio(
                               (ScreenTools.screenWidth - 30.w - 9.w) / 2,
-                              item.canvasSize ?? '',
+                              item?.canvasSize ?? '',
                             );
                             return HomePageItem(
-                              key: ValueKey(item.id),
+                              key: ValueKey(item?.id),
                               onTap: () {},
                               imageH: itemHeight,
                               imageUrl:
-                                  '${item.originalImage}${item.thumbnail}',
-                              title: item.title ?? '',
-                              type: item.isOfficial ?? 1,
-                              favorite: item.favoriteTotal ?? 0,
-                              isSelected: item.isFavorite == 1 ? true : false,
+                                  '${item?.originalImage}${item?.thumbnail}',
+                              title: item?.title ?? '',
+                              type: item?.isOfficial ?? 1,
+                              favorite: item?.favoriteTotal ?? 0,
+                              isSelected: item?.isFavorite == 1 ? true : false,
                             );
                           },
                         ),
