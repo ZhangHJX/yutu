@@ -11,11 +11,39 @@ class MainLogic extends GetxController {
 
   final pages = List<Widget?>.filled(2, null).obs;
 
+  final homeFrames = <String>[];
+  final middleFrames = <String>[];
+  final mineFrames = <String>[];
+
   @override
   void onInit() {
     super.onInit();
+    addLocationAssets();
     loadPage(globalLogic.tabIndex.value);
     globalLogic.tabIndex.listen(changeTabIndex);
+  }
+
+  void addLocationAssets() {
+    homeFrames.addAll(
+      List.generate(
+        20,
+        (i) => 'assets/images/tabBar/home/${i.toString().padLeft(3, '0')}.png',
+      ),
+    );
+    middleFrames.addAll(
+      List.generate(
+        24,
+        (i) =>
+            'assets/images/tabBar/center/${i.toString().padLeft(3, '0')}.png',
+      ),
+    );
+
+    mineFrames.addAll(
+      List.generate(
+        14,
+        (i) => 'assets/images/tabBar/mine/${i.toString().padLeft(3, '0')}.png',
+      ),
+    );
   }
 
   void changeTabIndex(int index) {

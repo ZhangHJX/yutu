@@ -2,6 +2,8 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../logic.dart';
 import 'custom_tab_bar.dart';
+import 'tab_bar_item.dart';
+import 'center_tab_bar_button.dart';
 import 'package:voicetemplate/ui/canvas/pages/create/create_canvals_page.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
@@ -26,6 +28,8 @@ class CustomBottomNavigationBar extends StatelessWidget {
               label: '首页',
               width: 37,
               height: 37,
+              selectedFrames: logic.homeFrames,
+              frameDuration: const Duration(milliseconds: 50),
             ),
             TabBarItem(
               normalPath: 'assets/images/tabBar/mine_bar_icon_unselect.png',
@@ -33,10 +37,20 @@ class CustomBottomNavigationBar extends StatelessWidget {
               label: '我的',
               width: 37,
               height: 37,
+              selectedFrames: logic.mineFrames,
+              frameDuration: const Duration(milliseconds: 50),
             ),
           ],
           centerButton: CenterTabBarButton(
-            icon: Icons.add,
+            item: TabBarItem(
+              normalPath: 'assets/images/tabBar/middle_bar_icon.png',
+              selectePath: 'assets/images/tabBar/middle_bar_icon.png',
+              label: '我的',
+              width: 37,
+              height: 37,
+              selectedFrames: logic.middleFrames,
+              frameDuration: const Duration(milliseconds: 50),
+            ),
             size: 70,
             onTap: () {
               _showCreateDesignDialog();
