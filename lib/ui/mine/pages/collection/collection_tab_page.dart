@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'collection_logic.dart';
 import 'collection_page_item.dart';
 import '../../../widgets/page_empty_state.dart';
-import '../../model/common_model.dart';
+import '../../../model/common_model.dart';
 
 /// 可保活的 Tab 页面组件
 class CollectionTabPage extends StatelessWidget {

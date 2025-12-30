@@ -9,7 +9,7 @@ part of 'canvas_model.dart';
 CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
   id: json['id'] as String? ?? '',
   ratio: json['ratio'] as String? ?? '',
-  clarity: json['clarity'] as String? ?? '1',
+  clarity: json['clarity'] as String? ?? '0',
   isCreate: json['isCreate'] as bool? ?? false,
   x: (json['x'] as num?)?.toDouble() ?? 0.0,
   y: (json['y'] as num?)?.toDouble() ?? 0.0,

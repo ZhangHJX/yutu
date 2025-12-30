@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../app/routes/index.dart';
 import '../../stores/global.dart';
-import './model/common_model.dart';
+import '../model/common_model.dart';
 import 'dart:async';
 
 class MineLogic extends GetxController {

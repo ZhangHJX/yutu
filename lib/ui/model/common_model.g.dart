@@ -28,6 +28,7 @@ CommonItemModel _$CommonItemModelFromJson(Map<String, dynamic> json) =>
       thumbnail: json['thumbnail'] as String?,
       favoriteTotal: (json['favorite_total'] as num?)?.toInt(),
       isFavorite: (json['is_favorite'] as num?)?.toInt(),
+      isOfficial: (json['is_official'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$CommonItemModelToJson(CommonItemModel instance) =>
@@ -43,4 +44,5 @@ Map<String, dynamic> _$CommonItemModelToJson(CommonItemModel instance) =>
       'thumbnail': instance.thumbnail,
       'favorite_total': instance.favoriteTotal,
       'is_favorite': instance.isFavorite,
+      'is_official': instance.isOfficial,
     };

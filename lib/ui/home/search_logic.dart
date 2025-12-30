@@ -6,7 +6,7 @@ import '../../app/routes/index.dart';
 import '../canvas/fonts/font_manager.dart';
 import 'package:voicetemplate/ui/utils/file/index.dart';
 import 'package:voicetemplate/ui/model/screen_model.dart';
-import '../mine/model/common_model.dart';
+import '../model/common_model.dart';
 import '../model/tab_data_state.dart';
 
 class SearchLogic extends GetxController with GetTickerProviderStateMixin {

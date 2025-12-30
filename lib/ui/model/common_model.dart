@@ -36,6 +36,9 @@ class CommonItemModel {
   @JsonKey(name: 'is_favorite')
   final int? isFavorite;
 
+  @JsonKey(name: 'is_official')
+  final int? isOfficial;
+
   CommonItemModel({
     this.id,
     this.uuid,
@@ -48,6 +51,7 @@ class CommonItemModel {
     this.thumbnail,
     this.favoriteTotal,
     this.isFavorite,
+    this.isOfficial,
   });
 
   factory CommonItemModel.fromJson(Map<String, dynamic> json) =>

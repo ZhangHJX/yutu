@@ -5,7 +5,7 @@ class HomePageItem extends StatelessWidget {
   final double imageH;
   final String imageUrl;
   final String title;
-  final String type;
+  final int type;
   final int favorite;
 
   final VoidCallback onTap;
@@ -26,10 +26,6 @@ class HomePageItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final itemWidth = (ScreenTools.screenWidth - 30.w - 9.w) / 2;
-    // final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize ?? '');
-    // '${item.originalImage}${item.thumbnail}'
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(14.w),
       child: Stack(
@@ -117,7 +113,7 @@ class HomePageItem extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8.w),
                         ),
                         child: Text(
-                          type,
+                          type == 1 ? '官方' : '个人',
                           style: TextStyle(
                             fontSize: 12.w,
                             color: "#007BFE".color,

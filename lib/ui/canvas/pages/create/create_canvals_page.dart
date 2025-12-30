@@ -138,7 +138,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
       CanvasModel canvalsModel = CanvasModel(
         id: uuid.v4(),
         ratio: ratio,
-        clarity: _selectedClarity == 0 ? '1' : '2',
+        clarity: _selectedClarity == 0 ? '0' : '1',
         isCreate: true,
         width: width,
         height: height,

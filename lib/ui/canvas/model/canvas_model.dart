@@ -38,7 +38,7 @@ class CanvasModel {
   CanvasModel({
     this.id = '',
     this.ratio = '',
-    this.clarity = '1',
+    this.clarity = '0',
     this.isCreate = false,
     this.x = 0.0,
     this.y = 0.0,

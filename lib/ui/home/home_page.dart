@@ -5,6 +5,7 @@ import './widgets/home_navigation_widget.dart';
 import '../widgets/tab_item_widget.dart';
 import './widgets/home_page_item.dart';
 import 'package:voicetemplate/app/routes/index.dart';
+import '../widgets/page_empty_state.dart';
 
 class HomePage extends StatelessWidget {
   HomePage({super.key});
@@ -46,32 +47,51 @@ class HomePage extends StatelessWidget {
 
                   // 瀑布流内容列表
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 15.w),
-                      child: MasonryGridView.count(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 12.h,
-                        crossAxisSpacing: 12.w,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: 20, // 示例数据，可以根据实际需求修改
-                        itemBuilder: (context, index) {
-                          return HomePageItem(
-                            // key: ValueKey(item.id), // ⭐️加上
-                            onTap: () {},
-                            imageH: 60,
-                            imageUrl: '',
-                            title: '',
-                            type: '',
-                            favorite: 90,
-                          );
-                        },
-                      ),
-                    ),
+                    child: Obx(() {
+                      if (logic.tagList.isEmpty) {
+                        return const PageEmptyState();
+                      }
+                      final tagId =
+                          logic.tagList[logic.selectedTabIndex.value].id;
+                      final tabData = logic.tabDataMap[tagId];
+                      if (tabData == null) {
+                        return const PageEmptyState();
+                      }
+
+                      return Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 15.w),
+                        child: MasonryGridView.count(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 14.h,
+                          crossAxisSpacing: 9.w,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: tabData.dataList.length,
+                          itemBuilder: (context, index) {
+                            final item = tabData.dataList[index];
+                            final itemHeight = calculateAspectRatio(
+                              (ScreenTools.screenWidth - 30.w - 9.w) / 2,
+                              item.canvasSize ?? '',
+                            );
+                            return HomePageItem(
+                              key: ValueKey(item.id),
+                              onTap: () {},
+                              imageH: itemHeight,
+                              imageUrl:
+                                  '${item.originalImage}${item.thumbnail}',
+                              title: item.title ?? '',
+                              type: item.isOfficial ?? 1,
+                              favorite: item.favoriteTotal ?? 0,
+                              isSelected: item.isFavorite == 1 ? true : false,
+                            );
+                          },
+                        ),
+                      );
+                    }),
                   ),
 
                   // 底部间距
-                  SliverToBoxAdapter(child: SizedBox(height: 20.h)),
+                  SliverToBoxAdapter(child: SizedBox(height: 20.w)),
                 ],
               ),
             ),
@@ -113,78 +133,80 @@ class HomePage extends StatelessWidget {
         SizedBox(height: 10.w),
 
         // 横向滚动卡片
-        Container(
-          padding: EdgeInsets.only(left: 15.w, bottom: 9.w),
-          height: 201.w,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: 10,
-            itemBuilder: (context, index) {
-              return Container(
-                width: 135.w,
-                margin: EdgeInsets.only(right: 9.w),
-                clipBehavior: Clip.antiAlias, // 或 Clip.hardEdge
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.w),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: CachedNetworkImage(
-                        imageUrl:
-                            'https://bkimg.cdn.bcebos.com/pic/574e9258d109b3de9c82351665f77b81800a19d8e63e',
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: "#F5F5F5".color,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.w,
-                              color: "#9082FF".color,
+        Obx(() {
+          return Container(
+            padding: EdgeInsets.only(left: 15.w, bottom: 9.w),
+            height: 201.w,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: logic.recommendList.length,
+              itemBuilder: (context, index) {
+                final item = logic.recommendList[index];
+                return Container(
+                  width: 135.w,
+                  margin: EdgeInsets.only(right: 9.w),
+                  clipBehavior: Clip.antiAlias, // 或 Clip.hardEdge
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12.w),
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: CachedNetworkImage(
+                          imageUrl: '${item.originalImage}${item.thumbnail}',
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: "#F5F5F5".color,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.w,
+                                color: "#9082FF".color,
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: "#F5F5F5".color,
+                            child: Icon(
+                              Icons.broken_image,
+                              color: "#CCCCCC".color,
+                              size: 24.w,
                             ),
                           ),
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          color: "#F5F5F5".color,
-                          child: Icon(
-                            Icons.broken_image,
-                            color: "#CCCCCC".color,
-                            size: 24.w,
-                          ),
-                        ),
                       ),
-                    ),
 
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        height: 30.w,
-                        alignment: Alignment.centerLeft,
-                        padding: EdgeInsets.symmetric(horizontal: 12.w),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFFFFE0E0), Color(0xFFFFF0E0)],
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          height: 30.w,
+                          alignment: Alignment.centerLeft,
+                          padding: EdgeInsets.symmetric(horizontal: 12.w),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFFFFE0E0), Color(0xFFFFF0E0)],
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          '为你精选',
-                          style: TextStyle(
-                            fontSize: 12.w,
-                            color: '#FFFFFF'.color,
-                            fontWeight: FontWeight.w500,
+                          child: Text(
+                            item.title ?? '',
+                            style: TextStyle(
+                              fontSize: 12.w,
+                              color: '#FFFFFF'.color,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          );
+        }),
       ],
     );
   }
@@ -204,9 +226,9 @@ class HomePage extends StatelessWidget {
               padding: EdgeInsets.only(left: 15.w, right: 50.w), // 右边留出图片空间
               child: Row(
                 children: List.generate(
-                  logic.tabs.length,
+                  logic.tagList.length,
                   (index) => TabItemWidget(
-                    name: logic.tabs[index],
+                    name: logic.tagList[index].name,
                     isSelected: logic.selectedTabIndex.value == index,
                     tapCallBack: () {
                       logic.switchTab(index);
@@ -222,14 +244,17 @@ class HomePage extends StatelessWidget {
             right: 0.w,
             top: 0,
             bottom: 0,
-            child: Container(
-              color: "#F7F7F7".color,
-              child: Center(
-                child: Image.asset(
-                  'assets/images/home/home_screen_more.png',
-                  width: 53.w,
-                  height: 26.w,
-                  fit: BoxFit.cover,
+            child: GestureDetector(
+              onTap: () => Get.toNamed(AppRoutes.search),
+              child: Container(
+                color: "#F7F7F7".color,
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/home/home_screen_more.png',
+                    width: 53.w,
+                    height: 26.w,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
@@ -237,15 +262,6 @@ class HomePage extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  // 处理搜索事件
-  void _handleSearch(String searchText) {
-    if (searchText.isNotEmpty) {
-      debugPrint('搜索内容: $searchText');
-      // 这里可以添加实际的搜索逻辑
-      // 例如：导航到搜索结果页面、调用搜索API等
-    }
   }
 }
 

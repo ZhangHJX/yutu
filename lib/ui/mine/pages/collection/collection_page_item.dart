@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../model/common_model.dart';
+import '../../../model/common_model.dart';
 
 class CollectionPageItem extends StatelessWidget {
   final CommonItemModel item;
