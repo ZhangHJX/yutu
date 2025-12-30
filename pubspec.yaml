@@ -85,6 +85,7 @@ flutter:
     - assets/images/global/
     - assets/images/login/
     - assets/icons/
+    - assets/images/home/
     
     
   # An image asset can refer to one or more resolution-specific "variants", see

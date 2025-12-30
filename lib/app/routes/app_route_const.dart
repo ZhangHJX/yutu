@@ -8,13 +8,11 @@ class AppRoutes {
   /// TabBar
   static const main = '/main';
 
-  // 创建设计
+  /// 首页
+  static const search = '/search_page';
+
+  // 画布相关
   static const canvalsDesign = '/canvals_design_page';
-
-  /// 登录页
-  static const login = '/login';
-
-  /// 画布页面
   static const canvalsPage = '/canvals_page';
 
   /// 我的模块页面
@@ -26,6 +24,9 @@ class AppRoutes {
   static const personInfo = '/person_info_page';
   static const appLogin = '/app_login';
   static const password = '/get_password';
+
+  /// 登录页
+  static const login = '/login';
 
   static const web = '/web';
 

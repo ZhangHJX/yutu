@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'collection_logic.dart';
 import 'collection_page_item.dart';
-import '../widgets/page_empty_state.dart';
+import '../../../widgets/page_empty_state.dart';
 import '../../model/common_model.dart';
 
 /// 可保活的 Tab 页面组件
@@ -21,7 +21,7 @@ class CollectionTabPage extends StatelessWidget {
 
     // 使用多个独立的 Obx，避免嵌套
     return Obx(() {
-      final designList = tabData.designList;
+      final designList = tabData.dataList;
       final isLoading = tabData.isLoading.value;
       if (isLoading && designList.isEmpty) {
         return const Center(child: CircularProgressIndicator());

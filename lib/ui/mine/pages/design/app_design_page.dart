@@ -2,12 +2,12 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'design_logic.dart';
 import 'design_tab_page.dart';
-import '../widgets/page_navigation_bar.dart';
-import '../widgets/tab_item_widget.dart';
+import '../../../widgets/page_navigation_bar.dart';
+import '../../../widgets/tab_item_widget.dart';
 import '../widgets/operation_bottom_bar.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import '../widgets/top_navigation_widget.dart';
-import '../widgets/page_empty_state.dart';
+import '../../../widgets/page_empty_state.dart';
 
 class AppDesignPage extends StatelessWidget {
   AppDesignPage({super.key});

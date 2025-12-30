@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../model/common_model.dart';
 import 'package:voicetemplate/ui/model/index.dart';
-import '../../model/tab_data_state.dart';
+import '../../../model/tab_data_state.dart';
 
 class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
   /// 头部的tab
@@ -25,7 +25,7 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
   /// 获取当前 tab 的数据列表
   RxList<CommonItemModel> get designList {
     final tagId = _getCurrentTagId();
-    return tabDataMap[tagId]?.designList ?? <CommonItemModel>[].obs;
+    return tabDataMap[tagId]?.dataList ?? <CommonItemModel>[].obs;
   }
 
   /// 获取当前 tab 是否正在加载
@@ -202,10 +202,10 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
       if (result.code == 0 && result.data != null) {
         final listModel = CommonModel.fromJson(result.data);
         if (tabData.currentPage == 1) {
-          tabData.designList.clear();
+          tabData.dataList.clear();
         }
         if (listModel.items.isNotEmpty) {
-          tabData.designList.addAll(listModel.items);
+          tabData.dataList.addAll(listModel.items);
           tabData.currentPage++;
           tabData.hasMore.value = true;
         } else {
@@ -283,7 +283,7 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
         final tagId = _getCurrentTagId();
         final tabData = tabDataMap[tagId];
         if (tabData != null) {
-          tabData.designList.removeWhere(
+          tabData.dataList.removeWhere(
             (item) => selectedIds.contains('${item.id}'),
           );
         }

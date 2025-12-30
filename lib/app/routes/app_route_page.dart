@@ -8,6 +8,9 @@ import 'package:voicetemplate/ui/canvas/pages/canvals/canvals_editor_page.dart';
 import 'package:voicetemplate/ui/login/login_page.dart';
 import 'package:voicetemplate/ui/login/password/password_page.dart';
 
+/// 搜索页面
+import 'package:voicetemplate/ui/home/search_page.dart';
+
 /// 我的模块
 import 'package:voicetemplate/ui/mine/pages/person_info/person_info_page.dart';
 import 'package:voicetemplate/ui/mine/pages/info/app_info_page.dart';
@@ -35,6 +38,9 @@ final List<GetPage> getPages = [
     page: MainPage.new,
     transition: Transition.fadeIn,
   ),
+
+  /// 搜索页面
+  GetPage(name: AppRoutes.search, page: SearchPage.new),
 
   // 创建设计页面
   // GetPage(name: AppRoutes.designPage, page: CreateDesignPage.new, transition: Transition.downToUp),

@@ -6,11 +6,22 @@ class TabItemWidget extends StatelessWidget {
   final VoidCallback tapCallBack;
   final String name;
   final bool isSelected;
+
+  final Color selectColor;
+  final Color unSelectColor;
+
+  final Color selectTextColor;
+  final Color unSelectTextColor;
+
   const TabItemWidget({
     super.key,
     required this.name,
     required this.isSelected,
     required this.tapCallBack,
+    this.selectColor = const Color(0xFFDCEDFE),
+    this.unSelectColor = const Color(0xFFE9F2F7),
+    this.selectTextColor = const Color(0xFF007BFE),
+    this.unSelectTextColor = const Color(0xFF2A6181),
   });
 
   @override
@@ -22,14 +33,14 @@ class TabItemWidget extends StatelessWidget {
         margin: EdgeInsets.only(right: 8.w),
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.w),
         decoration: BoxDecoration(
-          color: isSelected ? "#DCEDFE".color : '#E9F2F7'.color,
+          color: isSelected ? selectColor : unSelectColor,
           borderRadius: BorderRadius.circular(24.w),
         ),
         child: Text(
           name,
           style: TextStyle(
             fontSize: 14.w,
-            color: isSelected ? "#007BFE".color : "#2A6181".color,
+            color: isSelected ? selectTextColor : unSelectTextColor,
           ),
         ),
       ),

@@ -7,7 +7,13 @@ import '../canvas/fonts/font_manager.dart';
 import 'package:voicetemplate/ui/utils/file/index.dart';
 import 'package:voicetemplate/ui/model/screen_model.dart';
 
-class HomeLogic extends GetxController {
+class SearchLogic extends GetxController {
+  /// 顶部tab数据
+  final RxBool tabIsLoading = false.obs;
+
+  /// TabController
+  final Rxn<TabController> tabController = Rxn<TabController>();
+
   /// 头部的tab
   final screenList = <ScreenItemModel>[].obs;
 
@@ -21,6 +27,21 @@ class HomeLogic extends GetxController {
   // 切换 tab
   void switchTab(int index) {
     selectedTabIndex.value = index;
+  }
+
+  GlobalKey refresherKey = GlobalKey();
+  RefreshController refreshController = RefreshController(
+    initialRefresh: false,
+  );
+
+  @override
+  void onClose() {
+    // 清理 TabController
+    // tabController.value?.removeListener(_onTabControllerChanged);
+    tabController.value?.dispose();
+    tabController.value = null;
+    refreshController.dispose();
+    super.onClose();
   }
 
   @override

@@ -6,8 +6,6 @@ class PageEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("--中间可滚动列表-----PageEmptyState-----");
-
     return Container(
       color: '#F5F5F5'.color,
       padding: EdgeInsets.only(top: 89.w),

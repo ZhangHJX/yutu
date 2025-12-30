@@ -1,16 +1,15 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'collection_logic.dart';
-import '../widgets/operation_bottom_bar.dart';
-import '../../../widgets/page_empty_state.dart';
+import 'search_logic.dart';
+import './widgets/search_navigation_widget.dart';
+import '../widgets/tab_item_widget.dart';
+import '../widgets/page_empty_state.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
-import '../../../widgets/tab_item_widget.dart';
-import '../widgets/top_navigation_widget.dart';
-import 'collection_tab_page.dart';
+import 'search_tab_page.dart';
 
-class AppCollectionPage extends StatelessWidget {
-  AppCollectionPage({super.key});
-  final logic = Get.put(CollectionLogic());
+class SearchPage extends StatelessWidget {
+  SearchPage({super.key});
+  final logic = Get.put(SearchLogic());
 
   @override
   Widget build(BuildContext context) {
@@ -21,29 +20,15 @@ class AppCollectionPage extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF9ADEFD),
-              Color(0xFFF7F7F7),
-              Color(0xFFF7F7F7),
-              Color(0xFFE3EEF7),
-            ],
-            stops: [0.0, 0.1, 0.1, 1.0],
+            colors: [Color(0xFFF7F7F7), Color(0xFFE3EEF7)],
           ),
         ),
         child: Column(
           children: [
             // 顶部
             Obx(() {
-              return TopNavigationWidget(
-                title: "我的收藏",
-                rightTitle: logic.isBatchMode.value ? "全选" : "批量",
-                onTap: () {
-                  if (logic.isBatchMode.value) {
-                    logic.toggleSelectAll();
-                  } else {
-                    logic.toggleBatchMode();
-                  }
-                },
+              return SearchNavigationWidget(
+                onTap: () {},
                 children: [_buildTabBar()],
               );
             }),
@@ -62,32 +47,10 @@ class AppCollectionPage extends StatelessWidget {
                   controller: logic.tabController.value!,
                   children: List.generate(logic.screenList.length, (index) {
                     final tagId = logic.screenList[index].id;
-                    return KeepAliveWrapper(
-                      child: CollectionTabPage(tagId: tagId),
-                    );
+                    return KeepAliveWrapper(child: SearchTabPage(tagId: tagId));
                   }),
                 );
               }),
-            ),
-
-            /// 底部操作栏（全选 / 取消 / 删除）
-            Obx(
-              () => Column(
-                children: [
-                  if (logic.isBatchMode.value)
-                    OperationBottomBar(
-                      cancelEvent: logic.clearSelection,
-                      deleteEvent: logic.deleteSelected,
-                      typeName: "收藏",
-                    ),
-                  if (ScreenTools.bottomBarHeight > 0 &&
-                      logic.isBatchMode.value)
-                    Container(
-                      color: Colors.white,
-                      height: ScreenTools.bottomBarHeight,
-                    ),
-                ],
-              ),
             ),
           ],
         ),
@@ -95,7 +58,7 @@ class AppCollectionPage extends StatelessWidget {
     );
   }
 
-  // 构建 Tab 选择器
+  /// 构建 Tab 选择器
   Widget _buildTabBar() {
     return Container(
       height: 44.w,
@@ -117,6 +80,10 @@ class AppCollectionPage extends StatelessWidget {
                   logic.switchTab(index);
                 },
                 isSelected: logic.selectedTabIndex.value == index,
+                selectColor: "#D8F5FF".color,
+                unSelectColor: '#F4F4F4'.color,
+                selectTextColor: '#007BFE'.color,
+                unSelectTextColor: '#8D8D8D'.color,
               ),
             ),
           ),

@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'page_navigation_bar.dart';
+import '../../../widgets/page_navigation_bar.dart';
 
 class TopNavigationWidget extends StatelessWidget {
   const TopNavigationWidget({

@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
 import 'package:voicetemplate/stores/global.dart';
-import '../../ui/home/page.dart';
+import '../../ui/home/home_page.dart';
 import '../../ui/mine/mine_main_page.dart';
 import '../../ui/mine/mine_logic.dart';
 

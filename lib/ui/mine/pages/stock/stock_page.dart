@@ -4,7 +4,7 @@ import 'stock_logic.dart';
 import 'stock_page_item.dart';
 import '../widgets/storage_space_card.dart';
 import '../widgets/operation_bottom_bar.dart';
-import '../widgets/page_empty_state.dart';
+import '../../../widgets/page_empty_state.dart';
 import '../widgets/top_navigation_widget.dart';
 
 class AppStockPage extends StatelessWidget {
