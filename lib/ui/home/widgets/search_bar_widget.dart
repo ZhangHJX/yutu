@@ -42,7 +42,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
       height: 36.w,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: '#FFFFFF'.color.withValues(alpha: 0.8),
+        color: widget.isEnabled
+            ? '#EBEBEB'.color.withValues(alpha: 0.8)
+            : '#FFFFFF'.color.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(18.w),
         border: Border.all(color: '#FFFFFF'.color, width: 1),
       ),
@@ -97,11 +99,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
               padding: EdgeInsets.only(left: 9.w, right: 13.w),
               child: Text(
                 '搜索',
-                style: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(color: '#B1B6C2'.color, fontSize: 14.w),
               ),
             ),
           ),

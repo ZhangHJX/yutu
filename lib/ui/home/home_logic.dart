@@ -17,22 +17,10 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   final tagList = <TagModel>[].obs;
 
   // 每个 tab 的数据状态（使用 tagId 作为 key，0 表示全部）
-  final Map<int, TabDataState> tabDataMap = {};
+  final RxMap<int, TabDataState> tabDataMap = <int, TabDataState>{}.obs;
 
   // Tab 索引
   final selectedTabIndex = 0.obs;
-
-  /// TabController
-  final Rxn<TabController> tabController = Rxn<TabController>();
-
-  /// 顶部tab数据加载状态
-  final RxBool tabIsLoading = false.obs;
-
-  /// 获取当前 tab 的数据列表（响应式）
-  RxList<CommonItemModel> get designList {
-    final tagId = _getCurrentTagId();
-    return tabDataMap[tagId]?.dataList ?? <CommonItemModel>[].obs;
-  }
 
   /// 获取当前 tag 的 TagModel（响应式）
   TagModel? get currentTagModel {
@@ -70,10 +58,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   @override
   void onClose() {
-    // 清理 TabController
-    tabController.value?.removeListener(_onTabControllerChanged);
-    tabController.value?.dispose();
-    tabController.value = null;
     refreshController.dispose();
     super.onClose();
   }
@@ -92,12 +76,14 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   Future<void> loadHomeData({bool refresh = false}) async {
     try {
-      tabIsLoading.value = true;
       final result = await http.get(
         '/homePage/index',
         converter: HomeModel.fromJson,
+        showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
+        tabDataMap.clear();
+
         recommendList.value = result.data!.recommendList;
         tagList.value = result.data!.tagList;
 
@@ -114,12 +100,8 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
             tabData.hasMore.value = true;
           }
         }
-        // 创建 TabController
-        createTabController();
       }
-      tabIsLoading.value = false;
     } catch (e) {
-      tabIsLoading.value = false;
       debugPrint('获取首页数据失败: $e');
     }
   }
@@ -170,6 +152,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
           'limit': globalPageSize,
           'tag_id': targetTagId,
         },
+        showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
         final listModel = CommonModel.fromJson(result.data);
@@ -211,41 +194,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     }
   }
 
-  /// 创建或更新 TabController
-  void createTabController() {
-    final newLength = tagList.length;
-    if (newLength == 0) return;
-    // 创建新的 TabController
-    final newController = TabController(
-      length: newLength,
-      vsync: this,
-      initialIndex: 0,
-    );
-    newController.addListener(_onTabControllerChanged);
-    tabController.value = newController;
-    selectedTabIndex.value = 0;
-  }
-
-  /// TabController 切换监听
-  void _onTabControllerChanged() {
-    final controller = tabController.value;
-    if (controller == null) return;
-    if (!controller.indexIsChanging) {
-      final index = controller.index;
-      // 避免循环调用：只有当索引不同时才更新
-      if (index != selectedTabIndex.value) {
-        // 直接更新索引，避免再次触发 TabController 的 animateTo
-        selectedTabIndex.value = index;
-        // 切换 tab 时，如果该 tab 未初始化，则加载数据
-        final tagId = _getCurrentTagId();
-        final tabData = _getOrCreateTabData(tagId);
-        if (!tabData.isInitialized) {
-          loadSceneList(refresh: true);
-        }
-      }
-    }
-  }
-
   // 切换 tab
   void switchTab(int index) {
     if (index < 0 || tagList.isEmpty || index >= tagList.length) {
@@ -254,12 +202,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     if (selectedTabIndex.value == index) return;
     // 更新选中索引
     selectedTabIndex.value = index;
-
-    // 同步 TabController 的索引（如果不同步）
-    final controller = tabController.value;
-    if (controller != null && controller.index != index) {
-      controller.animateTo(index);
-    }
 
     // 切换 tab 时，如果该 tab 未初始化，则加载数据
     final tagId = _getCurrentTagId();

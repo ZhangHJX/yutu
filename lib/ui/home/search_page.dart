@@ -28,6 +28,7 @@ class SearchPage extends StatelessWidget {
             // 顶部
             Obx(() {
               return SearchNavigationWidget(
+                isEnabled: true,
                 onTap: () {},
                 children: [_buildTabBar()],
               );
@@ -64,31 +65,25 @@ class SearchPage extends StatelessWidget {
       height: 44.w,
       color: Colors.transparent,
       padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Obx(() {
-        if (logic.screenList.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        // 移除内层嵌套的 Obx，外层 Obx 已经监听了 screenList 和 selectedTabIndex
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: List.generate(
-              logic.screenList.length,
-              (index) => TabItemWidget(
-                name: logic.screenList[index].name,
-                tapCallBack: () {
-                  logic.switchTab(index);
-                },
-                isSelected: logic.selectedTabIndex.value == index,
-                selectColor: "#D8F5FF".color,
-                unSelectColor: '#F4F4F4'.color,
-                selectTextColor: '#007BFE'.color,
-                unSelectTextColor: '#8D8D8D'.color,
-              ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: List.generate(
+            logic.screenList.length,
+            (index) => TabItemWidget(
+              name: logic.screenList[index].name,
+              tapCallBack: () {
+                logic.switchTab(index);
+              },
+              isSelected: logic.selectedTabIndex.value == index,
+              selectColor: "#D8F5FF".color,
+              unSelectColor: '#F4F4F4'.color,
+              selectTextColor: '#007BFE'.color,
+              unSelectTextColor: '#8D8D8D'.color,
             ),
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 }

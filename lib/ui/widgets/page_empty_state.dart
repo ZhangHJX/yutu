@@ -7,7 +7,7 @@ class PageEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: '#F5F5F5'.color,
+      color: Colors.transparent,
       padding: EdgeInsets.only(top: 89.w),
       width: double.infinity,
       child: Column(

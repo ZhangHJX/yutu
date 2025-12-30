@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'home_logic.dart';
-import './widgets/home_navigation_widget.dart';
+import './widgets/search_navigation_widget.dart';
 import '../widgets/tab_item_widget.dart';
 import './widgets/home_page_item.dart';
 import 'package:voicetemplate/app/routes/index.dart';
@@ -32,7 +32,10 @@ class HomePage extends StatelessWidget {
         ),
         child: Column(
           children: [
-            HomeNavigationWidget(onTap: () => Get.toNamed(AppRoutes.search)),
+            SearchNavigationWidget(
+              isEnabled: false,
+              onTap: () => Get.toNamed(AppRoutes.search),
+            ),
             Expanded(
               child: CustomScrollView(
                 slivers: [
