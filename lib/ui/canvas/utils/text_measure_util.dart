@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:common/common.dart';
 
 class TextMeasureUtil {
   /// 智能计算文本尺寸：自动判断单行/多行并返回实际的宽高

@@ -45,6 +45,11 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
     return list.isNotEmpty && selectedIds.length == list.length;
   }
 
+  GlobalKey refresherKey = GlobalKey();
+  RefreshController refreshController = RefreshController(
+    initialRefresh: false,
+  );
+
   /// 初始化一些假数据
   @override
   void onInit() {
@@ -58,6 +63,7 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
     tabController.value?.removeListener(_onTabControllerChanged);
     tabController.value?.dispose();
     tabController.value = null;
+    refreshController.dispose();
     super.onClose();
   }
 
@@ -206,6 +212,16 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
           tabData.hasMore.value = false;
         }
         tabData.isInitialized = true;
+      }
+      // 更新刷新控制器状态
+      if (refresh) {
+        refreshController.refreshCompleted();
+      } else {
+        if (hasMore.value) {
+          refreshController.loadComplete();
+        } else {
+          refreshController.loadNoData();
+        }
       }
       tabData.isLoading.value = false;
     } catch (e) {

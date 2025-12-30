@@ -32,19 +32,41 @@ class DesignTabPage extends StatelessWidget {
       // 将响应式逻辑移到 itemBuilder 外部，使用独立的响应式 item 组件
       return Padding(
         padding: EdgeInsets.only(left: 15.w, right: 15.w, top: 12.w),
-        child: MasonryGridView.count(
-          crossAxisCount: 2,
-          mainAxisSpacing: 12.w,
-          crossAxisSpacing: 9.w,
-          padding: EdgeInsetsDirectional.only(
-            bottom: ScreenTools.bottomBarHeight,
+        child: SmartRefresher(
+          key: logic.refresherKey,
+          controller: logic.refreshController,
+          enablePullDown: true,
+          enablePullUp: logic.hasMore.value,
+          header: ClassicHeader(
+            refreshStyle: RefreshStyle.Follow, // 或 RefreshStyle.Behind
           ),
-          itemCount: designList.length,
-          itemBuilder: (context, index) {
-            final item = designList[index];
-            // 使用独立的响应式组件，避免在 itemBuilder 中嵌套 Obx
-            return _DesignItemWidget(item: item, logic: logic);
+          footer: ClassicFooter(
+            loadStyle: LoadStyle.ShowWhenLoading,
+            completeDuration: Duration(milliseconds: 500),
+          ),
+          onRefresh: () async {
+            await logic.onRefresh();
           },
+          onLoading: () async {
+            await logic.onLoad();
+          },
+          child: MasonryGridView.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12.w,
+            crossAxisSpacing: 9.w,
+            physics: const ClampingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            padding: EdgeInsetsDirectional.only(
+              bottom: ScreenTools.bottomBarHeight,
+            ),
+            itemCount: designList.length,
+            itemBuilder: (context, index) {
+              final item = designList[index];
+              // 使用独立的响应式组件，避免在 itemBuilder 中嵌套 Obx
+              return _DesignItemWidget(item: item, logic: logic);
+            },
+          ),
         ),
       );
     });

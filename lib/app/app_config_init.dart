@@ -17,9 +17,7 @@ class AppConfigInit extends StatelessWidget {
         footerTriggerDistance: 15,
         headerBuilder: () => const MaterialClassicHeader(),
         footerBuilder: () => const ClassicFooter(),
-        maxOverScrollExtent: 100,
-        maxUnderScrollExtent: 0,
-        enableScrollWhenRefreshCompleted: true,
+        hideFooterWhenNotFull: true,
         enableLoadingWhenNoData: false,
         child: GetMaterialApp(
           unknownRoute: unknownRoute,
@@ -31,6 +29,7 @@ class AppConfigInit extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
+            RefreshLocalizations.delegate,
           ],
           popGesture: true,
           getPages: getPages,

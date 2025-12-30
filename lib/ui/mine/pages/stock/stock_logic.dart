@@ -44,10 +44,16 @@ class StockLogic extends GetxController {
 
   final userInfo = UserModel().obs;
 
+  GlobalKey refresherKey = GlobalKey();
+  RefreshController refreshController = RefreshController(
+    initialRefresh: false,
+  );
+
   @override
   void onClose() {
     super.onClose();
     _countWorker?.dispose();
+    refreshController.dispose();
   }
 
   /// 初始化一些假数据
@@ -101,7 +107,21 @@ class StockLogic extends GetxController {
           currentPage++;
           hasMore.value = true;
         } else {
-          hasMore.value = false;
+          // 如果请求失败，也要更新 hasMore 状态
+          if (!refresh) {
+            hasMore.value = false;
+          }
+        }
+      }
+
+      // 更新刷新控制器状态
+      if (refresh) {
+        refreshController.refreshCompleted();
+      } else {
+        if (hasMore.value) {
+          refreshController.loadComplete();
+        } else {
+          refreshController.loadNoData();
         }
       }
       isLoading.value = false;

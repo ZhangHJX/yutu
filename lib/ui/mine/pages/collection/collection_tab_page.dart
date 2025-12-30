@@ -30,17 +30,39 @@ class CollectionTabPage extends StatelessWidget {
         return const PageEmptyState();
       }
       // 将响应式逻辑移到 itemBuilder 外部，使用独立的响应式 item 组件
-      return MasonryGridView.count(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12.w,
-        crossAxisSpacing: 9.w,
-        padding: EdgeInsets.all(15.w),
-        itemCount: designList.length,
-        itemBuilder: (context, index) {
-          final item = designList[index];
-          // 使用独立的响应式组件，避免在 itemBuilder 中嵌套 Obx
-          return _DesignItemWidget(item: item, logic: logic);
+      return SmartRefresher(
+        key: logic.refresherKey,
+        controller: logic.refreshController,
+        enablePullDown: true,
+        enablePullUp: logic.hasMore.value,
+        header: ClassicHeader(
+          refreshStyle: RefreshStyle.Follow, // 或 RefreshStyle.Behind
+        ),
+        footer: ClassicFooter(
+          loadStyle: LoadStyle.ShowWhenLoading,
+          completeDuration: Duration(milliseconds: 500),
+        ),
+        onRefresh: () async {
+          await logic.onRefresh();
         },
+        onLoading: () async {
+          await logic.onLoad();
+        },
+        child: MasonryGridView.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12.w,
+          crossAxisSpacing: 9.w,
+          padding: EdgeInsets.all(15.w),
+          itemCount: designList.length,
+          physics: const ClampingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          itemBuilder: (context, index) {
+            final item = designList[index];
+            // 使用独立的响应式组件，避免在 itemBuilder 中嵌套 Obx
+            return _DesignItemWidget(item: item, logic: logic);
+          },
+        ),
       );
     });
   }

@@ -67,42 +67,67 @@ class AppDraftPage extends StatelessWidget {
             /// 2. 中间可滚动列表（用 Expanded 包起来）
             Expanded(
               child: Obx(() {
-                if (logic.draftList.isEmpty) return PageEmptyState();
-                return Container(
-                  color: Colors.transparent,
-                  margin: EdgeInsets.symmetric(horizontal: 15.w),
-                  child: MasonryGridView.count(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12.w,
-                    crossAxisSpacing: 9.w,
-                    padding: EdgeInsetsDirectional.only(
-                      bottom: ScreenTools.bottomBarHeight,
+                if (logic.draftList.isEmpty && !logic.isLoading.value) {
+                  return PageEmptyState();
+                }
+                return Padding(
+                  padding: EdgeInsets.only(
+                    left: 15.w,
+                    right: 15.w,
+                    bottom: ScreenTools.bottomBarHeight,
+                  ),
+                  child: SmartRefresher(
+                    key: logic.refresherKey,
+                    controller: logic.refreshController,
+                    enablePullDown: true,
+                    enablePullUp: logic.hasMore.value,
+                    header: ClassicHeader(
+                      refreshStyle:
+                          RefreshStyle.Follow, // 或 RefreshStyle.Behind
                     ),
-                    itemCount: logic.draftList.length,
-                    itemBuilder: (context, index) {
-                      final item = logic.draftList[index];
-                      return Obx(() {
-                        final isBatch = logic.isBatchMode.value;
-                        final isSelected = logic.selectedIds.contains(
-                          '${item.id}',
-                        );
-                        return DraftPageItem(
-                          key: ValueKey(item.id), // ⭐️加上
-                          item: item,
-                          showCheck: isBatch,
-                          isSelected: isSelected,
-                          onTap: () {
-                            if (isBatch) {
-                              logic.toggleItemSelection('${item.id}');
-                            } else {
-                              // 非批量模式下可以进入详情 / 编辑
-                              // Get.to(...);
-                            }
-                          },
-                          index: index,
-                        );
-                      });
+                    footer: ClassicFooter(
+                      loadStyle: LoadStyle.ShowWhenLoading,
+                      completeDuration: Duration(milliseconds: 500),
+                    ),
+                    onRefresh: () async {
+                      await logic.onRefresh();
                     },
+                    onLoading: () async {
+                      await logic.onLoad();
+                    },
+                    child: MasonryGridView.count(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12.w,
+                      crossAxisSpacing: 9.w,
+                      itemCount: logic.draftList.length,
+                      physics: const ClampingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      itemBuilder: (context, index) {
+                        final item = logic.draftList[index];
+                        return Obx(() {
+                          final isBatch = logic.isBatchMode.value;
+                          final isSelected = logic.selectedIds.contains(
+                            '${item.id}',
+                          );
+                          return DraftPageItem(
+                            key: ValueKey(item.id), // ⭐️加上
+                            item: item,
+                            showCheck: isBatch,
+                            isSelected: isSelected,
+                            onTap: () {
+                              if (isBatch) {
+                                logic.toggleItemSelection('${item.id}');
+                              } else {
+                                // 非批量模式下可以进入详情 / 编辑
+                                // Get.to(...);
+                              }
+                            },
+                            index: index,
+                          );
+                        });
+                      },
+                    ),
                   ),
                 );
               }),

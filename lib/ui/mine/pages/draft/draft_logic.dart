@@ -36,10 +36,16 @@ class DraftLogic extends GetxController {
 
   final userInfo = UserModel().obs;
 
+  GlobalKey refresherKey = GlobalKey();
+  RefreshController refreshController = RefreshController(
+    initialRefresh: false,
+  );
+
   @override
   void onClose() {
     super.onClose();
     _countWorker?.dispose();
+    refreshController.dispose();
   }
 
   /// 初始化一些假数据
@@ -86,7 +92,7 @@ class DraftLogic extends GetxController {
 
       if (result.code == 0 && result.data != null) {
         final listModel = CommonModel.fromJson(result.data);
-        if (currentPage == 1) {
+        if (refresh) {
           draftList.clear();
         }
         if (listModel.items.isNotEmpty) {
@@ -96,11 +102,34 @@ class DraftLogic extends GetxController {
         } else {
           hasMore.value = false;
         }
+      } else {
+        // 如果请求失败，也要更新 hasMore 状态
+        if (!refresh) {
+          hasMore.value = false;
+        }
+      }
+
+      // 更新刷新控制器状态
+      if (refresh) {
+        refreshController.refreshCompleted();
+      } else {
+        if (hasMore.value) {
+          refreshController.loadComplete();
+        } else {
+          refreshController.loadNoData();
+        }
       }
       isLoading.value = false;
     } catch (e) {
       isLoading.value = false;
       debugPrint('草稿列表数据请求错误: $e');
+
+      // 更新刷新控制器状态（失败）
+      if (refresh) {
+        refreshController.refreshFailed();
+      } else {
+        refreshController.loadFailed();
+      }
     }
   }
 

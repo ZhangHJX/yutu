@@ -103,10 +103,7 @@ class DraftPageItem extends StatelessWidget {
                     SizedBox(height: 4.w),
 
                     Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 7.w,
-                        // vertical: 2,
-                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 7.w),
                       decoration: BoxDecoration(
                         color: "#DCEDFE".color,
                         borderRadius: BorderRadius.circular(8.w),
