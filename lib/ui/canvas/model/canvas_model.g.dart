@@ -7,7 +7,8 @@ part of 'canvas_model.dart';
 // **************************************************************************
 
 CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
-  id: json['id'] as String? ?? '',
+  id: (json['id'] as num?)?.toInt() ?? 0,
+  uuid: json['uuid'] as String? ?? '',
   ratio: json['ratio'] as String? ?? '',
   clarity: json['clarity'] as String? ?? '0',
   isCreate: json['isCreate'] as bool? ?? false,
@@ -32,6 +33,7 @@ CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
 Map<String, dynamic> _$CanvasModelToJson(CanvasModel instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'uuid': instance.uuid,
       'ratio': instance.ratio,
       'clarity': instance.clarity,
       'isCreate': instance.isCreate,

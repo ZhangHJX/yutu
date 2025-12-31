@@ -82,9 +82,6 @@ class _DesignItemWidget extends StatelessWidget {
     // 只监听需要的响应式变量
     return HomePageItem(
       key: ValueKey(item.id),
-      onTap: () {
-        // 可以在这里添加点击跳转逻辑
-      },
       imageH: itemHeight,
       imageUrl: '${item.originalImage}${item.thumbnail}',
       title: item.title ?? '',

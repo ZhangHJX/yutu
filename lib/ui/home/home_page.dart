@@ -80,16 +80,13 @@ class HomePage extends StatelessWidget {
                             );
                             return HomePageItem(
                               key: ValueKey(item?.id),
-                              onTap: () {
-                                Get.toNamed(AppRoutes.middle);
-                              },
                               imageH: itemHeight,
                               imageUrl:
                                   '${item?.originalImage}${item?.thumbnail}',
                               title: item?.title ?? '',
                               type: item?.isOfficial ?? 1,
                               favorite: item?.favoriteTotal ?? 0,
-                              isSelected: item?.isFavorite == 1 ? true : false,
+                              isFavorite: item?.isFavorite == 1 ? true : false,
                             );
                           },
                         ),

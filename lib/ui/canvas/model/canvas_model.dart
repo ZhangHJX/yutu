@@ -9,7 +9,8 @@ part 'canvas_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class CanvasModel {
-  String id;
+  int id;
+  String uuid;
   String ratio;
   String clarity;
   bool isCreate;
@@ -36,7 +37,8 @@ class CanvasModel {
   List<CanvasElement> elements;
 
   CanvasModel({
-    this.id = '',
+    this.id = 0,
+    this.uuid = '',
     this.ratio = '',
     this.clarity = '0',
     this.isCreate = false,

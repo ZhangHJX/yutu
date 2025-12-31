@@ -318,7 +318,7 @@ class SaveLogic extends GetxController {
       final result = await http.post(
         '/design/store',
         data: {
-          "uuid": model.id,
+          "uuid": model.uuid,
           "edit_time": '${model.timestamp}',
           "title": titleController.text.trim(),
           "desc": descriptionController.text.trim(),
@@ -364,7 +364,7 @@ class SaveLogic extends GetxController {
       final result = await http.post(
         '/design/draft/store',
         data: {
-          "uuid": model.id,
+          "uuid": model.uuid,
           "edit_time": '${model.timestamp}',
           "title": '',
           "desc": '',

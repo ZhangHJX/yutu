@@ -1,15 +1,21 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../widgets/index.dart';
+import '../../stores/global.dart';
 import '../canvas/draft/index.dart';
 import '../../app/routes/index.dart';
 import '../canvas/fonts/font_manager.dart';
+import '../canvas/model/index.dart';
 import 'package:voicetemplate/ui/utils/file/index.dart';
+import 'package:voicetemplate/ui/widgets/index.dart';
 import '../model/index.dart';
 //最新的数据
 import './model/home_model.dart';
+import './model/draft_edit_model.dart';
+import './widgets/draft_continue_edit_widget.dart';
 
 class HomeLogic extends GetxController with GetTickerProviderStateMixin {
+  final global = Get.find<GlobalLogic>();
+
   /// 推荐列表（响应式）
   final recommendList = <CommonItemModel>[].obs;
 
@@ -49,7 +55,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   void onInit() {
     super.onInit();
     homeRefresh();
-    // showDraftDialog();
+    showDraftDialog();
   }
 
   /// 加载首页数据
@@ -198,39 +204,94 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     }
   }
 
-  void showDraftDialog() async {
+  /// 获取是否有草稿信息
+  Future<void> showDraftDialog() async {
+    // if (!global.isLogin) {
+    //   return;
+    // }
     final isHave = await DraftManager().hasDraft();
     if (isHave) {
-      SmartDialog.show(
-        builder: (context) => ConfirmPopWidget(
-          title: "继续编辑",
-          subTitle: "您上次编辑的草稿未正常保存，是\n否返回编辑器继续编辑？",
-          cancelAction: () {
-            DraftManager().deleteDraft();
-          },
-          sureAction: () {
-            // 异步加载草稿并跳转到画布页面
-            () async {
-              final draft = await DraftManager().loadDraft();
-              if (draft == null) {
-                SmartDialog.dismiss();
-                return;
-              }
-              // 根据当前屏幕重新计算画布矩阵
-              draft.getMatrix4();
-              SmartDialog.dismiss();
-              Get.toNamed(AppRoutes.canvalsPage, arguments: draft);
-            }();
-          },
-        ),
-        alignment: Alignment.center,
-        animationType: SmartAnimationType.centerFade_otherSlide,
-        animationTime: Duration(milliseconds: 250),
-        maskColor: "#000000".color.withValues(alpha: 0.5),
-        clickMaskDismiss: true,
-        useAnimation: true,
-        usePenetrate: false,
-      );
+      final canvasModel = await DraftManager().loadDraft();
+      if (canvasModel == null) {
+        return;
+      }
+      // if (canvasModel.id == 0) {
+      //   showSingleDraftDialog();
+      // } else {
+      showMutipleDraftDialog();
+      // requestServiceDraft(canvasModel);
+      // }
     }
+  }
+
+  /// 服务端没有保存的相关的草稿
+  void showSingleDraftDialog() {
+    SmartDialog.show(
+      builder: (context) => ConfirmPopWidget(
+        title: "继续编辑",
+        subTitle: "您上次编辑的草稿未正常保存，是\n否返回编辑器继续编辑？",
+        cancelAction: () {
+          DraftManager().deleteDraft();
+        },
+        sureAction: () {
+          // 异步加载草稿并跳转到画布页面
+          () async {
+            final draft = await DraftManager().loadDraft();
+            if (draft == null) {
+              SmartDialog.dismiss();
+              return;
+            }
+            // 根据当前屏幕重新计算画布矩阵
+            draft.getMatrix4();
+            SmartDialog.dismiss();
+            Get.toNamed(AppRoutes.canvalsPage, arguments: draft);
+          }();
+        },
+      ),
+      alignment: Alignment.center,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: "#000000".color.withValues(alpha: 0.5),
+      clickMaskDismiss: false,
+      useAnimation: true,
+      usePenetrate: false,
+    );
+  }
+
+  /// 服务端保存了相关的草稿
+  void requestServiceDraft(CanvasModel model) async {
+    try {
+      final result = await http.post(
+        '/homePage/design/draft/read',
+        showErrorToast: false,
+      );
+      if (result.code == 0 && result.data != null) {
+        final model = DraftEditModel.fromJson(result.data);
+        debugPrint("哈哈哈哈哈哈====result.code == 0====");
+      }
+    } catch (e) {
+      debugPrint('==本地没有要编辑的草稿==  error: $e');
+    }
+  }
+
+  /// 服务端没有保存的相关的草稿
+  void showMutipleDraftDialog() {
+    SmartDialog.show(
+      builder: (context) => DraftContinueEditWidget(
+        localDraftTime: 1764848400,
+        serverDraftTime: 1764848400,
+        onLocalPreview: () {},
+        onServerPreview: () {},
+        sureAction: () {},
+        cancelAction: () {},
+      ),
+      alignment: Alignment.center,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: "#000000".color.withValues(alpha: 0.5),
+      clickMaskDismiss: false,
+      useAnimation: true,
+      usePenetrate: false,
+    );
   }
 }

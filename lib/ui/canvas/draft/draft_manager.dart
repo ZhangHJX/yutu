@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import '../model/index.dart';
 import '../pages/canvals/canvals_controller.dart';
 import '../../../file/index.dart';
@@ -117,7 +118,6 @@ class DraftManager {
         debugPrint('DraftManager: 草稿文件不存在: ${draftDir.path}/draft.json');
         return null;
       }
-
       // 解析为画布模型
       final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
       final canvasModel = CanvasModel.fromJson(jsonData);
@@ -159,6 +159,17 @@ class DraftManager {
     } catch (e) {
       debugPrint('DraftManager: 检查草稿失败: $e');
       return false;
+    }
+  }
+
+  /// 获取到本地草稿json
+  Future<String> getDraftFilePath() async {
+    try {
+      final draftDir = await _getDraftDirectory();
+      final String filePath = p.join(draftDir.path, 'draft.json');
+      return filePath;
+    } catch (e) {
+      return '';
     }
   }
 
