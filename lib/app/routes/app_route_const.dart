@@ -10,6 +10,7 @@ class AppRoutes {
 
   /// 首页
   static const search = '/search_page';
+  static const middle = '/middle_page';
 
   // 画布相关
   static const canvalsDesign = '/canvals_design_page';

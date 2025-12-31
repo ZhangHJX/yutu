@@ -1,23 +1,17 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../widgets/index.dart';
-import '../canvas/draft/index.dart';
-import '../../app/routes/index.dart';
-import '../canvas/fonts/font_manager.dart';
-import 'package:voicetemplate/ui/utils/file/index.dart';
-import 'package:voicetemplate/ui/model/screen_model.dart';
-import '../model/common_model.dart';
-import '../model/tab_data_state.dart';
+import 'model/home_model.dart';
+import '../model/index.dart';
 
 class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   /// 顶部tab数据
   final RxBool tabIsLoading = false.obs;
 
+  /// 头部的tab
+  final screenList = <TagModel>[].obs;
+
   /// TabController
   final Rxn<TabController> tabController = Rxn<TabController>();
-
-  /// 头部的tab
-  final screenList = <ScreenItemModel>[].obs;
 
   // 当前选中的 tab 索引
   final RxInt selectedTabIndex = 0.obs;
@@ -25,28 +19,11 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   // 每个 tab 的数据状态（使用 tagId 作为 key，0 表示全部）
   final Map<int, TabDataState> tabDataMap = {};
 
-  /// 获取当前 tab 的数据列表
-  RxList<CommonItemModel> get designList {
-    final tagId = _getCurrentTagId();
-    return tabDataMap[tagId]?.dataList ?? <CommonItemModel>[].obs;
-  }
-
-  /// 获取当前 tab 是否正在加载
-  RxBool get isLoading {
-    final tagId = _getCurrentTagId();
-    return tabDataMap[tagId]?.isLoading ?? false.obs;
-  }
-
   /// 获取当前 tab 是否还有更多数据
   RxBool get hasMore {
     final tagId = _getCurrentTagId();
     return tabDataMap[tagId]?.hasMore ?? true.obs;
   }
-
-  GlobalKey refresherKey = GlobalKey();
-  RefreshController refreshController = RefreshController(
-    initialRefresh: false,
-  );
 
   @override
   void onClose() {
@@ -54,7 +31,11 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
     tabController.value?.removeListener(_onTabControllerChanged);
     tabController.value?.dispose();
     tabController.value = null;
-    refreshController.dispose();
+    // 释放所有 tab 的 RefreshController
+    for (var tabData in tabDataMap.values) {
+      tabData.refreshController.dispose();
+    }
+    tabDataMap.clear();
     super.onClose();
   }
 
@@ -62,14 +43,6 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   void onInit() {
     super.onInit();
     getTabTags();
-    showDraftDialog();
-  }
-
-  @override
-  void onReady() {
-    FontManager.to.initFromDisk();
-    PickerImageManager.init();
-    super.onReady();
   }
 
   /// 创建或更新 TabController
@@ -102,7 +75,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
         final tagId = _getCurrentTagId();
         final tabData = _getOrCreateTabData(tagId);
         if (!tabData.isInitialized) {
-          loadDesignList(refresh: true);
+          loadSearchList(refresh: true);
         }
       }
     }
@@ -127,7 +100,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
     final tagId = _getCurrentTagId();
     final tabData = _getOrCreateTabData(tagId);
     if (!tabData.isInitialized) {
-      loadDesignList(refresh: true);
+      loadSearchList(refresh: true);
     }
   }
 
@@ -135,18 +108,30 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   Future<void> getTabTags() async {
     try {
       tabIsLoading.value = true;
-      final result = await http.post('/tag/index', showErrorToast: false);
+      final result = await http.get(
+        '/homePage/search/index',
+        query: {'page': '1', 'limit': globalPageSize},
+        showErrorToast: false,
+        converter: HomeModel.fromJson,
+      );
       if (result.code == 0 && result.data != null) {
-        final listModel = ScreenModel.fromJson(result.data);
-        final model = ScreenItemModel(id: 0, name: '全部');
-        listModel.items.insert(0, model);
-        screenList.value = listModel.items;
+        screenList.value = result.data!.tagList;
 
+        // 初始化每个 tag 的数据到 tabDataMap
+        for (var index = 0; index < screenList.length; index++) {
+          final tag = screenList[index];
+          final tabData = _getOrCreateTabData(tag.id);
+          if (tag.list.isNotEmpty) {
+            // 如果 tag 的 list 不为空，初始化数据
+            selectedTabIndex.value = index;
+            tabData.dataList.value = tag.list;
+            tabData.isInitialized = true;
+            tabData.currentPage = 1;
+            tabData.hasMore.value = true;
+          }
+        }
         // 创建 TabController
         createTabController();
-
-        /// 刚进来的时候传全部
-        await onRefresh();
       }
       tabIsLoading.value = false;
     } catch (e) {
@@ -157,12 +142,12 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
 
   /// 下拉刷新
   Future<void> onRefresh() async {
-    await loadDesignList(refresh: true);
+    await loadSearchList(refresh: true);
   }
 
   /// 上拉加载更多
   Future<void> onLoad({int? tagId}) async {
-    await loadDesignList(refresh: false);
+    await loadSearchList(refresh: false);
   }
 
   /// 获取当前 tab 的 tagId
@@ -182,7 +167,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   }
 
   /// 加载图片列表
-  Future<void> loadDesignList({bool refresh = false}) async {
+  Future<void> loadSearchList({bool refresh = false}) async {
     // 确定要加载的 tagId
     final targetTagId = _getCurrentTagId();
     final tabData = _getOrCreateTabData(targetTagId);
@@ -195,10 +180,11 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
     tabData.isLoading.value = true;
     try {
       final result = await http.get(
-        '/template/index',
+        '/homePage/search/where-index',
         query: {
           'page': '${tabData.currentPage}',
           'limit': globalPageSize,
+          'title': '',
           'tag_id': targetTagId,
         },
         showErrorToast: false,
@@ -218,58 +204,26 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
         }
         tabData.isInitialized = true;
       }
-      // 更新刷新控制器状态
+      // 更新刷新控制器状态 - 使用当前 tab 的 refreshController
       if (refresh) {
-        refreshController.refreshCompleted();
+        tabData.refreshController.refreshCompleted();
       } else {
         if (hasMore.value) {
-          refreshController.loadComplete();
+          tabData.refreshController.loadComplete();
         } else {
-          refreshController.loadNoData();
+          tabData.refreshController.loadNoData();
         }
       }
       tabData.isLoading.value = false;
     } catch (e) {
       tabData.isLoading.value = false;
       debugPrint('列表数据请求错误: $e');
-    }
-  }
-
-  void showDraftDialog() async {
-    final isHave = await DraftManager().hasDraft();
-    if (isHave) {
-      SmartDialog.show(
-        builder: (context) => ConfirmPopWidget(
-          title: "继续编辑",
-          subTitle: "您上次编辑的草稿未正常保存，是\n否返回编辑器继续编辑？",
-          cancelAction: () {
-            DraftManager().deleteDraft();
-          },
-          sureAction: () {
-            // 异步加载草稿并跳转到画布页面
-            () async {
-              final draft = await DraftManager().loadDraft();
-              if (draft == null) {
-                SmartDialog.dismiss();
-                return;
-              }
-
-              // 根据当前屏幕重新计算画布矩阵
-              draft.getMatrix4();
-
-              SmartDialog.dismiss();
-              Get.toNamed(AppRoutes.canvalsPage, arguments: draft);
-            }();
-          },
-        ),
-        alignment: Alignment.center,
-        animationType: SmartAnimationType.centerFade_otherSlide,
-        animationTime: Duration(milliseconds: 250),
-        maskColor: "#000000".color.withValues(alpha: 0.5),
-        clickMaskDismiss: true,
-        useAnimation: true,
-        usePenetrate: false,
-      );
+      // 处理错误状态 - 使用当前 tab 的 refreshController
+      if (refresh) {
+        tabData.refreshController.refreshFailed();
+      } else {
+        tabData.refreshController.loadFailed();
+      }
     }
   }
 }

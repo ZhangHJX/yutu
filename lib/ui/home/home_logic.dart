@@ -22,32 +22,11 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   // Tab 索引
   final selectedTabIndex = 0.obs;
 
-  /// 获取当前 tag 的 TagModel（响应式）
-  TagModel? get currentTagModel {
-    final tagId = _getCurrentTagId();
-    try {
-      return tagList.firstWhere((tag) => tag.id == tagId);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// 获取当前 tab 是否正在加载
-  RxBool get isLoading {
-    final tagId = _getCurrentTagId();
-    return tabDataMap[tagId]?.isLoading ?? false.obs;
-  }
-
   /// 获取当前 tab 是否还有更多数据
   RxBool get hasMore {
     final tagId = _getCurrentTagId();
     return tabDataMap[tagId]?.hasMore ?? true.obs;
   }
-
-  GlobalKey refresherKey = GlobalKey();
-  RefreshController refreshController = RefreshController(
-    initialRefresh: false,
-  );
 
   @override
   void onReady() {
@@ -58,7 +37,11 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   @override
   void onClose() {
-    refreshController.dispose();
+    // 释放所有 tab 的 RefreshController
+    for (var tabData in tabDataMap.values) {
+      tabData.refreshController.dispose();
+    }
+    tabDataMap.clear();
     super.onClose();
   }
 
@@ -82,6 +65,10 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
+        // 释放旧的 RefreshController 后再清除
+        for (var tabData in tabDataMap.values) {
+          tabData.refreshController.dispose();
+        }
         tabDataMap.clear();
 
         recommendList.value = result.data!.recommendList;
@@ -91,7 +78,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         for (var index = 0; index < tagList.length; index++) {
           final tag = tagList[index];
           final tabData = _getOrCreateTabData(tag.id);
-          if ((tag.isSelect == 1) && tag.list.isNotEmpty) {
+          if (tag.list.isNotEmpty) {
             // 如果 tag 的 list 不为空，初始化数据
             selectedTabIndex.value = index;
             tabData.dataList.value = tag.list;
@@ -171,25 +158,25 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         }
         tabData.isInitialized = true;
       }
-      // 更新刷新控制器状态
+      // 更新刷新控制器状态 - 使用当前 tab 的 refreshController
       if (refresh) {
-        refreshController.refreshCompleted();
+        tabData.refreshController.refreshCompleted();
       } else {
         if (hasMore.value) {
-          refreshController.loadComplete();
+          tabData.refreshController.loadComplete();
         } else {
-          refreshController.loadNoData();
+          tabData.refreshController.loadNoData();
         }
       }
       tabData.isLoading.value = false;
     } catch (e) {
       tabData.isLoading.value = false;
       debugPrint('列表数据请求错误: $e');
-      // 处理错误状态
+      // 处理错误状态 - 使用当前 tab 的 refreshController
       if (refresh) {
-        refreshController.refreshFailed();
+        tabData.refreshController.refreshFailed();
       } else {
-        refreshController.loadFailed();
+        tabData.refreshController.loadFailed();
       }
     }
   }

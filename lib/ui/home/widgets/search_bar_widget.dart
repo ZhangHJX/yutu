@@ -21,18 +21,34 @@ class SearchBarWidget extends StatefulWidget {
 
 class _SearchBarWidgetState extends State<SearchBarWidget> {
   late TextEditingController _controller;
+  final _focusNode = FocusNode();
+  bool _hasText = false;
 
   @override
   void initState() {
     super.initState();
     _controller = widget.controller ?? TextEditingController();
+    _hasText = _controller.text.isNotEmpty;
+    // 监听文本变化
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    final hasText = _controller.text.isNotEmpty;
+    if (_hasText != hasText) {
+      setState(() {
+        _hasText = hasText;
+      });
+    }
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onTextChanged);
     if (widget.controller == null) {
       _controller.dispose();
     }
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -72,15 +88,31 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
           // 搜索输入框
           Expanded(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 7.w),
+              padding: EdgeInsets.only(left: 7.w),
               child: TextField(
+                maxLines: 1,
                 controller: _controller,
                 enabled: widget.isEnabled,
+                focusNode: _focusNode,
                 decoration: InputDecoration(
+                  // filled: true,
+                  // fillColor: Colors.red,
                   hintText: widget.hintText,
                   hintStyle: TextStyle(color: '#6E7A91'.color, fontSize: 12.w),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 11.w),
+                  isDense: true,
+                  // contentPadding: EdgeInsets.symmetric(vertical: 5.w),
+                  contentPadding: EdgeInsets.symmetric(vertical: 8.w),
+                  suffixIcon: _hasText
+                      ? IconButton(
+                          icon: const Icon(Icons.close),
+                          iconSize: 15.w,
+                          onPressed: () {
+                            _controller.clear(); // 清空
+                            _focusNode.requestFocus(); // 清空后保持光标
+                          },
+                        )
+                      : null,
                 ),
                 style: TextStyle(fontSize: 12.w, color: Colors.black),
               ),

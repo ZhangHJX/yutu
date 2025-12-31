@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
+
 import '../utils/index.dart';
 
 import 'server_page_model.dart';
@@ -32,6 +34,8 @@ class BaseModel<T> {
     if (code == -1) {
       EventBusManager.share.emit(AppEventType.logout);
     }
+
+    debugPrint("=====$rawData======");
 
     if (showErrorToast && message.isNotEmpty) {
       showToast(message);

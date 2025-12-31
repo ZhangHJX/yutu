@@ -16,7 +16,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
+      body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -32,9 +32,9 @@ class HomePage extends StatelessWidget {
         ),
         child: Column(
           children: [
-            SearchNavigationWidget(
-              isEnabled: false,
+            GestureDetector(
               onTap: () => Get.toNamed(AppRoutes.search),
+              child: SearchNavigationWidget(isEnabled: false),
             ),
             Expanded(
               child: CustomScrollView(
@@ -80,7 +80,9 @@ class HomePage extends StatelessWidget {
                             );
                             return HomePageItem(
                               key: ValueKey(item?.id),
-                              onTap: () {},
+                              onTap: () {
+                                Get.toNamed(AppRoutes.middle);
+                              },
                               imageH: itemHeight,
                               imageUrl:
                                   '${item?.originalImage}${item?.thumbnail}',

@@ -15,7 +15,7 @@ class SearchPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: '#F5F5F5'.color,
-      body: DecoratedBox(
+      body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -29,7 +29,7 @@ class SearchPage extends StatelessWidget {
             Obx(() {
               return SearchNavigationWidget(
                 isEnabled: true,
-                onTap: () {},
+                onSearch: (value) {},
                 children: [_buildTabBar()],
               );
             }),
@@ -71,6 +71,7 @@ class SearchPage extends StatelessWidget {
           children: List.generate(
             logic.screenList.length,
             (index) => TabItemWidget(
+              key: ValueKey('tab_item_$index'),
               name: logic.screenList[index].name,
               tapCallBack: () {
                 logic.switchTab(index);
