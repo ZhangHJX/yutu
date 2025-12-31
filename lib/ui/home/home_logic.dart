@@ -216,10 +216,8 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
                 SmartDialog.dismiss();
                 return;
               }
-
               // 根据当前屏幕重新计算画布矩阵
               draft.getMatrix4();
-
               SmartDialog.dismiss();
               Get.toNamed(AppRoutes.canvalsPage, arguments: draft);
             }();
