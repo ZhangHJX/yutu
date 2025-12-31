@@ -123,7 +123,6 @@ class DraftLogic extends GetxController {
     } catch (e) {
       isLoading.value = false;
       debugPrint('草稿列表数据请求错误: $e');
-
       // 更新刷新控制器状态（失败）
       if (refresh) {
         refreshController.refreshFailed();

@@ -130,31 +130,54 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
           right: 19.w,
         ),
         height: 231.w,
-        child: Obx(() {
-          final list = logic.imageList;
-          return MasonryGridView.count(
-            crossAxisCount: 3, // 两列瀑布流
-            mainAxisSpacing: 12.w,
-            crossAxisSpacing: 9.w,
-            padding: EdgeInsets.only(top: 10),
-            itemCount: list.length,
-            itemBuilder: (context, index) {
-              final model = list[index];
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final itemHeight = calculateAspectRatio(
-                    constraints.maxWidth,
-                    model.canvasSize,
-                  );
-                  return SizedBox(
-                    height: itemHeight,
-                    child: _buildImageItem(model, index),
-                  );
-                },
-              );
+        child: RefreshConfiguration(
+          headerTriggerDistance: 40,
+          child: SmartRefresher(
+            key: logic.refresherKey,
+            controller: logic.refreshController,
+            enablePullDown: true,
+            enablePullUp: logic.hasMore.value,
+            header: ClassicHeader(
+              height: 40,
+              refreshStyle: RefreshStyle.Follow, // 或 RefreshStyle.Behind
+            ),
+            footer: ClassicFooter(
+              loadStyle: LoadStyle.ShowWhenLoading,
+              completeDuration: Duration(milliseconds: 500),
+            ),
+            onRefresh: () async {
+              await logic.onRefresh();
             },
-          );
-        }),
+            onLoading: () async {
+              await logic.onLoad();
+            },
+            child: MasonryGridView.count(
+              crossAxisCount: 3, // 两列瀑布流
+              mainAxisSpacing: 12.w,
+              crossAxisSpacing: 9.w,
+              padding: EdgeInsets.only(top: 10),
+              itemCount: logic.imageList.length,
+              physics: const ClampingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              itemBuilder: (context, index) {
+                final model = logic.imageList[index];
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final itemHeight = calculateAspectRatio(
+                      constraints.maxWidth,
+                      model.canvasSize,
+                    );
+                    return SizedBox(
+                      height: itemHeight,
+                      child: _buildImageItem(model, index),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ),
       );
     });
   }

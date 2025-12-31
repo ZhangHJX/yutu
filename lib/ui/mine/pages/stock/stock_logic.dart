@@ -128,6 +128,11 @@ class StockLogic extends GetxController {
     } catch (e) {
       isLoading.value = false;
       debugPrint('草稿列表数据请求错误: $e');
+      if (refresh) {
+        refreshController.refreshFailed();
+      } else {
+        refreshController.loadFailed();
+      }
     }
   }
 

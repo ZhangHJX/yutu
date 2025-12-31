@@ -14,18 +14,23 @@ class ImageLogic extends GetxController {
 
   // 当前页码
   int currentPage = 1;
-
   // 图片列表
   final RxList<ImageModel> imageList = <ImageModel>[].obs;
-
   // 是否正在加载
   final RxBool isLoading = false.obs;
-
-  // 是否正在刷新
-  final RxBool isRefreshing = false.obs;
-
   // 是否还有更多
   final RxBool hasMore = false.obs;
+
+  GlobalKey refresherKey = GlobalKey();
+  RefreshController refreshController = RefreshController(
+    initialRefresh: false,
+  );
+
+  @override
+  void onClose() {
+    super.onClose();
+    refreshController.dispose();
+  }
 
   @override
   void onInit() {
@@ -47,23 +52,19 @@ class ImageLogic extends GetxController {
   /// 加载图片列表
   /// [refresh] 是否为刷新操作（重置到第一页）
   Future<void> loadImageList({bool refresh = false}) async {
+    if (isLoading.value) {
+      return;
+    }
     if (refresh) {
       currentPage = 1;
-      isRefreshing.value = true;
-    } else {
-      if (isLoading.value) {
-        return;
-      }
-      isLoading.value = true;
     }
-
+    isLoading.value = true;
     try {
       final result = await http.get(
         '/user/material/index',
         query: {'page': '$currentPage', 'limit': globalPageSize},
         showErrorToast: false,
       );
-
       if (result.code == 0 && result.data != null) {
         final listModel = ImageListModels.fromJson(result.data);
         if (currentPage == 1) {
@@ -77,12 +78,28 @@ class ImageLogic extends GetxController {
           hasMore.value = false;
         }
       }
+      isLoading.value = false;
+      // 更新刷新控制器状态
+      if (refresh) {
+        debugPrint('更新刷新控制器状态: refresh ');
+        refreshController.refreshCompleted();
+      } else {
+        debugPrint('更新刷新控制器状态: hasMore ');
+        if (hasMore.value) {
+          refreshController.loadComplete();
+        } else {
+          refreshController.loadNoData();
+        }
+      }
     } catch (e) {
       hasMore.value = false;
       debugPrint('加载图片列表失败: $e');
-    } finally {
       isLoading.value = false;
-      isRefreshing.value = false;
+      if (refresh) {
+        refreshController.refreshFailed();
+      } else {
+        refreshController.loadFailed();
+      }
     }
   }
 
