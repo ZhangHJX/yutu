@@ -8,10 +8,12 @@ class SearchNavigationWidget extends StatelessWidget {
     required this.isEnabled,
     this.children = const [],
     this.onSearch,
+    this.onClear,
   });
   final List<Widget> children;
   final bool isEnabled;
   final Function(String)? onSearch;
+  final VoidCallback? onClear;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +48,7 @@ class SearchNavigationWidget extends StatelessWidget {
                   isEnabled,
                   hintText: '搜索一下吧～',
                   onSearch: onSearch,
+                  onClear: onClear,
                 ),
               ),
             ],

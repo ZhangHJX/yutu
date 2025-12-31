@@ -19,6 +19,8 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   // 每个 tab 的数据状态（使用 tagId 作为 key，0 表示全部）
   final Map<int, TabDataState> tabDataMap = {};
 
+  final searchText = ''.obs;
+
   /// 获取当前 tab 是否还有更多数据
   RxBool get hasMore {
     final tagId = _getCurrentTagId();
@@ -146,7 +148,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   }
 
   /// 上拉加载更多
-  Future<void> onLoad({int? tagId}) async {
+  Future<void> onLoadMore({int? tagId}) async {
     await loadSearchList(refresh: false);
   }
 
@@ -184,12 +186,11 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
         query: {
           'page': '${tabData.currentPage}',
           'limit': globalPageSize,
-          'title': '',
+          'title': searchText.value,
           'tag_id': targetTagId,
         },
         showErrorToast: false,
       );
-
       if (result.code == 0 && result.data != null) {
         final listModel = CommonModel.fromJson(result.data);
         if (tabData.currentPage == 1) {

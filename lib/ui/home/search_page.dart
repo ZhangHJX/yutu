@@ -29,7 +29,15 @@ class SearchPage extends StatelessWidget {
             Obx(() {
               return SearchNavigationWidget(
                 isEnabled: true,
-                onSearch: (value) {},
+                onSearch: (value) {
+                  logic.searchText.value = value;
+                  logic.onRefresh();
+                },
+                onClear: () {
+                  logic.searchText.value = '';
+                  logic.onRefresh();
+                  debugPrint("---哈哈哈哈哈哈----onClear------");
+                },
                 children: [_buildTabBar()],
               );
             }),
@@ -41,7 +49,7 @@ class SearchPage extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator());
                 } else {
                   if (logic.tabController.value == null) {
-                    return const PageEmptyState();
+                    return const PageEmptyState(title: '未找到匹配的模板~');
                   }
                 }
                 return TabBarView(

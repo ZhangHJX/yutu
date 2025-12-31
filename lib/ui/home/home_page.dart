@@ -68,7 +68,7 @@ class HomePage extends StatelessWidget {
                           mainAxisSpacing: 14.h,
                           crossAxisSpacing: 9.w,
                           shrinkWrap: true,
-                          padding: EdgeInsets.zero, // 关键：去掉默认 padding
+                          padding: EdgeInsets.zero,
                           primary: false,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: tabData?.dataList.length,

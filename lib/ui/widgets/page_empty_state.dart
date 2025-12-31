@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:common/common.dart';
 
 class PageEmptyState extends StatelessWidget {
-  const PageEmptyState({super.key});
+  const PageEmptyState({super.key, this.title = "暂无内容"});
+
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +29,7 @@ class PageEmptyState extends StatelessWidget {
                   width: 146.w,
                   child: Center(
                     child: Text(
-                      "暂无内容",
+                      title,
                       style: TextStyle(fontSize: 12.w, color: "#9E9E9E".color),
                     ),
                   ),

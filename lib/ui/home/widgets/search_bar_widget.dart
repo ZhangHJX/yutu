@@ -6,12 +6,14 @@ class SearchBarWidget extends StatefulWidget {
   final Function(String)? onSearch;
   final TextEditingController? controller;
   final bool isEnabled;
+  final VoidCallback? onClear;
 
   const SearchBarWidget(
     this.isEnabled, {
     super.key,
     this.hintText,
     this.onSearch,
+    this.onClear,
     this.controller,
   });
 
@@ -95,13 +97,10 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                 enabled: widget.isEnabled,
                 focusNode: _focusNode,
                 decoration: InputDecoration(
-                  // filled: true,
-                  // fillColor: Colors.red,
                   hintText: widget.hintText,
                   hintStyle: TextStyle(color: '#6E7A91'.color, fontSize: 12.w),
                   border: InputBorder.none,
                   isDense: true,
-                  // contentPadding: EdgeInsets.symmetric(vertical: 5.w),
                   contentPadding: EdgeInsets.symmetric(vertical: 8.w),
                   suffixIcon: _hasText
                       ? IconButton(
@@ -110,6 +109,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                           onPressed: () {
                             _controller.clear(); // 清空
                             _focusNode.requestFocus(); // 清空后保持光标
+                            widget.onClear?.call();
                           },
                         )
                       : null,

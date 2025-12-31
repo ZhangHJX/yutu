@@ -16,7 +16,7 @@ class SearchTabPage extends StatelessWidget {
     final tagId = logic.screenList[logic.selectedTabIndex.value].id;
     final tabData = logic.tabDataMap[tagId];
     if (tabData == null) {
-      return const PageEmptyState();
+      return const PageEmptyState(title: '未找到匹配的模板~');
     }
 
     // 使用多个独立的 Obx，避免嵌套
@@ -27,7 +27,7 @@ class SearchTabPage extends StatelessWidget {
         return const Center(child: CircularProgressIndicator());
       }
       if (designList.isEmpty) {
-        return const PageEmptyState();
+        return const PageEmptyState(title: '未找到匹配的模板~');
       }
       // 将响应式逻辑移到 itemBuilder 外部，使用独立的响应式 item 组件
       return SmartRefresher(
@@ -46,13 +46,13 @@ class SearchTabPage extends StatelessWidget {
           await logic.onRefresh();
         },
         onLoading: () async {
-          await logic.onLoad();
+          await logic.onLoadMore();
         },
         child: MasonryGridView.count(
           crossAxisCount: 2,
           mainAxisSpacing: 12.w,
           crossAxisSpacing: 9.w,
-          padding: EdgeInsets.all(15.w),
+          padding: EdgeInsets.symmetric(horizontal: 15.w),
           itemCount: designList.length,
           physics: const ClampingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics(),
