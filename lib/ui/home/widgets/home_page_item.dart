@@ -28,10 +28,8 @@ class HomePageItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        debugPrint("----哈哈哈哈哈---$id---");
-        Get.toNamed(AppRoutes.middle, arguments: {'id': id, "type": "home"});
-      },
+      onTap: () =>
+          Get.toNamed(AppRoutes.middle, arguments: {'id': id, "type": "home"}),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14.w),
         child: Stack(

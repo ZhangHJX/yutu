@@ -14,15 +14,20 @@ class MiddleModel {
   @JsonKey(name: 'ordinary_image')
   final String ordinaryImage;
   final String thumbnail;
-
   @JsonKey(name: 'recources_url')
   final String recourcesUrl;
-
   @JsonKey(name: 'favorite_total')
   final int favoriteTotal;
+  @JsonKey(name: 'is_official')
+  final int isOfficial;
+  @JsonKey(name: 'is_favorite')
+  final int isFavorite;
 
   @JsonKey(name: 'front_data')
   final List<FontItemModel> frontData;
+
+  @JsonKey(name: 'tag_data')
+  final List<TagItemModel> tagData;
 
   MiddleModel({
     required this.id,
@@ -35,7 +40,10 @@ class MiddleModel {
     required this.thumbnail,
     required this.recourcesUrl,
     required this.favoriteTotal,
+    required this.isOfficial,
+    required this.isFavorite,
     required this.frontData,
+    required this.tagData,
   });
 
   factory MiddleModel.fromJson(Map<String, dynamic> json) =>
@@ -57,4 +65,16 @@ class FontItemModel {
   factory FontItemModel.fromJson(Map<String, dynamic> json) =>
       _$FontItemModelFromJson(json);
   Map<String, dynamic> toJson() => _$FontItemModelToJson(this);
+}
+
+@JsonSerializable()
+class TagItemModel {
+  final int id;
+  final String name;
+
+  TagItemModel({required this.id, required this.name});
+
+  factory TagItemModel.fromJson(Map<String, dynamic> json) =>
+      _$TagItemModelFromJson(json);
+  Map<String, dynamic> toJson() => _$TagItemModelToJson(this);
 }

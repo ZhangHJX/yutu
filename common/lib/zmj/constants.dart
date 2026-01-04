@@ -50,3 +50,6 @@ double calculateAspectRatio(double width, String canvasSize) {
   final height = double.parse(parts[1]);
   return (width, height);
 }
+
+/// 中间页数据来源
+enum PageSource { home, search }
