@@ -315,6 +315,11 @@ class SaveLogic extends GetxController {
       final sourceDir = await DirectoryManager.getDocumentsSubDirectory(
         'cavals',
       );
+      final infoList = [
+        for (final e in model.elements)
+          if (e.fontId != 0)
+            {'font_id': '${e.fontId}', 'font_version': e.version},
+      ];
       final result = await http.post(
         '/design/store',
         data: {
@@ -333,6 +338,7 @@ class SaveLogic extends GetxController {
           "zip_id": '$fileResourceId',
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
+          "front_data": infoList,
         },
         showErrorToast: false,
       );
@@ -355,12 +361,18 @@ class SaveLogic extends GetxController {
     }
   }
 
-  ///创建新的保存模版
+  ///保存草稿
   Future<void> createAndUpdateDraft(String filePath, CanvasModel model) async {
     try {
       final sourceDir = await DirectoryManager.getDocumentsSubDirectory(
         'cavals',
       );
+      final infoList = [
+        for (final e in model.elements)
+          if (e.fontId != 0)
+            {'font_id': '${e.fontId}', 'font_version': e.version},
+      ];
+
       final result = await http.post(
         '/design/draft/store',
         data: {
@@ -377,6 +389,7 @@ class SaveLogic extends GetxController {
           "zip_id": '$fileResourceId',
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
+          "front_data": infoList,
         },
         showErrorToast: false,
       );

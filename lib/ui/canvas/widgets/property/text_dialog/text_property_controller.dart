@@ -17,6 +17,7 @@ class TextPropertyController extends GetxController {
   /// 字体相关属性
   final RxString familyKey = 'AlibabaPuHuiTi'.obs;
   final RxString styleName = defaultConfigStyleName.obs;
+  final RxString version = '1.0.0'.obs;
   final RxnInt selectedFontId = RxnInt();
   final RxString fontSize = '16'.obs;
 
@@ -72,8 +73,8 @@ class TextPropertyController extends GetxController {
         final modelArray = result.data as List<FontInfoModel>;
         fontList.assignAll(modelArray);
         // 将字体 ID 列表传递给 FontManager，用于推荐字体
-        // final fontIds = fontList.map((f) => f.id).toList();
-        // FontManager.to.setTemplateUsedFonts(fontIds);
+        final fontIds = fontList.map((f) => f.id).toList();
+        FontManager.to.setTemplateUsedFonts(fontIds);
         debugPrint("-获取字体列表中数据成功--数量: ${fontList.length}");
         await FontManager.to.warmUpdateInstalledFonts(modelArray);
       }

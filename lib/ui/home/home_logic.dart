@@ -34,6 +34,11 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     return tabDataMap[tagId]?.hasMore ?? true.obs;
   }
 
+  GlobalKey refresherKey = GlobalKey();
+  RefreshController refreshController = RefreshController(
+    initialRefresh: false,
+  );
+
   @override
   void onReady() {
     FontManager.to.initFromDisk();
@@ -94,7 +99,21 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
           }
         }
       }
+      if (refresh) {
+        refreshController.refreshCompleted();
+      } else {
+        if (hasMore.value) {
+          refreshController.loadComplete();
+        } else {
+          refreshController.loadNoData();
+        }
+      }
     } catch (e) {
+      if (refresh) {
+        refreshController.refreshFailed();
+      } else {
+        refreshController.loadFailed();
+      }
       debugPrint('获取首页数据失败: $e');
     }
   }
@@ -211,16 +230,17 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     // }
     final isHave = await DraftManager().hasDraft();
     if (isHave) {
+      debugPrint('已经存在草稿列表: $isHave');
       final canvasModel = await DraftManager().loadDraft();
       if (canvasModel == null) {
         return;
       }
-      // if (canvasModel.id == 0) {
-      //   showSingleDraftDialog();
-      // } else {
-      // showMutipleDraftDialog();
-      requestServiceDraft(canvasModel);
-      // }
+      debugPrint('已经获取到草稿列表: $canvasModel');
+      if (canvasModel.id == 0) {
+        showSingleDraftDialog();
+      } else {
+        requestServiceDraft(canvasModel);
+      }
     }
   }
 
@@ -261,10 +281,13 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   /// 服务端保存了相关的草稿
   void requestServiceDraft(CanvasModel model) async {
     try {
+      debugPrint('草稿列表已经进行了请求');
       final result = await http.post(
         '/homePage/design/draft/read',
+        data: {'id': '${model.id}'},
         showErrorToast: false,
       );
+      debugPrint("哈哈哈哈哈哈====${result.code}====");
       if (result.code == 0 && result.data != null) {
         final model = DraftEditModel.fromJson(result.data);
         debugPrint("哈哈哈哈哈哈====result.code == 0====");

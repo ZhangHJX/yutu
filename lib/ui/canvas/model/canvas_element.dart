@@ -36,6 +36,7 @@ class CanvasElement {
   int fontId;
   String familyKey; // 字体家族名
   String styleName; // 自重名字
+  String version; // 字体版本号
 
   @JsonKey(
     fromJson: CanvasElement._textAlignFromJson,
@@ -88,6 +89,7 @@ class CanvasElement {
     this.fontId = 0,
     this.familyKey = defaultConfigFamliy,
     this.styleName = defaultConfigStyleName,
+    this.version = '1.0.0',
 
     this.fontSize = 16,
     this.lineHeight = 1.0,

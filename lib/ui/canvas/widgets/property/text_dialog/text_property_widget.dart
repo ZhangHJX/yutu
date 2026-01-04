@@ -12,7 +12,7 @@ class TextPropertyWidget extends StatefulWidget {
   final dynamic element;
   final Function(bool notify)? onPropertyChanged;
   final VoidCallback? onDeleteText;
-  final Function(String, double, String) onFontChanged;
+  final Function(String, double, String, String) onFontChanged;
 
   const TextPropertyWidget({
     super.key,
@@ -51,6 +51,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
     logic.selectedFontId.value = data.fontId;
     logic.styleName.value = data.styleName;
     logic.familyKey.value = data.familyKey;
+    logic.version.value = data.version;
     // 初始化字号
     _fontSizeController.text = data.fontSize?.toInt().toString() ?? '14';
   }
@@ -70,6 +71,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
       logic.familyKey.value, // ✅ 使用找到的 familyKey
       fontSize,
       logic.styleName.value, // ✅ 使用找到的 styleName
+      logic.version.value,
     );
     widget.onPropertyChanged?.call(notify);
   }
@@ -209,8 +211,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   if (meta != null && meta.weights.isNotEmpty) {
                     logic.familyKey.value = meta.weights.first.familyKey;
                     logic.styleName.value = meta.weights.first.styleName;
+                    logic.version.value = meta.version;
                   }
-
                   FontManager.to.markUsed(font.id);
                   setState(() {
                     _updateModel();
@@ -238,6 +240,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                     logic.selectedFontId.value = font.id;
                     logic.familyKey.value = meta.weights.first.familyKey;
                     logic.styleName.value = meta.weights.first.styleName;
+                    logic.version.value = meta.version;
                     setState(() {
                       _updateModel();
                     });

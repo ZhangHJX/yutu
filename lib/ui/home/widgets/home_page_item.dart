@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:voicetemplate/app/routes/index.dart';
 
 class HomePageItem extends StatelessWidget {
+  final int id;
   final double imageH;
   final String imageUrl;
   final String title;
@@ -13,6 +14,7 @@ class HomePageItem extends StatelessWidget {
 
   const HomePageItem({
     super.key,
+    required this.id,
     required this.imageH,
     required this.imageUrl,
     required this.title,
@@ -26,7 +28,10 @@ class HomePageItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => Get.toNamed(AppRoutes.middle),
+      onTap: () {
+        debugPrint("----哈哈哈哈哈---$id---");
+        Get.toNamed(AppRoutes.middle, arguments: {'id': id, "type": "home"});
+      },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14.w),
         child: Stack(
