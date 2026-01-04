@@ -55,19 +55,25 @@ class MiddlePage extends StatelessWidget {
                           // 收藏按钮
                           GestureDetector(
                             onTap: () {
-                              debugPrint("====收藏按钮===");
+                              if (logic.isFavorite.value == 1) {
+                                logic.favoriteEventDialog();
+                              } else {
+                                logic.clickFavoriteEvent(true);
+                              }
                             },
                             child: SizedBox(
                               width: 36.w,
                               height: 36.w,
                               child: Center(
-                                child: Image.asset(
-                                  logic.isFavorite == 1
-                                      ? "assets/images/home/home_collectin_btn_finsh.png"
-                                      : "assets/images/home/home_collectin_btn.png",
-                                  width: 26.w,
-                                  height: 26.w,
-                                  fit: BoxFit.cover,
+                                child: Obx(
+                                  () => Image.asset(
+                                    logic.isFavorite.value == 1
+                                        ? "assets/images/home/home_collectin_btn_finsh.png"
+                                        : "assets/images/home/home_collectin_btn.png",
+                                    width: 26.w,
+                                    height: 26.w,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
                             ),

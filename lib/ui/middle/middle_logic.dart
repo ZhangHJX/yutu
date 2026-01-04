@@ -13,7 +13,7 @@ class MiddleLogic extends GetxController {
   String get imgUrl =>
       '${middleInfo.value?.originalImage}${middleInfo.value?.thumbnail}';
 
-  int get isFavorite => middleInfo.value?.isFavorite ?? 0;
+  final isFavorite = 0.obs;
 
   List<TagItemModel> get tagArray => middleInfo.value?.tagData ?? [];
 
@@ -30,21 +30,24 @@ class MiddleLogic extends GetxController {
 
   Future<void> getMiddleData() async {
     try {
+      debugPrint("==getMiddleData==${getMiddleUrlPath(type)}=======");
+
       final result = await http.post(
-        getPageSource(type),
+        getMiddleUrlPath(type),
         data: {"id": itemId},
         converter: MiddleModel.fromJson,
         showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
         middleInfo.value = result.data;
+        isFavorite.value = result.data!.isFavorite;
       }
     } catch (e) {
       debugPrint('获取详情页数据失败: $e');
     }
   }
 
-  String getPageSource(PageSource source) {
+  String getMiddleUrlPath(PageSource source) {
     if (source == PageSource.home) {
       return '/homePage/read';
     } else {
@@ -53,15 +56,22 @@ class MiddleLogic extends GetxController {
   }
 
   /// 收藏事件处理
-  Future<void> clickFavoriteEvent() async {
+  Future<void> clickFavoriteEvent(bool shouldFavorite) async {
     try {
       final result = await http.post(
-        '/user/favorite/store',
+        getFavoriteUrlPath(type, shouldFavorite),
         data: {"link_id": itemId},
         showErrorToast: false,
       );
       debugPrint("===favorite===收藏事件===${result.code}===");
-      if (result.code == 0 && result.data != null) {}
+      if (result.code == 0) {
+        // 更新 isFavorite 状态
+        isFavorite.value = shouldFavorite ? 1 : 0;
+        // 同步更新 middleInfo 中的 isFavorite
+        if (middleInfo.value != null) {
+          middleInfo.value!.isFavorite = isFavorite.value;
+        }
+      }
     } catch (e) {
       debugPrint('获取详情页数据失败: $e');
     }
@@ -73,7 +83,7 @@ class MiddleLogic extends GetxController {
       builder: (context) => ConfirmPopWidget(
         title: "取消收藏",
         subTitle: "是否确认取消收藏该模版",
-        sureAction: () {},
+        sureAction: () => clickFavoriteEvent(false),
       ),
       alignment: Alignment.center,
       animationType: SmartAnimationType.centerFade_otherSlide,
@@ -83,5 +93,17 @@ class MiddleLogic extends GetxController {
       useAnimation: true,
       usePenetrate: false,
     );
+  }
+
+  String getFavoriteUrlPath(PageSource source, bool isFavorite) {
+    if (source == PageSource.home) {
+      return isFavorite
+          ? '/homePage/favorite-store'
+          : '/homePage/favorite-destroy';
+    } else {
+      return isFavorite
+          ? '/homePage/search/favorite-store'
+          : '/homePage/search/favorite-destroy';
+    }
   }
 }

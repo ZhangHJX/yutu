@@ -39,6 +39,22 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     initialRefresh: false,
   );
 
+  /// 获取当前 tab 的 tagId
+  int _getCurrentTagId() {
+    if (tagList.isEmpty || selectedTabIndex.value >= tagList.length) {
+      return 0;
+    }
+    return tagList[selectedTabIndex.value].id;
+  }
+
+  /// 获取或创建 tab 数据状态
+  TabDataState _getOrCreateTabData(int tagId) {
+    if (!tabDataMap.containsKey(tagId)) {
+      tabDataMap[tagId] = TabDataState();
+    }
+    return tabDataMap[tagId]!;
+  }
+
   @override
   void onReady() {
     FontManager.to.initFromDisk();
@@ -118,6 +134,23 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     }
   }
 
+  // 切换 tab
+  void switchTab(int index) {
+    if (index < 0 || tagList.isEmpty || index >= tagList.length) {
+      return;
+    }
+    if (selectedTabIndex.value == index) return;
+    // 更新选中索引
+    selectedTabIndex.value = index;
+
+    // 切换 tab 时，如果该 tab 未初始化，则加载数据
+    final tagId = _getCurrentTagId();
+    final tabData = _getOrCreateTabData(tagId);
+    if (!tabData.isInitialized) {
+      loadSceneList(refresh: true);
+    }
+  }
+
   /// 下拉刷新
   Future<void> onRefresh() async {
     await loadSceneList(refresh: true);
@@ -126,22 +159,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   /// 上拉加载更多
   Future<void> onLoad({int? tagId}) async {
     await loadSceneList(refresh: false);
-  }
-
-  /// 获取当前 tab 的 tagId
-  int _getCurrentTagId() {
-    if (tagList.isEmpty || selectedTabIndex.value >= tagList.length) {
-      return 0;
-    }
-    return tagList[selectedTabIndex.value].id;
-  }
-
-  /// 获取或创建 tab 数据状态
-  TabDataState _getOrCreateTabData(int tagId) {
-    if (!tabDataMap.containsKey(tagId)) {
-      tabDataMap[tagId] = TabDataState();
-    }
-    return tabDataMap[tagId]!;
   }
 
   /// 加载图片列表
@@ -206,22 +223,8 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     }
   }
 
-  // 切换 tab
-  void switchTab(int index) {
-    if (index < 0 || tagList.isEmpty || index >= tagList.length) {
-      return;
-    }
-    if (selectedTabIndex.value == index) return;
-    // 更新选中索引
-    selectedTabIndex.value = index;
-
-    // 切换 tab 时，如果该 tab 未初始化，则加载数据
-    final tagId = _getCurrentTagId();
-    final tabData = _getOrCreateTabData(tagId);
-    if (!tabData.isInitialized) {
-      loadSceneList(refresh: true);
-    }
-  }
+  /// 点击收藏接口
+  Future<void> clickFavoriteInterface() async {}
 
   /// 获取是否有草稿信息
   Future<void> showDraftDialog() async {
