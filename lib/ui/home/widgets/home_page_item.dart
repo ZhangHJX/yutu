@@ -1,7 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/app/routes/index.dart';
-import 'package:voicetemplate/ui/widgets/index.dart';
 
 class HomePageItem extends StatelessWidget {
   final double imageH;

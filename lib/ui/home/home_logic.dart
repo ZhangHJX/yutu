@@ -218,8 +218,8 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
       // if (canvasModel.id == 0) {
       //   showSingleDraftDialog();
       // } else {
-      showMutipleDraftDialog();
-      // requestServiceDraft(canvasModel);
+      // showMutipleDraftDialog();
+      requestServiceDraft(canvasModel);
       // }
     }
   }
