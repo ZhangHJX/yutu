@@ -95,8 +95,15 @@ class HomePage extends StatelessWidget {
                               final item = tabData?.dataList[index];
                               return HomePageItem(
                                 key: ValueKey(item?.id),
-                                model: item ?? null,
+                                model: item,
                                 source: PageSource.home,
+                                favoriteCallBack: () {
+                                  if (item?.isFavorite == 1) {
+                                    logic.favoriteEventDialog(item?.id ?? 0);
+                                  } else {
+                                    logic.clickFavorite(item?.id ?? 0, true);
+                                  }
+                                },
                               );
                             },
                           ),

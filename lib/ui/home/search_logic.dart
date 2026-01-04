@@ -2,6 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'model/home_model.dart';
 import '../model/index.dart';
+import 'package:voicetemplate/ui/widgets/index.dart';
 
 class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   /// 顶部tab数据
@@ -226,5 +227,73 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
         tabData.refreshController.loadFailed();
       }
     }
+  }
+
+  /// 收藏事件处理
+  Future<void> clickFavorite(int itemId, bool shouldFavorite) async {
+    try {
+      final result = await http.post(
+        shouldFavorite
+            ? '/homePage/search/favorite-store'
+            : '/homePage/search/favorite-destroy',
+        data: {"link_id": '$itemId'},
+        showErrorToast: false,
+      );
+      if (result.code == 0) {
+        // 更新 isFavorite 状态
+        final newFavoriteStatus = shouldFavorite ? 1 : 0;
+        
+        // 更新 screenList 中每个 TagModel 的 list 中的 item
+        final updatedScreenList = <TagModel>[];
+        for (var tag in screenList) {
+          final tagIndex = tag.list.indexWhere((item) => item.id == itemId);
+          if (tagIndex != -1) {
+            final updatedList = List<CommonItemModel>.from(tag.list);
+            updatedList[tagIndex] = updatedList[tagIndex].copyWith(
+              isFavorite: newFavoriteStatus,
+            );
+            updatedScreenList.add(tag.copyWith(list: updatedList));
+          } else {
+            updatedScreenList.add(tag);
+          }
+        }
+        if (updatedScreenList.isNotEmpty) {
+          screenList.value = updatedScreenList;
+        }
+        
+        // 更新 tabDataMap 中每个 TabDataState 的 dataList 中的 item
+        for (var tabData in tabDataMap.values) {
+          final dataIndex = tabData.dataList.indexWhere(
+            (item) => item.id == itemId,
+          );
+          if (dataIndex != -1) {
+            final oldItem = tabData.dataList[dataIndex];
+            tabData.dataList[dataIndex] = oldItem.copyWith(
+              isFavorite: newFavoriteStatus,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('获取详情页数据失败: $e');
+    }
+  }
+
+  /// 取消收藏事件
+  void favoriteEventDialog(int itemId) {
+    SmartDialog.show(
+      builder: (context) => ConfirmPopWidget(
+        title: "取消收藏",
+        subTitle: "是否确认取消收藏该模版",
+        sureAction: () => clickFavorite(itemId, false),
+      ),
+      alignment: Alignment.center,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: "#000000".color.withValues(alpha: 0.5),
+      clickMaskDismiss: false,
+      useAnimation: true,
+      usePenetrate: false,
+    );
   }
 }

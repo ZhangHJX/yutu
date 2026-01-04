@@ -6,8 +6,14 @@ import 'package:voicetemplate/ui/model/index.dart';
 class HomePageItem extends StatelessWidget {
   final CommonItemModel? model;
   final PageSource source;
+  final VoidCallback favoriteCallBack;
 
-  const HomePageItem({super.key, required this.model, required this.source});
+  const HomePageItem({
+    super.key,
+    required this.model,
+    required this.source,
+    required this.favoriteCallBack,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -60,25 +66,20 @@ class HomePageItem extends StatelessWidget {
             Positioned(
               top: 6.w,
               right: 6.w,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  debugPrint("=====GestureDetector===========");
-                },
-                child: SizedBox(
-                  width: 35.w,
-                  height: 35.w,
-                  child: Center(
-                    child: Image.asset(
-                      model?.isFavorite == 1
-                          ? "assets/images/home/home_collectin_btn_finsh.png"
-                          : "assets/images/home/home_collectin_btn.png",
-                      width: 22.w,
-                      height: 22.w,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+              child: CButton(
+                width: 35.w,
+                height: 35.w,
+                icon: Image.asset(
+                  model?.isFavorite == 1
+                      ? "assets/images/home/home_collectin_btn_finsh.png"
+                      : "assets/images/home/home_collectin_btn.png",
+                  width: 22.w,
+                  height: 22.w,
+                  fit: BoxFit.cover,
                 ),
+                onPressed: () {
+                  favoriteCallBack.call();
+                },
               ),
             ),
 
@@ -111,6 +112,7 @@ class HomePageItem extends StatelessWidget {
                     SizedBox(height: 4.w),
 
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 7.w),
@@ -126,8 +128,6 @@ class HomePageItem extends StatelessWidget {
                             ),
                           ),
                         ),
-
-                        Spacer(),
 
                         CButton(
                           height: 22.w,

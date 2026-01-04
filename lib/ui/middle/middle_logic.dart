@@ -63,13 +63,15 @@ class MiddleLogic extends GetxController {
         data: {"link_id": itemId},
         showErrorToast: false,
       );
-      debugPrint("===favorite===收藏事件===${result.code}===");
       if (result.code == 0) {
         // 更新 isFavorite 状态
-        isFavorite.value = shouldFavorite ? 1 : 0;
+        final newFavoriteStatus = shouldFavorite ? 1 : 0;
+        isFavorite.value = newFavoriteStatus;
         // 同步更新 middleInfo 中的 isFavorite
         if (middleInfo.value != null) {
-          middleInfo.value!.isFavorite = isFavorite.value;
+          middleInfo.value = middleInfo.value!.copyWith(
+            isFavorite: newFavoriteStatus,
+          );
         }
       }
     } catch (e) {

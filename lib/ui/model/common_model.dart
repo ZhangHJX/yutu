@@ -57,4 +57,34 @@ class CommonItemModel {
   factory CommonItemModel.fromJson(Map<String, dynamic> json) =>
       _$CommonItemModelFromJson(json);
   Map<String, dynamic> toJson() => _$CommonItemModelToJson(this);
+
+  CommonItemModel copyWith({
+    int? id,
+    String? uuid,
+    String? title,
+    String? desc,
+    String? canvas,
+    String? canvasSize,
+    String? originalImage,
+    String? ordinaryImage,
+    String? thumbnail,
+    int? favoriteTotal,
+    int? isFavorite,
+    int? isOfficial,
+  }) {
+    return CommonItemModel(
+      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
+      title: title ?? this.title,
+      desc: desc ?? this.desc,
+      canvas: canvas ?? this.canvas,
+      canvasSize: canvasSize ?? this.canvasSize,
+      originalImage: originalImage ?? this.originalImage,
+      ordinaryImage: ordinaryImage ?? this.ordinaryImage,
+      thumbnail: thumbnail ?? this.thumbnail,
+      favoriteTotal: favoriteTotal ?? this.favoriteTotal,
+      isFavorite: isFavorite ?? this.isFavorite,
+      isOfficial: isOfficial ?? this.isOfficial,
+    );
+  }
 }
