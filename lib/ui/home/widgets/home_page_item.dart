@@ -1,35 +1,27 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/app/routes/index.dart';
+import 'package:voicetemplate/ui/model/index.dart';
 
 class HomePageItem extends StatelessWidget {
-  final int id;
-  final double imageH;
-  final String imageUrl;
-  final String title;
-  final int type;
-  final int favorite;
-  final bool isFavorite;
-  final bool showCheck;
+  final CommonItemModel? model;
+  final PageSource source;
 
-  const HomePageItem({
-    super.key,
-    required this.id,
-    required this.imageH,
-    required this.imageUrl,
-    required this.title,
-    required this.type,
-    required this.favorite,
-    this.showCheck = false,
-    this.isFavorite = false,
-  });
+  const HomePageItem({super.key, required this.model, required this.source});
 
   @override
   Widget build(BuildContext context) {
+    final imageH = calculateAspectRatio(
+      (ScreenTools.screenWidth - 30.w - 9.w) / 2,
+      model?.canvasSize ?? '',
+    );
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () =>
-          Get.toNamed(AppRoutes.middle, arguments: {'id': id, "type": "home"}),
+      onTap: () => Get.toNamed(
+        AppRoutes.middle,
+        arguments: {'id': model?.id, "type": source},
+      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14.w),
         child: Stack(
@@ -40,7 +32,7 @@ class HomePageItem extends StatelessWidget {
                 SizedBox(
                   height: imageH,
                   child: CachedNetworkImage(
-                    imageUrl: imageUrl,
+                    imageUrl: '${model?.originalImage}${model?.thumbnail}',
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
                       color: "#F5F5F5".color,
@@ -78,7 +70,7 @@ class HomePageItem extends StatelessWidget {
                   height: 35.w,
                   child: Center(
                     child: Image.asset(
-                      isFavorite
+                      model?.isFavorite == 1
                           ? "assets/images/home/home_collectin_btn_finsh.png"
                           : "assets/images/home/home_collectin_btn.png",
                       width: 22.w,
@@ -106,7 +98,7 @@ class HomePageItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      model?.title ?? '',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -127,7 +119,7 @@ class HomePageItem extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8.w),
                           ),
                           child: Text(
-                            type == 1 ? '官方' : '个人',
+                            model?.isOfficial == 1 ? '官方' : '个人',
                             style: TextStyle(
                               fontSize: 12.w,
                               color: "#007BFE".color,
@@ -141,7 +133,7 @@ class HomePageItem extends StatelessWidget {
                           height: 22.w,
                           textColor: Colors.white,
                           text: Text(
-                            '$favorite',
+                            '${model?.favoriteTotal}',
                             style: TextStyle(
                               fontSize: 12.w,
                               color: "#A7AFBD".color,
@@ -150,7 +142,7 @@ class HomePageItem extends StatelessWidget {
                           ),
                           spacing: 4.w,
                           icon: Image.asset(
-                            "assets/images/home/${isFavorite ? 'collection_favorite' : 'collection_no_favorite'}.png",
+                            "assets/images/home/${model?.isFavorite == 1 ? 'collection_favorite' : 'collection_no_favorite'}.png",
                             width: 14.w,
                             height: 14.w,
                             fit: BoxFit.cover,

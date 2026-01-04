@@ -1,12 +1,12 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'middle_model.dart';
+import 'model/middle_model.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 
 class MiddleLogic extends GetxController {
   final args = Get.arguments as Map<String, dynamic>;
   int get itemId => args['id'] as int;
-  String get type => args['type'] as String;
+  PageSource get type => args['type'] as PageSource;
 
   final middleInfo = Rxn<MiddleModel>();
 
@@ -31,7 +31,7 @@ class MiddleLogic extends GetxController {
   Future<void> getMiddleData() async {
     try {
       final result = await http.post(
-        type == "home" ? '/homePage/read' : '/homePage/search/read',
+        getPageSource(type),
         data: {"id": itemId},
         converter: MiddleModel.fromJson,
         showErrorToast: false,
@@ -41,6 +41,14 @@ class MiddleLogic extends GetxController {
       }
     } catch (e) {
       debugPrint('获取详情页数据失败: $e');
+    }
+  }
+
+  String getPageSource(PageSource source) {
+    if (source == PageSource.home) {
+      return '/homePage/read';
+    } else {
+      return '/homePage/search/read';
     }
   }
 

@@ -3,31 +3,31 @@ part 'middle_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class MiddleModel {
-  final int id;
-  final String title;
-  final String desc;
-  final String canvas;
+  int id;
+  String title;
+  String desc;
+  String canvas;
   @JsonKey(name: 'canvas_size')
-  final String canvasSize;
+  String canvasSize;
   @JsonKey(name: 'original_image')
-  final String originalImage;
+  String originalImage;
   @JsonKey(name: 'ordinary_image')
-  final String ordinaryImage;
-  final String thumbnail;
+  String ordinaryImage;
+  String thumbnail;
   @JsonKey(name: 'recources_url')
-  final String recourcesUrl;
+  String recourcesUrl;
   @JsonKey(name: 'favorite_total')
-  final int favoriteTotal;
+  int favoriteTotal;
   @JsonKey(name: 'is_official')
-  final int isOfficial;
+  int isOfficial;
   @JsonKey(name: 'is_favorite')
-  final int isFavorite;
+  int isFavorite;
 
   @JsonKey(name: 'front_data')
-  final List<FontItemModel> frontData;
+  List<FontItemModel> frontData;
 
   @JsonKey(name: 'tag_data')
-  final List<TagItemModel> tagData;
+  List<TagItemModel> tagData;
 
   MiddleModel({
     required this.id,
@@ -55,10 +55,10 @@ class MiddleModel {
 @JsonSerializable()
 class FontItemModel {
   @JsonKey(name: 'front_id')
-  final int frontId;
+  int frontId;
 
   @JsonKey(name: 'front_version')
-  final String frontVersion;
+  String frontVersion;
 
   FontItemModel({required this.frontId, required this.frontVersion});
 
@@ -69,8 +69,8 @@ class FontItemModel {
 
 @JsonSerializable()
 class TagItemModel {
-  final int id;
-  final String name;
+  int id;
+  String name;
 
   TagItemModel({required this.id, required this.name});
 

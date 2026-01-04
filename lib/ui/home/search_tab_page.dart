@@ -60,34 +60,14 @@ class SearchTabPage extends StatelessWidget {
           itemBuilder: (context, index) {
             final item = designList[index];
             // 使用独立的响应式组件，避免在 itemBuilder 中嵌套 Obx
-            return _DesignItemWidget(item: item, logic: logic);
+            return HomePageItem(
+              key: ValueKey(item.id),
+              model: item,
+              source: PageSource.search,
+            );
           },
         ),
       );
     });
-  }
-}
-
-/// 独立的响应式 Item 组件，避免在 itemBuilder 中嵌套 Obx
-class _DesignItemWidget extends StatelessWidget {
-  final CommonItemModel item;
-  final SearchLogic logic;
-
-  const _DesignItemWidget({required this.item, required this.logic});
-
-  @override
-  Widget build(BuildContext context) {
-    final itemWidth = (ScreenTools.screenWidth - 30.w - 9.w) / 2;
-    final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize ?? '');
-    // 只监听需要的响应式变量
-    return HomePageItem(
-      key: ValueKey(item.id),
-      id: item.id ?? 0,
-      imageH: itemHeight,
-      imageUrl: '${item.originalImage}${item.thumbnail}',
-      title: item.title ?? '',
-      type: 1,
-      favorite: item.favoriteTotal ?? 0,
-    );
   }
 }

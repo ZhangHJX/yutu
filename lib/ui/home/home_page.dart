@@ -93,22 +93,10 @@ class HomePage extends StatelessWidget {
                             itemCount: tabData?.dataList.length,
                             itemBuilder: (context, index) {
                               final item = tabData?.dataList[index];
-                              final itemHeight = calculateAspectRatio(
-                                (ScreenTools.screenWidth - 30.w - 9.w) / 2,
-                                item?.canvasSize ?? '',
-                              );
                               return HomePageItem(
                                 key: ValueKey(item?.id),
-                                id: item?.id ?? 0,
-                                imageH: itemHeight,
-                                imageUrl:
-                                    '${item?.originalImage}${item?.thumbnail}',
-                                title: item?.title ?? '',
-                                type: item?.isOfficial ?? 1,
-                                favorite: item?.favoriteTotal ?? 0,
-                                isFavorite: item?.isFavorite == 1
-                                    ? true
-                                    : false,
+                                model: item ?? null,
+                                source: PageSource.home,
                               );
                             },
                           ),
