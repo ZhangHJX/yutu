@@ -99,12 +99,13 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
           element: widget.element,
           onPropertyChanged: widget.onPropertyChanged,
           onDeleteText: widget.onDeleteText,
-          onFontChanged: (familyKey, fontSize, styleName, version) {
+          onFontChanged: (familyKey, fontSize, styleName, version, fontId) {
             final data = widget.element;
             data.familyKey = familyKey;
             data.fontSize = fontSize;
             data.styleName = styleName;
             data.version = version;
+            data.fontId = fontId;
             widget.onPropertyChanged?.call(true);
           },
         ),
