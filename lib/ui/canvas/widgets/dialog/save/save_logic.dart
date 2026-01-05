@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
@@ -57,7 +58,7 @@ class SaveLogic extends GetxController {
   /// 应用场景接口
   Future<void> getSceneResource() async {
     try {
-      final result = await http.post('/scene/index', showErrorToast: true);
+      final result = await http.post('/scene/index', showErrorToast: false);
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
         if (listModel.items.isNotEmpty) {
@@ -74,7 +75,7 @@ class SaveLogic extends GetxController {
   /// 风格标签
   Future<void> getSuggestedTags() async {
     try {
-      final result = await http.post('/tag/index', showErrorToast: true);
+      final result = await http.post('/tag/index', showErrorToast: false);
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
         suggestedTags.value = listModel.items;
@@ -201,7 +202,7 @@ class SaveLogic extends GetxController {
           },
         ),
         useBaseUrl: false,
-        showErrorToast: true,
+        showErrorToast: false,
         isNake: true,
       );
 
@@ -315,7 +316,7 @@ class SaveLogic extends GetxController {
       final infoList = [
         for (final e in model.elements)
           if (e.fontId != 0)
-            {'font_id': '${e.fontId}', 'font_version': e.version},
+            {'front_id': '${e.fontId}', 'front_version': e.version},
       ];
       final result = await http.post(
         '/design/store',
@@ -335,7 +336,7 @@ class SaveLogic extends GetxController {
           "zip_id": '$fileResourceId',
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
-          "front_data": infoList.toString(),
+          "front_data": infoList.isNotEmpty ? jsonEncode(infoList) : '',
         },
         showErrorToast: true,
       );
@@ -363,7 +364,7 @@ class SaveLogic extends GetxController {
       final infoList = [
         for (final e in model.elements)
           if (e.fontId != 0)
-            {'font_id': '${e.fontId}', 'font_version': e.version},
+            {'front_id': '${e.fontId}', 'front_version': e.version},
       ];
 
       // .  /design/draft/update
@@ -383,7 +384,7 @@ class SaveLogic extends GetxController {
           "zip_id": '$fileResourceId',
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
-          "front_data": infoList.toString(),
+          "front_data": infoList.isNotEmpty ? jsonEncode(infoList) : '',
         },
         showErrorToast: true,
       );

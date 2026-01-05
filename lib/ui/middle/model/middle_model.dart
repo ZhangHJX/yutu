@@ -4,6 +4,8 @@ part 'middle_model.g.dart';
 @JsonSerializable(explicitToJson: true)
 class MiddleModel {
   final int id;
+  @JsonKey(name: 'edit_time')
+  final int editTime;
   final String title;
   final String desc;
   final String canvas;
@@ -31,6 +33,7 @@ class MiddleModel {
 
   MiddleModel({
     required this.id,
+    required this.editTime,
     required this.title,
     required this.desc,
     required this.canvas,
@@ -53,6 +56,7 @@ class MiddleModel {
 
   MiddleModel copyWith({
     int? id,
+    int? editTime,
     String? title,
     String? desc,
     String? canvas,
@@ -69,6 +73,7 @@ class MiddleModel {
   }) {
     return MiddleModel(
       id: id ?? this.id,
+      editTime: this.editTime,
       title: title ?? this.title,
       desc: desc ?? this.desc,
       canvas: canvas ?? this.canvas,
@@ -94,16 +99,28 @@ class FontItemModel {
   @JsonKey(name: 'front_version')
   final String frontVersion;
 
-  FontItemModel({required this.frontId, required this.frontVersion});
+  @JsonKey(name: 'front_url')
+  final String frontUrl;
+
+  FontItemModel({
+    required this.frontId,
+    required this.frontVersion,
+    required this.frontUrl,
+  });
 
   factory FontItemModel.fromJson(Map<String, dynamic> json) =>
       _$FontItemModelFromJson(json);
   Map<String, dynamic> toJson() => _$FontItemModelToJson(this);
 
-  FontItemModel copyWith({int? frontId, String? frontVersion}) {
+  FontItemModel copyWith({
+    int? frontId,
+    String? frontVersion,
+    String? frontUrl,
+  }) {
     return FontItemModel(
       frontId: frontId ?? this.frontId,
       frontVersion: frontVersion ?? this.frontVersion,
+      frontUrl: frontUrl ?? this.frontUrl,
     );
   }
 }

@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// import '../../widgets/app_status_bar.dart';
+import 'navigation_widget.dart';
 import 'logic.dart';
 
 class PasswordPage extends StatelessWidget {
@@ -20,69 +20,66 @@ class PasswordPage extends StatelessWidget {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.white,
-        body: Stack(
-          children: [
-            // AppStatusBar(),
-            Column(
-              children: [
-                CAppBar(
-                  title: Text(
-                    logic.global.isLogin ? "设置密码" : '忘记密码',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  backgroundColor: Colors.transparent,
-                ),
-
-                SizedBox(height: 24.w),
-
-                _buildPhoneField(),
-                SizedBox(height: 16.w),
-
-                _buildYanZhengField(),
-                SizedBox(height: 16.w),
-
-                _buildNewPassworldField(),
-                SizedBox(height: 16.w),
-
-                _buildAgainPassworldField(),
-
-                Spacer(),
-
-                GestureDetector(
-                  onTap: logic.changePassWord,
-                  child: Container(
-                    height: 48.w,
-                    margin: EdgeInsets.only(
-                      left: 29.w,
-                      right: 29.w,
-                      bottom: 51.w,
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 29.w),
-                    decoration: BoxDecoration(
-                      color: "#64A2FF".color,
-                      image: DecorationImage(
-                        image: AssetImage(
-                          'assets/images/login/login_btn_bg.png',
-                        ),
-                        fit: BoxFit.cover,
-                      ),
-                      borderRadius: BorderRadius.circular(24.w),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '登录',
-                        style: TextStyle(
-                          fontSize: 16.w,
-                          fontWeight: FontWeight.w500,
-                          color: "#FFFFFF".color,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+        body: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF9ADEFD), Color(0xFFF7F7F7)],
+              stops: [0.0, 0.15],
             ),
-          ],
+          ),
+          child: Column(
+            children: [
+              NavigationWidget(title: logic.global.isLogin ? "设置密码" : '忘记密码'),
+
+              SizedBox(height: 24.w),
+
+              _buildPhoneField(),
+              SizedBox(height: 16.w),
+
+              _buildYanZhengField(),
+              SizedBox(height: 16.w),
+
+              _buildNewPassworldField(),
+              SizedBox(height: 16.w),
+
+              _buildAgainPassworldField(),
+
+              Spacer(),
+
+              GestureDetector(
+                onTap: logic.changePassWord,
+                child: Container(
+                  height: 48.w,
+                  margin: EdgeInsets.only(
+                    left: 29.w,
+                    right: 29.w,
+                    bottom: 51.w,
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 29.w),
+                  decoration: BoxDecoration(
+                    color: "#64A2FF".color,
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/login/login_btn_bg.png'),
+                      fit: BoxFit.cover,
+                    ),
+                    borderRadius: BorderRadius.circular(24.w),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '登录',
+                      style: TextStyle(
+                        fontSize: 16.w,
+                        fontWeight: FontWeight.w500,
+                        color: "#FFFFFF".color,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -116,6 +113,8 @@ class PasswordPage extends StatelessWidget {
               inputFormatters: [LengthLimitingTextInputFormatter(11)],
               decoration: InputDecoration(
                 isCollapsed: true,
+                filled: true,
+                fillColor: "#F4F4F4".color,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -151,6 +150,8 @@ class PasswordPage extends StatelessWidget {
               controller: _codeController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
+                filled: true,
+                fillColor: "#F4F4F4".color,
                 isCollapsed: true,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -203,6 +204,8 @@ class PasswordPage extends StatelessWidget {
               controller: _passwordOneController,
               obscureText: true,
               decoration: InputDecoration(
+                filled: true,
+                fillColor: "#F4F4F4".color,
                 isCollapsed: true,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -240,6 +243,8 @@ class PasswordPage extends StatelessWidget {
               controller: _passwordTwoController,
               obscureText: true,
               decoration: InputDecoration(
+                filled: true,
+                fillColor: "#F4F4F4".color,
                 isCollapsed: true,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,

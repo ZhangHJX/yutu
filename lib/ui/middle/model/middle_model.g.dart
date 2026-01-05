@@ -8,6 +8,7 @@ part of 'middle_model.dart';
 
 MiddleModel _$MiddleModelFromJson(Map<String, dynamic> json) => MiddleModel(
   id: (json['id'] as num).toInt(),
+  editTime: (json['edit_time'] as num).toInt(),
   title: json['title'] as String,
   desc: json['desc'] as String,
   canvas: json['canvas'] as String,
@@ -30,6 +31,7 @@ MiddleModel _$MiddleModelFromJson(Map<String, dynamic> json) => MiddleModel(
 Map<String, dynamic> _$MiddleModelToJson(MiddleModel instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'edit_time': instance.editTime,
       'title': instance.title,
       'desc': instance.desc,
       'canvas': instance.canvas,
@@ -49,12 +51,14 @@ FontItemModel _$FontItemModelFromJson(Map<String, dynamic> json) =>
     FontItemModel(
       frontId: (json['front_id'] as num).toInt(),
       frontVersion: json['front_version'] as String,
+      frontUrl: json['front_url'] as String,
     );
 
 Map<String, dynamic> _$FontItemModelToJson(FontItemModel instance) =>
     <String, dynamic>{
       'front_id': instance.frontId,
       'front_version': instance.frontVersion,
+      'front_url': instance.frontUrl,
     };
 
 TagItemModel _$TagItemModelFromJson(Map<String, dynamic> json) =>
