@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../model/common_model.dart';
 import 'package:voicetemplate/ui/model/index.dart';
 import '../../../model/tab_data_state.dart';
+import 'package:voicetemplate/ui/widgets/index.dart';
 
 class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
   /// 头部的tab
@@ -299,5 +300,57 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
     } catch (e) {
       debugPrint('删除设计失败: $e');
     }
+  }
+
+  /// 收藏事件处理
+  Future<void> clickFavorite(int itemId, bool shouldFavorite) async {
+    try {
+      final result = await http.post(
+        shouldFavorite ? '/design/favorite-store' : '/design/favorite-destroy',
+        data: {"link_id": '$itemId'},
+        showErrorToast: false,
+      );
+
+      if (result.code == 0) {
+        // 更新 isFavorite 状态
+        final newFavoriteStatus = shouldFavorite ? 1 : 0;
+
+        // 更新 tabDataMap 中每个 TabDataState 的 dataList 中的 item
+        for (var tabData in tabDataMap.values) {
+          final dataIndex = tabData.dataList.indexWhere(
+            (item) => item.id == itemId,
+          );
+          if (dataIndex != -1) {
+            final oldItem = tabData.dataList[dataIndex];
+            final favoriteTotal =
+                (oldItem.favoriteTotal ?? 0) + (shouldFavorite ? 1 : -1);
+            tabData.dataList[dataIndex] = oldItem.copyWith(
+              isFavorite: newFavoriteStatus,
+              favoriteTotal: favoriteTotal,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('收藏操作失败: $e');
+    }
+  }
+
+  /// 取消收藏事件
+  void favoriteEventDialog(int itemId) {
+    SmartDialog.show(
+      builder: (context) => ConfirmPopWidget(
+        title: "取消收藏",
+        subTitle: "是否确认取消收藏该模版",
+        sureAction: () => clickFavorite(itemId, false),
+      ),
+      alignment: Alignment.center,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: "#000000".color.withValues(alpha: 0.5),
+      clickMaskDismiss: false,
+      useAnimation: true,
+      usePenetrate: false,
+    );
   }
 }

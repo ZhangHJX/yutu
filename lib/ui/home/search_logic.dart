@@ -242,15 +242,19 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
       if (result.code == 0) {
         // 更新 isFavorite 状态
         final newFavoriteStatus = shouldFavorite ? 1 : 0;
-        
+
         // 更新 screenList 中每个 TagModel 的 list 中的 item
         final updatedScreenList = <TagModel>[];
         for (var tag in screenList) {
           final tagIndex = tag.list.indexWhere((item) => item.id == itemId);
           if (tagIndex != -1) {
             final updatedList = List<CommonItemModel>.from(tag.list);
-            updatedList[tagIndex] = updatedList[tagIndex].copyWith(
+            final oldItem = updatedList[tagIndex];
+            final favoriteTotal =
+                (oldItem.favoriteTotal ?? 0) + (shouldFavorite ? 1 : -1);
+            updatedList[tagIndex] = oldItem.copyWith(
               isFavorite: newFavoriteStatus,
+              favoriteTotal: favoriteTotal,
             );
             updatedScreenList.add(tag.copyWith(list: updatedList));
           } else {
@@ -260,7 +264,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
         if (updatedScreenList.isNotEmpty) {
           screenList.value = updatedScreenList;
         }
-        
+
         // 更新 tabDataMap 中每个 TabDataState 的 dataList 中的 item
         for (var tabData in tabDataMap.values) {
           final dataIndex = tabData.dataList.indexWhere(
@@ -268,8 +272,11 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
           );
           if (dataIndex != -1) {
             final oldItem = tabData.dataList[dataIndex];
+            final favoriteTotal =
+                (oldItem.favoriteTotal ?? 0) + (shouldFavorite ? 1 : -1);
             tabData.dataList[dataIndex] = oldItem.copyWith(
               isFavorite: newFavoriteStatus,
+              favoriteTotal: favoriteTotal,
             );
           }
         }

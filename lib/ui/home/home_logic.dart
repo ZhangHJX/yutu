@@ -259,8 +259,12 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
           final tagIndex = tag.list.indexWhere((item) => item.id == itemId);
           if (tagIndex != -1) {
             final updatedList = List<CommonItemModel>.from(tag.list);
-            updatedList[tagIndex] = updatedList[tagIndex].copyWith(
+            final oldItem = updatedList[tagIndex];
+            final favoriteTotal =
+                (oldItem.favoriteTotal ?? 0) + (shouldFavorite ? 1 : -1);
+            updatedList[tagIndex] = oldItem.copyWith(
               isFavorite: newFavoriteStatus,
+              favoriteTotal: favoriteTotal,
             );
             updatedTagList.add(tag.copyWith(list: updatedList));
           } else {
@@ -278,8 +282,11 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
           );
           if (dataIndex != -1) {
             final oldItem = tabData.dataList[dataIndex];
+            final favoriteTotal =
+                (oldItem.favoriteTotal ?? 0) + (shouldFavorite ? 1 : -1);
             tabData.dataList[dataIndex] = oldItem.copyWith(
               isFavorite: newFavoriteStatus,
+              favoriteTotal: favoriteTotal,
             );
           }
         }

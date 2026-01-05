@@ -1,7 +1,5 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../canvas/draft/index.dart';
-import '../../app/routes/index.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 
 import 'middle_logic.dart';
@@ -269,9 +267,7 @@ class MiddlePage extends StatelessWidget {
                             fontSize: 16.w,
                             fontWeight: FontWeight.w500,
                           ),
-                          onPressed: () {
-                            debugPrint("====处理使用按钮点击===");
-                          },
+                          onPressed: () => logic.handleImmediatelyUse(),
                         ),
                       ),
 

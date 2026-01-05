@@ -7,6 +7,7 @@ class DesiginPageItem extends StatelessWidget {
   final bool isSelected;
   final bool showCheck;
   final VoidCallback onTap;
+  final VoidCallback favoriteCallBack;
 
   const DesiginPageItem({
     super.key,
@@ -14,6 +15,7 @@ class DesiginPageItem extends StatelessWidget {
     required this.isSelected,
     required this.showCheck,
     required this.onTap,
+    required this.favoriteCallBack,
   });
 
   @override
@@ -132,17 +134,36 @@ class DesiginPageItem extends StatelessWidget {
                           ),
                           spacing: 4.w,
                           icon: Image.asset(
-                            "assets/images/mine/app_design_like.png",
-                            width: 13.w,
-                            height: 10.w,
+                            "assets/images/home/${item.isFavorite == 1 ? 'collection_favorite' : 'collection_no_favorite'}.png",
+                            width: 14.w,
+                            height: 14.w,
                             fit: BoxFit.cover,
                           ),
-                          onPressed: () {},
                         ),
                       ],
                     ),
                   ],
                 ),
+              ),
+            ),
+
+            Positioned(
+              top: 6.w,
+              right: 6.w,
+              child: CButton(
+                width: 35.w,
+                height: 35.w,
+                icon: Image.asset(
+                  item.isFavorite == 1
+                      ? "assets/images/home/home_collectin_btn_finsh.png"
+                      : "assets/images/home/home_collectin_btn.png",
+                  width: 22.w,
+                  height: 22.w,
+                  fit: BoxFit.cover,
+                ),
+                onPressed: () {
+                  favoriteCallBack.call();
+                },
               ),
             ),
           ],
