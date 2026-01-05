@@ -55,7 +55,7 @@ class SaveLogic extends GetxController {
   /// 应用场景接口
   Future<void> getSceneResource() async {
     try {
-      final result = await http.post('/scene/index', showErrorToast: false);
+      final result = await http.post('/scene/index', showErrorToast: true);
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
         if (listModel.items.isNotEmpty) {
@@ -72,7 +72,7 @@ class SaveLogic extends GetxController {
   /// 风格标签
   Future<void> getSuggestedTags() async {
     try {
-      final result = await http.post('/tag/index', showErrorToast: false);
+      final result = await http.post('/tag/index', showErrorToast: true);
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
         suggestedTags.value = listModel.items;
@@ -168,7 +168,7 @@ class SaveLogic extends GetxController {
           "field_type": isSaveActiion.value ? "design_img" : "design_draft_img",
         },
         converter: UploadOssModel.fromJson,
-        showErrorToast: false,
+        showErrorToast: true,
       );
       if (result.code == 0 && result.data != null) {
         await uploadImageFile(result.data!, canvalsImage!, model);
@@ -199,7 +199,7 @@ class SaveLogic extends GetxController {
           },
         ),
         useBaseUrl: false,
-        showErrorToast: false,
+        showErrorToast: true,
         isNake: true,
       );
 
@@ -210,11 +210,9 @@ class SaveLogic extends GetxController {
         await handleZipResource(model);
       } else {
         debugPrint('图片上传失败----${res.code}');
-        showToast("保存失败");
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
     } catch (e) {
-      showToast("保存失败");
       debugPrint('图片上传失败---$e');
       SmartDialog.dismiss(status: SmartStatus.loading);
     }
@@ -230,7 +228,7 @@ class SaveLogic extends GetxController {
         "field_type": isSaveActiion.value ? "design_zip" : 'design_draft_zip',
       },
       converter: UploadOssModel.fromJson,
-      showErrorToast: false,
+      showErrorToast: true,
     );
     if (result.code == 0 && result.data != null) {
       await uploadZipFile(result.data!, model);
@@ -275,7 +273,7 @@ class SaveLogic extends GetxController {
           },
         ),
         useBaseUrl: false,
-        showErrorToast: false,
+        showErrorToast: true,
         isNake: true,
       );
 
@@ -283,20 +281,17 @@ class SaveLogic extends GetxController {
       if (res.isSuccess) {
         fileMemorySize = (bytes.length / 1024).ceil(); // 向上取整
         fileResourceId = ossModel.resourceId;
-        debugPrint('文件上传成后怎么办---${isSaveActiion.value}-');
         if (isSaveActiion.value) {
           await createAndUpdateTemplate(zipPath, model);
         } else {
           await createAndUpdateDraft(zipPath, model);
         }
       } else {
-        showToast("文件上传失败");
         debugPrint('文件上传失败"');
         FileManager.deleteFileByPath(zipPath);
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
     } catch (e) {
-      showToast("文件上传失败");
       debugPrint('图片上传失败---$e');
       FileManager.deleteFileByPath(zipPath);
       SmartDialog.dismiss(status: SmartStatus.loading);
@@ -338,24 +333,20 @@ class SaveLogic extends GetxController {
           "zip_id": '$fileResourceId',
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
-          "front_data": infoList,
+          "front_data": infoList.toString(),
         },
-        showErrorToast: false,
+        showErrorToast: true,
       );
+      debugPrint("===模版保存成功====${result.code}=====");
       if (result.code == 0) {
-        showToast("模版保存成功");
         Get.back();
         FileManager.deleteFileByPath(sourceDir.path);
         FileManager.deleteFileByPath(filePath);
       } else {
-        showToast("模版保存失败");
         FileManager.deleteFileByPath(filePath);
-        debugPrint('模版保存失败');
       }
       SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {
-      showToast("模版保存失败");
-      debugPrint('模版保存失败--$e');
       FileManager.deleteFileByPath(filePath);
       SmartDialog.dismiss(status: SmartStatus.loading);
     }
@@ -389,23 +380,20 @@ class SaveLogic extends GetxController {
           "zip_id": '$fileResourceId',
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
-          "front_data": infoList,
+          "front_data": infoList.toString(),
         },
-        showErrorToast: false,
+        showErrorToast: true,
       );
       if (result.code == 0) {
-        showToast("草稿保存成功");
         Get.back();
         FileManager.deleteFileByPath(sourceDir.path);
         FileManager.deleteFileByPath(filePath);
       } else {
-        showToast("草稿保存失败");
         FileManager.deleteFileByPath(filePath);
         debugPrint('草稿保存失败====${result.code}');
       }
       SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {
-      showToast("草稿保存失败");
       debugPrint('草稿保存失败--$e');
       FileManager.deleteFileByPath(filePath);
       SmartDialog.dismiss(status: SmartStatus.loading);
