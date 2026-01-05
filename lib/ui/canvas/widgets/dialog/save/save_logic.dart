@@ -8,6 +8,8 @@ import 'package:voicetemplate/ui/model/index.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:voicetemplate/ui/canvas/model/index.dart';
 
+import 'package:voicetemplate/ui/canvas/draft/index.dart';
+
 class SaveLogic extends GetxController {
   // 获取画布控制器
   final canvalsLogic = Get.find<CanvalsController>();
@@ -364,6 +366,7 @@ class SaveLogic extends GetxController {
             {'font_id': '${e.fontId}', 'font_version': e.version},
       ];
 
+      // .  /design/draft/update
       final result = await http.post(
         '/design/draft/store',
         data: {
@@ -384,6 +387,10 @@ class SaveLogic extends GetxController {
         },
         showErrorToast: true,
       );
+
+      canvalsLogic.canvasModel.id = 1;
+      DraftManager().notifyCanvasPropertyChanged();
+
       if (result.code == 0) {
         Get.back();
         FileManager.deleteFileByPath(sourceDir.path);

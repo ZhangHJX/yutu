@@ -10,8 +10,9 @@ import 'package:voicetemplate/ui/widgets/index.dart';
 import '../model/index.dart';
 //最新的数据
 import './model/home_model.dart';
-import './model/draft_edit_model.dart';
-import './widgets/draft_continue_edit_widget.dart';
+import 'draft/draft_edit_model.dart';
+import 'draft/draft_continue_edit_widget.dart';
+import 'draft/draft_download_service.dart';
 
 class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   final global = Get.find<GlobalLogic>();
@@ -27,6 +28,9 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   // Tab 索引
   final selectedTabIndex = 0.obs;
+
+  /// 草稿选择
+  final isLocal = true.obs;
 
   /// 获取当前 tab 是否还有更多数据
   RxBool get hasMore {
@@ -308,20 +312,20 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     // if (!global.isLogin) {
     //   return;
     // }
-    final isHave = await DraftManager().hasDraft();
-    if (isHave) {
-      debugPrint('已经存在草稿列表: $isHave');
-      final canvasModel = await DraftManager().loadDraft();
-      if (canvasModel == null) {
-        return;
-      }
-      debugPrint('已经获取到草稿列表: $canvasModel');
-      if (canvasModel.id == 0) {
-        showSingleDraftDialog();
-      } else {
-        requestServiceDraft(canvasModel);
-      }
-    }
+    // final isHave = await DraftManager().hasDraft();
+    // if (isHave) {
+    // debugPrint('已经存在草稿列表: $isHave');
+    // final canvasModel = await DraftManager().loadDraft();
+    // if (canvasModel == null) {
+    //   return;
+    // }
+    // debugPrint('已经获取到草稿列表: ${canvasModel.id}');
+    // if (canvasModel.id == 0) {
+    //   showSingleDraftDialog();
+    // } else {
+    requestServiceDraft(CanvasModel());
+    // }
+    // }
   }
 
   /// 服务端没有保存的相关的草稿
@@ -333,19 +337,8 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         cancelAction: () {
           DraftManager().deleteDraft();
         },
-        sureAction: () {
-          // 异步加载草稿并跳转到画布页面
-          () async {
-            final draft = await DraftManager().loadDraft();
-            if (draft == null) {
-              SmartDialog.dismiss();
-              return;
-            }
-            // 根据当前屏幕重新计算画布矩阵
-            draft.getMatrix4();
-            SmartDialog.dismiss();
-            Get.toNamed(AppRoutes.canvalsPage, arguments: draft);
-          }();
+        sureAction: () async {
+          loadDraftDialog();
         },
       ),
       alignment: Alignment.center,
@@ -362,15 +355,16 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   void requestServiceDraft(CanvasModel model) async {
     try {
       debugPrint('草稿列表已经进行了请求');
-      final result = await http.post(
+      final result = await http.post<DraftEditModel>(
         '/homePage/design/draft/read',
-        data: {'id': '${model.id}'},
-        showErrorToast: false,
+        data: {'id': '2'},
+        converter: DraftEditModel.fromJson,
+        showErrorToast: true,
       );
-      debugPrint("哈哈哈哈哈哈====${result.code}====");
+      debugPrint("哈哈哈哈哈哈====${result.code}==${result.data}==");
       if (result.code == 0 && result.data != null) {
-        final model = DraftEditModel.fromJson(result.data);
-        debugPrint("哈哈哈哈哈哈====result.code == 0====");
+        debugPrint("哈哈哈哈哈哈====result.code == ${result.data}====");
+        showMutipleDraftDialog(result.data!, model);
       }
     } catch (e) {
       debugPrint('==本地没有要编辑的草稿==  error: $e');
@@ -378,15 +372,48 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   }
 
   /// 服务端没有保存的相关的草稿
-  void showMutipleDraftDialog() {
+  void showMutipleDraftDialog(
+    DraftEditModel editModel,
+    CanvasModel canvalsModel,
+  ) {
     SmartDialog.show(
       builder: (context) => DraftContinueEditWidget(
-        localDraftTime: 1764848400,
-        serverDraftTime: 1764848400,
-        onLocalPreview: () {},
-        onServerPreview: () {},
-        sureAction: () {},
-        cancelAction: () {},
+        localDraftTime: canvalsModel.timestamp,
+        serverDraftTime: editModel.editTime,
+        onLocalPreview: () {
+          final canvasSize = '${canvalsModel.width}:${canvalsModel.height}';
+          Get.toNamed(
+            AppRoutes.draftPreview,
+            arguments: {
+              "canvasSize": canvasSize,
+              "isLocal": true,
+              "imgPath": '',
+            },
+          );
+        },
+        onServerPreview: () {
+          Get.toNamed(
+            AppRoutes.draftPreview,
+            arguments: {
+              "canvasSize": editModel.canvasSize,
+              "isLocal": false,
+              "imgPath": '${editModel.originalImage}${editModel.thumbnail}',
+            },
+          );
+        },
+        selectType: (type) {
+          isLocal.value = (type == DraftType.local) ? true : false;
+        },
+        sureAction: () async {
+          if (isLocal.value) {
+            loadDraftDialog();
+          } else {
+            await loadServerDraft(editModel);
+          }
+        },
+        cancelAction: () {
+          DraftManager().deleteDraft(); // 删掉本地草稿
+        },
       ),
       alignment: Alignment.center,
       animationType: SmartAnimationType.centerFade_otherSlide,
@@ -396,5 +423,49 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
       useAnimation: true,
       usePenetrate: false,
     );
+  }
+
+  /// 异步加载草稿并跳转到画布页面
+  Future<void> loadDraftDialog() async {
+    final draft = await DraftManager().loadDraft();
+    if (draft == null) {
+      SmartDialog.dismiss();
+      return;
+    }
+    // 根据当前屏幕重新计算画布矩阵
+    draft.getMatrix4();
+    SmartDialog.dismiss();
+    Get.toNamed(AppRoutes.canvalsPage, arguments: draft);
+  }
+
+  /// 加载服务器草稿（下载字体和压缩包后加载）
+  Future<void> loadServerDraft(DraftEditModel editModel) async {
+    try {
+      // 显示加载对话框
+      SmartDialog.showLoading(
+        msg: '正在准备草稿...',
+        maskColor: "#000000".color.withValues(alpha: 0.5),
+      );
+
+      // 准备服务器草稿（下载字体和压缩包）
+      await DraftDownloadService.instance.prepareServerDraft(
+        editModel,
+        onProgress: (progress) {
+          // 可以在这里更新进度显示
+          debugPrint('DraftDownloadService: 进度 ${(progress * 100).toInt()}%');
+        },
+      );
+
+      // 关闭加载对话框
+      SmartDialog.dismiss();
+
+      // 加载草稿并跳转
+      await loadDraftDialog();
+    } catch (e) {
+      SmartDialog.dismiss();
+      debugPrint('加载服务器草稿失败: $e');
+      // 可以显示错误提示
+      SmartDialog.showToast('加载草稿失败，请重试');
+    }
   }
 }

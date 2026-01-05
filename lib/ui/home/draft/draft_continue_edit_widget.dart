@@ -11,6 +11,7 @@ class DraftContinueEditWidget extends StatefulWidget {
   final VoidCallback? onServerPreview;
   final VoidCallback? sureAction;
   final VoidCallback? cancelAction;
+  final Function(DraftType type)? selectType;
 
   const DraftContinueEditWidget({
     super.key,
@@ -18,6 +19,7 @@ class DraftContinueEditWidget extends StatefulWidget {
     required this.serverDraftTime,
     this.onLocalPreview,
     this.onServerPreview,
+    this.selectType,
     this.sureAction,
     this.cancelAction,
   });
@@ -182,6 +184,7 @@ class _DraftContinueEditWidgetState extends State<DraftContinueEditWidget> {
     return GestureDetector(
       onTap: () {
         setState(() {
+          widget.selectType?.call(type);
           _selectedType = type;
         });
       },
@@ -208,7 +211,9 @@ class _DraftContinueEditWidgetState extends State<DraftContinueEditWidget> {
 
             GestureDetector(
               onTap: () {
-                onPreview?.call();
+                if (_selectedType == type) {
+                  onPreview?.call();
+                }
               },
               child: Container(
                 width: 52.w,

@@ -31,11 +31,7 @@ class TextPropertyController extends GetxController {
   void onInit() {
     super.onInit();
     getFontListData();
-    // 监听每一次变化
-
     _countWorker = ever(FontManager.to.recommendedFonts, (value) {
-      debugPrint("-监听每一次变化---");
-
       final recommendedList = <FontInfoModel>[];
       final fontMap = {for (var font in fontList) font.id: font};
       // 按照推荐顺序添加
@@ -73,8 +69,8 @@ class TextPropertyController extends GetxController {
         final modelArray = result.data as List<FontInfoModel>;
         fontList.assignAll(modelArray);
         // 将字体 ID 列表传递给 FontManager，用于推荐字体
-        final fontIds = fontList.map((f) => f.id).toList();
-        FontManager.to.setTemplateUsedFonts(fontIds);
+        // final fontIds = fontList.map((f) => f.id).toList();
+        // FontManager.to.setTemplateUsedFonts(fontIds);
         debugPrint("-获取字体列表中数据成功--数量: ${fontList.length}");
         await FontManager.to.warmUpdateInstalledFonts(modelArray);
       }
