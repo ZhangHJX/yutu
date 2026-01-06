@@ -1,8 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../../model/common_model.dart';
 import 'package:voicetemplate/ui/model/index.dart';
-import '../../../model/tab_data_state.dart';
 
 class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
   /// 头部的tab

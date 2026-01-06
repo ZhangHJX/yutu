@@ -103,6 +103,7 @@ class DesiginPageItem extends StatelessWidget {
                     SizedBox(height: 4.w),
 
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 7.w),
@@ -118,8 +119,6 @@ class DesiginPageItem extends StatelessWidget {
                             ),
                           ),
                         ),
-
-                        Spacer(),
 
                         CButton(
                           height: 22.w,
