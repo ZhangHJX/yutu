@@ -52,7 +52,7 @@ double calculateAspectRatio(double width, String canvasSize) {
 }
 
 /// 中间页数据来源
-enum PageSource { home, search }
+enum PageSource { home, search, design, draft, favorite }
 
 /// 资源文件存储目录
 const String resourcesDirName = 'templates';

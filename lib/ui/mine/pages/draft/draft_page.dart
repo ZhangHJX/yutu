@@ -4,6 +4,7 @@ import '../../../widgets/page_empty_state.dart';
 import '../widgets/operation_bottom_bar.dart';
 import '../widgets/top_navigation_widget.dart';
 import '../widgets/storage_space_card.dart';
+import 'package:voicetemplate/app/routes/index.dart';
 import 'draft_page_item.dart';
 import 'draft_logic.dart';
 
@@ -119,8 +120,13 @@ class AppDraftPage extends StatelessWidget {
                               if (isBatch) {
                                 logic.toggleItemSelection('${item.id}');
                               } else {
-                                // 非批量模式下可以进入详情 / 编辑
-                                // Get.to(...);
+                                Get.toNamed(
+                                  AppRoutes.middle,
+                                  arguments: {
+                                    'id': item.id,
+                                    "type": PageSource.draft,
+                                  },
+                                );
                               }
                             },
                             index: index,

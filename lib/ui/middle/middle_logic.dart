@@ -41,7 +41,6 @@ class MiddleLogic extends GetxController {
   Future<void> getMiddleData() async {
     try {
       debugPrint("==getMiddleData==${getMiddleUrlPath(type)}=======");
-
       final result = await http.post(
         getMiddleUrlPath(type),
         data: {"id": itemId},
@@ -58,10 +57,17 @@ class MiddleLogic extends GetxController {
   }
 
   String getMiddleUrlPath(PageSource source) {
-    if (source == PageSource.home) {
-      return '/homePage/read';
-    } else {
-      return '/homePage/search/read';
+    switch (source) {
+      case PageSource.home:
+        return '/homePage/read';
+      case PageSource.search:
+        return '/homePage/search/read';
+      case PageSource.design:
+        return '';
+      case PageSource.draft:
+        return '';
+      case PageSource.favorite:
+        return '';
     }
   }
 
@@ -108,14 +114,25 @@ class MiddleLogic extends GetxController {
   }
 
   String getFavoriteUrlPath(PageSource source, bool isFavorite) {
-    if (source == PageSource.home) {
-      return isFavorite
-          ? '/homePage/favorite-store'
-          : '/homePage/favorite-destroy';
-    } else {
-      return isFavorite
-          ? '/homePage/search/favorite-store'
-          : '/homePage/search/favorite-destroy';
+    switch (source) {
+      case PageSource.home:
+        return isFavorite
+            ? '/homePage/favorite-store'
+            : '/homePage/favorite-destroy';
+      case PageSource.search:
+        return isFavorite
+            ? '/homePage/search/favorite-store'
+            : '/homePage/search/favorite-destroy';
+      case PageSource.design:
+        return isFavorite
+            ? '/design/favorite-store'
+            : '/design/favorite-destroy';
+      case PageSource.draft:
+        return isFavorite
+            ? '/design/favorite-store'
+            : '/design/favorite-destroy';
+      case PageSource.favorite:
+        return '';
     }
   }
 
@@ -126,6 +143,9 @@ class MiddleLogic extends GetxController {
       showToast('模板信息不存在');
       return;
     }
+
+    if (type == PageSource.draft) {
+    } else {}
 
     // 重置取消标志
     _isCancelled = false;

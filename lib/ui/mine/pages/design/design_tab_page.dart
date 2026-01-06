@@ -4,6 +4,7 @@ import 'design_logic.dart';
 import 'desigin_page_item.dart';
 import '../../../widgets/page_empty_state.dart';
 import '../../../model/common_model.dart';
+import 'package:voicetemplate/app/routes/index.dart';
 
 /// 可保活的 Tab 页面组件
 class DesignTabPage extends StatelessWidget {
@@ -94,6 +95,11 @@ class _DesignItemWidget extends StatelessWidget {
         onTap: () {
           if (showCheck) {
             logic.toggleItemSelection("${item.id}");
+          } else {
+            Get.toNamed(
+              AppRoutes.middle,
+              arguments: {'id': item.id, "type": PageSource.design},
+            );
           }
         },
         favoriteCallBack: () {
