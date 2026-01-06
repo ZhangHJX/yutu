@@ -1,12 +1,20 @@
 import 'dart:convert';
 
+/// DraftModel 只代表“业务草稿数据”：
+/// - id：业务侧的草稿标识（例如 CanvasModel.id）
+/// - textJson：画布 JSON 数据
+/// - timestamp：时间戳（秒）
+///
+/// 数据库存储结构中，业务 id 会映射到单独的整数列（如 canvasId），
+/// 数据库内部主键（自增 id）对业务层透明。
 class DraftModel {
-  String uuid;
+  /// 业务侧草稿 id（例如 CanvasModel.id）
+  int id;
   String textJson;
   int timestamp;
 
   DraftModel({
-    required this.uuid,
+    required this.id,
     Map<String, dynamic>? text, // 你想要的 json
     int? timestamp,
   }) : textJson = jsonEncode(text ?? {}),
@@ -21,7 +29,7 @@ class DraftModel {
   /// 从 Map 创建 DraftModel（用于从数据库读取）
   factory DraftModel.fromMap(Map<String, dynamic> map) {
     return DraftModel(
-      uuid: map['uuid'] as String? ?? '',
+      id: map['canvasId'] as int? ?? 0,
       text: map['textJson'] != null
           ? jsonDecode(map['textJson'] as String) as Map<String, dynamic>
           : null,
@@ -30,8 +38,8 @@ class DraftModel {
   }
 
   /// 转换为 Map（用于保存到数据库）
-  /// 注意：不包含 id 字段，因为数据库使用 uuid 作为唯一标识
+  /// 注意：这里的 id 映射到表中的 canvasId 列
   Map<String, dynamic> toMap() {
-    return {'uuid': uuid, 'textJson': textJson, 'timestamp': timestamp};
+    return {'canvasId': id, 'textJson': textJson, 'timestamp': timestamp};
   }
 }

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +8,7 @@ import 'package:voicetemplate/ui/model/index.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:voicetemplate/ui/canvas/model/index.dart';
 import 'package:voicetemplate/ui/canvas/draft/index.dart';
+import './model/save_response.dart';
 
 class SaveLogic extends GetxController {
   // 获取画布控制器
@@ -133,7 +133,7 @@ class SaveLogic extends GetxController {
       return;
     }
 
-    final canvalsModel = canvalsLogic.buildSnapshot();
+    final canvalsModel = await DraftManager().loadDraft();
     if (canvalsModel == null) {
       showToast('画布信息不存在');
       return;
@@ -148,7 +148,7 @@ class SaveLogic extends GetxController {
 
   /// 保存为草稿
   void saveAsDraft() async {
-    final canvalsModel = canvalsLogic.buildSnapshot();
+    final canvalsModel = await DraftManager().loadDraft();
     if (canvalsModel == null) {
       showToast('画布信息不存在');
       return;
@@ -170,7 +170,7 @@ class SaveLogic extends GetxController {
           "field_type": isSaveActiion.value ? "design_img" : "design_draft_img",
         },
         converter: UploadOssModel.fromJson,
-        showErrorToast: true,
+        showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
         await uploadImageFile(result.data!, canvalsImage!, model);
@@ -275,7 +275,7 @@ class SaveLogic extends GetxController {
           },
         ),
         useBaseUrl: false,
-        showErrorToast: true,
+        showErrorToast: false,
         isNake: true,
       );
 
@@ -312,12 +312,8 @@ class SaveLogic extends GetxController {
       final sourceDir = await DirectoryManager.getDocumentsSubDirectory(
         'cavals',
       );
-      final infoList = [
-        for (final e in model.elements)
-          if (e.fontId != 0)
-            {'front_id': '${e.fontId}', 'front_version': e.version},
-      ];
-      final result = await http.post(
+      final idsStr = model.elements.map((e) => e.fontId).toSet().join(',');
+      final result = await http.post<SaveResponse>(
         '/design/store',
         data: {
           "uuid": model.uuid,
@@ -335,12 +331,13 @@ class SaveLogic extends GetxController {
           "zip_id": '$fileResourceId',
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
-          "front_data": infoList.isNotEmpty ? jsonEncode(infoList) : '',
+          "front_ids": idsStr,
         },
+        converter: SaveResponse.fromJson,
         showErrorToast: true,
       );
-      debugPrint("===模版保存成功====${result.code}=====");
-      if (result.code == 0) {
+      debugPrint("===模版保存是否成功====${result.code}=====");
+      if (result.code == 0 && result.data != null) {
         Get.back();
         FileManager.deleteFileByPath(sourceDir.path);
         FileManager.deleteFileByPath(filePath);
@@ -360,14 +357,10 @@ class SaveLogic extends GetxController {
       final sourceDir = await DirectoryManager.getDocumentsSubDirectory(
         'cavals',
       );
-      final infoList = [
-        for (final e in model.elements)
-          if (e.fontId != 0)
-            {'front_id': '${e.fontId}', 'front_version': e.version},
-      ];
+      final idsStr = model.elements.map((e) => e.fontId).toSet().join(',');
 
       // .  /design/draft/update
-      final result = await http.post(
+      final result = await http.post<SaveResponse>(
         '/design/draft/store',
         data: {
           "uuid": model.uuid,
@@ -383,17 +376,16 @@ class SaveLogic extends GetxController {
           "zip_id": '$fileResourceId',
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
-          "front_data": infoList.isNotEmpty ? jsonEncode(infoList) : '',
+          "front_ids": idsStr,
         },
         showErrorToast: true,
+        converter: SaveResponse.fromJson,
       );
 
-      canvalsLogic.canvasModel.id = 1;
-      DraftManager().notifyCanvasPropertyChanged();
-
-      if (result.code == 0) {
+      if (result.code == 0 && result.data != null) {
         final success = await DraftStoreManager.instance.saveOrUpdateDraft(
           model,
+          result.data!.id,
         );
         if (!success) {
           debugPrint('===草稿保存或更新失败===');

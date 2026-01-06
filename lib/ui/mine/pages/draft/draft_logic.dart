@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../model/common_model.dart';
 import 'package:voicetemplate/stores/global.dart';
 import 'package:voicetemplate/stores/user_model.dart';
+import 'package:voicetemplate/ui/canvas/draft/index.dart';
 
 class DraftLogic extends GetxController {
   /// 全局
@@ -167,6 +168,8 @@ class DraftLogic extends GetxController {
   Future<void> deleteSelected() async {
     if (selectedIds.isEmpty) return;
     try {
+      showLoading("删除中");
+
       // 发送删除请求，将选中的uuid列表作为参数
       final result = await http.post(
         '/design/draft/destroys',
@@ -175,14 +178,30 @@ class DraftLogic extends GetxController {
       );
 
       if (result.code == 0) {
+        await deleteSelectedDrafts();
         // 删除成功，从当前tab的数据列表中移除已删除的项
         draftList.removeWhere((e) => selectedIds.contains('${e.id}'));
         // 清除选择并退出批量模式
         clearSelection();
         refreshUserInfo();
       }
+      SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {
+      SmartDialog.dismiss(status: SmartStatus.loading);
       debugPrint('删除设计失败: $e');
+    }
+  }
+
+  Future<void> deleteSelectedDrafts() async {
+    final ids = selectedIds.toList(growable: false); // 先拷贝
+    for (final idStr in ids) {
+      final id = int.tryParse(idStr);
+      if (id == null) {
+        // 不是纯数字就跳过/或移除选中，按你需求
+        // selectedIds.remove(idStr);
+        continue;
+      }
+      await DraftStoreManager.instance.deleteDraftById(id);
     }
   }
 }

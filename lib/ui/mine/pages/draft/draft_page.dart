@@ -140,7 +140,10 @@ class AppDraftPage extends StatelessWidget {
                   if (logic.isBatchMode.value)
                     OperationBottomBar(
                       cancelEvent: logic.clearSelection,
-                      deleteEvent: logic.deleteSelected,
+                      deleteEvent: () {
+                        SmartDialog.dismiss();
+                        logic.deleteSelected();
+                      },
                       typeName: "草稿",
                     ),
 

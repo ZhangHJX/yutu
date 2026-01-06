@@ -17,7 +17,7 @@ class DraftStore {
   Database? _database;
   bool _isInitialized = false;
   static const String _tableName = 'drafts';
-  static const int _version = 1;
+  static const int _version = 2;
 
   /// 初始化数据库
   Future<void> init() async {
@@ -56,8 +56,8 @@ class DraftStore {
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE $_tableName (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        uuid TEXT UNIQUE NOT NULL,
+        pk INTEGER PRIMARY KEY AUTOINCREMENT,
+        canvasId INTEGER UNIQUE NOT NULL,
         textJson TEXT NOT NULL,
         timestamp INTEGER NOT NULL
       )
@@ -65,7 +65,7 @@ class DraftStore {
 
     // 创建索引以提高查询性能
     await db.execute('''
-      CREATE INDEX idx_uuid ON $_tableName(uuid)
+      CREATE INDEX idx_canvasId ON $_tableName(canvasId)
     ''');
     await db.execute('''
       CREATE INDEX idx_timestamp ON $_tableName(timestamp)
@@ -76,8 +76,10 @@ class DraftStore {
 
   /// 数据库升级
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // 如果需要升级，在这里处理
-    debugPrint('DraftStore: 数据库升级: $oldVersion -> $newVersion');
+    // 当前版本变更较大，直接丢弃旧表重建
+    debugPrint('DraftStore: 数据库升级: $oldVersion -> $newVersion, 重建表结构');
+    await db.execute('DROP TABLE IF EXISTS $_tableName');
+    await _onCreate(db, newVersion);
   }
 
   /// 确保已初始化
@@ -88,7 +90,7 @@ class DraftStore {
   }
 
   /// 保存 DraftModel
-  /// 如果 uuid 已存在，则更新；否则创建新记录
+  /// 如果业务 id（canvasId）已存在，则更新；否则创建新记录
   /// 返回 true 表示成功，false 表示失败
   Future<bool> save(DraftModel model) async {
     await _ensureInitialized();
@@ -97,26 +99,26 @@ class DraftStore {
     }
 
     try {
-      if (model.uuid.isEmpty) {
-        debugPrint('DraftStore: uuid 为空，无法保存');
+      if (model.id == 0) {
+        debugPrint('DraftStore: 业务 id 为空，无法保存');
         return false;
       }
 
       // 检查记录是否存在
-      final existing = await getByUuid(model.uuid);
+      final existing = await getById(model.id);
       if (existing != null) {
-        // 更新现有记录（使用 uuid 作为条件）
-        debugPrint('DraftStore: 更新记录, uuid=${model.uuid}');
+        // 更新现有记录（使用 canvasId 作为条件）
+        debugPrint('DraftStore: 更新记录, canvasId=${model.id}');
         return await update(model);
       }
 
-      // 创建新记录（使用 INSERT OR REPLACE 确保 uuid 唯一性）
+      // 创建新记录（使用 INSERT OR REPLACE 确保 canvasId 唯一性）
       await _database!.insert(
         _tableName,
         model.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
-      debugPrint('DraftStore: 保存成功, uuid=${model.uuid}');
+      debugPrint('DraftStore: 保存成功, canvasId=${model.id}');
       return true;
     } catch (e, stackTrace) {
       debugPrint('DraftStore: 保存失败: $e\n$stackTrace');
@@ -125,7 +127,7 @@ class DraftStore {
   }
 
   /// 更新 DraftModel
-  /// 根据 uuid 更新记录
+  /// 根据业务 id（canvasId）更新记录
   Future<bool> update(DraftModel model) async {
     await _ensureInitialized();
     if (_database == null) {
@@ -133,23 +135,23 @@ class DraftStore {
     }
 
     try {
-      if (model.uuid.isEmpty) {
-        debugPrint('DraftStore: uuid 为空，无法更新');
+      if (model.id == 0) {
+        debugPrint('DraftStore: 业务 id 为空，无法更新');
         return false;
       }
 
-      // 使用 uuid 作为更新条件
+      // 使用 canvasId 作为更新条件
       final count = await _database!.update(
         _tableName,
         model.toMap(),
-        where: 'uuid = ?',
-        whereArgs: [model.uuid],
+        where: 'canvasId = ?',
+        whereArgs: [model.id],
       );
       final success = count > 0;
       if (success) {
-        debugPrint('DraftStore: 更新成功, uuid=${model.uuid}');
+        debugPrint('DraftStore: 更新成功, canvasId=${model.id}');
       } else {
-        debugPrint('DraftStore: 更新失败，记录不存在, uuid=${model.uuid}');
+        debugPrint('DraftStore: 更新失败，记录不存在, canvasId=${model.id}');
       }
       return success;
     } catch (e, stackTrace) {
@@ -158,30 +160,30 @@ class DraftStore {
     }
   }
 
-  /// 根据 uuid 删除
-  Future<bool> deleteByUuid(String uuid) async {
+  /// 根据业务 id（canvasId）删除
+  Future<bool> deleteById(int id) async {
     await _ensureInitialized();
     if (_database == null) {
       throw Exception('DraftStore: 数据库未初始化');
     }
 
     try {
-      if (uuid.isEmpty) {
-        debugPrint('DraftStore: uuid 为空，无法删除');
+      if (id == 0) {
+        debugPrint('DraftStore: 业务 id 为空，无法删除');
         return false;
       }
 
-      // 直接使用 uuid 作为删除条件
+      // 直接使用 canvasId 作为删除条件
       final count = await _database!.delete(
         _tableName,
-        where: 'uuid = ?',
-        whereArgs: [uuid],
+        where: 'canvasId = ?',
+        whereArgs: [id],
       );
       final success = count > 0;
       if (success) {
-        debugPrint('DraftStore: 删除成功, uuid=$uuid');
+        debugPrint('DraftStore: 删除成功, canvasId=$id');
       } else {
-        debugPrint('DraftStore: 删除失败，记录不存在, uuid=$uuid');
+        debugPrint('DraftStore: 删除失败，记录不存在, canvasId=$id');
       }
       return success;
     } catch (e, stackTrace) {
@@ -190,18 +192,22 @@ class DraftStore {
     }
   }
 
-  /// 根据 uuid 获取
-  Future<DraftModel?> getByUuid(String uuid) async {
+  /// 根据业务 id（canvasId）获取
+  Future<DraftModel?> getById(int id) async {
     await _ensureInitialized();
     if (_database == null) {
       throw Exception('DraftStore: 数据库未初始化');
     }
 
     try {
+      if (id == 0) {
+        return null;
+      }
+
       final List<Map<String, dynamic>> maps = await _database!.query(
         _tableName,
-        where: 'uuid = ?',
-        whereArgs: [uuid],
+        where: 'canvasId = ?',
+        whereArgs: [id],
         limit: 1,
       );
 
