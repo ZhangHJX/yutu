@@ -186,12 +186,9 @@ class DownloadService {
     }
   }
 
-  /// 资源文件存储目录名
-  static const String _resourcesDirName = 'templates';
-
   /// 获取资源文件目录
   Future<Directory> _getResourcesDirectory() async {
-    return await DirectoryManager.getSupportSubDirectory(_resourcesDirName);
+    return await DirectoryManager.getSupportSubDirectory(resourcesDirName);
   }
 
   /// 获取资源文件路径（文件名格式：id_editTime）

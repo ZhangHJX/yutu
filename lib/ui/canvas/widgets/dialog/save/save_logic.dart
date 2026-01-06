@@ -8,7 +8,6 @@ import 'dart:typed_data';
 import 'package:voicetemplate/ui/model/index.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:voicetemplate/ui/canvas/model/index.dart';
-
 import 'package:voicetemplate/ui/canvas/draft/index.dart';
 
 class SaveLogic extends GetxController {
@@ -393,6 +392,15 @@ class SaveLogic extends GetxController {
       DraftManager().notifyCanvasPropertyChanged();
 
       if (result.code == 0) {
+        final success = await DraftStoreManager.instance.saveOrUpdateDraft(
+          model,
+        );
+        if (!success) {
+          debugPrint('===草稿保存或更新失败===');
+        } else {
+          debugPrint('===草稿保存或更新成功===');
+        }
+
         Get.back();
         FileManager.deleteFileByPath(sourceDir.path);
         FileManager.deleteFileByPath(filePath);

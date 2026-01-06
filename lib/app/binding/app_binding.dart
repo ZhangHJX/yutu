@@ -1,12 +1,15 @@
 import 'package:common/common.dart';
-import '../../core/index.dart';
 import 'package:voicetemplate/ui/canvas/fonts/font_manager.dart';
+import 'package:voicetemplate/ui/canvas/draft/index.dart';
 
 // Binding 只负责 new 对象 + Get.put
 class AppBinding extends Bindings {
   @override
-  void dependencies() {
+  void dependencies() async {
     Get.put<FontManager>(FontManager(), permanent: true);
+
+    // 初始化 ObjectBox
+    await DraftStore.instance.init();
 
     // Get.put<GetStorageService>(
     //   GetStorageService(GetStorage('app_storage')),

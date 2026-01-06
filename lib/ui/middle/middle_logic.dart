@@ -187,15 +187,15 @@ class MiddleLogic extends GetxController {
       // 4. 将解压后的文件移动到 Documents 目录下并改名为 cavals
       await _moveResourceToCavals(resourcePath);
 
-      final draft = await DraftManager().loadDraft();
-      if (draft == null) {
+      final canvalsModel = await DraftManager().loadDraft();
+      if (canvalsModel == null) {
         SmartDialog.dismiss();
         return;
       }
       // 根据当前屏幕重新计算画布矩阵
-      draft.getMatrix4();
+      canvalsModel.getMatrix4();
       SmartDialog.dismiss();
-      Get.toNamed(AppRoutes.canvalsPage, arguments: draft);
+      Get.toNamed(AppRoutes.canvalsPage, arguments: canvalsModel);
     } catch (e) {
       SmartDialog.dismiss();
       debugPrint('准备模板失败: $e');

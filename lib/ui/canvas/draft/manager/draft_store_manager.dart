@@ -1,0 +1,240 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
+import '../../model/index.dart';
+import '../../../../file/index.dart';
+import 'draft_store.dart';
+import 'draft_model.dart';
+
+/// 草稿存储管理类
+/// 负责：
+/// 1. 传入 CanvasModel，根据 uuid 判断草稿是否保存过
+/// 2. 如果不存在，就保存起来，如果有保存过就进行数据的更新
+/// 3. 同时将 Documents 目录下的 cavals 文件 copy 到 Application Support 下的 sqflite_draft，文件名使用 uuid
+class DraftStoreManager {
+  DraftStoreManager._();
+  static DraftStoreManager? _instance;
+  static DraftStoreManager get instance {
+    _instance ??= DraftStoreManager._();
+    return _instance!;
+  }
+
+  /// 保存或更新草稿
+  ///
+  /// [canvasModel] 画布模型
+  /// 返回 true 表示成功，false 表示失败
+  Future<bool> saveOrUpdateDraft(CanvasModel canvasModel) async {
+    try {
+      if (canvasModel.uuid.isEmpty) {
+        debugPrint('DraftStoreManager: uuid 为空，无法保存草稿');
+        return false;
+      }
+
+      // 1. 将 CanvasModel 转换为 DraftModel
+      final draftModel = DraftModel(
+        uuid: canvasModel.uuid,
+        text: canvasModel.toJson(),
+        timestamp: canvasModel.timestamp > 0
+            ? canvasModel.timestamp
+            : DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      );
+
+      // 2. 保存或更新数据库记录
+      final success = await DraftStore.instance.save(draftModel);
+
+      if (!success) {
+        debugPrint('DraftStoreManager: 保存数据库记录失败, uuid=${canvasModel.uuid}');
+        return false;
+      }
+
+      // 3. 复制 Documents/cavals 目录到 Application Support/sqflite_draft/{uuid}
+      await _copyCavalsDirectory(canvasModel.uuid);
+
+      debugPrint('DraftStoreManager: 草稿更新或保存成功, uuid=${canvasModel.uuid}');
+
+      return true;
+    } catch (e, stackTrace) {
+      debugPrint('DraftStoreManager: 保存草稿失败: $e\n$stackTrace');
+      return false;
+    }
+  }
+
+  /// 复制 Documents/cavals 目录到 Application Support/sqflite_draft/{uuid}
+  /// [uuid] 画布的 uuid，作为目标目录名
+  Future<void> _copyCavalsDirectory(String uuid) async {
+    try {
+      // 获取源目录：Documents/cavals
+      final documentsDir = await DirectoryManager.getDocumentsDirectory();
+      final sourceCavalsDir = Directory(p.join(documentsDir.path, 'cavals'));
+
+      // 检查源目录是否存在
+      if (!await sourceCavalsDir.exists()) {
+        debugPrint('DraftStoreManager: 源目录不存在，跳过文件复制: ${sourceCavalsDir.path}');
+        return;
+      }
+
+      // 获取目标目录：Application Support/sqflite_draft/{uuid}
+      final supportDir = await DirectoryManager.getSupportDirectory();
+      final targetDir = await DirectoryManager.getOrCreateSubDirectory(
+        supportDir,
+        p.join('sqflite_draft', uuid),
+      );
+
+      // 如果目标目录已存在，先删除（确保是最新的内容）
+      if (await targetDir.exists()) {
+        await FileManager.deleteDirectory(targetDir, deleteDirectory: true);
+      }
+
+      // 创建目标目录
+      await targetDir.create(recursive: true);
+
+      // 递归复制目录内容
+      await _copyDirectoryRecursive(sourceCavalsDir, targetDir);
+
+      debugPrint('DraftStoreManager: cavals 目录已复制到: ${targetDir.path}');
+    } catch (e, stackTrace) {
+      debugPrint('DraftStoreManager: 复制 cavals 目录失败: $e\n$stackTrace');
+      // 不抛出异常，文件复制失败不影响数据库保存
+    }
+  }
+
+  /// 递归复制目录及其所有内容
+  Future<void> _copyDirectoryRecursive(
+    Directory source,
+    Directory destination,
+  ) async {
+    // 确保目标目录存在
+    if (!await destination.exists()) {
+      await destination.create(recursive: true);
+    }
+
+    // 遍历源目录中的所有内容
+    await for (final entity in source.list(recursive: false)) {
+      final fileName = p.basename(entity.path);
+      final targetPath = p.join(destination.path, fileName);
+
+      if (entity is File) {
+        // 复制文件
+        await entity.copy(targetPath);
+      } else if (entity is Directory) {
+        // 递归复制子目录
+        final targetSubDir = Directory(targetPath);
+        await _copyDirectoryRecursive(entity, targetSubDir);
+      }
+    }
+  }
+
+  /// 根据 uuid 删除草稿（包括数据库记录和文件）
+  /// 返回 true 表示删除成功，false 表示删除失败
+  Future<bool> deleteDraftByUuid(String uuid) async {
+    try {
+      if (uuid.isEmpty) {
+        return false;
+      }
+
+      // 1. 删除数据库记录
+      final dbSuccess = await DraftStore.instance.deleteByUuid(uuid);
+
+      // 2. 删除文件目录
+      try {
+        final supportDir = await DirectoryManager.getSupportDirectory();
+        final draftDir = Directory(
+          p.join(supportDir.path, 'sqflite_draft', uuid),
+        );
+
+        if (await draftDir.exists()) {
+          await FileManager.deleteDirectory(draftDir, deleteDirectory: true);
+          debugPrint('DraftStoreManager: 草稿文件目录已删除: ${draftDir.path}');
+        }
+      } catch (e) {
+        debugPrint('DraftStoreManager: 删除草稿文件目录失败: $e');
+        // 文件删除失败不影响返回结果
+      }
+
+      if (dbSuccess) {
+        debugPrint('DraftStoreManager: 草稿已删除, uuid=$uuid');
+      }
+
+      return dbSuccess;
+    } catch (e, stackTrace) {
+      debugPrint('DraftStoreManager: 删除草稿失败: $e\n$stackTrace');
+      return false;
+    }
+  }
+
+  /// 获取草稿对应的 cavals 目录路径
+  /// 根据 Application Support/sqflite_draft/{uuid} 目录，
+  /// 将文件拷贝到 Documents 目录下，并命名为 cavals，
+  /// 返回拷贝后的 Documents/cavals 目录路径
+  Future<String?> getDraftCavalsPath(String uuid) async {
+    try {
+      if (uuid.isEmpty) {
+        return null;
+      }
+
+      // 源目录：Application Support/sqflite_draft/{uuid}
+      final supportDir = await DirectoryManager.getSupportDirectory();
+      final draftDir = Directory(
+        p.join(supportDir.path, 'sqflite_draft', uuid),
+      );
+
+      if (!await draftDir.exists()) {
+        debugPrint('DraftStoreManager: 源草稿目录不存在: ${draftDir.path}');
+        return null;
+      }
+
+      // 目标目录：Documents/cavals
+      final documentsDir = await DirectoryManager.getDocumentsDirectory();
+      final targetCavalsDir = Directory(p.join(documentsDir.path, 'cavals'));
+
+      // 如果目标 cavals 目录已存在，先删除，保证是当前 uuid 的内容
+      if (await targetCavalsDir.exists()) {
+        await FileManager.deleteDirectory(
+          targetCavalsDir,
+          deleteDirectory: true,
+        );
+      }
+
+      // 将 sqflite_draft/{uuid} 下的内容复制到 Documents/cavals
+      await _copyDirectoryRecursive(draftDir, targetCavalsDir);
+
+      debugPrint(
+        'DraftStoreManager: 草稿文件已从 $uuid 恢复到 Documents/cavals: ${targetCavalsDir.path}',
+      );
+
+      return targetCavalsDir.path;
+    } catch (e) {
+      debugPrint('DraftStoreManager: 拷贝草稿 cavals 目录失败: $e');
+      return null;
+    }
+  }
+}
+
+
+/*
+
+  /// 根据 uuid 获取草稿
+  /// 返回 CanvasModel，如果不存在则返回 null
+  Future<CanvasModel?> getDraftByUuid(String uuid) async {
+    try {
+      if (uuid.isEmpty) {
+        return null;
+      }
+
+      final draftModel = await DraftStore.instance.getByUuid(uuid);
+      if (draftModel == null) {
+        return null;
+      }
+
+      // 将 DraftModel 的 text 字段解析为 CanvasModel
+      final jsonData = jsonDecode(draftModel.textJson) as Map<String, dynamic>;
+      final canvasModel = CanvasModel.fromJson(jsonData);
+
+      return canvasModel;
+    } catch (e, stackTrace) {
+      debugPrint('DraftStoreManager: 获取草稿失败: $e\n$stackTrace');
+      return null;
+    }
+  }
+
+*/ 

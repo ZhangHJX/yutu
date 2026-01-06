@@ -25,7 +25,6 @@ class DraftManager {
   static const int _debounceDelayMs = 500;
 
   /// 开始自动保存
-  ///
   /// [controller] 画布控制器
   void startAutoSave(CanvalsController controller) {
     // 如果已经监听同一个控制器，则不需要重新设置
@@ -179,7 +178,6 @@ class DraftManager {
   }
 
   /// 通知画布属性已变更
-  ///
   /// 当画布属性（如填充颜色、透明度等）改变时调用此方法
   void notifyCanvasPropertyChanged() {
     _scheduleSave();

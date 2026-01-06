@@ -5,6 +5,8 @@ import 'package:common/common.dart';
 import 'canvas_element.dart';
 import 'dart:math' as math;
 
+// import 'package:objectbox/objectbox.dart';
+
 part 'canvas_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)

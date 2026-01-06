@@ -34,10 +34,8 @@ class CanvalsController extends GetxController {
   CanvasModel? buildSnapshot() {
     // 使用 JSON 序列化方式克隆画布模型
     final cloned = CanvasModelClone.clone(canvasModel);
-
     // 更新元素列表（因为 elements 是响应式列表，需要单独处理）
     cloned.elements = elements.toList();
-    // cloned.timestamp = DateTime.now().millisecondsSinceEpoch;
     cloned.timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     return cloned;
   }
