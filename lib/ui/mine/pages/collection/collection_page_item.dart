@@ -77,14 +77,16 @@ class CollectionPageItem extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          item.title ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 14.w,
-                            fontWeight: FontWeight.w600,
-                            color: "#051E34".color,
+                        Expanded(
+                          child: Text(
+                            item.title ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14.w,
+                              fontWeight: FontWeight.w600,
+                              color: "#051E34".color,
+                            ),
                           ),
                         ),
 

@@ -77,14 +77,16 @@ class DraftPageItem extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '草稿${index + 1}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 14.w,
-                            fontWeight: FontWeight.w600,
-                            color: "#051E34".color,
+                        Expanded(
+                          child: Text(
+                            '草稿${index + 1}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14.w,
+                              fontWeight: FontWeight.w600,
+                              color: "#051E34".color,
+                            ),
                           ),
                         ),
 
