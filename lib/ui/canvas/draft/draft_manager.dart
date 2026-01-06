@@ -21,6 +21,8 @@ class DraftManager {
   Timer? _saveTimer;
   bool _isAutoSaving = false;
 
+  bool ishChanage = false;
+
   /// 防抖延迟时间（毫秒）
   static const int _debounceDelayMs = 500;
 
@@ -94,6 +96,7 @@ class DraftManager {
         content: jsonString,
       );
       debugPrint('DraftManager: 草稿已保存到 ${draftDir.path}/draft.json');
+      ishChanage = true;
     } catch (e, stackTrace) {
       debugPrint('DraftManager: 保存草稿失败: $e\n$stackTrace');
     } finally {
@@ -139,7 +142,7 @@ class DraftManager {
 
       final directory = await _getDraftDirectory();
       await FileManager.deleteDirectory(directory, deleteDirectory: true);
-
+      ishChanage = false;
       return true;
     } catch (e, stackTrace) {
       debugPrint('DraftManager: 删除草稿失败: $e\n$stackTrace');

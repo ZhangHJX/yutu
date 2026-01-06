@@ -9,6 +9,7 @@ import 'package:voicetemplate/file/index.dart';
 import 'package:voicetemplate/ui/canvas/model/index.dart';
 import 'package:voicetemplate/ui/canvas/draft/index.dart';
 import './model/save_response.dart';
+import 'template/template_manager.dart';
 
 class SaveLogic extends GetxController {
   // 获取画布控制器
@@ -338,6 +339,12 @@ class SaveLogic extends GetxController {
       );
       debugPrint("===模版保存是否成功====${result.code}=====");
       if (result.code == 0 && result.data != null) {
+        // 模版保存成功后，资源保存到本地
+        await TemplateManager.instance.saveTemplateFromSaveFlow(
+          result.data!.id,
+          model.timestamp,
+        );
+
         Get.back();
         FileManager.deleteFileByPath(sourceDir.path);
         FileManager.deleteFileByPath(filePath);

@@ -581,7 +581,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
 
   /// 返回操作
   void _handleBack() {
-    if (_canvalsController.elements.isNotEmpty) {
+    if (DraftManager().ishChanage) {
       showIsSaveDraftDialog();
       return;
     }
