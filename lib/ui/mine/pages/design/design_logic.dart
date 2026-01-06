@@ -1,8 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../../model/common_model.dart';
 import 'package:voicetemplate/ui/model/index.dart';
-import '../../../model/tab_data_state.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 
 class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
@@ -130,7 +128,10 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
   Future<void> getTabTags() async {
     try {
       tabIsLoading.value = true;
-      final result = await http.post('/tag/index', showErrorToast: false);
+      final result = await http.post(
+        '/design/tag-index',
+        showErrorToast: false,
+      );
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
         final model = ScreenItemModel(id: 0, name: '全部');
