@@ -148,7 +148,7 @@ class SaveLogic extends GetxController {
   }
 
   /// 保存为草稿
-  void saveAsDraft() async {
+  Future<void> saveAsDraft() async {
     final canvalsModel = await DraftManager().loadDraft();
     if (canvalsModel == null) {
       showToast('画布信息不存在');

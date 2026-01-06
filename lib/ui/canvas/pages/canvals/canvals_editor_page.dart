@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/index.dart';
@@ -14,6 +13,7 @@ import 'widgets/transform_canvas.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
 import 'canvals_editor_page_dialog_mixin.dart';
 import '../../draft/index.dart';
+import '../../widgets/dialog/save/save_logic.dart';
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -582,7 +582,30 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   /// 返回操作
   void _handleBack() {
     if (DraftManager().ishChanage) {
-      showIsSaveDraftDialog();
+      showIsSaveDraftDialog(() async {
+        // 获取画布截图
+        final imageBytes = await getCurrentCanvals();
+        if (imageBytes == null) {
+          showToast('画布截图失败');
+          return;
+        }
+        // 创建或获取 SaveLogic 实例
+        SaveLogic saveLogic;
+        if (Get.isRegistered<SaveLogic>(tag: saveDialog)) {
+          saveLogic = Get.find<SaveLogic>(tag: saveDialog);
+        } else {
+          saveLogic = Get.put(SaveLogic(), tag: saveDialog);
+        }
+
+        // 设置画布截图
+        saveLogic.canvalsImage = imageBytes;
+
+        // 调用保存草稿方法
+        await saveLogic.saveAsDraft();
+
+        SmartDialog.dismiss(); // 关闭保存草稿对话框
+        Get.back(); // 返回上一页
+      });
       return;
     }
     Get.back();

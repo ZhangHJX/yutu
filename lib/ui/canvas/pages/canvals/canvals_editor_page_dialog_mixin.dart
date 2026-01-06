@@ -297,7 +297,7 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
   }
 
   /// 显示是否保存为草稿
-  void showIsSaveDraftDialog() {
+  void showIsSaveDraftDialog(VoidCallback? sureAction) {
     SmartDialog.show(
       builder: (context) => ConfirmPopWidget(
         title: "保存为草稿",
@@ -308,7 +308,7 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
           DraftManager().deleteDraft();
           Get.back();
         },
-        sureAction: () {},
+        sureAction: sureAction,
       ),
       alignment: Alignment.center,
       animationType: SmartAnimationType.centerFade_otherSlide,
