@@ -3,32 +3,37 @@ part 'middle_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class MiddleModel {
+  @JsonKey(defaultValue: 0)
   final int id;
-  @JsonKey(name: 'edit_time')
+  @JsonKey(name: 'edit_time', defaultValue: 0)
   final int editTime;
+  @JsonKey(defaultValue: '')
   final String title;
+  @JsonKey(defaultValue: '')
   final String desc;
+  @JsonKey(defaultValue: '')
   final String canvas;
-  @JsonKey(name: 'canvas_size')
+  @JsonKey(name: 'canvas_size', defaultValue: '')
   final String canvasSize;
-  @JsonKey(name: 'original_image')
+  @JsonKey(name: 'original_image', defaultValue: '')
   final String originalImage;
-  @JsonKey(name: 'ordinary_image')
+  @JsonKey(name: 'ordinary_image', defaultValue: '')
   final String ordinaryImage;
+  @JsonKey(defaultValue: '')
   final String thumbnail;
-  @JsonKey(name: 'recources_url')
+  @JsonKey(name: 'recources_url', defaultValue: '')
   final String recourcesUrl;
-  @JsonKey(name: 'favorite_total')
+  @JsonKey(name: 'favorite_total', defaultValue: 0)
   final int favoriteTotal;
-  @JsonKey(name: 'is_official')
+  @JsonKey(name: 'is_official', defaultValue: 0)
   final int isOfficial;
-  @JsonKey(name: 'is_favorite')
+  @JsonKey(name: 'is_favorite', defaultValue: 0)
   final int isFavorite;
 
-  @JsonKey(name: 'front_data')
+  @JsonKey(name: 'front_data', defaultValue: [])
   final List<FontItemModel> frontData;
 
-  @JsonKey(name: 'tag_data')
+  @JsonKey(name: 'tag_data', defaultValue: [])
   final List<TagItemModel> tagData;
 
   MiddleModel({
@@ -93,13 +98,13 @@ class MiddleModel {
 
 @JsonSerializable()
 class FontItemModel {
-  @JsonKey(name: 'front_id')
+  @JsonKey(name: 'front_id', defaultValue: 0)
   final int frontId;
 
-  @JsonKey(name: 'front_version')
+  @JsonKey(name: 'front_version', defaultValue: '')
   final String frontVersion;
 
-  @JsonKey(name: 'front_url')
+  @JsonKey(name: 'front_url', defaultValue: '')
   final String frontUrl;
 
   FontItemModel({
@@ -127,7 +132,9 @@ class FontItemModel {
 
 @JsonSerializable()
 class TagItemModel {
+  @JsonKey(defaultValue: 0)
   final int id;
+  @JsonKey(defaultValue: '')
   final String name;
 
   TagItemModel({required this.id, required this.name});

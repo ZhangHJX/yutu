@@ -3,7 +3,7 @@ part 'stock_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class StockModel {
-  @JsonKey(name: 'list')
+  @JsonKey(name: 'list', defaultValue: [])
   final List<StockItemModel> items;
 
   StockModel({required this.items});
@@ -16,14 +16,23 @@ class StockModel {
 
 @JsonSerializable()
 class StockItemModel {
-  final int? id;
-  final String? image;
-  @JsonKey(name: 'file_size')
-  final String? fileSize;
-  @JsonKey(name: 'canvas_size')
-  final String? canvasSize;
+  @JsonKey(defaultValue: 0)
+  final int id;
 
-  StockItemModel({this.id, this.image, this.fileSize, this.canvasSize});
+  @JsonKey(defaultValue: '')
+  final String image;
+
+  @JsonKey(name: 'file_size', defaultValue: '')
+  final String fileSize;
+  @JsonKey(name: 'canvas_size', defaultValue: '')
+  final String canvasSize;
+
+  StockItemModel({
+    required this.id,
+    required this.image,
+    required this.fileSize,
+    required this.canvasSize,
+  });
 
   factory StockItemModel.fromJson(Map<String, dynamic> json) =>
       _$StockItemModelFromJson(json);

@@ -3,7 +3,7 @@ part 'screen_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class ScreenModel {
-  @JsonKey(name: 'list')
+  @JsonKey(name: 'list', defaultValue: [])
   final List<ScreenItemModel> items;
 
   ScreenModel({required this.items});
@@ -16,7 +16,10 @@ class ScreenModel {
 
 @JsonSerializable()
 class ScreenItemModel {
+  @JsonKey(defaultValue: 0)
   final int id;
+
+  @JsonKey(defaultValue: '')
   final String name;
   ScreenItemModel({required this.id, required this.name});
 

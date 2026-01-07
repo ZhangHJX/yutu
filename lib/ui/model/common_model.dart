@@ -3,7 +3,7 @@ part 'common_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class CommonModel {
-  @JsonKey(name: 'list')
+  @JsonKey(name: 'list', defaultValue: [])
   final List<CommonItemModel> items;
 
   CommonModel({required this.items});
@@ -16,42 +16,54 @@ class CommonModel {
 
 @JsonSerializable()
 class CommonItemModel {
-  final int? id;
-  final String? uuid;
-  final String? title;
-  final String? desc;
-  final String? canvas;
-  @JsonKey(name: 'canvas_size')
-  final String? canvasSize;
-  @JsonKey(name: 'original_image')
-  final String? originalImage;
+  @JsonKey(defaultValue: 0)
+  final int id;
 
-  @JsonKey(name: 'ordinary_image')
-  final String? ordinaryImage;
-  final String? thumbnail;
+  @JsonKey(defaultValue: '')
+  final String uuid;
 
-  @JsonKey(name: 'favorite_total')
-  final int? favoriteTotal;
+  @JsonKey(defaultValue: '')
+  final String title;
 
-  @JsonKey(name: 'is_favorite')
-  final int? isFavorite;
+  @JsonKey(defaultValue: '')
+  final String desc;
 
-  @JsonKey(name: 'is_official')
-  final int? isOfficial;
+  @JsonKey(defaultValue: '')
+  final String canvas;
+  @JsonKey(name: 'canvas_size', defaultValue: '')
+  final String canvasSize;
+
+  @JsonKey(name: 'original_image', defaultValue: '')
+  final String originalImage;
+
+  @JsonKey(name: 'ordinary_image', defaultValue: '')
+  final String ordinaryImage;
+
+  @JsonKey(defaultValue: '')
+  final String thumbnail;
+
+  @JsonKey(name: 'favorite_total', defaultValue: 0)
+  final int favoriteTotal;
+
+  @JsonKey(name: 'is_favorite', defaultValue: 0)
+  final int isFavorite;
+
+  @JsonKey(name: 'is_official', defaultValue: 0)
+  final int isOfficial;
 
   CommonItemModel({
-    this.id,
-    this.uuid,
-    this.title,
-    this.desc,
-    this.canvas,
-    this.canvasSize,
-    this.originalImage,
-    this.ordinaryImage,
-    this.thumbnail,
-    this.favoriteTotal,
-    this.isFavorite,
-    this.isOfficial,
+    required this.id,
+    required this.uuid,
+    required this.title,
+    required this.desc,
+    required this.canvas,
+    required this.canvasSize,
+    required this.originalImage,
+    required this.ordinaryImage,
+    required this.thumbnail,
+    required this.favoriteTotal,
+    required this.isFavorite,
+    required this.isOfficial,
   });
 
   factory CommonItemModel.fromJson(Map<String, dynamic> json) =>

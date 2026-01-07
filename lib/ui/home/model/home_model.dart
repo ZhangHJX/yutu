@@ -4,8 +4,12 @@ part 'home_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class HomeModel {
+  @JsonKey(defaultValue: [])
   final List<TagModel> tagList;
+
+  @JsonKey(defaultValue: [])
   final List<CommonItemModel> recommendList;
+
   HomeModel({required this.tagList, required this.recommendList});
   factory HomeModel.fromJson(Map<String, dynamic> json) =>
       _$HomeModelFromJson(json);
@@ -25,10 +29,13 @@ class HomeModel {
 
 @JsonSerializable(explicitToJson: true)
 class TagModel {
+  @JsonKey(defaultValue: 0)
   final int id;
+
+  @JsonKey(defaultValue: '')
   final String name;
 
-  @JsonKey(name: 'is_select')
+  @JsonKey(name: 'is_select', defaultValue: 0)
   final int isSelect;
 
   final List<CommonItemModel> list;

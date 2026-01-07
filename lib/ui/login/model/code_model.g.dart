@@ -7,7 +7,7 @@ part of 'code_model.dart';
 // **************************************************************************
 
 CodeModel _$CodeModelFromJson(Map<String, dynamic> json) =>
-    CodeModel(code: json['code'] as String);
+    CodeModel(code: json['code'] as String? ?? '');
 
 Map<String, dynamic> _$CodeModelToJson(CodeModel instance) => <String, dynamic>{
   'code': instance.code,

@@ -7,7 +7,7 @@ part of 'phone_model.dart';
 // **************************************************************************
 
 PhoneModel _$PhoneModelFromJson(Map<String, dynamic> json) =>
-    PhoneModel(mobile: json['mobile'] as String);
+    PhoneModel(mobile: json['mobile'] as String? ?? '');
 
 Map<String, dynamic> _$PhoneModelToJson(PhoneModel instance) =>
     <String, dynamic>{'mobile': instance.mobile};

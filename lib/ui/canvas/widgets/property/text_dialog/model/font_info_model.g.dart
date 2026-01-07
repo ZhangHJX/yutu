@@ -8,11 +8,11 @@ part of 'font_info_model.dart';
 
 FontInfoModel _$FontInfoModelFromJson(Map<String, dynamic> json) =>
     FontInfoModel(
-      id: (json['id'] as num).toInt(),
-      version: json['version'] as String,
-      name: json['name'] as String,
-      image: json['image'] as String,
-      url: json['url'] as String,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      version: json['version'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      image: json['image'] as String? ?? '',
+      url: json['url'] as String? ?? '',
     );
 
 Map<String, dynamic> _$FontInfoModelToJson(FontInfoModel instance) =>

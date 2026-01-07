@@ -7,9 +7,11 @@ part of 'common_model.dart';
 // **************************************************************************
 
 CommonModel _$CommonModelFromJson(Map<String, dynamic> json) => CommonModel(
-  items: (json['list'] as List<dynamic>)
-      .map((e) => CommonItemModel.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  items:
+      (json['list'] as List<dynamic>?)
+          ?.map((e) => CommonItemModel.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
 );
 
 Map<String, dynamic> _$CommonModelToJson(CommonModel instance) =>
@@ -17,18 +19,18 @@ Map<String, dynamic> _$CommonModelToJson(CommonModel instance) =>
 
 CommonItemModel _$CommonItemModelFromJson(Map<String, dynamic> json) =>
     CommonItemModel(
-      id: (json['id'] as num?)?.toInt(),
-      uuid: json['uuid'] as String?,
-      title: json['title'] as String?,
-      desc: json['desc'] as String?,
-      canvas: json['canvas'] as String?,
-      canvasSize: json['canvas_size'] as String?,
-      originalImage: json['original_image'] as String?,
-      ordinaryImage: json['ordinary_image'] as String?,
-      thumbnail: json['thumbnail'] as String?,
-      favoriteTotal: (json['favorite_total'] as num?)?.toInt(),
-      isFavorite: (json['is_favorite'] as num?)?.toInt(),
-      isOfficial: (json['is_official'] as num?)?.toInt(),
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      uuid: json['uuid'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      desc: json['desc'] as String? ?? '',
+      canvas: json['canvas'] as String? ?? '',
+      canvasSize: json['canvas_size'] as String? ?? '',
+      originalImage: json['original_image'] as String? ?? '',
+      ordinaryImage: json['ordinary_image'] as String? ?? '',
+      thumbnail: json['thumbnail'] as String? ?? '',
+      favoriteTotal: (json['favorite_total'] as num?)?.toInt() ?? 0,
+      isFavorite: (json['is_favorite'] as num?)?.toInt() ?? 0,
+      isOfficial: (json['is_official'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$CommonItemModelToJson(CommonItemModel instance) =>

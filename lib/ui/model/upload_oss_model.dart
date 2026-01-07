@@ -4,22 +4,26 @@ part 'upload_oss_model.g.dart';
 
 @JsonSerializable()
 class UploadOssModel {
-  @JsonKey(name: 'sign_url')
+  @JsonKey(name: 'sign_url', defaultValue: '')
   String signUrl;
+  @JsonKey(defaultValue: '')
   String endpoint;
+  @JsonKey(defaultValue: '')
   String bucket;
+  @JsonKey(defaultValue: '')
   String path;
+  @JsonKey(defaultValue: '')
   String file;
-  @JsonKey(name: 'resource_id')
+  @JsonKey(name: 'resource_id', defaultValue: 0)
   int resourceId;
 
   UploadOssModel({
-    this.signUrl = '',
-    this.endpoint = '',
-    this.bucket = '',
-    this.path = '',
-    this.file = '',
-    this.resourceId = 0,
+    required this.signUrl,
+    required this.endpoint,
+    required this.bucket,
+    required this.path,
+    required this.file,
+    required this.resourceId,
   });
 
   factory UploadOssModel.fromJson(Map<String, dynamic> json) =>

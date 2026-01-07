@@ -7,12 +7,16 @@ part of 'home_model.dart';
 // **************************************************************************
 
 HomeModel _$HomeModelFromJson(Map<String, dynamic> json) => HomeModel(
-  tagList: (json['tagList'] as List<dynamic>)
-      .map((e) => TagModel.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  recommendList: (json['recommendList'] as List<dynamic>)
-      .map((e) => CommonItemModel.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  tagList:
+      (json['tagList'] as List<dynamic>?)
+          ?.map((e) => TagModel.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
+  recommendList:
+      (json['recommendList'] as List<dynamic>?)
+          ?.map((e) => CommonItemModel.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
 );
 
 Map<String, dynamic> _$HomeModelToJson(HomeModel instance) => <String, dynamic>{
@@ -21,12 +25,12 @@ Map<String, dynamic> _$HomeModelToJson(HomeModel instance) => <String, dynamic>{
 };
 
 TagModel _$TagModelFromJson(Map<String, dynamic> json) => TagModel(
-  id: (json['id'] as num).toInt(),
-  name: json['name'] as String,
+  id: (json['id'] as num?)?.toInt() ?? 0,
+  name: json['name'] as String? ?? '',
   list: (json['list'] as List<dynamic>)
       .map((e) => CommonItemModel.fromJson(e as Map<String, dynamic>))
       .toList(),
-  isSelect: (json['is_select'] as num).toInt(),
+  isSelect: (json['is_select'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$TagModelToJson(TagModel instance) => <String, dynamic>{

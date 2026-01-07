@@ -7,9 +7,11 @@ part of 'screen_model.dart';
 // **************************************************************************
 
 ScreenModel _$ScreenModelFromJson(Map<String, dynamic> json) => ScreenModel(
-  items: (json['list'] as List<dynamic>)
-      .map((e) => ScreenItemModel.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  items:
+      (json['list'] as List<dynamic>?)
+          ?.map((e) => ScreenItemModel.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
 );
 
 Map<String, dynamic> _$ScreenModelToJson(ScreenModel instance) =>
@@ -17,8 +19,8 @@ Map<String, dynamic> _$ScreenModelToJson(ScreenModel instance) =>
 
 ScreenItemModel _$ScreenItemModelFromJson(Map<String, dynamic> json) =>
     ScreenItemModel(
-      id: (json['id'] as num).toInt(),
-      name: json['name'] as String,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      name: json['name'] as String? ?? '',
     );
 
 Map<String, dynamic> _$ScreenItemModelToJson(ScreenItemModel instance) =>

@@ -7,9 +7,11 @@ part of 'stock_model.dart';
 // **************************************************************************
 
 StockModel _$StockModelFromJson(Map<String, dynamic> json) => StockModel(
-  items: (json['list'] as List<dynamic>)
-      .map((e) => StockItemModel.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  items:
+      (json['list'] as List<dynamic>?)
+          ?.map((e) => StockItemModel.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
 );
 
 Map<String, dynamic> _$StockModelToJson(StockModel instance) =>
@@ -17,10 +19,10 @@ Map<String, dynamic> _$StockModelToJson(StockModel instance) =>
 
 StockItemModel _$StockItemModelFromJson(Map<String, dynamic> json) =>
     StockItemModel(
-      id: (json['id'] as num?)?.toInt(),
-      image: json['image'] as String?,
-      fileSize: json['file_size'] as String?,
-      canvasSize: json['canvas_size'] as String?,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      image: json['image'] as String? ?? '',
+      fileSize: json['file_size'] as String? ?? '',
+      canvasSize: json['canvas_size'] as String? ?? '',
     );
 
 Map<String, dynamic> _$StockItemModelToJson(StockItemModel instance) =>

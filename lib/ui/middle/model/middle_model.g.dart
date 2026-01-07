@@ -7,25 +7,29 @@ part of 'middle_model.dart';
 // **************************************************************************
 
 MiddleModel _$MiddleModelFromJson(Map<String, dynamic> json) => MiddleModel(
-  id: (json['id'] as num).toInt(),
-  editTime: (json['edit_time'] as num).toInt(),
-  title: json['title'] as String,
-  desc: json['desc'] as String,
-  canvas: json['canvas'] as String,
-  canvasSize: json['canvas_size'] as String,
-  originalImage: json['original_image'] as String,
-  ordinaryImage: json['ordinary_image'] as String,
-  thumbnail: json['thumbnail'] as String,
-  recourcesUrl: json['recources_url'] as String,
-  favoriteTotal: (json['favorite_total'] as num).toInt(),
-  isOfficial: (json['is_official'] as num).toInt(),
-  isFavorite: (json['is_favorite'] as num).toInt(),
-  frontData: (json['front_data'] as List<dynamic>)
-      .map((e) => FontItemModel.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  tagData: (json['tag_data'] as List<dynamic>)
-      .map((e) => TagItemModel.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  id: (json['id'] as num?)?.toInt() ?? 0,
+  editTime: (json['edit_time'] as num?)?.toInt() ?? 0,
+  title: json['title'] as String? ?? '',
+  desc: json['desc'] as String? ?? '',
+  canvas: json['canvas'] as String? ?? '',
+  canvasSize: json['canvas_size'] as String? ?? '',
+  originalImage: json['original_image'] as String? ?? '',
+  ordinaryImage: json['ordinary_image'] as String? ?? '',
+  thumbnail: json['thumbnail'] as String? ?? '',
+  recourcesUrl: json['recources_url'] as String? ?? '',
+  favoriteTotal: (json['favorite_total'] as num?)?.toInt() ?? 0,
+  isOfficial: (json['is_official'] as num?)?.toInt() ?? 0,
+  isFavorite: (json['is_favorite'] as num?)?.toInt() ?? 0,
+  frontData:
+      (json['front_data'] as List<dynamic>?)
+          ?.map((e) => FontItemModel.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
+  tagData:
+      (json['tag_data'] as List<dynamic>?)
+          ?.map((e) => TagItemModel.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
 );
 
 Map<String, dynamic> _$MiddleModelToJson(MiddleModel instance) =>
@@ -49,9 +53,9 @@ Map<String, dynamic> _$MiddleModelToJson(MiddleModel instance) =>
 
 FontItemModel _$FontItemModelFromJson(Map<String, dynamic> json) =>
     FontItemModel(
-      frontId: (json['front_id'] as num).toInt(),
-      frontVersion: json['front_version'] as String,
-      frontUrl: json['front_url'] as String,
+      frontId: (json['front_id'] as num?)?.toInt() ?? 0,
+      frontVersion: json['front_version'] as String? ?? '',
+      frontUrl: json['front_url'] as String? ?? '',
     );
 
 Map<String, dynamic> _$FontItemModelToJson(FontItemModel instance) =>
@@ -61,8 +65,10 @@ Map<String, dynamic> _$FontItemModelToJson(FontItemModel instance) =>
       'front_url': instance.frontUrl,
     };
 
-TagItemModel _$TagItemModelFromJson(Map<String, dynamic> json) =>
-    TagItemModel(id: (json['id'] as num).toInt(), name: json['name'] as String);
+TagItemModel _$TagItemModelFromJson(Map<String, dynamic> json) => TagItemModel(
+  id: (json['id'] as num?)?.toInt() ?? 0,
+  name: json['name'] as String? ?? '',
+);
 
 Map<String, dynamic> _$TagItemModelToJson(TagItemModel instance) =>
     <String, dynamic>{'id': instance.id, 'name': instance.name};

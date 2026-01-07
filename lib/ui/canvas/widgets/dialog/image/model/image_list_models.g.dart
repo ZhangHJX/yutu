@@ -8,11 +8,13 @@ part of 'image_list_models.dart';
 
 ImageListModels _$ImageListModelsFromJson(Map<String, dynamic> json) =>
     ImageListModels(
-      items: (json['list'] as List<dynamic>)
-          .map((e) => ImageModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      page: (json['page'] as num).toInt(),
-      pageSize: (json['pageSize'] as num).toInt(),
+      items:
+          (json['list'] as List<dynamic>?)
+              ?.map((e) => ImageModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      page: (json['page'] as num?)?.toInt() ?? 1,
+      pageSize: (json['pageSize'] as num?)?.toInt() ?? 10,
     );
 
 Map<String, dynamic> _$ImageListModelsToJson(ImageListModels instance) =>
@@ -23,10 +25,10 @@ Map<String, dynamic> _$ImageListModelsToJson(ImageListModels instance) =>
     };
 
 ImageModel _$ImageModelFromJson(Map<String, dynamic> json) => ImageModel(
-  id: (json['id'] as num).toInt(),
-  image: json['image'] as String,
-  fileSize: json['file_size'] as String,
-  canvasSize: json['canvas_size'] as String,
+  id: (json['id'] as num?)?.toInt() ?? 0,
+  image: json['image'] as String? ?? '',
+  fileSize: json['file_size'] as String? ?? '',
+  canvasSize: json['canvas_size'] as String? ?? '',
 );
 
 Map<String, dynamic> _$ImageModelToJson(ImageModel instance) =>

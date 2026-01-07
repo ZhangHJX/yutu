@@ -4,6 +4,7 @@ part 'code_model.g.dart';
 
 @JsonSerializable()
 class CodeModel {
+  @JsonKey(defaultValue: '')
   final String code;
 
   CodeModel({required this.code});

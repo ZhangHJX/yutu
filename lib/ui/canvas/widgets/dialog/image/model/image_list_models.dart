@@ -4,9 +4,13 @@ part 'image_list_models.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class ImageListModels {
-  @JsonKey(name: 'list')
+  @JsonKey(name: 'list', defaultValue: [])
   final List<ImageModel> items;
+
+  @JsonKey(defaultValue: 1)
   final int page;
+
+  @JsonKey(defaultValue: 10)
   final int pageSize;
 
   ImageListModels({
@@ -23,14 +27,16 @@ class ImageListModels {
 
 @JsonSerializable()
 class ImageModel {
+  @JsonKey(defaultValue: 0)
   final int id;
 
+  @JsonKey(defaultValue: '')
   final String image;
 
-  @JsonKey(name: 'file_size')
+  @JsonKey(name: 'file_size', defaultValue: '')
   final String fileSize;
 
-  @JsonKey(name: 'canvas_size')
+  @JsonKey(name: 'canvas_size', defaultValue: '')
   final String canvasSize;
 
   ImageModel({

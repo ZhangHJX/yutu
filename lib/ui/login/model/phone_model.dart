@@ -4,6 +4,7 @@ part 'phone_model.g.dart';
 
 @JsonSerializable()
 class PhoneModel {
+  @JsonKey(defaultValue: '')
   final String mobile;
 
   PhoneModel({required this.mobile});

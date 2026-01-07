@@ -4,10 +4,19 @@ part 'font_info_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class FontInfoModel {
+  @JsonKey(defaultValue: 0)
   int id;
+
+  @JsonKey(defaultValue: '')
   String version;
+
+  @JsonKey(defaultValue: '')
   String name;
+
+  @JsonKey(defaultValue: '')
   String image;
+
+  @JsonKey(defaultValue: '')
   String url;
 
   FontInfoModel({

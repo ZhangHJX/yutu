@@ -8,14 +8,14 @@ part of 'draft_edit_model.dart';
 
 DraftEditModel _$DraftEditModelFromJson(Map<String, dynamic> json) =>
     DraftEditModel(
-      id: (json['id'] as num).toInt(),
-      editTime: (json['edit_time'] as num).toInt(),
-      canvas: json['canvas'] as String,
-      canvasSize: json['canvas_size'] as String,
-      originalImage: json['original_image'] as String,
-      ordinaryImage: json['ordinary_image'] as String,
-      thumbnail: json['thumbnail'] as String,
-      recourcesUrl: json['recources_url'] as String,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      editTime: (json['edit_time'] as num?)?.toInt() ?? 0,
+      canvas: json['canvas'] as String? ?? '',
+      canvasSize: json['canvas_size'] as String? ?? '',
+      originalImage: json['original_image'] as String? ?? '',
+      ordinaryImage: json['ordinary_image'] as String? ?? '',
+      thumbnail: json['thumbnail'] as String? ?? '',
+      recourcesUrl: json['recources_url'] as String? ?? '',
       frontData:
           (json['front_data'] as List<dynamic>?)
               ?.map(
@@ -40,8 +40,8 @@ Map<String, dynamic> _$DraftEditModelToJson(DraftEditModel instance) =>
 
 DraftEditItemModel _$DraftEditItemModelFromJson(Map<String, dynamic> json) =>
     DraftEditItemModel(
-      frontId: (json['front_id'] as num?)?.toInt(),
-      frontVersion: json['front_version'] as String?,
+      frontId: (json['front_id'] as num?)?.toInt() ?? 0,
+      frontVersion: json['front_version'] as String? ?? '',
     );
 
 Map<String, dynamic> _$DraftEditItemModelToJson(DraftEditItemModel instance) =>
