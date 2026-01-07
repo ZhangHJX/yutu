@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'model/middle_model.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import 'package:voicetemplate/app/routes/index.dart';
-import 'download_service.dart';
+import 'download/download_service.dart';
 import 'middle_loading.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:voicetemplate/ui/canvas/draft/index.dart';
@@ -63,11 +62,11 @@ class MiddleLogic extends GetxController {
       case PageSource.search:
         return '/homePage/search/read';
       case PageSource.design:
-        return '';
+        return '/design/read';
       case PageSource.draft:
-        return '';
+        return '/design/draft/read';
       case PageSource.favorite:
-        return '';
+        return '/user/favorite/read';
     }
   }
 
@@ -128,9 +127,7 @@ class MiddleLogic extends GetxController {
             ? '/design/favorite-store'
             : '/design/favorite-destroy';
       case PageSource.draft:
-        return isFavorite
-            ? '/design/favorite-store'
-            : '/design/favorite-destroy';
+        return '';
       case PageSource.favorite:
         return '';
     }
@@ -143,10 +140,6 @@ class MiddleLogic extends GetxController {
       showToast('模板信息不存在');
       return;
     }
-
-    if (type == PageSource.draft) {
-    } else {}
-
     // 重置取消标志
     _isCancelled = false;
 
@@ -169,20 +162,69 @@ class MiddleLogic extends GetxController {
         return;
       }
 
-      // 2. 检查并下载资源文件
-      final resourceExists = await DownloadService.instance
-          .checkResourceFileExists(model.id, model.editTime);
+      // 2. 根据来源类型处理资源文件
+      String resourcePath;
+      if (type == PageSource.draft) {
+        // 草稿场景：检查数据库，如果有数据且时间戳匹配，直接使用本地文件
+        final (exists, timestampMatches) = await DownloadService.instance
+            .checkDraftResourceExists(model.id, model.editTime);
 
-      if (!resourceExists) {
-        await DownloadService.instance.downloadResourceFile(
-          model.recourcesUrl,
-          model.id,
-          model.editTime,
-          onProgress: (progress) {
-            debugPrint('资源文件下载进度: ${(50 + progress * 50).toStringAsFixed(1)}%');
-          },
-          shouldCancel: () => _isCancelled,
-        );
+        if (exists && timestampMatches) {
+          // 时间戳匹配，直接使用本地文件
+          debugPrint('MiddleLogic: 草稿 ${model.id} 时间戳匹配，使用本地文件');
+          // 获取草稿资源路径
+          final supportDir = await DirectoryManager.getSupportDirectory();
+          resourcePath = p.join(
+            supportDir.path,
+            'sqflite_draft',
+            '${model.id}',
+          );
+        } else {
+          // 需要下载
+          resourcePath = await DownloadService.instance.downloadDraftResource(
+            model.recourcesUrl,
+            model.id,
+            model.editTime,
+            onProgress: (progress) {
+              debugPrint(
+                '资源文件下载进度: ${(50 + progress * 50).toStringAsFixed(1)}%',
+              );
+            },
+            shouldCancel: () => _isCancelled,
+          );
+        }
+      } else {
+        // 模板场景：检查文件是否存在
+        final resourceExists = await DownloadService.instance
+            .checkTemplateResourceExists(model.id, model.editTime);
+
+        if (resourceExists) {
+          // 文件已存在，直接使用
+          debugPrint(
+            'MiddleLogic: 模板资源文件 ${model.id}_${model.editTime} 已存在，使用本地文件',
+          );
+          final templatesDir = await DirectoryManager.getSupportSubDirectory(
+            'templates',
+          );
+          resourcePath = p.join(
+            templatesDir.path,
+            '${model.id}_${model.editTime}',
+          );
+        } else {
+          // 需要下载
+          resourcePath = await DownloadService.instance
+              .downloadTemplateResource(
+                model.recourcesUrl,
+                model.id,
+                model.editTime,
+                onProgress: (progress) {
+                  debugPrint(
+                    '资源文件下载进度: ${(50 + progress * 50).toStringAsFixed(1)}%',
+                  );
+                },
+                shouldCancel: () => _isCancelled,
+              );
+        }
       }
 
       // 检查是否已取消
@@ -191,22 +233,12 @@ class MiddleLogic extends GetxController {
         return;
       }
 
-      // 3. 获取解压后的资源文件路径
-      final resourcePath = await DownloadService.instance.getResourceFilePath(
-        model.id,
-        model.editTime,
-      );
+      debugPrint('MiddleLogic: 准备获取解压后的数据文件夹: $resourcePath');
 
-      if (resourcePath == null) {
-        SmartDialog.dismiss();
-        return;
-      }
+      // 3. 将资源文件复制到 Documents/cavals 目录
+      await DownloadService.instance.copyResourceToCavals(resourcePath);
 
-      debugPrint('准备获取解压后的数据文件夹:===$resourcePath ');
-
-      // 4. 将解压后的文件移动到 Documents 目录下并改名为 cavals
-      await _moveResourceToCavals(resourcePath);
-
+      // 4. 加载草稿并进入画布编辑器
       final canvalsModel = await DraftManager().loadDraft();
       if (canvalsModel == null) {
         SmartDialog.dismiss();
@@ -219,12 +251,10 @@ class MiddleLogic extends GetxController {
     } catch (e) {
       SmartDialog.dismiss();
       debugPrint('准备模板失败: $e');
-
       // 如果是取消操作，不显示错误提示
       if (_isCancelled || e.toString().contains('取消')) {
         return;
       }
-
       showToast('准备模板失败，请重试');
     }
   }
@@ -251,82 +281,13 @@ class MiddleLogic extends GetxController {
   Future<void> _handleCancelDownload() async {
     _isCancelled = true;
     debugPrint('MiddleLogic: 用户取消下载');
-
     try {
       // 取消所有正在进行的下载（字体和资源）
       await DownloadService.instance.cancelAllDownloads();
     } catch (e) {
       debugPrint('MiddleLogic: 取消下载失败: $e');
     }
-
     SmartDialog.dismiss();
     showToast('已取消下载');
-  }
-
-  /// 将解压后的资源文件移动到 Documents 目录下并改名为 cavals
-  /// 将 sourceDir 目录下的 cavals 文件夹复制到 Documents 下
-  Future<void> _moveResourceToCavals(String sourcePath) async {
-    try {
-      final sourceDir = Directory(sourcePath);
-      if (!await sourceDir.exists()) {
-        debugPrint('MiddleLogic: 源目录不存在: $sourcePath');
-        return;
-      }
-
-      // 查找 sourceDir 目录下的 cavals 文件夹
-      final sourceCavalsDir = Directory(p.join(sourceDir.path, 'cavals'));
-      if (!await sourceCavalsDir.exists()) {
-        debugPrint('MiddleLogic: 源目录下不存在 cavals 文件夹: ${sourceCavalsDir.path}');
-        return;
-      }
-
-      // 获取 Documents/cavals 目录
-      final documentsDir = await DirectoryManager.getDocumentsDirectory();
-      final targetCavalsDir = Directory(p.join(documentsDir.path, 'cavals'));
-
-      // 如果目标目录已存在，先删除（使用 FileManager）
-      if (await targetCavalsDir.exists()) {
-        await FileManager.deleteDirectory(
-          targetCavalsDir,
-          deleteDirectory: true,
-        );
-      }
-
-      // 将 sourceDir 下的 cavals 文件夹复制到 Documents 下
-      await _copyDirectoryRecursive(sourceCavalsDir, targetCavalsDir);
-
-      debugPrint(
-        'MiddleLogic: cavals 文件夹已复制到 Documents: ${targetCavalsDir.path}',
-      );
-    } catch (e) {
-      debugPrint('MiddleLogic: 复制 cavals 文件夹失败: $e');
-      rethrow;
-    }
-  }
-
-  /// 递归复制目录及其所有内容
-  Future<void> _copyDirectoryRecursive(
-    Directory source,
-    Directory destination,
-  ) async {
-    // 确保目标目录存在
-    if (!await destination.exists()) {
-      await destination.create(recursive: true);
-    }
-
-    // 遍历源目录中的所有内容
-    await for (final entity in source.list(recursive: false)) {
-      final fileName = p.basename(entity.path);
-      final targetPath = p.join(destination.path, fileName);
-
-      if (entity is File) {
-        // 复制文件
-        await entity.copy(targetPath);
-      } else if (entity is Directory) {
-        // 递归复制子目录
-        final targetSubDir = Directory(targetPath);
-        await _copyDirectoryRecursive(entity, targetSubDir);
-      }
-    }
   }
 }
