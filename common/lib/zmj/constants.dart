@@ -52,4 +52,4 @@ double calculateAspectRatio(double width, String canvasSize) {
 }
 
 /// 中间页数据来源
-enum PageSource { home, search, design, draft, favorite }
+enum PageSource { home, search, design, draft, favorite, collection }

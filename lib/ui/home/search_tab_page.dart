@@ -66,9 +66,9 @@ class SearchTabPage extends StatelessWidget {
               source: PageSource.search,
               favoriteCallBack: () {
                 if (item.isFavorite == 1) {
-                  logic.favoriteEventDialog(item.id ?? 0);
+                  logic.favoriteEventDialog(item.id);
                 } else {
-                  logic.clickFavorite(item.id ?? 0, true);
+                  logic.clickFavorite(item.id, true);
                 }
               },
             );

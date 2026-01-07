@@ -261,7 +261,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
             final updatedList = List<CommonItemModel>.from(tag.list);
             final oldItem = updatedList[tagIndex];
             final favoriteTotal =
-                (oldItem.favoriteTotal ?? 0) + (shouldFavorite ? 1 : -1);
+                (oldItem.favoriteTotal) + (shouldFavorite ? 1 : -1);
             updatedList[tagIndex] = oldItem.copyWith(
               isFavorite: newFavoriteStatus,
               favoriteTotal: favoriteTotal,
@@ -283,7 +283,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
           if (dataIndex != -1) {
             final oldItem = tabData.dataList[dataIndex];
             final favoriteTotal =
-                (oldItem.favoriteTotal ?? 0) + (shouldFavorite ? 1 : -1);
+                (oldItem.favoriteTotal) + (shouldFavorite ? 1 : -1);
             tabData.dataList[dataIndex] = oldItem.copyWith(
               isFavorite: newFavoriteStatus,
               favoriteTotal: favoriteTotal,
@@ -316,23 +316,24 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   /// 获取是否有草稿信息
   Future<void> showDraftDialog() async {
-    // if (!global.isLogin) {
-    //   return;
-    // }
-    // final isHave = await DraftManager().hasDraft();
-    // if (isHave) {
-    // debugPrint('已经存在草稿列表: $isHave');
-    // final canvasModel = await DraftManager().loadDraft();
-    // if (canvasModel == null) {
-    //   return;
-    // }
-    // debugPrint('已经获取到草稿列表: ${canvasModel.id}');
-    // if (canvasModel.id == 0) {
-    //   showSingleDraftDialog();
-    // } else {
-    requestServiceDraft(CanvasModel());
-    // }
-    // }
+    if (!global.isLogin) {
+      debugPrint('未登录=====或者登录失败');
+      return;
+    }
+    final isHave = await DraftManager().hasDraft();
+    if (isHave) {
+      debugPrint('已经存在草稿列表: $isHave');
+      final canvasModel = await DraftManager().loadDraft();
+      if (canvasModel == null) {
+        return;
+      }
+      debugPrint('已经获取到草稿列表: ${canvasModel.id}');
+      if (canvasModel.id == 0) {
+        showSingleDraftDialog();
+      } else {
+        requestServiceDraft(canvasModel);
+      }
+    }
   }
 
   /// 服务端没有保存的相关的草稿
@@ -361,17 +362,25 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   /// 服务端保存了相关的草稿
   void requestServiceDraft(CanvasModel model) async {
     try {
-      debugPrint('草稿列表已经进行了请求');
       final result = await http.post<DraftEditModel>(
         '/homePage/design/draft/read',
-        data: {'id': '2'},
+        data: {'id': model.id},
         converter: DraftEditModel.fromJson,
         showErrorToast: true,
       );
-      debugPrint("哈哈哈哈哈哈====${result.code}==${result.data}==");
+
       if (result.code == 0 && result.data != null) {
-        debugPrint("哈哈哈哈哈哈====result.code == ${result.data}====");
-        showMutipleDraftDialog(result.data!, model);
+        debugPrint(
+          "本地草稿列表==${model.timestamp}====${result.data}===${result.data!.editTime}===",
+        );
+
+        if (model.timestamp > result.data!.editTime) {
+          showSingleDraftDialog();
+        } else {
+          showMutipleDraftDialog(result.data!, model);
+        }
+      } else {
+        showSingleDraftDialog();
       }
     } catch (e) {
       debugPrint('==本地没有要编辑的草稿==  error: $e');
@@ -387,14 +396,15 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
       builder: (context) => DraftContinueEditWidget(
         localDraftTime: canvalsModel.timestamp,
         serverDraftTime: editModel.editTime,
-        onLocalPreview: () {
+        onLocalPreview: () async {
           final canvasSize = '${canvalsModel.width}:${canvalsModel.height}';
+          final draftImgPath = await DraftManager().getScreenshotFilePath();
           Get.toNamed(
             AppRoutes.draftPreview,
             arguments: {
               "canvasSize": canvasSize,
               "isLocal": true,
-              "imgPath": '',
+              "imgPath": draftImgPath,
             },
           );
         },

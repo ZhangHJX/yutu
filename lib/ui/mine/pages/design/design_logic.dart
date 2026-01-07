@@ -321,7 +321,7 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
           if (dataIndex != -1) {
             final oldItem = tabData.dataList[dataIndex];
             final favoriteTotal =
-                (oldItem.favoriteTotal ?? 0) + (shouldFavorite ? 1 : -1);
+                (oldItem.favoriteTotal) + (shouldFavorite ? 1 : -1);
             tabData.dataList[dataIndex] = oldItem.copyWith(
               isFavorite: newFavoriteStatus,
               favoriteTotal: favoriteTotal,

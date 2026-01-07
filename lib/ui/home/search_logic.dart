@@ -251,7 +251,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
             final updatedList = List<CommonItemModel>.from(tag.list);
             final oldItem = updatedList[tagIndex];
             final favoriteTotal =
-                (oldItem.favoriteTotal ?? 0) + (shouldFavorite ? 1 : -1);
+                (oldItem.favoriteTotal) + (shouldFavorite ? 1 : -1);
             updatedList[tagIndex] = oldItem.copyWith(
               isFavorite: newFavoriteStatus,
               favoriteTotal: favoriteTotal,
@@ -273,7 +273,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
           if (dataIndex != -1) {
             final oldItem = tabData.dataList[dataIndex];
             final favoriteTotal =
-                (oldItem.favoriteTotal ?? 0) + (shouldFavorite ? 1 : -1);
+                (oldItem.favoriteTotal) + (shouldFavorite ? 1 : -1);
             tabData.dataList[dataIndex] = oldItem.copyWith(
               isFavorite: newFavoriteStatus,
               favoriteTotal: favoriteTotal,

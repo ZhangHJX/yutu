@@ -314,16 +314,32 @@ class SaveLogic extends GetxController {
         'cavals',
       );
       final idsStr = model.elements.map((e) => e.fontId).toSet().join(',');
-      final result = await http.post<SaveResponse>(
-        '/design/store',
-        data: {
-          "uuid": model.uuid,
+
+      var params = {
+        "uuid": model.uuid,
+        "edit_time": '${model.timestamp}',
+        "title": titleController.text.trim(),
+        "desc": descriptionController.text.trim(),
+        "canvas": model.ratio,
+        "canvas_size": '${model.width}:${model.height}',
+        "is_clear": model.clarity,
+        "scene_id": '${screenModel.id}',
+        "tag_ids": selectedTags.isEmpty
+            ? ''
+            : selectedTags.map((e) => e.id).join(','),
+        "img_id": '$imageResourceId',
+        "zip_id": '$fileResourceId',
+        "img_file_size": '$imageMemorySize',
+        "zip_file_size": "$fileMemorySize",
+        "front_ids": idsStr,
+      };
+
+      if (model.id > 0) {
+        params = {
+          "id": '${model.id}',
           "edit_time": '${model.timestamp}',
           "title": titleController.text.trim(),
           "desc": descriptionController.text.trim(),
-          "canvas": model.ratio,
-          "canvas_size": '${model.width}:${model.height}',
-          "is_clear": model.clarity,
           "scene_id": '${screenModel.id}',
           "tag_ids": selectedTags.isEmpty
               ? ''
@@ -333,7 +349,12 @@ class SaveLogic extends GetxController {
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
           "front_ids": idsStr,
-        },
+        };
+      }
+
+      final result = await http.post<SaveResponse>(
+        model.id > 0 ? '/design/update' : '/design/store',
+        data: params,
         converter: SaveResponse.fromJson,
         showErrorToast: true,
       );
@@ -345,7 +366,7 @@ class SaveLogic extends GetxController {
           model.timestamp,
         );
 
-        Get.back();
+        Get.back(result: true);
         FileManager.deleteFileByPath(sourceDir.path);
         FileManager.deleteFileByPath(filePath);
       } else {
@@ -366,25 +387,37 @@ class SaveLogic extends GetxController {
       );
       final idsStr = model.elements.map((e) => e.fontId).toSet().join(',');
 
-      // .  /design/draft/update
-      final result = await http.post<SaveResponse>(
-        '/design/draft/store',
-        data: {
-          "uuid": model.uuid,
+      var params = {
+        "uuid": model.uuid,
+        "edit_time": '${model.timestamp}',
+        "title": '',
+        "desc": '',
+        "canvas": model.ratio,
+        "canvas_size": '${model.width}:${model.height}',
+        "is_clear": model.clarity,
+        "scene_id": '',
+        "tag_ids": '',
+        "img_id": '$imageResourceId',
+        "zip_id": '$fileResourceId',
+        "img_file_size": '$imageMemorySize',
+        "zip_file_size": "$fileMemorySize",
+        "front_ids": idsStr,
+      };
+      if (model.id > 0) {
+        params = {
+          "id": '${model.id}',
           "edit_time": '${model.timestamp}',
-          "title": '',
-          "desc": '',
-          "canvas": model.ratio,
-          "canvas_size": '${model.width}:${model.height}',
-          "is_clear": model.clarity,
-          "scene_id": '',
-          "tag_ids": '',
           "img_id": '$imageResourceId',
           "zip_id": '$fileResourceId',
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
           "front_ids": idsStr,
-        },
+        };
+      }
+
+      final result = await http.post<SaveResponse>(
+        model.id > 0 ? '/design/draft/update' : '/design/draft/store',
+        data: params,
         showErrorToast: true,
         converter: SaveResponse.fromJson,
       );
@@ -399,8 +432,7 @@ class SaveLogic extends GetxController {
         } else {
           debugPrint('===草稿保存或更新成功===');
         }
-
-        Get.back();
+        Get.back(result: true);
         FileManager.deleteFileByPath(sourceDir.path);
         FileManager.deleteFileByPath(filePath);
       } else {

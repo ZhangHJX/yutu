@@ -285,8 +285,7 @@ class _MinePageState extends State<MinePage> {
                         },
                         itemBuilder: (_, index) {
                           final item = logic.designList[index];
-                          List<String> parts =
-                              item.canvasSize?.split(':') ?? [];
+                          List<String> parts = item.canvasSize.split(':');
                           if (parts.isEmpty) {
                             parts = ["1", "1"];
                           }

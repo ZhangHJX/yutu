@@ -61,8 +61,11 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
     // 初始化画布属性快照
     initCanvasProperties();
 
-    // 启动草稿自动保存
-    DraftManager().startAutoSave(_canvalsController);
+    // 启动草稿自动保存（传递截图控制器）
+    DraftManager().startAutoSave(
+      _canvalsController,
+      screenshotController: _screenshotController,
+    );
 
     debugPrint("--画布页面的初始化---initState---");
   }

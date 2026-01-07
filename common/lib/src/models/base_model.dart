@@ -35,7 +35,7 @@ class BaseModel<T> {
       EventBusManager.share.emit(AppEventType.logout);
     }
 
-    debugPrint("=====$rawData======");
+    debugPrint("=====$rawData=====错误信息=====$message");
 
     if (showErrorToast && message.isNotEmpty) {
       showToast(message);

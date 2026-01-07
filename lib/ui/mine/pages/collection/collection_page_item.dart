@@ -21,7 +21,7 @@ class CollectionPageItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final itemWidth = (ScreenTools.screenWidth - 30.w - 9.w) / 2;
-    final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize ?? '');
+    final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize);
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
@@ -79,7 +79,7 @@ class CollectionPageItem extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            item.title ?? '',
+                            item.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

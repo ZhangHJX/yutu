@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
+import 'package:screenshot/screenshot.dart';
 import '../model/index.dart';
 import '../pages/canvals/canvals_controller.dart';
 import '../../../file/index.dart';
@@ -18,6 +19,7 @@ class DraftManager {
   DraftManager._internal();
 
   CanvalsController? _controller;
+  ScreenshotController? _screenshotController;
   Timer? _saveTimer;
   bool _isAutoSaving = false;
 
@@ -28,9 +30,17 @@ class DraftManager {
 
   /// 开始自动保存
   /// [controller] 画布控制器
-  void startAutoSave(CanvalsController controller) {
+  /// [screenshotController] 截图控制器（可选），用于保存画布截图
+  void startAutoSave(
+    CanvalsController controller, {
+    ScreenshotController? screenshotController,
+  }) {
     // 如果已经监听同一个控制器，则不需要重新设置
     if (_controller == controller) {
+      // 更新截图控制器（如果提供）
+      if (screenshotController != null) {
+        _screenshotController = screenshotController;
+      }
       return;
     }
 
@@ -38,6 +48,7 @@ class DraftManager {
     stopAutoSave();
 
     _controller = controller;
+    _screenshotController = screenshotController;
 
     // 监听元素列表的变化
     controller.elements.listen((elements) {
@@ -55,6 +66,7 @@ class DraftManager {
     _saveTimer?.cancel();
     _saveTimer = null;
     _controller = null;
+    _screenshotController = null;
   }
 
   /// 调度保存（防抖）
@@ -95,12 +107,45 @@ class DraftManager {
         fileName: 'draft.json',
         content: jsonString,
       );
+
       debugPrint('DraftManager: 草稿已保存到 ${draftDir.path}/draft.json');
+
+      // 保存画布截图
+      await _saveCanvasScreenshot(draftDir);
+
       ishChanage = true;
     } catch (e, stackTrace) {
       debugPrint('DraftManager: 保存草稿失败: $e\n$stackTrace');
     } finally {
       _isAutoSaving = false;
+    }
+  }
+
+  /// 保存画布截图到指定目录
+  /// [draftDir] 草稿保存目录
+  Future<void> _saveCanvasScreenshot(Directory draftDir) async {
+    if (_screenshotController == null) {
+      debugPrint('DraftManager: 截图控制器未设置，跳过截图保存');
+      return;
+    }
+
+    try {
+      // 使用截图控制器捕获画布
+      final imageBytes = await _screenshotController!.capture(pixelRatio: 3.0);
+      if (imageBytes == null) {
+        debugPrint('DraftManager: 截图捕获失败');
+        return;
+      }
+
+      // 保存截图到文件
+      final screenshotPath = p.join(draftDir.path, 'canvas_screenshot.png');
+      final screenshotFile = File(screenshotPath);
+      await screenshotFile.writeAsBytes(imageBytes);
+
+      debugPrint('DraftManager: 画布截图已保存到 $screenshotPath');
+    } catch (e, stackTrace) {
+      debugPrint('DraftManager: 保存画布截图失败: $e\n$stackTrace');
+      // 截图保存失败不影响草稿保存，只记录错误
     }
   }
 
@@ -136,16 +181,22 @@ class DraftManager {
     try {
       final draftDir = await _getDraftDirectory();
 
-      // 删除文件
-      await FileManager.deleteFile(directory: draftDir, fileName: 'draft.json');
-      debugPrint('DraftManager: 草稿已删除: ${draftDir.path}/draft.json');
+      // 如果目录不存在，视为已删除
+      if (!await draftDir.exists()) {
+        debugPrint('DraftManager: 草稿目录不存在，无需删除: ${draftDir.path}');
+        ishChanage = false;
+        return true;
+      }
 
-      final directory = await _getDraftDirectory();
-      await FileManager.deleteDirectory(directory, deleteDirectory: true);
+      // 删除整个草稿目录（包含 draft.json、截图等所有文件）
+      await FileManager.deleteDirectory(draftDir, deleteDirectory: true);
+      debugPrint('DraftManager: 草稿目录已删除: ${draftDir.path}');
+
       ishChanage = false;
       return true;
     } catch (e, stackTrace) {
       debugPrint('DraftManager: 删除草稿失败: $e\n$stackTrace');
+      ishChanage = false;
       return false;
     }
   }
@@ -169,6 +220,18 @@ class DraftManager {
     try {
       final draftDir = await _getDraftDirectory();
       final String filePath = p.join(draftDir.path, 'draft.json');
+      return filePath;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /// 获取本地保存的画布截图路径
+  /// 返回完整文件路径，如果失败则返回空字符串
+  Future<String> getScreenshotFilePath() async {
+    try {
+      final draftDir = await _getDraftDirectory();
+      final String filePath = p.join(draftDir.path, 'canvas_screenshot.png');
       return filePath;
     } catch (e) {
       return '';

@@ -15,7 +15,6 @@ class CanvasModel {
   String uuid;
   String ratio;
   String clarity;
-  bool isCreate;
 
   double x;
   double y;
@@ -43,7 +42,6 @@ class CanvasModel {
     this.uuid = '',
     this.ratio = '',
     this.clarity = '0',
-    this.isCreate = false,
     this.x = 0.0,
     this.y = 0.0,
     this.width = 1080,

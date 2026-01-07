@@ -21,7 +21,7 @@ class DesiginPageItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final itemWidth = (ScreenTools.screenWidth - 30.w - 9.w) / 2;
-    final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize ?? '');
+    final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize);
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(

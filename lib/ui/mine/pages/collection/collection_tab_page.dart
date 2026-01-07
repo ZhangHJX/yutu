@@ -94,7 +94,7 @@ class _DesignItemWidget extends StatelessWidget {
           } else {
             Get.toNamed(
               AppRoutes.middle,
-              arguments: {'id': item.id, "type": PageSource.design},
+              arguments: {'id': item.id, "type": PageSource.collection},
             );
           }
         },

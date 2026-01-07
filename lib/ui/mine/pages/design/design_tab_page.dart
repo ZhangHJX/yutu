@@ -98,15 +98,15 @@ class _DesignItemWidget extends StatelessWidget {
           } else {
             Get.toNamed(
               AppRoutes.middle,
-              arguments: {'id': item.id, "type": PageSource.design},
+              arguments: {'id': item.id, "type": PageSource.other},
             );
           }
         },
         favoriteCallBack: () {
           if (item.isFavorite == 1) {
-            logic.favoriteEventDialog(item.id ?? 0);
+            logic.favoriteEventDialog(item.id);
           } else {
-            logic.clickFavorite(item.id ?? 0, true);
+            logic.clickFavorite(item.id, true);
           }
         },
       );

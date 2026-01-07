@@ -239,15 +239,7 @@ class MiddleLogic extends GetxController {
       await DownloadService.instance.copyResourceToCavals(resourcePath);
 
       // 4. 加载草稿并进入画布编辑器
-      final canvalsModel = await DraftManager().loadDraft();
-      if (canvalsModel == null) {
-        SmartDialog.dismiss();
-        return;
-      }
-      // 根据当前屏幕重新计算画布矩阵
-      canvalsModel.getMatrix4();
-      SmartDialog.dismiss();
-      Get.toNamed(AppRoutes.canvalsPage, arguments: canvalsModel);
+      await pushCanvansDetail();
     } catch (e) {
       SmartDialog.dismiss();
       debugPrint('准备模板失败: $e');
@@ -257,6 +249,24 @@ class MiddleLogic extends GetxController {
       }
       showToast('准备模板失败，请重试');
     }
+  }
+
+  Future<void> pushCanvansDetail() async {
+    final canvalsModel = await DraftManager().loadDraft();
+    canvalsModel?.id = middleInfo.value?.id ?? 0;
+    if (canvalsModel == null) {
+      SmartDialog.dismiss();
+      return;
+    }
+    // 根据当前屏幕重新计算画布矩阵
+    canvalsModel.getMatrix4();
+    SmartDialog.dismiss();
+
+    Get.toNamed(AppRoutes.canvalsPage, arguments: canvalsModel)?.then((result) {
+      if (result == true) {
+        getMidelDetailData();
+      }
+    });
   }
 
   /// 服务端没有保存的相关的草稿

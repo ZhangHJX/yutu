@@ -197,8 +197,6 @@ class DraftLogic extends GetxController {
     for (final idStr in ids) {
       final id = int.tryParse(idStr);
       if (id == null) {
-        // 不是纯数字就跳过/或移除选中，按你需求
-        // selectedIds.remove(idStr);
         continue;
       }
       await DraftStoreManager.instance.deleteDraftById(id);
