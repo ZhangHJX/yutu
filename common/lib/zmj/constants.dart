@@ -55,4 +55,4 @@ double calculateAspectRatio(double width, String canvasSize) {
 enum PageSource { home, search, design, draft, favorite }
 
 /// 资源文件存储目录
-const String resourcesDirName = 'templates';
+String resourcesDirName = 'templates';

@@ -17,7 +17,6 @@ class TextPropertyController extends GetxController {
   /// 字体相关属性
   final RxString familyKey = 'AlibabaPuHuiTi'.obs;
   final RxString styleName = defaultConfigStyleName.obs;
-  final RxString version = '1.0.0'.obs;
   final RxnInt selectedFontId = RxnInt();
   final RxString fontSize = '16'.obs;
 

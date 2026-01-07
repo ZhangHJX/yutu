@@ -205,32 +205,3 @@ class DraftStoreManager {
     }
   }
 }
-
-
-/*
-
-  /// 根据 id 获取草稿
-  /// 返回 CanvasModel，如果不存在则返回 null
-  Future<CanvasModel?> getDraftById(int id) async {
-    try {
-      if (id == 0) {
-        return null;
-      }
-
-      final draftModel = await DraftStore.instance.getById(id);
-      if (draftModel == null) {
-        return null;
-      }
-
-      // 将 DraftModel 的 text 字段解析为 CanvasModel
-      final jsonData = jsonDecode(draftModel.textJson) as Map<String, dynamic>;
-      final canvasModel = CanvasModel.fromJson(jsonData);
-
-      return canvasModel;
-    } catch (e, stackTrace) {
-      debugPrint('DraftStoreManager: 获取草稿失败: $e\n$stackTrace');
-      return null;
-    }
-  }
-
-*/ 
