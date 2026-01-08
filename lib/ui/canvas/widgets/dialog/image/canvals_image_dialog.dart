@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'image_logic.dart';
 import 'model/image_list_models.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'manager/canvals_image_manager.dart';
+import 'package:voicetemplate/ui/utils/file/picker_image_manager.dart';
+import 'package:voicetemplate/file/index.dart';
+import 'package:path/path.dart' as p;
+import 'dart:io';
+import 'manager/material_manager.dart';
 
 class CanvalsImageDialog extends StatefulWidget {
   final Function(String imageUrl, double? width, double? height)?
@@ -318,24 +321,47 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
                 showToast('请选择一张图片');
                 return;
               }
-
               final model = list[index];
               final result = getCanvasSizeWH(model.canvasSize);
 
               try {
                 showLoading('正在添加图片');
 
-                // 统一由管理器处理“是否已下载 + 拷贝到 cavals/images”
-                final String fileName = await CanvalsImageManager.instance
-                    .ensureImageInCanvasImages(model.image);
+                // 1. 使用 ImageModel 中 image 的文件名，判断 Application Support/localAsset 文件夹下是否存在该图片
+                final localAssetDir =
+                    await DirectoryManager.getSupportSubDirectory('localAsset');
 
-                // 回调到外部，在画布中新增图片
-                if (widget.onImageSelected != null) {
-                  widget.onImageSelected!(fileName, result.$1, result.$2);
+                final fileName = Uri.parse(model.image).pathSegments.last;
+                final localAssetPath = p.join(localAssetDir.path, fileName);
+                final localAssetFile = File(localAssetPath);
+                File? finalFile;
+                if (await localAssetFile.exists()) {
+                  // 2. 如果存在则直接使用
+                  finalFile = localAssetFile;
+                } else {
+                  // 3. 如果没有，使用 background_downloader 下载到 localAsset
+                  // ensureImageInLocalAsset 也会从 URL 提取相同的文件名，确保一致性
+                  finalFile = await MaterialManager.instance
+                      .ensureImageInLocalAsset(model.image);
                 }
 
-                // 关闭当前图片选择弹窗
-                SmartDialog.dismiss();
+                // 4. 再将图片拷贝到 Documents/cavals/images 目录
+                final Directory cavalsDir = Directory(
+                  PickerImageManager.cavalsPath,
+                );
+                if (!await cavalsDir.exists()) {
+                  await cavalsDir.create(recursive: true);
+                }
+                final String targetPath = p.join(cavalsDir.path, fileName);
+                final File targetFile = File(targetPath);
+                if (!await targetFile.exists()) {
+                  await finalFile.copy(targetPath);
+                }
+
+                // 5. 返回画布使用的相对路径（文件名），通过 onUploadSuccess 传递到画布数据中，dialog 弹框消失
+                if (logic.onUploadSuccess != null) {
+                  logic.onUploadSuccess!(fileName, result.$1, result.$2);
+                }
               } catch (e, stackTrace) {
                 debugPrint('添加图片到画布失败: $e\n$stackTrace');
                 showToast('添加图片失败，请稍后重试');

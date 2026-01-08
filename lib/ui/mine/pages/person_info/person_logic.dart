@@ -154,7 +154,6 @@ class PersonLogic extends GetxController {
   void getUploadInfo(String filePath) async {
     try {
       showLoading("上传中");
-
       final fileType = ImageCameraUtils.getFileExtensionFromPath(filePath);
       final result = await http.post<UploadOssModel>(
         '/upload/generateUploadUrl',
@@ -198,7 +197,7 @@ class PersonLogic extends GetxController {
         useBaseUrl: false,
         isNake: true,
       );
-      if (res.isSuccess) {
+      if (res.isSuccess || (res.code == 200)) {
         // 上传成功后更新为服务器URL
         fileId = ossModel.resourceId;
         avatar.value = filePath;

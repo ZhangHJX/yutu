@@ -3,6 +3,7 @@ import 'package:common/common.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import 'package:voicetemplate/ui/utils/file/index.dart';
 import 'package:voicetemplate/ui/model/index.dart';
+import 'package:voicetemplate/file/index.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 
@@ -11,7 +12,6 @@ import 'dart:io';
 class ImageLogic extends GetxController {
   //上传成功
   Function(String imagePath, double width, double height)? onUploadSuccess;
-
   // 当前页码
   int currentPage = 1;
   // 图片列表
@@ -147,8 +147,7 @@ class ImageLogic extends GetxController {
         converter: UploadOssModel.fromJson,
         showErrorToast: false,
       );
-      debugPrint('===${result.code}=====获取图片上传url报错====${result.data}===');
-      if ((result.code == 0 || result.code == 200) && result.data != null) {
+      if (result.code == 0 && result.data != null) {
         String mimeType = mimeTypeMap[fileType] ?? "";
         await uploadFile(
           result.data!,
@@ -195,14 +194,8 @@ class ImageLogic extends GetxController {
       );
 
       /// 上传成功
-      if (res.isSuccess) {
-        await requestImage(
-          filePath,
-          ossModel.resourceId,
-          fileSize,
-          width,
-          height,
-        );
+      if (res.isSuccess || (res.code == 200)) {
+        await requestImage(filePath, ossModel, fileSize, width, height);
       } else {
         showToast("图片上传失败"); // 上传失败
         await PickerImageManager.deleteDirectory();
@@ -218,7 +211,7 @@ class ImageLogic extends GetxController {
   /// 把获取到的信息传给后台
   Future<void> requestImage(
     String filePath,
-    int resourceId,
+    UploadOssModel ossModel,
     int fileSize,
     double width,
     double height,
@@ -227,15 +220,14 @@ class ImageLogic extends GetxController {
       final result = await http.post(
         '/user/material/store',
         data: {
-          "img_id": '$resourceId',
+          "img_id": '${ossModel.resourceId}',
           "img_file_size": '$fileSize',
           "canvas_size": '$width:$height',
         },
         showErrorToast: false,
       );
-      debugPrint('========>>>把获取到的信息传给后台=${result.code}==');
-      if (result.code == 0 || result.code == 200) {
-        await savePickerImage(filePath, width, height);
+      if (result.code == 0) {
+        await savePickerImage(ossModel, filePath, width, height);
       } else {
         await PickerImageManager.deleteDirectory();
         SmartDialog.dismiss(status: SmartStatus.loading);
@@ -248,19 +240,27 @@ class ImageLogic extends GetxController {
   }
 
   Future<void> savePickerImage(
+    UploadOssModel ossModel,
     String filePath,
     double width,
     double height,
   ) async {
     try {
-      final fileName = p.basenameWithoutExtension(filePath);
-      final ext = ImageCameraUtils.getFileExtensionFromPath(filePath);
-      final fileFormat = '$fileName.$ext';
-      final fullPath = p.join(PickerImageManager.cavalsPath, fileFormat);
+      // 使用 UploadOssModel 中 file 的文件名
+      final fileFormat = Uri.parse(ossModel.file).pathSegments.last;
 
-      /// 将临时保存的图片，保存到这新的路径下
-      await copyImageFilePath(fromPath: filePath, toPath: fullPath);
+      // 1. 复制到 Application Support/localAsset 文件夹（不存在则创建）
+      final localAssetDir = await DirectoryManager.getSupportSubDirectory(
+        'localAsset',
+      );
+      final localAssetPath = p.join(localAssetDir.path, fileFormat);
+      await copyImageFilePath(fromPath: filePath, toPath: localAssetPath);
 
+      // 2. 同时复制到 Documents/cavals/images 目录
+      final cavalsPath = p.join(PickerImageManager.cavalsPath, fileFormat);
+      await copyImageFilePath(fromPath: filePath, toPath: cavalsPath);
+
+      // 3. 将图片名、宽高通过 onUploadSuccess 传递到画布数据中，dialog 弹框消失
       if (onUploadSuccess != null) {
         onUploadSuccess!(fileFormat, width, height);
       }

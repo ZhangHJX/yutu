@@ -4,7 +4,6 @@ import 'package:path/path.dart' as p;
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'image_camera_utils.dart';
-import 'dart:io';
 
 class PickerImageManager {
   static const int maxSizeBites = 10 * 1024 * 1024;
@@ -77,11 +76,6 @@ class PickerImageManager {
         textDelegate: const AssetPickerTextDelegate(),
       ),
     );
-  }
-
-  /// 我的素材的绝对路径
-  static Future<Directory> getSuCaiRelative() async {
-    return await DirectoryManager.getDocumentsSubDirectory('localAsset');
   }
 
   /// 删除在相册中选中的图片的临时保存路径

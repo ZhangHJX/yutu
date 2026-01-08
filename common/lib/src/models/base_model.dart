@@ -35,16 +35,16 @@ class BaseModel<T> {
       EventBusManager.share.emit(AppEventType.logout);
     }
 
-    debugPrint("=====$rawData=====错误信息=====$message");
+    debugPrint("=====$json=====接口返回信息=====$message");
 
-    if (showErrorToast && message.isNotEmpty) {
-      showToast(message);
-    }
-
-    if (rawData is Map) {
-      data = fromJsonT(rawData as Map<String, dynamic>);
-    } else {
-      data = fromJsonT({dstValueKey: rawData});
+    try {
+      if (rawData is Map) {
+        data = fromJsonT(Map<String, dynamic>.from(rawData));
+      } else {
+        data = fromJsonT({dstValueKey: rawData});
+      }
+    } finally {
+      if (showErrorToast && message.isNotEmpty) showToast(message);
     }
 
     return BaseModel(code: code, message: message, data: data);

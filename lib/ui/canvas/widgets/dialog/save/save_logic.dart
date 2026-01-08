@@ -210,7 +210,7 @@ class SaveLogic extends GetxController {
       );
 
       /// 上传成功
-      if (res.isSuccess) {
+      if (res.isSuccess || (res.code == 200)) {
         imageMemorySize = (bytes.length / 1024).ceil(); // 向上取整
         imageResourceId = ossModel.resourceId;
         await handleZipResource(model);
