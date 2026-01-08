@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:voicetemplate/ui/canvas/fonts/font_manager.dart';
-import 'package:voicetemplate/ui/canvas/draft/index.dart';
+import 'package:voicetemplate/ui/middle/manager/index.dart';
 
 // Binding 只负责 new 对象 + Get.put
 class AppBinding extends Bindings {

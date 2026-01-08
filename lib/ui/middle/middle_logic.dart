@@ -4,11 +4,11 @@ import 'package:path/path.dart' as p;
 import 'model/middle_model.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import 'package:voicetemplate/app/routes/index.dart';
-import 'download/download_service.dart';
 import 'middle_loading.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:voicetemplate/ui/canvas/draft/index.dart';
 import '../../stores/global.dart';
+import 'download/index.dart';
 
 class MiddleLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
@@ -214,6 +214,9 @@ class MiddleLogic extends GetxController {
             },
             shouldCancel: () => _isCancelled,
           );
+
+          ///保存到数据库
+          await DraftResourceDownload.instance.saveOrUpdateDraft(model);
         }
       } else {
         // 模板场景：检查文件是否存在

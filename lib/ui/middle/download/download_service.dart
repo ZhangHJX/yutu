@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
 import '../model/middle_model.dart';
 import 'font_download_service.dart';
-import 'resource_download_service.dart';
+import 'draft_resource_download.dart';
+import 'template_resource_download.dart';
 
-/// 模板下载服务
+/// 下载服务管理类
 /// 负责协调字体和资源文件的下载
 /// 区分草稿和模板两种场景
 class DownloadService {
@@ -13,16 +14,19 @@ class DownloadService {
   /// 字体下载服务
   final FontDownloadService _fontService = FontDownloadService.instance;
 
-  /// 资源文件下载服务
-  final ResourceDownloadService _resourceService =
-      ResourceDownloadService.instance;
+  /// 草稿资源下载服务
+  final DraftResourceDownload _draftService = DraftResourceDownload.instance;
+
+  /// 模板资源下载服务
+  final TemplateResourceDownload _templateService =
+      TemplateResourceDownload.instance;
 
   /// 检查字体文件是否存在且版本匹配
   Future<bool> checkFontExists(int fontId, String requiredVersion) async {
     return await _fontService.checkFontExists(fontId, requiredVersion);
   }
 
-  /// 下载字体文件
+  /// 下载单个字体文件
   /// 如果字体不存在或版本不匹配，则下载新版本
   /// 下载完成后，删除旧版本，移动新版本到字体文件夹
   Future<void> downloadFontIfNeeded(
@@ -35,11 +39,6 @@ class DownloadService {
       onProgress: onProgress,
       shouldCancel: shouldCancel,
     );
-  }
-
-  /// 取消所有正在进行的字体下载
-  Future<void> cancelAllFontDownloads() async {
-    return await _fontService.cancelAllFontDownloads();
   }
 
   /// 下载所有需要的字体（并发下载）
@@ -55,13 +54,18 @@ class DownloadService {
     );
   }
 
+  /// 取消所有正在进行的字体下载
+  Future<void> cancelAllFontDownloads() async {
+    return await _fontService.cancelAllFontDownloads();
+  }
+
   /// 检查草稿资源文件是否存在
   /// 返回 (是否存在, 时间戳是否匹配)
   Future<(bool exists, bool timestampMatches)> checkDraftResourceExists(
     int id,
     int editTime,
   ) async {
-    return await _resourceService.checkDraftResourceExists(id, editTime);
+    return await _draftService.checkDraftResourceExists(id, editTime);
   }
 
   /// 下载草稿资源文件
@@ -75,7 +79,7 @@ class DownloadService {
     ValueChanged<double>? onProgress,
     bool Function()? shouldCancel,
   }) async {
-    return await _resourceService.downloadDraftResource(
+    return await _draftService.downloadDraftResource(
       resourcesUrl,
       id,
       editTime,
@@ -95,7 +99,7 @@ class DownloadService {
     ValueChanged<double>? onProgress,
     bool Function()? shouldCancel,
   }) async {
-    return await _resourceService.downloadTemplateResource(
+    return await _templateService.downloadTemplateResource(
       resourcesUrl,
       id,
       editTime,
@@ -106,24 +110,26 @@ class DownloadService {
 
   /// 检查模板资源文件是否存在（解压后是目录）
   Future<bool> checkTemplateResourceExists(int id, int editTime) async {
-    return await _resourceService.checkTemplateResourceExists(id, editTime);
+    return await _templateService.checkTemplateResourceExists(id, editTime);
   }
 
   /// 取消当前正在进行的资源文件下载
+  /// 同时取消草稿和模板的下载任务
   Future<void> cancelResourceDownload() async {
-    return await _resourceService.cancelResourceDownload();
+    await _draftService.cancelResourceDownload();
+    await _templateService.cancelResourceDownload();
   }
 
   /// 取消所有正在进行的下载（字体和资源）
   Future<void> cancelAllDownloads() async {
     await _fontService.cancelAllFontDownloads();
-    await _resourceService.cancelResourceDownload();
+    await cancelResourceDownload();
   }
 
   /// 将资源文件复制到 Documents/cavals 目录
   /// 将 sourcePath 目录的内容直接复制到 Documents/cavals
   /// 注意：sourcePath 目录的内容就是 cavals 的内容（zip 解压后的内容）
   Future<void> copyResourceToCavals(String sourcePath) async {
-    return await _resourceService.copyResourceToCavals(sourcePath);
+    return await _draftService.copyResourceToCavals(sourcePath);
   }
 }

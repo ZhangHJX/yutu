@@ -10,6 +10,7 @@ import 'package:voicetemplate/ui/canvas/model/index.dart';
 import 'package:voicetemplate/ui/canvas/draft/index.dart';
 import './model/save_response.dart';
 import 'template/template_manager.dart';
+import 'package:voicetemplate/ui/middle/manager/index.dart';
 
 class SaveLogic extends GetxController {
   // 获取画布控制器
@@ -450,7 +451,6 @@ class SaveLogic extends GetxController {
           model,
           result.data!.id,
         );
-
         if (!success) {
           debugPrint('===草稿保存或更新失败===');
         } else {
@@ -477,7 +477,6 @@ class SaveLogic extends GetxController {
   }
 }
 
-
 /*
 草稿：
   * 保存模版： 新建
@@ -486,5 +485,4 @@ class SaveLogic extends GetxController {
 其它的要区分是否是自己
   别人的都是 新建
   自己的保存模版都是更新，保存草稿都是新建
-*/ 
-
+*/

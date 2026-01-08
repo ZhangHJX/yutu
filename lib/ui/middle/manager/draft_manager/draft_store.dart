@@ -17,7 +17,7 @@ class DraftStore {
   Database? _database;
   bool _isInitialized = false;
   static const String _tableName = 'drafts';
-  static const int _version = 2;
+  static const int _version = 4; // 升级版本，删除 text 列
 
   /// 初始化数据库
   Future<void> init() async {
@@ -58,7 +58,6 @@ class DraftStore {
       CREATE TABLE $_tableName (
         pk INTEGER PRIMARY KEY AUTOINCREMENT,
         canvasId INTEGER UNIQUE NOT NULL,
-        textJson TEXT NOT NULL,
         timestamp INTEGER NOT NULL
       )
     ''');

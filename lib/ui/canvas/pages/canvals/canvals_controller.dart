@@ -13,7 +13,6 @@ class CanvalsController extends GetxController {
   CanvasModel get canvasModel => args['model'] as CanvasModel;
   PageSource get type => args['type'] as PageSource;
   int get isOwn => (args['is_own'] ?? 1) as int;
-  int get middleId => (args['middleId'] ?? 0) as int;
 
   PointerEvent? currentPoint; // 画布点击
 
@@ -30,7 +29,6 @@ class CanvalsController extends GetxController {
       // 确保模型中的元素列表引用响应式列表，便于后续保存快照
       canvasModel.elements = elements;
     }
-
     debugPrint("--走过的路线---onInit---");
   }
 

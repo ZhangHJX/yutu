@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../model/common_model.dart';
 import 'package:voicetemplate/stores/global.dart';
 import 'package:voicetemplate/stores/user_model.dart';
-import 'package:voicetemplate/ui/canvas/draft/index.dart';
+import 'package:voicetemplate/ui/middle/manager/index.dart';
 
 class DraftLogic extends GetxController {
   /// 全局

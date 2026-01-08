@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
-import '../../model/index.dart';
+import '../../../canvas/model/index.dart';
 import '../../../../file/index.dart';
 import 'draft_store.dart';
 import 'draft_model.dart';
@@ -20,15 +20,13 @@ class DraftStoreManager {
   }
 
   /// 保存或更新草稿
-  ///
   /// [canvasModel] 画布模型
   /// 返回 true 表示成功，false 表示失败
   Future<bool> saveOrUpdateDraft(CanvasModel canvasModel, int id) async {
     try {
-      // 1. 将 CanvasModel 转换为 DraftModel
+      // 1. 创建 DraftModel（不再保存画布 JSON 数据）
       final draftModel = DraftModel(
         id: id,
-        text: canvasModel.toJson(),
         timestamp: canvasModel.timestamp > 0
             ? canvasModel.timestamp
             : DateTime.now().millisecondsSinceEpoch ~/ 1000,
@@ -129,14 +127,12 @@ class DraftStoreManager {
       }
       // 1. 删除数据库记录
       final dbSuccess = await DraftStore.instance.deleteById(id);
-
       // 2. 删除文件目录
       try {
         final supportDir = await DirectoryManager.getSupportDirectory();
         final draftDir = Directory(
           p.join(supportDir.path, 'sqflite_draft', '$id'),
         );
-
         if (await draftDir.exists()) {
           await FileManager.deleteDirectory(draftDir, deleteDirectory: true);
           debugPrint('DraftStoreManager: 草稿文件目录已删除: ${draftDir.path}');
@@ -145,11 +141,9 @@ class DraftStoreManager {
         debugPrint('DraftStoreManager: 删除草稿文件目录失败: $e');
         // 文件删除失败不影响返回结果
       }
-
       if (dbSuccess) {
         debugPrint('DraftStoreManager: 草稿已删除, id=$id');
       }
-
       return dbSuccess;
     } catch (e, stackTrace) {
       debugPrint('DraftStoreManager: 删除草稿失败: $e\n$stackTrace');
