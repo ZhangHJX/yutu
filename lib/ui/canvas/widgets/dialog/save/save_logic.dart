@@ -34,6 +34,9 @@ class SaveLogic extends GetxController {
   final showScenarioDropdown = false.obs;
   RxString sceneName = ''.obs;
 
+  RxBool tempteIsCreate = true.obs;
+  RxBool draftIsCreate = true.obs;
+
   ///风格标签
   final suggestedTags = <ScreenItemModel>[].obs;
   final selectedTags = <ScreenItemModel>[].obs;
@@ -314,6 +317,9 @@ class SaveLogic extends GetxController {
         'cavals',
       );
       final idsStr = model.elements.map((e) => e.fontId).toSet().join(',');
+      if (canvalsLogic.isOwn == 1) {
+        tempteIsCreate.value = false;
+      }
 
       var params = {
         "uuid": model.uuid,
@@ -334,7 +340,7 @@ class SaveLogic extends GetxController {
         "front_ids": idsStr,
       };
 
-      if (model.id > 0) {
+      if (!tempteIsCreate.value) {
         params = {
           "id": '${model.id}',
           "edit_time": '${model.timestamp}',
@@ -353,7 +359,7 @@ class SaveLogic extends GetxController {
       }
 
       final result = await http.post<SaveResponse>(
-        model.id > 0 ? '/design/update' : '/design/store',
+        tempteIsCreate.value ? '/design/store' : '/design/update',
         data: params,
         converter: SaveResponse.fromJson,
         showErrorToast: true,
@@ -387,6 +393,10 @@ class SaveLogic extends GetxController {
       );
       final idsStr = model.elements.map((e) => e.fontId).toSet().join(',');
 
+      if (canvalsLogic.type == PageSource.draft) {
+        draftIsCreate.value = false;
+      }
+
       var params = {
         "uuid": model.uuid,
         "edit_time": '${model.timestamp}',
@@ -403,7 +413,7 @@ class SaveLogic extends GetxController {
         "zip_file_size": "$fileMemorySize",
         "front_ids": idsStr,
       };
-      if (model.id > 0) {
+      if (!draftIsCreate.value) {
         params = {
           "id": '${model.id}',
           "edit_time": '${model.timestamp}',
@@ -416,7 +426,7 @@ class SaveLogic extends GetxController {
       }
 
       final result = await http.post<SaveResponse>(
-        model.id > 0 ? '/design/draft/update' : '/design/draft/store',
+        draftIsCreate.value ? '/design/draft/store' : '/design/draft/update',
         data: params,
         showErrorToast: true,
         converter: SaveResponse.fromJson,
@@ -447,3 +457,15 @@ class SaveLogic extends GetxController {
     }
   }
 }
+
+
+/*
+草稿：
+  * 保存模版： 新建
+  * 保存草稿： 更新
+
+其它的要区分是否是自己
+  别人的都是 新建
+  自己的保存模版都是更新，保存草稿都是新建
+*/ 
+

@@ -67,6 +67,8 @@ class MiddleLogic extends GetxController {
         return '/design/draft/read';
       case PageSource.favorite:
         return '/user/favorite/read';
+      case PageSource.create:
+        return '';
     }
   }
 
@@ -127,8 +129,8 @@ class MiddleLogic extends GetxController {
             ? '/design/favorite-store'
             : '/design/favorite-destroy';
       case PageSource.draft:
-        return '';
       case PageSource.favorite:
+      case PageSource.create:
         return '';
     }
   }
@@ -262,7 +264,15 @@ class MiddleLogic extends GetxController {
     canvalsModel.getMatrix4();
     SmartDialog.dismiss();
 
-    Get.toNamed(AppRoutes.canvalsPage, arguments: canvalsModel)?.then((result) {
+    Get.toNamed(
+      AppRoutes.canvalsPage,
+      arguments: {
+        "model": canvalsModel,
+        "type": type,
+        "is_own": middleInfo.value?.isOwn,
+        "middleId": middleInfo.value?.id,
+      },
+    )?.then((result) {
       if (result == true) {
         getMidelDetailData();
       }

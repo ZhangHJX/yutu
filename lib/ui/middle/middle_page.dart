@@ -51,7 +51,8 @@ class MiddlePage extends StatelessWidget {
                           ),
 
                           // 收藏按钮
-                          if (logic.type != PageSource.favorite)
+                          if (logic.type != PageSource.favorite ||
+                              logic.type != PageSource.draft)
                             GestureDetector(
                               onTap: () {
                                 if (logic.isFavorite.value == 1) {

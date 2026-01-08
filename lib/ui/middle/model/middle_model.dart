@@ -36,6 +36,10 @@ class MiddleModel {
   @JsonKey(name: 'tag_data', defaultValue: [])
   final List<TagItemModel> tagData;
 
+  ///新增 是否是自己  0 否   1 是
+  @JsonKey(name: 'is_own', defaultValue: 0)
+  final int isOwn;
+
   MiddleModel({
     required this.id,
     required this.editTime,
@@ -52,6 +56,7 @@ class MiddleModel {
     required this.isFavorite,
     required this.frontData,
     required this.tagData,
+    required this.isOwn,
   });
 
   factory MiddleModel.fromJson(Map<String, dynamic> json) =>
@@ -75,6 +80,7 @@ class MiddleModel {
     int? isFavorite,
     List<FontItemModel>? frontData,
     List<TagItemModel>? tagData,
+    int? isOwn,
   }) {
     return MiddleModel(
       id: id ?? this.id,
@@ -92,6 +98,7 @@ class MiddleModel {
       isFavorite: isFavorite ?? this.isFavorite,
       frontData: frontData ?? this.frontData,
       tagData: tagData ?? this.tagData,
+      isOwn: isOwn ?? this.isOwn,
     );
   }
 }

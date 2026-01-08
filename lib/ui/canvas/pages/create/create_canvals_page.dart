@@ -145,7 +145,10 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
 
       canvalsModel.getMatrix4();
       _onCancel();
-      Get.toNamed(AppRoutes.canvalsPage, arguments: canvalsModel);
+      Get.toNamed(
+        AppRoutes.canvalsPage,
+        arguments: {"model": canvalsModel, "type": PageSource.create},
+      );
     } else {
       if (_widthController.text.isEmpty) {
         showToast("请输入宽度值");
@@ -165,7 +168,10 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
       );
       canvalsModel.getMatrix4();
       _onCancel();
-      Get.toNamed(AppRoutes.canvalsPage, arguments: canvalsModel);
+      Get.toNamed(
+        AppRoutes.canvalsPage,
+        arguments: {"model": canvalsModel, "type": PageSource.create},
+      );
     }
   }
 
