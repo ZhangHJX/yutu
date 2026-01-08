@@ -1,6 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:voicetemplate/ui/canvas/draft/draft_manager.dart';
 import '../../model/index.dart';
 import '../../history/clone_tools/canvas_model_clone.dart';
 import 'dart:math' as math;
@@ -12,7 +13,7 @@ class CanvalsController extends GetxController {
   CanvasModel get canvasModel => args['model'] as CanvasModel;
   PageSource get type => args['type'] as PageSource;
   int get isOwn => (args['is_own'] ?? 1) as int;
-  int get middleId => args['middleId'] as int;
+  int get middleId => (args['middleId'] ?? 0) as int;
 
   PointerEvent? currentPoint; // 画布点击
 
@@ -31,6 +32,12 @@ class CanvalsController extends GetxController {
     }
 
     debugPrint("--走过的路线---onInit---");
+  }
+
+  @override
+  void onReady() {
+    DraftManager().initSaveDraft();
+    super.onReady();
   }
 
   CanvasModel? buildSnapshot() {

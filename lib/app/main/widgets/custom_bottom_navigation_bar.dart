@@ -4,7 +4,6 @@ import '../logic.dart';
 import 'custom_tab_bar.dart';
 import 'tab_bar_item.dart';
 import 'center_tab_bar_button.dart';
-import 'package:voicetemplate/ui/canvas/pages/create/create_canvals_page.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   const CustomBottomNavigationBar({super.key});
@@ -13,13 +12,13 @@ class CustomBottomNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetX<MainLogic>(
       builder: (logic) {
-        final currentIndex = logic.globalLogic.tabIndex.value;
+        final currentIndex = logic.global.tabIndex.value;
         debugPrint('currentIndex:$currentIndex');
         return CustomTabBarWithCenter(
           currentIndex: currentIndex,
           onTap: (index) {
             debugPrint('CustomTabBarWithCenter:$index');
-            logic.globalLogic.tabIndex.value = index;
+            logic.global.tabIndex.value = index;
           },
           items: [
             TabBarItem(
@@ -52,33 +51,8 @@ class CustomBottomNavigationBar extends StatelessWidget {
               frameDuration: const Duration(milliseconds: 50),
             ),
             size: 70,
-            onTap: () {
-              _showCreateDesignDialog();
-            },
+            onTap: logic.clickCenterBtn,
           ),
-        );
-      },
-    );
-  }
-
-  void _showCreateDesignDialog() {
-    SmartDialog.show(
-      builder: (context) => const CreateCanvalsPage(),
-      alignment: Alignment.bottomCenter,
-      animationType: SmartAnimationType.centerFade_otherSlide,
-      maskColor: Colors.black,
-      maskWidget: null,
-      clickMaskDismiss: true,
-      keepSingle: true,
-      permanent: false,
-      animationTime: const Duration(milliseconds: 300),
-      animationBuilder: (controller, child, animationParam) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOut)),
-          child: child,
         );
       },
     );

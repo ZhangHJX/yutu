@@ -17,7 +17,7 @@ class MainPage extends StatelessWidget {
         extendBody: true,
         body: Obx(
           () => IndexedStack(
-            index: logic.globalLogic.tabIndex.value,
+            index: logic.global.tabIndex.value,
             children: List.generate(2, (i) => logic.pages[i] ?? Container()),
           ),
         ),

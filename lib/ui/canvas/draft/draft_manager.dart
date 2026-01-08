@@ -243,6 +243,35 @@ class DraftManager {
     return await DirectoryManager.getDocumentsSubDirectory('cavals');
   }
 
+  /// 初始化时，保存到本地
+  Future<void> initSaveDraft() async {
+    try {
+      // 构建完整的画布数据（包含元素列表）
+      final snapshot = _controller!.buildSnapshot();
+      if (snapshot == null) {
+        debugPrint('DraftManager: 无法构建画布快照');
+        return;
+      }
+
+      // 转换为JSON
+      final jsonData = snapshot.toJson();
+      final jsonString = jsonEncode(jsonData);
+
+      // 获取保存目录（固定路径，不依赖canvasId）
+      final draftDir = await _getDraftDirectory();
+
+      // 写入文件
+      await FileManager.writeTextFile(
+        directory: draftDir,
+        fileName: 'draft.json',
+        content: jsonString,
+      );
+      debugPrint('DraftManager: 草稿已保存到 ${draftDir.path}/draft.json');
+    } catch (e, stackTrace) {
+      debugPrint('DraftManager: 保存草稿失败: $e\n$stackTrace');
+    }
+  }
+
   /// 通知画布属性已变更
   /// 当画布属性（如填充颜色、透明度等）改变时调用此方法
   void notifyCanvasPropertyChanged() {

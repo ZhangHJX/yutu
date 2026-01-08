@@ -320,6 +320,7 @@ class SaveLogic extends GetxController {
       if (canvalsLogic.isOwn == 1) {
         tempteIsCreate.value = false;
       }
+      debugPrint('===保存模版时的id=${model.id}==');
 
       var params = {
         "uuid": model.uuid,
@@ -339,6 +340,9 @@ class SaveLogic extends GetxController {
         "zip_file_size": "$fileMemorySize",
         "front_ids": idsStr,
       };
+      if (canvalsLogic.type == PageSource.draft) {
+        params["design_draft_id"] = '${model.id}';
+      }
 
       if (!tempteIsCreate.value) {
         params = {
@@ -372,7 +376,16 @@ class SaveLogic extends GetxController {
           model.timestamp,
         );
 
-        Get.back(result: true);
+        ///草稿转模版删除本地数据
+        if (canvalsLogic.type == PageSource.draft) {
+          await DraftStoreManager.instance.deleteDraftById(model.id);
+        }
+
+        if (draftIsCreate.value) {
+          Get.until((route) => route.isFirst);
+        } else {
+          Get.back(result: true);
+        }
         FileManager.deleteFileByPath(sourceDir.path);
         FileManager.deleteFileByPath(filePath);
       } else {
@@ -437,12 +450,18 @@ class SaveLogic extends GetxController {
           model,
           result.data!.id,
         );
+
         if (!success) {
           debugPrint('===草稿保存或更新失败===');
         } else {
           debugPrint('===草稿保存或更新成功===');
         }
-        Get.back(result: true);
+        if (draftIsCreate.value) {
+          Get.until((route) => route.isFirst);
+        } else {
+          Get.back(result: true);
+        }
+
         FileManager.deleteFileByPath(sourceDir.path);
         FileManager.deleteFileByPath(filePath);
       } else {

@@ -5,9 +5,11 @@ import 'package:voicetemplate/stores/global.dart';
 import '../../ui/home/home_page.dart';
 import '../../ui/mine/mine_main_page.dart';
 import '../../ui/mine/mine_logic.dart';
+import 'package:voicetemplate/ui/canvas/pages/create/create_canvals_page.dart';
+import 'package:voicetemplate/app/routes/index.dart';
 
 class MainLogic extends GetxController {
-  final globalLogic = Get.put(GlobalLogic(), permanent: true);
+  final global = Get.put(GlobalLogic(), permanent: true);
 
   final pages = List<Widget?>.filled(2, null).obs;
 
@@ -19,8 +21,8 @@ class MainLogic extends GetxController {
   void onInit() {
     super.onInit();
     addLocationAssets();
-    loadPage(globalLogic.tabIndex.value);
-    globalLogic.tabIndex.listen(changeTabIndex);
+    loadPage(global.tabIndex.value);
+    global.tabIndex.listen(changeTabIndex);
   }
 
   void addLocationAssets() {
@@ -55,7 +57,7 @@ class MainLogic extends GetxController {
     if (pages[index] == null) {
       loadPage(index);
     }
-    globalLogic.tabIndex.value = index;
+    global.tabIndex.value = index;
   }
 
   void _onMinePageEnter() {
@@ -76,5 +78,33 @@ class MainLogic extends GetxController {
     }
     debugPrint("MinePage-------");
     return MinePage();
+  }
+
+  void clickCenterBtn() {
+    if (!global.isLogin) {
+      Get.toNamed(AppRoutes.appLogin);
+      return;
+    }
+
+    SmartDialog.show(
+      builder: (context) => const CreateCanvalsPage(),
+      alignment: Alignment.bottomCenter,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      maskColor: Colors.black,
+      maskWidget: null,
+      clickMaskDismiss: true,
+      keepSingle: true,
+      permanent: false,
+      animationTime: const Duration(milliseconds: 300),
+      animationBuilder: (controller, child, animationParam) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 1),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOut)),
+          child: child,
+        );
+      },
+    );
   }
 }

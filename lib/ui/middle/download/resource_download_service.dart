@@ -296,7 +296,8 @@ class ResourceDownloadService {
     }
   }
 
-  /// 解压草稿资源文件到目标目录 (sqflite_draft/{id})
+  /// 解压草稿资源文件到目标目录 (sqflite_draft/)
+  /// 解压后如果顶层目录名为 cavals，则重命名为当前草稿 id（sqflite_draft/{id}）
   Future<void> _extractDraftZip(
     String zipPath,
     int id,
@@ -312,7 +313,7 @@ class ResourceDownloadService {
       final supportDir = await DirectoryManager.getSupportDirectory();
       final targetDir = await DirectoryManager.getOrCreateSubDirectory(
         supportDir,
-        p.join('sqflite_draft', '$id'),
+        p.join('sqflite_draft'),
       );
 
       // 如果目标目录已存在且有内容，先清空（处理旧版本，使用 FileManager）
@@ -322,11 +323,24 @@ class ResourceDownloadService {
 
       onProgress?.call(0.2);
 
-      // 解压到目标目录
+      // 解压到目标目录（SupportDirectory/sqflite_draft）
       await ZipFile.extractToDirectory(
         zipFile: zipFile,
         destinationDir: targetDir,
       );
+
+      // 解压后，将目录名 cavals 重命名为 id（sqflite_draft/{id}）
+      final cavalsDir = Directory(p.join(targetDir.path, 'cavals'));
+      if (await cavalsDir.exists()) {
+        final idDir = Directory(p.join(targetDir.path, '$id'));
+
+        // 如果同名目录已存在，先删除，避免 rename 失败
+        if (await idDir.exists()) {
+          await FileManager.deleteDirectory(idDir, deleteDirectory: true);
+        }
+
+        await cavalsDir.rename(idDir.path);
+      }
 
       onProgress?.call(1.0);
       debugPrint('ResourceDownloadService: 草稿资源文件解压完成: ${targetDir.path}');

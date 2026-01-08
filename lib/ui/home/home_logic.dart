@@ -59,6 +59,8 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     return tabDataMap[tagId]!;
   }
 
+  Worker? _countWorker;
+
   @override
   void onReady() {
     FontManager.to.initFromDisk();
@@ -73,6 +75,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
       tabData.refreshController.dispose();
     }
     tabDataMap.clear();
+    _countWorker?.dispose();
     super.onClose();
   }
 
@@ -81,6 +84,11 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     super.onInit();
     homeRefresh();
     showDraftDialog();
+
+    /// 登录事件监听
+    _countWorker = ever(global.accessToken, (token) {
+      homeRefresh();
+    });
   }
 
   /// 加载首页数据
@@ -104,7 +112,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
         recommendList.value = result.data!.recommendList;
         tagList.value = result.data!.tagList;
-
         // 初始化每个 tag 的数据到 tabDataMap
         for (var index = 0; index < tagList.length; index++) {
           final tag = tagList[index];
@@ -118,7 +125,10 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
             tabData.hasMore.value = true;
           }
         }
+
+        /// 处理
       }
+
       if (refresh) {
         refreshController.refreshCompleted();
       } else {

@@ -98,6 +98,10 @@ class HomePage extends StatelessWidget {
                                 model: item,
                                 source: PageSource.home,
                                 favoriteCallBack: () {
+                                  if (!logic.global.isLogin) {
+                                    Get.toNamed(AppRoutes.appLogin);
+                                    return;
+                                  }
                                   if (item?.isFavorite == 1) {
                                     logic.favoriteEventDialog(item?.id ?? 0);
                                   } else {

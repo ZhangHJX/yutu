@@ -41,7 +41,7 @@ class DraftStoreManager {
         return false;
       }
 
-      // 3. 复制 Documents/cavals 目录到 Application Support/sqflite_draft/{uuid}
+      // 3. 复制 Documents/cavals 目录到 Application Support/sqflite_draft/{id}
       await _copyCavalsDirectory(id);
 
       debugPrint(
@@ -127,7 +127,6 @@ class DraftStoreManager {
       if (id == 0) {
         return false;
       }
-
       // 1. 删除数据库记录
       final dbSuccess = await DraftStore.instance.deleteById(id);
 

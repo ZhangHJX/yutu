@@ -94,4 +94,45 @@ class CanvasModel {
       ..scaleByVector3(Vector3(scale, scale, 1))
       ..translateByVector3(Vector3(offsetX, offsetY, 0));
   }
+
+  /// 创建一个新的 CanvasModel 实例，使用当前值作为默认值
+  /// 可以通过命名参数覆盖任意字段
+  CanvasModel copyWith({
+    int? id,
+    String? uuid,
+    String? ratio,
+    String? clarity,
+    double? x,
+    double? y,
+    double? scale,
+    double? width,
+    double? height,
+    String? fillColor,
+    double? fillAlpha,
+    bool? locked,
+    bool? isSelected,
+    double? version,
+    int? timestamp,
+    Matrix4? transform,
+    List<CanvasElement>? elements,
+  }) {
+    return CanvasModel(
+      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
+      ratio: ratio ?? this.ratio,
+      clarity: clarity ?? this.clarity,
+      x: x ?? this.x,
+      y: y ?? this.y,
+      scale: scale ?? this.scale,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      fillColor: fillColor ?? this.fillColor,
+      fillAlpha: fillAlpha ?? this.fillAlpha,
+      locked: locked ?? this.locked,
+      isSelected: isSelected ?? this.isSelected,
+      version: version ?? this.version,
+      timestamp: timestamp ?? this.timestamp,
+      elements: elements ?? List<CanvasElement>.from(this.elements),
+    )..transform = transform ?? Matrix4.copy(this.transform);
+  }
 }

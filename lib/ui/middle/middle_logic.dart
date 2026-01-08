@@ -8,8 +8,11 @@ import 'download/download_service.dart';
 import 'middle_loading.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:voicetemplate/ui/canvas/draft/index.dart';
+import '../../stores/global.dart';
 
 class MiddleLogic extends GetxController {
+  final global = Get.find<GlobalLogic>();
+
   final args = Get.arguments as Map<String, dynamic>;
   int get itemId => args['id'] as int;
   PageSource get type => args['type'] as PageSource;
@@ -26,10 +29,23 @@ class MiddleLogic extends GetxController {
   /// 取消标志，用于取消正在进行的下载
   bool _isCancelled = false;
 
+  Worker? _countWorker;
+
+  @override
+  void onClose() {
+    super.onClose();
+    _countWorker?.dispose();
+  }
+
   @override
   void onInit() {
     super.onInit();
     getMidelDetailData();
+
+    /// 监听已经登录了
+    _countWorker = ever(global.accessToken, (token) {
+      getMidelDetailData();
+    });
   }
 
   /// 加载中间页的页面
@@ -137,6 +153,10 @@ class MiddleLogic extends GetxController {
 
   /// 立即使用按钮点击处理
   Future<void> handleImmediatelyUse() async {
+    if (!global.isLogin) {
+      Get.toNamed(AppRoutes.appLogin);
+      return;
+    }
     final model = middleInfo.value;
     if (model == null) {
       showToast('模板信息不存在');
@@ -260,6 +280,7 @@ class MiddleLogic extends GetxController {
       SmartDialog.dismiss();
       return;
     }
+
     // 根据当前屏幕重新计算画布矩阵
     canvalsModel.getMatrix4();
     SmartDialog.dismiss();
@@ -270,7 +291,6 @@ class MiddleLogic extends GetxController {
         "model": canvalsModel,
         "type": type,
         "is_own": middleInfo.value?.isOwn,
-        "middleId": middleInfo.value?.id,
       },
     )?.then((result) {
       if (result == true) {

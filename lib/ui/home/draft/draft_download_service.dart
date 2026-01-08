@@ -61,7 +61,7 @@ class DraftDownloadService {
 
     // 过滤掉无效的字体数据
     final validFonts = frontData
-        .where((item) => item.frontId != null && item.frontVersion != null)
+        .where((item) => item.frontId != 0 && item.frontVersion.isNotEmpty)
         .toList();
 
     if (validFonts.isEmpty) {
@@ -71,7 +71,7 @@ class DraftDownloadService {
 
     // 获取字体信息列表
     final fontInfoList = await _getFontInfoList(
-      validFonts.map((e) => e.frontId!).toList(),
+      validFonts.map((e) => e.frontId).toList(),
     );
 
     if (fontInfoList.isEmpty) {

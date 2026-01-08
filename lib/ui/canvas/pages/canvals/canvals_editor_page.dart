@@ -611,6 +611,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
       });
       return;
     }
+
+    DraftManager().deleteDraft();
     Get.back();
   }
 }

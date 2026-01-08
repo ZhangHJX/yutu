@@ -27,9 +27,6 @@ class AppRoutes {
   static const appLogin = '/app_login';
   static const password = '/get_password';
 
-  /// 登录页
-  static const login = '/login';
-
   static const web = '/web';
 
   /// 404
