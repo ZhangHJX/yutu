@@ -260,12 +260,14 @@ class ImageLogic extends GetxController {
       final cavalsPath = p.join(PickerImageManager.cavalsPath, fileFormat);
       await copyImageFilePath(fromPath: filePath, toPath: cavalsPath);
 
+      // 先关闭 loading 对话框，再触发回调关闭图片选择对话框
+      await PickerImageManager.deleteDirectory();
+      SmartDialog.dismiss(status: SmartStatus.loading);
+
       // 3. 将图片名、宽高通过 onUploadSuccess 传递到画布数据中，dialog 弹框消失
       if (onUploadSuccess != null) {
         onUploadSuccess!(fileFormat, width, height);
       }
-      await PickerImageManager.deleteDirectory();
-      SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {
       showToast("图片上传失败");
       await PickerImageManager.deleteDirectory();

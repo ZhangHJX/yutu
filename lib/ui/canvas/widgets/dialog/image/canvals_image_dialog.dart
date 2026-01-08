@@ -358,6 +358,9 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
                   await finalFile.copy(targetPath);
                 }
 
+                // 先关闭 loading 对话框，再触发回调关闭图片选择对话框
+                SmartDialog.dismiss(status: SmartStatus.loading);
+
                 // 5. 返回画布使用的相对路径（文件名），通过 onUploadSuccess 传递到画布数据中，dialog 弹框消失
                 if (logic.onUploadSuccess != null) {
                   logic.onUploadSuccess!(fileName, result.$1, result.$2);
@@ -365,7 +368,6 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
               } catch (e, stackTrace) {
                 debugPrint('添加图片到画布失败: $e\n$stackTrace');
                 showToast('添加图片失败，请稍后重试');
-              } finally {
                 SmartDialog.dismiss(status: SmartStatus.loading);
               }
             },
