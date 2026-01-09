@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import 'model/font_info_model.dart';
 import '../../../fonts/font_manager.dart';
 import 'package:voicetemplate/ui/canvas/fonts/font_models.dart';
+import '../../../pages/canvals/canvals_controller.dart';
+import '../../../model/index.dart';
 
 /// 文本属性（字体相关）控制器
 class TextPropertyController extends GetxController {
+  final canvalsControl = Get.find<CanvalsController>();
+
   /// 全部字体列表（从接口获取的数据）
   final RxList<FontInfoModel> fontList = <FontInfoModel>[].obs;
   List<FontInfoModel> get allFontList => fontList.toList();
@@ -24,11 +28,14 @@ class TextPropertyController extends GetxController {
 
   // 字重列表
   List<String> fontWeights = [];
-  RxBool get isFontEdit => FontManager.to.isInstallingTasks.obs;
+
+  // 字重下拉菜单显示状态
+  RxBool showFontWeightDropdown = false.obs;
 
   @override
   void onInit() {
     super.onInit();
+    currentUseFonts();
     getFontListData();
     _countWorker = ever(FontManager.to.recommendedFonts, (value) {
       final recommendedList = <FontInfoModel>[];
@@ -42,6 +49,18 @@ class TextPropertyController extends GetxController {
       }
       recommendedFonts.value = recommendedList;
     });
+  }
+
+  /// 获取已使用的字体
+  void currentUseFonts() {
+    final fontIds = canvalsControl.elements
+        .where((e) => e.type == ElementType.text)
+        .map((e) => e.fontId)
+        .where((fontId) => fontId != 0)
+        .toSet();
+    if (fontIds.isNotEmpty) {
+      FontManager.to.markUsedFonts(fontIds.toList());
+    }
   }
 
   /// 获取字体列表pop数据
@@ -67,10 +86,6 @@ class TextPropertyController extends GetxController {
         // 更新字体列表
         final modelArray = result.data as List<FontInfoModel>;
         fontList.assignAll(modelArray);
-        // 将字体 ID 列表传递给 FontManager，用于推荐字体
-        // final fontIds = fontList.map((f) => f.id).toList();
-        // FontManager.to.setTemplateUsedFonts(fontIds);
-        debugPrint("-获取字体列表中数据成功--数量: ${fontList.length}");
         await FontManager.to.warmUpdateInstalledFonts(modelArray);
       }
     } catch (e) {

@@ -35,9 +35,6 @@ class FontManager extends GetxController {
   /// 最近使用的字体 id（用于推荐）
   final List<int> _recentUsed = [];
 
-  /// 模板已使用的字体 id（用于推荐优先展示）
-  final List<int> _templateUsed = [];
-
   /// 已经通过 FontLoader 注册过的 familyKey，避免重复 load
   final Set<String> _registeredFamilyKeys = <String>{};
 
@@ -373,7 +370,7 @@ class FontManager extends GetxController {
     return meta.weights;
   }
 
-  /// 记录“最近使用”，用于推荐字体
+  /// 记录单个字体：“最近使用”，用于推荐字体
   void markUsed(int fontId) {
     debugPrint('markUsed====$_recentUsed recommendedFonts=$recommendedFonts');
     if (!_recentUsed.contains(fontId)) {
@@ -382,39 +379,27 @@ class FontManager extends GetxController {
     _rebuildRecommended();
   }
 
+  /// 接受字体数组
+  void markUsedFonts(List<int> fontIds) {
+    for (final fontId in fontIds) {
+      if (!_recentUsed.contains(fontId)) {
+        _recentUsed.add(fontId);
+      }
+    }
+    _rebuildRecommended();
+  }
+
   /// 根据最近使用 + 已安装构建推荐字体
   void _rebuildRecommended() {
     final list = <FontFamilyMeta>[];
-    final seen = <int>{};
-
-    // 模板已用字体优先
-    for (final id in _templateUsed) {
-      if (!seen.add(id)) continue;
-      final meta = allFonts[id];
-      if (meta != null) {
-        list.add(meta);
-      }
-    }
-
     // 最近使用的字体追加
     for (final id in _recentUsed) {
-      if (!seen.add(id)) continue;
       final meta = allFonts[id];
       if (meta != null) {
         list.add(meta);
       }
     }
     recommendedFonts.assignAll(list);
-  }
-
-  /// 提供模板中已使用的字体列表（用于推荐列表兜底）
-  void setTemplateUsedFonts(Iterable<int> fontIds) {
-    _templateUsed
-      ..clear()
-      ..addAll({
-        for (final id in fontIds) id, // 保留传入顺序去重
-      });
-    _rebuildRecommended();
   }
 
   /// 使用 FontWeightMeta 中的 familyKey 单独注册每个字体文件到 Flutter 引擎

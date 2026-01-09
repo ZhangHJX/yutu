@@ -33,8 +33,6 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   final TextEditingController _fontSizeController = TextEditingController();
   // Tab控制器
   late TabController _tabController;
-  // 字重下拉菜单显示状态
-  bool _showFontWeightDropdown = false;
 
   @override
   void initState() {
@@ -200,8 +198,9 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   showToast("已有字体在下载，请稍后操作");
                   return;
                 }
-                if (_showFontWeightDropdown) {
-                  _showFontWeightDropdown = false;
+
+                if (logic.showFontWeightDropdown.value) {
+                  logic.showFontWeightDropdown.value = false;
                 }
                 // 如果字体已准备好，直接选中
                 if (isReady && fontMeta != null) {
@@ -232,7 +231,6 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                     },
                   );
 
-                  logic.isFontEdit.value = true;
                   FontManager.to.markUsed(font.id);
                   // 字体准备成功后，更新选中状态
                   if (mounted) {
@@ -244,7 +242,6 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                     });
                   }
                 } catch (e) {
-                  logic.isFontEdit.value = true;
                   FontManager.to.fontStatus[font.id] == FontStatus.failed;
                   debugPrint('字体准备失败: $e');
                   showToast('字体下载失败，请重试');
@@ -373,7 +370,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                           FocusManager.instance.primaryFocus?.unfocus();
                           logic.getCurrentFontIdWeight();
                           setState(() {
-                            _showFontWeightDropdown = !_showFontWeightDropdown;
+                            logic.showFontWeightDropdown.value =
+                                !logic.showFontWeightDropdown.value;
                           });
                         },
                         child: Container(
@@ -434,7 +432,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                           return TextField(
                             controller: _fontSizeController,
                             keyboardType: TextInputType.number,
-                            enabled: logic.isFontEdit.value,
+                            enabled: !logic.showFontWeightDropdown.value,
                             inputFormatters: const [
                               // FilteringTextInputFormatter.digitsOnly,
                               // LengthLimitingTextInputFormatter(3),
@@ -449,9 +447,9 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                             ),
                             onChanged: (_) => _updateModel(),
                             onTap: () {
-                              if (_showFontWeightDropdown) {
+                              if (logic.showFontWeightDropdown.value) {
                                 setState(() {
-                                  _showFontWeightDropdown = false;
+                                  logic.showFontWeightDropdown.value = false;
                                 });
                               }
                             },
@@ -472,8 +470,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                 ],
               ),
 
-              if (_showFontWeightDropdown) SizedBox(height: 80.w),
-              if (!_showFontWeightDropdown) SizedBox(height: 20.w),
+              if (logic.showFontWeightDropdown.value) SizedBox(height: 80.w),
+              if (!logic.showFontWeightDropdown.value) SizedBox(height: 20.w),
               // 删除文本按钮
               _buildDeleteButton(),
               SizedBox(height: ScreenTools.bottomBarHeight + 15.w),
@@ -481,7 +479,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
           ),
 
           // 字重下拉菜单
-          if (_showFontWeightDropdown)
+          if (logic.showFontWeightDropdown.value)
             Positioned(
               left: 11.w,
               top: 42.w + 15.w,
@@ -523,7 +521,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                           }
                           logic.styleName.value = value;
                           setState(() {
-                            _showFontWeightDropdown = false;
+                            logic.showFontWeightDropdown.value = false;
                             _updateModel();
                           });
                         },

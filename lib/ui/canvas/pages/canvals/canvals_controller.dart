@@ -1,7 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:voicetemplate/ui/canvas/draft/draft_manager.dart';
 import '../../model/index.dart';
 import '../../history/clone_tools/canvas_model_clone.dart';
 import 'dart:math' as math;
@@ -12,7 +11,7 @@ class CanvalsController extends GetxController {
   final args = Get.arguments as Map<String, dynamic>;
   CanvasModel get canvasModel => args['model'] as CanvasModel;
   PageSource get type => args['type'] as PageSource;
-  int get isOwn => (args['is_own'] ?? 1) as int;
+  int get isOwn => (args['is_own'] ?? 0) as int;
 
   PointerEvent? currentPoint; // 画布点击
 
