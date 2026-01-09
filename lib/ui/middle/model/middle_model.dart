@@ -106,18 +106,26 @@ class MiddleModel {
 @JsonSerializable()
 class FontItemModel {
   @JsonKey(name: 'front_id', defaultValue: 0)
-  final int frontId;
+  final int id;
 
   @JsonKey(name: 'front_version', defaultValue: '')
-  final String frontVersion;
+  final String version;
+
+  @JsonKey(name: 'front_name', defaultValue: '')
+  final String name;
+
+  @JsonKey(name: 'front_image', defaultValue: '')
+  final String image;
 
   @JsonKey(name: 'front_url', defaultValue: '')
-  final String frontUrl;
+  final String url;
 
   FontItemModel({
-    required this.frontId,
-    required this.frontVersion,
-    required this.frontUrl,
+    required this.id,
+    required this.version,
+    required this.name,
+    required this.image,
+    required this.url,
   });
 
   factory FontItemModel.fromJson(Map<String, dynamic> json) =>
@@ -125,14 +133,18 @@ class FontItemModel {
   Map<String, dynamic> toJson() => _$FontItemModelToJson(this);
 
   FontItemModel copyWith({
-    int? frontId,
-    String? frontVersion,
-    String? frontUrl,
+    int? id,
+    String? version,
+    String? name,
+    String? image,
+    String? url,
   }) {
     return FontItemModel(
-      frontId: frontId ?? this.frontId,
-      frontVersion: frontVersion ?? this.frontVersion,
-      frontUrl: frontUrl ?? this.frontUrl,
+      id: id ?? this.id,
+      version: version ?? this.version,
+      name: name ?? this.name,
+      image: image ?? this.image,
+      url: url ?? this.url,
     );
   }
 }

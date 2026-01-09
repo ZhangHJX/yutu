@@ -138,10 +138,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
           controller: logic.refreshController,
           enablePullDown: true,
           enablePullUp: logic.hasMore.value,
-          header: ClassicHeader(
-            height: 40,
-            refreshStyle: RefreshStyle.Follow, // 或 RefreshStyle.Behind
-          ),
+          header: ClassicHeader(height: 40),
           footer: ClassicFooter(
             loadStyle: LoadStyle.ShowWhenLoading,
             completeDuration: Duration(milliseconds: 500),

@@ -29,9 +29,9 @@ class FontDownload {
     ValueChanged<double>? onProgress,
     bool Function()? shouldCancel,
   }) async {
-    final fontId = fontItem.frontId;
-    final requiredVersion = fontItem.frontVersion;
-    final fontUrl = fontItem.frontUrl;
+    final fontId = fontItem.id;
+    final requiredVersion = fontItem.version;
+    final fontUrl = fontItem.url;
 
     // 检查字体是否已存在且版本匹配
     final exists = await checkFontExists(fontId, requiredVersion);
@@ -155,7 +155,7 @@ class FontDownload {
             if (e.toString().contains('取消')) {
               throw e;
             }
-            debugPrint('FontDownloadService: 字体 ${fontItem.frontId} 下载失败: $e');
+            debugPrint('FontDownloadService: 字体 ${fontItem.id} 下载失败: $e');
             // 单个字体失败不影响整体流程，标记为完成
             fontProgressMap[taskIndex] = 1.0;
             updateTotalProgress();

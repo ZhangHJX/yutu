@@ -15,7 +15,7 @@ class AppConfigInit extends StatelessWidget {
       designSize: const Size(375, 812),
       child: RefreshConfiguration(
         footerTriggerDistance: 15,
-        headerBuilder: () => const MaterialClassicHeader(),
+        headerBuilder: () => const ClassicHeader(),
         footerBuilder: () => const ClassicFooter(),
         hideFooterWhenNotFull: true,
         enableLoadingWhenNoData: false,

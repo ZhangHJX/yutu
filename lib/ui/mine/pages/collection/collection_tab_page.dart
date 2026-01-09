@@ -37,9 +37,7 @@ class CollectionTabPage extends StatelessWidget {
         controller: tabData.refreshController,
         enablePullDown: true,
         enablePullUp: logic.hasMore.value,
-        header: ClassicHeader(
-          refreshStyle: RefreshStyle.Follow, // 或 RefreshStyle.Behind
-        ),
+
         footer: ClassicFooter(
           loadStyle: LoadStyle.ShowWhenLoading,
           completeDuration: Duration(milliseconds: 500),

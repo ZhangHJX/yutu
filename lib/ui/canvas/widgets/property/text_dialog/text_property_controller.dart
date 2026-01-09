@@ -53,13 +53,18 @@ class TextPropertyController extends GetxController {
 
   /// 获取已使用的字体
   void currentUseFonts() {
-    final fontIds = canvalsControl.elements
-        .where((e) => e.type == ElementType.text)
-        .map((e) => e.fontId)
-        .where((fontId) => fontId != 0)
-        .toSet();
-    if (fontIds.isNotEmpty) {
-      FontManager.to.markUsedFonts(fontIds.toList());
+    if (canvalsControl.fontList.isNotEmpty) {
+      recommendedFonts.assignAll(canvalsControl.fontList);
+
+      final fontIds = canvalsControl.fontList.map((e) {
+        debugPrint("-获取已使用的字体的json数据: ${e.toJson()}");
+        return e.id;
+      }).toSet();
+      if (fontIds.isNotEmpty) {
+        FontManager.to.markUsedFonts(fontIds.toList());
+      }
+
+      // FontManager.to.markUsedFonts(fontIds.toList());
     }
   }
 

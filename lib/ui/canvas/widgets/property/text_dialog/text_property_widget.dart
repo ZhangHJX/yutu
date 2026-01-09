@@ -135,9 +135,9 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
               physics: const NeverScrollableScrollPhysics(), // ✅ 禁止拖动
               children: [
                 // 推荐字体 Tab - 完全响应式
-                _buildFontList(logic.allRecommendedFonts),
+                _buildFontList(logic.allRecommendedFonts, true),
                 // 全部字体 Tab - 完全响应式
-                _buildFontList(logic.allFontList),
+                _buildFontList(logic.allFontList, false),
               ],
             );
           }),
@@ -147,7 +147,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   }
 
   /// 构建字体列表（每行3个）- 使用GetX响应式
-  Widget _buildFontList(List<FontInfoModel> fonts) {
+  Widget _buildFontList(List<FontInfoModel> fonts, bool isRecommend) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: GridView.builder(
@@ -165,7 +165,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
           return Obx(() {
             final selectedId = logic.selectedFontId.value;
             final isSelected = selectedId != null && selectedId == font.id;
-            return _buildFontItem(font, isSelected);
+            return _buildFontItem(font, isSelected, isRecommend);
           });
         },
       ),
@@ -173,7 +173,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   }
 
   /// 构建单个字体项
-  Widget _buildFontItem(FontInfoModel font, bool isSelected) {
+  Widget _buildFontItem(FontInfoModel font, bool isSelected, bool isRecommend) {
     // 使用 Obx 监听字体状态变化
     return Obx(() {
       final fontStatus =
@@ -261,33 +261,25 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                 child: Stack(
                   children: [
                     Positioned.fill(
-                      child: CachedNetworkImage(
-                        imageUrl: font.image,
-                        imageBuilder: (context, imageProvider) {
-                          return Container(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12.w),
+                        child: CachedNetworkImage(
+                          imageUrl: font.image,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12.w),
-                              image: DecorationImage(
-                                image: imageProvider,
-                                fit: BoxFit.cover,
-                              ),
+                              color: const Color(0xFFE7EEF7),
                             ),
-                          );
-                        },
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12.w),
-                            color: const Color(0xFFE7EEF7),
                           ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12.w),
-                            color: const Color(0xFFE7EEF7),
+                          errorWidget: (context, url, error) => Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12.w),
+                              color: const Color(0xFFE7EEF7),
+                            ),
                           ),
+                          fadeInDuration: const Duration(milliseconds: 200),
                         ),
-                        fadeInDuration: const Duration(milliseconds: 200),
                       ),
                     ),
 
@@ -308,7 +300,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                     if (!isReady &&
                         !isDownloading &&
                         !isInstalling &&
-                        !isFailed)
+                        !isFailed &&
+                        !isRecommend)
                       Positioned(
                         top: 2.w,
                         right: 2.w,

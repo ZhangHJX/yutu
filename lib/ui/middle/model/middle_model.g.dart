@@ -55,16 +55,20 @@ Map<String, dynamic> _$MiddleModelToJson(MiddleModel instance) =>
 
 FontItemModel _$FontItemModelFromJson(Map<String, dynamic> json) =>
     FontItemModel(
-      frontId: (json['front_id'] as num?)?.toInt() ?? 0,
-      frontVersion: json['front_version'] as String? ?? '',
-      frontUrl: json['front_url'] as String? ?? '',
+      id: (json['front_id'] as num?)?.toInt() ?? 0,
+      version: json['front_version'] as String? ?? '',
+      name: json['front_name'] as String? ?? '',
+      image: json['front_image'] as String? ?? '',
+      url: json['front_url'] as String? ?? '',
     );
 
 Map<String, dynamic> _$FontItemModelToJson(FontItemModel instance) =>
     <String, dynamic>{
-      'front_id': instance.frontId,
-      'front_version': instance.frontVersion,
-      'front_url': instance.frontUrl,
+      'front_id': instance.id,
+      'front_version': instance.version,
+      'front_name': instance.name,
+      'front_image': instance.image,
+      'front_url': instance.url,
     };
 
 TagItemModel _$TagItemModelFromJson(Map<String, dynamic> json) => TagItemModel(

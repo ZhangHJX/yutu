@@ -9,6 +9,7 @@ import 'package:voicetemplate/file/index.dart';
 import 'package:voicetemplate/ui/canvas/draft/index.dart';
 import '../../stores/global.dart';
 import 'download/index.dart';
+import 'package:voicetemplate/ui/canvas/widgets/property/text_dialog/model/font_info_model.dart';
 
 class MiddleLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
@@ -290,6 +291,18 @@ class MiddleLogic extends GetxController {
 
     await DraftManager().initSaveDraft(canvalsModel);
 
+    final List<FontItemModel> fonts = middleInfo.value?.frontData ?? [];
+    final List<FontInfoModel> list = fonts.map((e) {
+      final m = FontInfoModel(
+        id: e.id,
+        version: e.version,
+        name: e.name,
+        image: e.image,
+        url: e.url,
+      );
+      return m;
+    }).toList();
+
     SmartDialog.dismiss();
 
     Get.toNamed(
@@ -298,6 +311,7 @@ class MiddleLogic extends GetxController {
         "model": canvalsModel,
         "type": type,
         "is_own": middleInfo.value?.isOwn,
+        "font": list,
       },
     )?.then((result) {
       if (result == true) {
