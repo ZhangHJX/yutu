@@ -217,7 +217,7 @@ class HomePage extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            item.title ?? '',
+                            item.title,
                             style: TextStyle(
                               fontSize: 12.w,
                               color: '#FFFFFF'.color,
