@@ -9,10 +9,12 @@ import 'package:voicetemplate/file/index.dart';
 import 'package:voicetemplate/ui/canvas/model/index.dart';
 import 'package:voicetemplate/ui/canvas/draft/index.dart';
 import './model/save_response.dart';
-import 'template/template_manager.dart';
 import 'package:voicetemplate/ui/middle/manager/index.dart';
+import 'package:voicetemplate/stores/global.dart';
 
 class SaveLogic extends GetxController {
+  final global = Get.find<GlobalLogic>();
+
   // 获取画布控制器
   final canvalsLogic = Get.find<CanvalsController>();
 
@@ -57,6 +59,7 @@ class SaveLogic extends GetxController {
     super.onInit();
     await getSceneResource();
     await getSuggestedTags();
+    global.fetchUserInfo();
   }
 
   /// 应用场景接口
@@ -318,9 +321,12 @@ class SaveLogic extends GetxController {
         'cavals',
       );
       final idsStr = model.elements.map((e) => e.fontId).toSet().join(',');
-      if (canvalsLogic.isOwn == 1) {
-        tempteIsCreate.value = false;
+      if (canvalsLogic.type != PageSource.create) {
+        if (canvalsLogic.isOwn == 1) {
+          tempteIsCreate.value = false;
+        }
       }
+
       debugPrint('===保存模版时的id=${model.id}==');
 
       var params = {
@@ -340,10 +346,8 @@ class SaveLogic extends GetxController {
         "img_file_size": '$imageMemorySize',
         "zip_file_size": "$fileMemorySize",
         "front_ids": idsStr,
+        "design_draft_id": '${model.id}',
       };
-      if (canvalsLogic.type == PageSource.draft) {
-        params["design_draft_id"] = '${model.id}';
-      }
 
       if (!tempteIsCreate.value) {
         params = {
@@ -372,9 +376,9 @@ class SaveLogic extends GetxController {
       debugPrint("===模版保存是否成功====${result.code}=====");
       if (result.code == 0 && result.data != null) {
         // 模版保存成功后，资源保存到本地
-        await TemplateManager.instance.saveTemplateFromSaveFlow(
+        await TemplateStoreManager.instance.saveOrUpdateTemplate(
+          model,
           result.data!.id,
-          model.timestamp,
         );
 
         ///草稿转模版删除本地数据

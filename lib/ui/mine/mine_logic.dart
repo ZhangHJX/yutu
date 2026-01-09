@@ -112,7 +112,7 @@ class MineLogic extends GetxController {
 
   Future<void> updatePersonInfo() async {
     // 调接口刷新
-    global.fetchUserInfo();
+    await global.fetchUserInfo();
     loadDesignList();
   }
 }

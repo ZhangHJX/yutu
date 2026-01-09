@@ -5,11 +5,12 @@ import 'package:voicetemplate/ui/utils/file/index.dart';
 import 'package:voicetemplate/ui/model/index.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:flutter/material.dart';
+import 'package:voicetemplate/stores/global.dart';
 import 'dart:io';
 
-//  SmartDialog.dismiss(status: SmartStatus.loading);
-
 class ImageLogic extends GetxController {
+  final global = Get.find<GlobalLogic>();
+
   //上传成功
   Function(String imagePath, double width, double height)? onUploadSuccess;
   // 当前页码
@@ -37,6 +38,7 @@ class ImageLogic extends GetxController {
     super.onInit();
     // 初始化时加载第一页数据
     loadImageList(refresh: true);
+    global.fetchUserInfo(); // 更新用户信息
   }
 
   /// 下拉刷新

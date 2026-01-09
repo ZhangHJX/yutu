@@ -5,9 +5,9 @@ import '../model/middle_model.dart';
 
 /// 字体下载服务
 /// 负责下载和管理字体文件
-class FontDownloadService {
-  FontDownloadService._();
-  static final FontDownloadService instance = FontDownloadService._();
+class FontDownload {
+  FontDownload._();
+  static final FontDownload instance = FontDownload._();
 
   /// 当前正在下载的字体任务ID映射：fontId -> taskId
   final Map<int, String> _currentFontTaskIds = {};

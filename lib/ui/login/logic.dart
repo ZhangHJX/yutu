@@ -107,7 +107,7 @@ class LoginLogic extends GetxController {
       );
       if (result.code == 0) {
         globalLogic.accessToken.value = result.data?.token ?? '';
-        globalLogic.fetchUserInfo();
+        await globalLogic.fetchUserInfo();
         Get.back();
       }
       // 返回上一个页面
@@ -128,7 +128,7 @@ class LoginLogic extends GetxController {
       );
       if (result.code == 0) {
         globalLogic.accessToken.value = result.data?.token ?? '';
-        globalLogic.fetchUserInfo();
+        await globalLogic.fetchUserInfo();
         Get.back();
       }
     } catch (e) {

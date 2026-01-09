@@ -216,25 +216,20 @@ class MiddleLogic extends GetxController {
           );
 
           ///保存到数据库
-          await DraftResourceDownload.instance.saveOrUpdateDraft(model);
+          await DraftDownload.instance.saveOrUpdateDraft(model);
         }
       } else {
         // 模板场景：检查文件是否存在
-        final resourceExists = await DownloadService.instance
+        final (exists, timestampMatches) = await DownloadService.instance
             .checkTemplateResourceExists(model.id, model.editTime);
 
-        if (resourceExists) {
-          // 文件已存在，直接使用
-          debugPrint(
-            'MiddleLogic: 模板资源文件 ${model.id}_${model.editTime} 已存在，使用本地文件',
-          );
+        if (exists && timestampMatches) {
+          // 文件已存在且时间戳匹配，直接使用
+          debugPrint('MiddleLogic: 模板资源文件 ${model.id} 已存在且时间戳匹配，使用本地文件');
           final templatesDir = await DirectoryManager.getSupportSubDirectory(
             'templates',
           );
-          resourcePath = p.join(
-            templatesDir.path,
-            '${model.id}_${model.editTime}',
-          );
+          resourcePath = p.join(templatesDir.path, '${model.id}');
         } else {
           // 需要下载
           resourcePath = await DownloadService.instance
@@ -249,6 +244,9 @@ class MiddleLogic extends GetxController {
                 },
                 shouldCancel: () => _isCancelled,
               );
+
+          ///保存到数据库
+          await TemplateDownload.instance.saveOrUpdateTemplate(model);
         }
       }
 
@@ -261,7 +259,10 @@ class MiddleLogic extends GetxController {
       debugPrint('MiddleLogic: 准备获取解压后的数据文件夹: $resourcePath');
 
       // 3. 将资源文件复制到 Documents/cavals 目录
-      await DownloadService.instance.copyResourceToCavals(resourcePath);
+      await DownloadService.instance.copyResourceToCavals(
+        resourcePath,
+        type == PageSource.draft,
+      );
 
       // 4. 加载草稿并进入画布编辑器
       await pushCanvansDetail();
@@ -286,6 +287,9 @@ class MiddleLogic extends GetxController {
 
     // 根据当前屏幕重新计算画布矩阵
     canvalsModel.getMatrix4();
+
+    await DraftManager().initSaveDraft(canvalsModel);
+
     SmartDialog.dismiss();
 
     Get.toNamed(

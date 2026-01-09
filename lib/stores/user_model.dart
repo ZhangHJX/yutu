@@ -65,8 +65,7 @@ class UserModel {
   int get designSizeLimit => _kbStringToMbInt(designFileSizeLimit);
 
   int get draftSize => _kbStringToMbInt(designDraftFileSize);
-  int get draftSizeLimit =>
-      _kbStringToMbInt(designDraftFileSizeLimit);
+  int get draftSizeLimit => _kbStringToMbInt(designDraftFileSizeLimit);
 
   // --------- helpers ---------
   static int _kbStringToMbInt(String kbStr) {

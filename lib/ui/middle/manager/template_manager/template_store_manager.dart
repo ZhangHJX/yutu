@@ -3,29 +3,30 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import '../../../canvas/model/index.dart';
 import '../../../../file/index.dart';
-import 'draft_store.dart';
+import 'template_store.dart';
 import '../manager_model.dart';
 
-/// 草稿存储管理类
+/// 模板存储管理类
 /// 负责：
-/// 1. 传入 CanvasModel，根据 uuid 判断草稿是否保存过
+/// 1. 传入 CanvasModel，根据 id 判断模板是否保存过
 /// 2. 如果不存在，就保存起来，如果有保存过就进行数据的更新
-/// 3. 同时将 Documents 目录下的 cavals 文件 copy 到 Application Support 下的 sqflite_draft，文件名使用 uuid
-class DraftStoreManager {
-  DraftStoreManager._();
-  static DraftStoreManager? _instance;
-  static DraftStoreManager get instance {
-    _instance ??= DraftStoreManager._();
+/// 3. 同时将 Documents 目录下的 cavals 文件 copy 到 Application Support 下的 templates，文件名使用 id（与草稿一致）
+class TemplateStoreManager {
+  TemplateStoreManager._();
+  static TemplateStoreManager? _instance;
+  static TemplateStoreManager get instance {
+    _instance ??= TemplateStoreManager._();
     return _instance!;
   }
 
-  /// 保存或更新草稿
+  /// 保存或更新模板
   /// [canvasModel] 画布模型
+  /// [id] 模板 id
   /// 返回 true 表示成功，false 表示失败
-  Future<bool> saveOrUpdateDraft(CanvasModel canvasModel, int id) async {
+  Future<bool> saveOrUpdateTemplate(CanvasModel canvasModel, int id) async {
     try {
-      // 1. 创建 DraftModel（不再保存画布 JSON 数据）
-      final draftModel = ManagerModel(
+      // 1. 创建 ManagerModel
+      final managerModel = ManagerModel(
         id: id,
         timestamp: canvasModel.timestamp > 0
             ? canvasModel.timestamp
@@ -33,28 +34,28 @@ class DraftStoreManager {
       );
 
       // 2. 保存或更新数据库记录
-      final success = await DraftStore.instance.save(draftModel);
+      final success = await TemplateStore.instance.save(managerModel);
       if (!success) {
-        debugPrint('DraftStoreManager: 保存数据库记录失败, id=${canvasModel.id}');
+        debugPrint('TemplateStoreManager: 保存数据库记录失败, id=$id');
         return false;
       }
 
-      // 3. 复制 Documents/cavals 目录到 Application Support/sqflite_draft/{id}
+      // 3. 复制 Documents/cavals 目录到 Application Support/templates/{id}
       await _copyCavalsDirectory(id);
 
       debugPrint(
-        'DraftStoreManager: 草稿更新或保存成功, id=${canvasModel.id}, uuid=${canvasModel.uuid}',
+        'TemplateStoreManager: 模板更新或保存成功, id=$id, uuid=${canvasModel.uuid}',
       );
 
       return true;
     } catch (e, stackTrace) {
-      debugPrint('DraftStoreManager: 保存草稿失败: $e\n$stackTrace');
+      debugPrint('TemplateStoreManager: 保存模板失败: $e\n$stackTrace');
       return false;
     }
   }
 
-  /// 复制 Documents/cavals 目录到 Application Support/sqflite_draft/{uuid}
-  /// [uuid] 画布的 uuid，作为目标目录名
+  /// 复制 Documents/cavals 目录到 Application Support/templates/{id}
+  /// [id] 模板 id
   Future<void> _copyCavalsDirectory(int id) async {
     try {
       // 获取源目录：Documents/cavals
@@ -63,15 +64,19 @@ class DraftStoreManager {
 
       // 检查源目录是否存在
       if (!await sourceCavalsDir.exists()) {
-        debugPrint('DraftStoreManager: 源目录不存在，跳过文件复制: ${sourceCavalsDir.path}');
+        debugPrint(
+          'TemplateStoreManager: 源目录不存在，跳过文件复制: ${sourceCavalsDir.path}',
+        );
         return;
       }
 
-      // 获取目标目录：Application Support/sqflite_draft/{uuid}
-      final supportDir = await DirectoryManager.getSupportDirectory();
+      // 获取目标目录：Application Support/templates/{id}
+      final templatesDir = await DirectoryManager.getSupportSubDirectory(
+        'templates',
+      );
       final targetDir = await DirectoryManager.getOrCreateSubDirectory(
-        supportDir,
-        p.join('sqflite_draft', '$id'),
+        templatesDir,
+        '$id',
       );
 
       // 如果目标目录已存在，先删除（确保是最新的内容）
@@ -85,9 +90,9 @@ class DraftStoreManager {
       // 递归复制目录内容
       await _copyDirectoryRecursive(sourceCavalsDir, targetDir);
 
-      debugPrint('DraftStoreManager: cavals 目录已复制到: ${targetDir.path}');
+      debugPrint('TemplateStoreManager: cavals 目录已复制到: ${targetDir.path}');
     } catch (e, stackTrace) {
-      debugPrint('DraftStoreManager: 复制 cavals 目录失败: $e\n$stackTrace');
+      debugPrint('TemplateStoreManager: 复制 cavals 目录失败: $e\n$stackTrace');
       // 不抛出异常，文件复制失败不影响数据库保存
     }
   }
@@ -118,57 +123,58 @@ class DraftStoreManager {
     }
   }
 
-  /// 根据 id 删除草稿（包括数据库记录和文件）
+  /// 根据 id 删除模板（包括数据库记录和文件）
   /// 返回 true 表示删除成功，false 表示删除失败
-  Future<bool> deleteDraftById(int id) async {
+  Future<bool> deleteTemplateById(int id) async {
     try {
       if (id == 0) {
         return false;
       }
       // 1. 删除数据库记录
-      final dbSuccess = await DraftStore.instance.deleteById(id);
+      final dbSuccess = await TemplateStore.instance.deleteById(id);
+
       // 2. 删除文件目录
       try {
-        final supportDir = await DirectoryManager.getSupportDirectory();
-        final draftDir = Directory(
-          p.join(supportDir.path, 'sqflite_draft', '$id'),
+        final templatesDir = await DirectoryManager.getSupportSubDirectory(
+          'templates',
         );
-        if (await draftDir.exists()) {
-          await FileManager.deleteDirectory(draftDir, deleteDirectory: true);
-          debugPrint('DraftStoreManager: 草稿文件目录已删除: ${draftDir.path}');
+        final templateDir = Directory(p.join(templatesDir.path, '$id'));
+        if (await templateDir.exists()) {
+          await FileManager.deleteDirectory(templateDir, deleteDirectory: true);
+          debugPrint('TemplateStoreManager: 模板文件目录已删除: ${templateDir.path}');
         }
       } catch (e) {
-        debugPrint('DraftStoreManager: 删除草稿文件目录失败: $e');
+        debugPrint('TemplateStoreManager: 删除模板文件目录失败: $e');
         // 文件删除失败不影响返回结果
       }
       if (dbSuccess) {
-        debugPrint('DraftStoreManager: 草稿已删除, id=$id');
+        debugPrint('TemplateStoreManager: 模板已删除, id=$id');
       }
       return dbSuccess;
     } catch (e, stackTrace) {
-      debugPrint('DraftStoreManager: 删除草稿失败: $e\n$stackTrace');
+      debugPrint('TemplateStoreManager: 删除模板失败: $e\n$stackTrace');
       return false;
     }
   }
 
-  /// 获取草稿对应的 cavals 目录路径
-  /// 根据 Application Support/sqflite_draft/{uuid} 目录，
+  /// 获取模板对应的 cavals 目录路径
+  /// 根据 Application Support/templates/{id} 目录，
   /// 将文件拷贝到 Documents 目录下，并命名为 cavals，
   /// 返回拷贝后的 Documents/cavals 目录路径
-  Future<String?> getDraftCavalsPath(int id) async {
+  Future<String?> getTemplateCavalsPath(int id) async {
     try {
       if (id == 0) {
         return null;
       }
 
-      // 源目录：Application Support/sqflite_draft/{uuid}
-      final supportDir = await DirectoryManager.getSupportDirectory();
-      final draftDir = Directory(
-        p.join(supportDir.path, 'sqflite_draft', '$id'),
+      // 源目录：Application Support/templates/{id}
+      final templatesDir = await DirectoryManager.getSupportSubDirectory(
+        'templates',
       );
+      final templateDir = Directory(p.join(templatesDir.path, '$id'));
 
-      if (!await draftDir.exists()) {
-        debugPrint('DraftStoreManager: 源草稿目录不存在: ${draftDir.path}');
+      if (!await templateDir.exists()) {
+        debugPrint('TemplateStoreManager: 源模板目录不存在: ${templateDir.path}');
         return null;
       }
 
@@ -176,7 +182,7 @@ class DraftStoreManager {
       final documentsDir = await DirectoryManager.getDocumentsDirectory();
       final targetCavalsDir = Directory(p.join(documentsDir.path, 'cavals'));
 
-      // 如果目标 cavals 目录已存在，先删除，保证是当前 uuid 的内容
+      // 如果目标 cavals 目录已存在，先删除，保证是当前模板的内容
       if (await targetCavalsDir.exists()) {
         await FileManager.deleteDirectory(
           targetCavalsDir,
@@ -184,16 +190,16 @@ class DraftStoreManager {
         );
       }
 
-      // 将 sqflite_draft/{uuid} 下的内容复制到 Documents/cavals
-      await _copyDirectoryRecursive(draftDir, targetCavalsDir);
+      // 将 templates/{id} 下的内容复制到 Documents/cavals
+      await _copyDirectoryRecursive(templateDir, targetCavalsDir);
 
       debugPrint(
-        'DraftStoreManager: 草稿文件已从 $id 恢复到 Documents/cavals: ${targetCavalsDir.path}',
+        'TemplateStoreManager: 模板文件已从 $id 恢复到 Documents/cavals: ${targetCavalsDir.path}',
       );
 
       return targetCavalsDir.path;
     } catch (e) {
-      debugPrint('DraftStoreManager: 拷贝草稿 cavals 目录失败: $e');
+      debugPrint('TemplateStoreManager: 拷贝模板 cavals 目录失败: $e');
       return null;
     }
   }

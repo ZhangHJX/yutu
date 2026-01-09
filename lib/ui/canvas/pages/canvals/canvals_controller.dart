@@ -32,12 +32,6 @@ class CanvalsController extends GetxController {
     debugPrint("--走过的路线---onInit---");
   }
 
-  @override
-  void onReady() {
-    DraftManager().initSaveDraft();
-    super.onReady();
-  }
-
   CanvasModel? buildSnapshot() {
     // 使用 JSON 序列化方式克隆画布模型
     final cloned = CanvasModelClone.clone(canvasModel);

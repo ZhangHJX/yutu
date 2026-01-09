@@ -9,9 +9,9 @@ import '../model/middle_model.dart';
 
 /// 草稿资源文件下载服务
 /// 负责下载和管理草稿资源文件
-class DraftResourceDownload extends BaseResourceDownload {
-  DraftResourceDownload._();
-  static final DraftResourceDownload instance = DraftResourceDownload._();
+class DraftDownload extends BaseResourceDownload {
+  DraftDownload._();
+  static final DraftDownload instance = DraftDownload._();
 
   /// 检查草稿资源文件是否存在
   /// 根据 id 查找数据库，如果有数据，比较时间戳
@@ -201,7 +201,7 @@ class DraftResourceDownload extends BaseResourceDownload {
   Future<bool> saveOrUpdateDraft(MiddleModel model) async {
     try {
       // 1. 创建 DraftModel（仅保存元数据，不保存画布数据）
-      final draftModel = DraftModel(id: model.id, timestamp: model.editTime);
+      final draftModel = ManagerModel(id: model.id, timestamp: model.editTime);
       // 2. 保存或更新数据库记录
       final success = await DraftStore.instance.save(draftModel);
       if (!success) {

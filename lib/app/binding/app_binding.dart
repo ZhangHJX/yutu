@@ -10,6 +10,7 @@ class AppBinding extends Bindings {
 
     // 初始化 ObjectBox
     await DraftStore.instance.init();
+    await TemplateStore.instance.init();
 
     // Get.put<GetStorageService>(
     //   GetStorageService(GetStorage('app_storage')),

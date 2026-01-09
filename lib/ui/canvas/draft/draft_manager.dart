@@ -244,22 +244,14 @@ class DraftManager {
   }
 
   /// 初始化时，保存到本地
-  Future<void> initSaveDraft() async {
+  Future<void> initSaveDraft(CanvasModel model) async {
     try {
-      // 构建完整的画布数据（包含元素列表）
-      final snapshot = _controller!.buildSnapshot();
-      if (snapshot == null) {
-        debugPrint('DraftManager: 无法构建画布快照');
-        return;
-      }
-
       // 转换为JSON
-      final jsonData = snapshot.toJson();
+      final jsonData = model.toJson();
       final jsonString = jsonEncode(jsonData);
 
       // 获取保存目录（固定路径，不依赖canvasId）
       final draftDir = await _getDraftDirectory();
-
       // 写入文件
       await FileManager.writeTextFile(
         directory: draftDir,
