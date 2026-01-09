@@ -6,6 +6,7 @@ class GradientText extends StatelessWidget {
   final List<Color> colors;
   final AlignmentGeometry begin;
   final AlignmentGeometry end;
+  final List<double>? stops;
 
   const GradientText(
     this.text, {
@@ -14,6 +15,7 @@ class GradientText extends StatelessWidget {
     required this.colors,
     this.begin = Alignment.topLeft,
     this.end = Alignment.bottomRight,
+    this.stops,
   });
 
   @override
@@ -23,6 +25,7 @@ class GradientText extends StatelessWidget {
         colors: colors,
         begin: begin,
         end: end,
+        stops: stops,
       ).createShader(bounds),
       child: Text(text, style: style?.copyWith(color: Colors.white)),
     );

@@ -14,7 +14,6 @@ class AppRoutes {
   static const draftPreview = '/draft_preview_widget';
 
   // 画布相关
-  static const canvalsDesign = '/canvals_design_page';
   static const canvalsPage = '/canvals_page';
 
   /// 我的模块页面

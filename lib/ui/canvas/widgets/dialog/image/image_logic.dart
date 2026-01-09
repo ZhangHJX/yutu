@@ -6,6 +6,7 @@ import 'package:voicetemplate/ui/model/index.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/stores/global.dart';
+import 'package:voicetemplate/app/routes/index.dart';
 import 'dart:io';
 
 class ImageLogic extends GetxController {
@@ -121,12 +122,25 @@ class ImageLogic extends GetxController {
         context: context,
         onSuccess:
             (String filePath, double width, double height, int fileSize) {
-              getUploadInfo(filePath, fileSize, width, height);
+              final materialSize =
+                  double.tryParse(global.userInfo.value.designFileSize) ??
+                  0 + fileSize.toDouble();
+              final materialLimit =
+                  double.tryParse(global.userInfo.value.designFileSizeLimit) ??
+                  0;
+
+              if (materialSize >= materialLimit) {
+                SmartDialog.dismiss();
+                showMaterialMemoryDialog();
+              } else {
+                getUploadInfo(filePath, fileSize, width, height);
+              }
             },
       );
     } catch (e, stackTrace) {
       showToast('读取照片路径报错，请重试');
       debugPrint('从相册选择😟😟😟😟: $e $stackTrace');
+      await PickerImageManager.deleteDirectory();
     }
   }
 
@@ -313,5 +327,51 @@ class ImageLogic extends GetxController {
       await dst.delete();
     }
     return src.copy(toPath);
+  }
+
+  /// 显示是否保存为草稿
+  void showMaterialMemoryDialog() {
+    final textWidget = RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        style: TextStyle(
+          fontSize: 16.w,
+          color: "#434343".color,
+          fontWeight: FontWeight.w500,
+        ),
+        children: [
+          TextSpan(text: '您的素材存储空间已满，请\n先去'),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: GradientText(
+              '"我的素材"',
+              style: TextStyle(fontSize: 16.w, fontWeight: FontWeight.w500),
+              colors: ["#8556FF".color, "#3691FF".color.withValues(alpha: 0.5)],
+              stops: [0.7, 1.0],
+            ),
+          ),
+          TextSpan(text: '页面整理已上传的\n素材，才能继续开始新的设计'),
+        ],
+      ),
+    );
+
+    SmartDialog.show(
+      builder: (context) => ConfirmPopWidget(
+        title: "存储空间已满",
+        subTitleWidget: textWidget,
+        sureTitle: "跳转我的素材",
+        sureAction: () {
+          Get.toNamed(AppRoutes.design);
+        },
+      ),
+      alignment: Alignment.center,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: "#000000".color.withValues(alpha: 0.5),
+      clickMaskDismiss: true,
+      useAnimation: true,
+      usePenetrate: false,
+    );
   }
 }

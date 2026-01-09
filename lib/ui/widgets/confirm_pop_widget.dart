@@ -39,78 +39,79 @@ class ConfirmPopWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18.w,
                 color: "#232535".color,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
 
           Padding(
-            padding: EdgeInsets.only(top: 46.w),
+            padding: EdgeInsets.only(top: 29.w),
             child: _buildSubTitle(),
           ),
 
           Spacer(),
 
-          // 标题栏
-          Row(
-            children: [
-              SizedBox(width: 20.w),
-              GestureDetector(
-                onTap: () {
-                  cancelAction?.call();
-                  SmartDialog.dismiss();
-                },
-                child: Container(
-                  width: 114.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    color: "#E8E8E8".color,
-                    borderRadius: BorderRadius.circular(20.w),
-                  ),
-                  child: Center(
-                    child: Text(
-                      cancelTitle,
-                      style: TextStyle(
-                        fontSize: 16.w,
-                        color: "#222325".color.withValues(alpha: 0.5),
-                        fontWeight: FontWeight.w500,
+          // 按钮
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    cancelAction?.call();
+                    SmartDialog.dismiss();
+                  },
+                  child: Container(
+                    width: 114.w,
+                    height: 40.w,
+                    decoration: BoxDecoration(
+                      color: "#E8E8E8".color,
+                      borderRadius: BorderRadius.circular(20.w),
+                    ),
+                    child: Center(
+                      child: Text(
+                        cancelTitle,
+                        style: TextStyle(
+                          fontSize: 16.w,
+                          color: "#222325".color.withValues(alpha: 0.5),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
 
-              SizedBox(width: 8.w),
-
-              GestureDetector(
-                onTap: () {
-                  sureAction?.call();
-                  SmartDialog.dismiss();
-                },
-                child: Container(
-                  width: 114.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20.w),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF3691FF), Color(0xFF8556FF)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
+                GestureDetector(
+                  onTap: () {
+                    sureAction?.call();
+                    SmartDialog.dismiss();
+                  },
+                  child: Container(
+                    width: 114.w,
+                    height: 40.w,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20.w),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF3691FF), Color(0xFF8556FF)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
                     ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      sureTitle,
-                      style: TextStyle(
-                        fontSize: 16.w,
-                        color: "#FFFFFF".color,
-                        fontWeight: FontWeight.w500,
+                    child: Center(
+                      child: Text(
+                        sureTitle,
+                        style: TextStyle(
+                          fontSize: 16.w,
+                          color: "#FFFFFF".color,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           SizedBox(height: 26.w),

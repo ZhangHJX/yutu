@@ -42,6 +42,7 @@ class DraftDownload extends BaseResourceDownload {
       final draftDir = Directory(
         p.join(supportDir.path, 'sqflite_draft', '$id'),
       );
+
       final exists = await draftDir.exists();
 
       if (exists) {
