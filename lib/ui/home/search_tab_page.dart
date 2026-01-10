@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'search_logic.dart';
 import '../widgets/page_empty_state.dart';
 import './widgets/home_page_item.dart';
-import '../model/common_model.dart';
 
 /// 可保活的 Tab 页面组件
 class SearchTabPage extends StatelessWidget {
