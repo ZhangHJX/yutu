@@ -28,7 +28,7 @@ class AppDesignPage extends StatelessWidget {
               Color(0xFFF7F7F7),
               Color(0xFFE3EEF7),
             ],
-            stops: [0.0, 0.1, 0.1, 1.0],
+            stops: [0.0, 0.15, 0.15, 1.0],
           ),
         ),
         child: Column(

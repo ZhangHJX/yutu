@@ -36,7 +36,7 @@ class MineScrollTabBar extends StatelessWidget {
             indicator: const BoxDecoration(),
             dividerColor: Colors.transparent,
             labelColor: '#007BFE'.color,
-            unselectedLabelColor: '#8D8D8D'.color,
+            unselectedLabelColor: '#2A6181'.color,
             labelStyle: TextStyle(fontSize: 14.w, fontWeight: FontWeight.w400),
             unselectedLabelStyle: TextStyle(
               fontSize: 14.w,
@@ -53,14 +53,14 @@ class MineScrollTabBar extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 9.w),
                 height: 24.w,
                 decoration: BoxDecoration(
-                  color: isSelected ? '#D8F5FF'.color : '#F4F4F4'.color,
+                  color: isSelected ? '#DCEDFE'.color : '#E9F2F7'.color,
                   borderRadius: BorderRadius.circular(12.w),
                 ),
                 child: Center(
                   child: Text(
                     item.name,
                     style: TextStyle(
-                      color: isSelected ? '#007BFE'.color : '#8D8D8D'.color,
+                      color: isSelected ? '#007BFE'.color : '#2A6181'.color,
                       fontSize: 14.w,
                       fontWeight: FontWeight.w400,
                     ),
@@ -75,7 +75,7 @@ class MineScrollTabBar extends StatelessWidget {
   }
 
   double _paddingWithTab(int index, int total) {
-    if (index > 0 && index < total) {
+    if (index < total) {
       return 12.w;
     }
     return 0;

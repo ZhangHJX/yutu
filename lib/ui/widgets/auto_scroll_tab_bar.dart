@@ -75,7 +75,7 @@ class AutoScrollTabBar extends StatelessWidget {
   }
 
   double _paddingWithTab(int index, int total) {
-    if (index > 0 && index < total) {
+    if (index < total) {
       return 12.w;
     }
     return 0;
