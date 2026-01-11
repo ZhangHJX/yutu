@@ -7,6 +7,7 @@ import '../widgets/operation_bottom_bar.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import '../widgets/top_navigation_widget.dart';
 import '../../../widgets/page_empty_state.dart';
+import 'package:voicetemplate/ui/mine/pages/widgets/mine_scroll_tab_bar.dart';
 
 class AppDesignPage extends StatelessWidget {
   AppDesignPage({super.key});
@@ -44,7 +45,13 @@ class AppDesignPage extends StatelessWidget {
                     logic.toggleBatchMode();
                   }
                 },
-                children: [_buildTabBar()],
+                child: Obx(
+                  () => MineScrollTabBar(
+                    screenList: logic.screenList,
+                    tabController: logic.tabController.value,
+                    onTabTap: (index) => logic.switchTab(index),
+                  ),
+                ),
               );
             }),
 
@@ -62,7 +69,13 @@ class AppDesignPage extends StatelessWidget {
                   controller: logic.tabController.value!,
                   children: List.generate(logic.screenList.length, (index) {
                     final tagId = logic.screenList[index].id;
-                    return KeepAliveWrapper(child: DesignTabPage(tagId: tagId));
+                    return KeepAliveWrapper(
+                      key: ValueKey('design_page_$tagId'),
+                      child: DesignTabPage(
+                        key: ValueKey('design_page_$tagId'),
+                        tagId: tagId,
+                      ),
+                    );
                   }),
                 );
               }),

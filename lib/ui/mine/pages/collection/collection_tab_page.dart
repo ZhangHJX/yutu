@@ -15,7 +15,6 @@ class CollectionTabPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tagId = logic.screenList[logic.selectedTabIndex.value].id;
     final tabData = logic.tabDataMap[tagId];
     if (tabData == null) {
       return const PageEmptyState();

@@ -79,7 +79,7 @@ class DesiginPageItem extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            item.title ?? '',
+                            item.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

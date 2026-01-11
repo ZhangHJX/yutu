@@ -1,10 +1,10 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:voicetemplate/ui/mine/pages/widgets/mine_scroll_tab_bar.dart';
 import 'collection_logic.dart';
 import '../widgets/operation_bottom_bar.dart';
 import '../../../widgets/page_empty_state.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
-// import '../../../widgets/tab_item_widget.dart';
 import '../widgets/top_navigation_widget.dart';
 import 'collection_tab_page.dart';
 
@@ -33,20 +33,24 @@ class AppCollectionPage extends StatelessWidget {
         child: Column(
           children: [
             // 顶部
-            Obx(() {
-              return TopNavigationWidget(
-                title: "我的收藏",
-                rightTitle: logic.isBatchMode.value ? "全选" : "批量",
-                onTap: () {
-                  if (logic.isBatchMode.value) {
-                    logic.toggleSelectAll();
-                  } else {
-                    logic.toggleBatchMode();
-                  }
-                },
-                children: [_buildTabBar()],
-              );
-            }),
+            TopNavigationWidget(
+              title: "我的收藏",
+              rightTitle: logic.isBatchMode.value ? "全选" : "批量",
+              onTap: () {
+                if (logic.isBatchMode.value) {
+                  logic.toggleSelectAll();
+                } else {
+                  logic.toggleBatchMode();
+                }
+              },
+              child: Obx(
+                () => MineScrollTabBar(
+                  screenList: logic.screenList,
+                  tabController: logic.tabController.value,
+                  onTabTap: (index) => logic.switchTab(index),
+                ),
+              ),
+            ),
 
             Expanded(
               child: Obx(() {
@@ -63,7 +67,11 @@ class AppCollectionPage extends StatelessWidget {
                   children: List.generate(logic.screenList.length, (index) {
                     final tagId = logic.screenList[index].id;
                     return KeepAliveWrapper(
-                      child: CollectionTabPage(tagId: tagId),
+                      key: ValueKey('collection_page_$tagId'),
+                      child: CollectionTabPage(
+                        key: ValueKey('collection_page_$tagId'),
+                        tagId: tagId,
+                      ),
                     );
                   }),
                 );
@@ -92,38 +100,6 @@ class AppCollectionPage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  // 构建 Tab 选择器
-  Widget _buildTabBar() {
-    return Container(
-      height: 44.w,
-      color: Colors.transparent,
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Obx(() {
-        if (logic.screenList.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        // 移除内层嵌套的 Obx，外层 Obx 已经监听了 screenList 和 selectedTabIndex
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Text("data"),
-
-          //  Row(
-          //   children: List.generate(
-          //     logic.screenList.length,
-          //     (index) => TabItemWidget(
-          //       name: logic.screenList[index].name,
-          //       tapCallBack: () {
-          //         logic.switchTab(index);
-          //       },
-          //       isSelected: logic.selectedTabIndex.value == index,
-          //     ),
-          //   ),
-          // ),
-        );
-      }),
     );
   }
 }
