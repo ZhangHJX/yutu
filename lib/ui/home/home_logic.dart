@@ -29,6 +29,9 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   // Tab 索引
   final selectedTabIndex = 0.obs;
 
+  /// TabController
+  final Rxn<TabController> tabController = Rxn<TabController>();
+
   /// 草稿选择
   final isLocal = true.obs;
 
@@ -75,6 +78,9 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
       tabData.refreshController.dispose();
     }
     tabDataMap.clear();
+    // 释放 TabController
+    tabController.value?.dispose();
+    tabController.value = null;
     _countWorker?.dispose();
     super.onClose();
   }
@@ -112,21 +118,36 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
         recommendList.value = result.data!.recommendList;
         tagList.value = result.data!.tagList;
+
+        // 根据 isSelect 字段找到应该选中的 tab 索引
+        int selectedIndex = 0;
+
         // 初始化每个 tag 的数据到 tabDataMap
         for (var index = 0; index < tagList.length; index++) {
           final tag = tagList[index];
           final tabData = _getOrCreateTabData(tag.id);
           if (tag.list.isNotEmpty) {
             // 如果 tag 的 list 不为空，初始化数据
-            selectedTabIndex.value = index;
             tabData.dataList.value = tag.list;
             tabData.isInitialized = true;
             tabData.currentPage = 1;
             tabData.hasMore.value = true;
           }
+
+          // 根据后台的 isSelect 标识设置选中的 tab
+          if (tag.isSelect == 1) {
+            selectedIndex = index;
+          }
         }
 
-        /// 处理
+        // 设置选中的 tab 索引
+        selectedTabIndex.value = selectedIndex;
+
+        // 创建或更新 TabController
+        _createOrUpdateTabController();
+        if (selectedIndex != 0) {
+          loadSceneList(refresh: true);
+        }
       }
 
       if (refresh) {
@@ -148,12 +169,49 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     }
   }
 
+  /// 创建或更新 TabController
+  void _createOrUpdateTabController() {
+    if (tagList.isEmpty) {
+      tabController.value?.dispose();
+      tabController.value = null;
+      return;
+    }
+
+    final newLength = tagList.length;
+
+    // 如果 TabController 已存在且长度相同，只需要同步索引
+    if (tabController.value != null &&
+        tabController.value!.length == newLength) {
+      if (tabController.value!.index != selectedTabIndex.value) {
+        tabController.value!.index = selectedTabIndex.value;
+      }
+      return;
+    }
+
+    // 释放旧的 TabController
+    tabController.value?.dispose();
+
+    // 创建新的 TabController
+    final newController = TabController(
+      length: newLength,
+      vsync: this,
+      initialIndex: selectedTabIndex.value.clamp(0, newLength - 1),
+    );
+
+    tabController.value = newController;
+  }
+
   // 切换 tab
   void switchTab(int index) {
     if (index < 0 || tagList.isEmpty || index >= tagList.length) {
       return;
     }
     if (selectedTabIndex.value == index) return;
+
+    // 先调用 animateTo 来滚动和动画
+    if (tabController.value != null) {
+      tabController.value!.animateTo(index);
+    }
     // 更新选中索引
     selectedTabIndex.value = index;
 

@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'home_logic.dart';
 import './widgets/search_navigation_widget.dart';
-// import '../widgets/tab_item_widget.dart';
+import 'package:voicetemplate/ui/widgets/index.dart';
 import './widgets/home_page_item.dart';
 import 'package:voicetemplate/app/routes/index.dart';
 import '../widgets/page_empty_state.dart';
@@ -237,31 +237,24 @@ class HomePage extends StatelessWidget {
 
   // 构建 Tab 栏
   Widget _buildTabBar() {
-    return Container(
+    return SizedBox(
       height: 44.0,
-      color: "#F7F7F7".color,
       child: Stack(
         children: [
           // 可滚动的标签列表
           Align(
             alignment: Alignment.centerLeft,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.only(left: 15.w, right: 50.w), // 右边留出图片空间
-              child: Text("data"),
-
-              // Row(
-              //   children: List.generate(
-              //     logic.tagList.length,
-              //     (index) => TabItemWidget(
-              //       name: logic.tagList[index].name,
-              //       isSelected: logic.selectedTabIndex.value == index,
-              //       tapCallBack: () {
-              //         logic.switchTab(index);
-              //       },
-              //     ),
-              //   ),
-              // ),
+            child: Obx(
+              () => AutoScrollTabBar(
+                screenList: logic.tagList,
+                tabController: logic.tabController.value,
+                onTabTap: (index) => logic.switchTab(index),
+                rightMargin: 53.w,
+                textColor: '#2A6181',
+                textSelectColor: '#007BFE',
+                itemBackColor: '#E9F2F7',
+                itemSelectBackColor: '#DCEDFE',
+              ),
             ),
           ),
 

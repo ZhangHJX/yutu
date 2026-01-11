@@ -202,6 +202,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
     }
     if (refresh) {
       tabData.currentPage = 1;
+      tabData.hasMore.value = false;
     }
     tabData.isLoading.value = true;
     try {

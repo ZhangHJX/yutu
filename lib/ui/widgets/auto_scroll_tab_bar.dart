@@ -6,12 +6,24 @@ class AutoScrollTabBar extends StatelessWidget {
   final List<TagModel> screenList;
   final TabController? tabController;
   final ValueChanged<int>? onTabTap;
+  final double rightMargin;
+
+  // text相关属性
+  final String textColor;
+  final String textSelectColor;
+  final String itemBackColor;
+  final String itemSelectBackColor;
 
   const AutoScrollTabBar({
     super.key,
     required this.screenList,
     this.tabController,
     this.onTabTap,
+    this.rightMargin = 16,
+    this.textColor = '#8D8D8D',
+    this.textSelectColor = '#007BFE',
+    this.itemBackColor = '#F4F4F4',
+    this.itemSelectBackColor = '#D8F5FF',
   });
 
   @override
@@ -23,7 +35,7 @@ class AutoScrollTabBar extends StatelessWidget {
     return Container(
       height: 44.w,
       color: Colors.transparent,
-      margin: EdgeInsets.symmetric(horizontal: 16.w),
+      margin: EdgeInsets.only(left: 16.w, right: rightMargin.w),
       child: AnimatedBuilder(
         animation: tabController!,
         builder: (context, child) {
@@ -53,14 +65,18 @@ class AutoScrollTabBar extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 9.w),
                 height: 24.w,
                 decoration: BoxDecoration(
-                  color: isSelected ? '#D8F5FF'.color : '#F4F4F4'.color,
+                  color: isSelected
+                      ? itemSelectBackColor.color
+                      : itemBackColor.color,
                   borderRadius: BorderRadius.circular(12.w),
                 ),
                 child: Center(
                   child: Text(
                     item.name,
                     style: TextStyle(
-                      color: isSelected ? '#007BFE'.color : '#8D8D8D'.color,
+                      color: isSelected
+                          ? textSelectColor.color
+                          : textColor.color,
                       fontSize: 14.w,
                       fontWeight: FontWeight.w400,
                     ),
