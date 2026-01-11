@@ -4,4 +4,3 @@ export 'tab_bar_underline_indicator.dart';
 export 'select_item_gradient_border.dart';
 export 'keep_alive_wrapper.dart';
 export 'custom_gesture_detector.dart';
-export 'auto_scroll_tab_bar.dart';

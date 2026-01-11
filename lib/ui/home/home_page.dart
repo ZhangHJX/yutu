@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'home_logic.dart';
 import './widgets/search_navigation_widget.dart';
-import '../widgets/tab_item_widget.dart';
+// import '../widgets/tab_item_widget.dart';
 import './widgets/home_page_item.dart';
 import 'package:voicetemplate/app/routes/index.dart';
 import '../widgets/page_empty_state.dart';
@@ -60,12 +60,12 @@ class HomePage extends StatelessWidget {
                     SliverToBoxAdapter(child: _buildWonderfulRecommendations()),
 
                     // Tab 栏（使用 SliverPersistentHeader 实现固定在顶部效果）
-                    SliverPersistentHeader(
-                      pinned: true, // 设置为 true 实现固定在顶部效果
-                      delegate: _TabBarDelegate(
-                        child: Obx(() => _buildTabBar()),
-                      ),
-                    ),
+                    // SliverPersistentHeader(
+                    //   pinned: true, // 设置为 true 实现固定在顶部效果
+                    //   delegate: _TabBarDelegate(
+                    //     child: Obx(() => _buildTabBar()),
+                    //   ),
+                    // ),
 
                     // 瀑布流内容列表
                     SliverToBoxAdapter(
@@ -242,51 +242,54 @@ class HomePage extends StatelessWidget {
     return Container(
       height: 44.0,
       color: "#F7F7F7".color,
-      child: Stack(
-        children: [
-          // 可滚动的标签列表
-          Align(
-            alignment: Alignment.centerLeft,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.only(left: 15.w, right: 50.w), // 右边留出图片空间
-              child: Row(
-                children: List.generate(
-                  logic.tagList.length,
-                  (index) => TabItemWidget(
-                    name: logic.tagList[index].name,
-                    isSelected: logic.selectedTabIndex.value == index,
-                    tapCallBack: () {
-                      logic.switchTab(index);
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ),
 
-          // 右侧固定图片
-          Positioned(
-            right: 0.w,
-            top: 0,
-            bottom: 0,
-            child: GestureDetector(
-              onTap: () => Get.toNamed(AppRoutes.search),
-              child: Container(
-                color: "#F7F7F7".color,
-                child: Center(
-                  child: Image.asset(
-                    'assets/images/home/home_screen_more.png',
-                    width: 53.w,
-                    height: 26.w,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      // Stack(
+      //   children: [
+      //     // 可滚动的标签列表
+      //     Align(
+      //       alignment: Alignment.centerLeft,
+      //       child: SingleChildScrollView(
+      //         scrollDirection: Axis.horizontal,
+      //         padding: EdgeInsets.only(left: 15.w, right: 50.w), // 右边留出图片空间
+      //         child: Text("data"),
+
+      //         // Row(
+      //         //   children: List.generate(
+      //         //     logic.tagList.length,
+      //         //     (index) => TabItemWidget(
+      //         //       name: logic.tagList[index].name,
+      //         //       isSelected: logic.selectedTabIndex.value == index,
+      //         //       tapCallBack: () {
+      //         //         logic.switchTab(index);
+      //         //       },
+      //         //     ),
+      //         //   ),
+      //         // ),
+      //       ),
+      //     ),
+
+      //     // 右侧固定图片
+      //     Positioned(
+      //       right: 0.w,
+      //       top: 0,
+      //       bottom: 0,
+      //       child: GestureDetector(
+      //         onTap: () => Get.toNamed(AppRoutes.search),
+      //         child: Container(
+      //           color: "#F7F7F7".color,
+      //           child: Center(
+      //             child: Image.asset(
+      //               'assets/images/home/home_screen_more.png',
+      //               width: 53.w,
+      //               height: 26.w,
+      //               fit: BoxFit.cover,
+      //             ),
+      //           ),
+      //         ),
+      //       ),
+      //     ),
+      //   ],
+      // ),
     );
   }
 }

@@ -49,18 +49,29 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   }
 
   /// 创建或更新 TabController
-  void createTabController() {
+  void createTabController({int initialIndex = 0}) {
     final newLength = screenList.length;
     if (newLength == 0) return;
+
+    // 如果 TabController 已存在且长度相同，只需要更新索引
+    if (tabController.value != null &&
+        tabController.value!.length == newLength) {
+      if (tabController.value!.index != initialIndex) {
+        tabController.value!.animateTo(initialIndex);
+      }
+      selectedTabIndex.value = initialIndex;
+      return;
+    }
+
     // 创建新的 TabController
     final newController = TabController(
       length: newLength,
       vsync: this,
-      initialIndex: 0,
+      initialIndex: initialIndex,
     );
     newController.addListener(_onTabControllerChanged);
     tabController.value = newController;
-    selectedTabIndex.value = 0;
+    selectedTabIndex.value = initialIndex;
   }
 
   /// TabController 切换监听
@@ -120,21 +131,33 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
       if (result.code == 0 && result.data != null) {
         screenList.value = result.data!.tagList;
 
+        // 根据 isSelect 字段找到应该选中的 tab 索引
+        int selectedIndex = 0;
+
         // 初始化每个 tag 的数据到 tabDataMap
         for (var index = 0; index < screenList.length; index++) {
           final tag = screenList[index];
           final tabData = _getOrCreateTabData(tag.id);
+
           if (tag.list.isNotEmpty) {
             // 如果 tag 的 list 不为空，初始化数据
-            selectedTabIndex.value = index;
             tabData.dataList.value = tag.list;
             tabData.isInitialized = true;
             tabData.currentPage = 1;
             tabData.hasMore.value = true;
           }
+
+          // 根据后台的 isSelect 标识设置选中的 tab
+          if (tag.isSelect == 1) {
+            selectedIndex = index;
+          }
         }
-        // 创建 TabController
-        createTabController();
+
+        // 设置选中的 tab 索引
+        selectedTabIndex.value = selectedIndex;
+
+        // 创建 TabController，并设置初始索引
+        createTabController(initialIndex: selectedIndex);
       }
       tabIsLoading.value = false;
     } catch (e) {

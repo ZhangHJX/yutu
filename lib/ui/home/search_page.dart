@@ -2,14 +2,24 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'search_logic.dart';
 import './widgets/search_navigation_widget.dart';
-import '../widgets/tab_item_widget.dart';
 import '../widgets/page_empty_state.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import 'search_tab_page.dart';
 
-class SearchPage extends StatelessWidget {
-  SearchPage({super.key});
+class SearchPage extends StatefulWidget {
+  const SearchPage({super.key});
+
+  @override
+  State<SearchPage> createState() => _SearchPageState();
+}
+
+class _SearchPageState extends State<SearchPage> {
   final logic = Get.put(SearchLogic());
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,26 +36,28 @@ class SearchPage extends StatelessWidget {
         child: Column(
           children: [
             // 顶部
-            Obx(() {
-              return SearchNavigationWidget(
-                isEnabled: true,
-                onSearch: (value) {
-                  logic.searchText.value = value;
-                  logic.onRefresh();
-                },
-                onClear: () {
-                  logic.searchText.value = '';
-                  logic.onRefresh();
-                  debugPrint("---哈哈哈哈哈哈----onClear------");
-                },
-                children: [_buildTabBar()],
-              );
-            }),
-
+            SearchNavigationWidget(
+              isEnabled: true,
+              onSearch: (value) {
+                logic.searchText.value = value;
+                logic.onRefresh();
+              },
+              onClear: () {
+                logic.searchText.value = '';
+                logic.onRefresh();
+              },
+              child: _buildTabBar(),
+            ),
             Expanded(
               child: Obx(() {
+                final list = logic.screenList;
+
+                debugPrint(
+                  '=${list.isEmpty}=======${logic.tabIsLoading.value}========',
+                );
+
                 // 如果screenList为空或TabController未初始化，显示加载状态
-                if (logic.screenList.isEmpty && logic.tabIsLoading.value) {
+                if (list.isEmpty && logic.tabIsLoading.value) {
                   return const Center(child: CircularProgressIndicator());
                 } else {
                   if (logic.tabController.value == null) {
@@ -56,7 +68,13 @@ class SearchPage extends StatelessWidget {
                   controller: logic.tabController.value!,
                   children: List.generate(logic.screenList.length, (index) {
                     final tagId = logic.screenList[index].id;
-                    return KeepAliveWrapper(child: SearchTabPage(tagId: tagId));
+                    return KeepAliveWrapper(
+                      key: ValueKey('search_page_$tagId'),
+                      child: SearchTabPage(
+                        key: ValueKey('search_page_$tagId'),
+                        tagId: tagId,
+                      ),
+                    );
                   }),
                 );
               }),
@@ -69,30 +87,78 @@ class SearchPage extends StatelessWidget {
 
   /// 构建 Tab 选择器
   Widget _buildTabBar() {
-    return Container(
-      height: 44.w,
-      color: Colors.transparent,
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: List.generate(
-            logic.screenList.length,
-            (index) => TabItemWidget(
-              key: ValueKey('tab_item_$index'),
-              name: logic.screenList[index].name,
-              tapCallBack: () {
+    return Obx(() {
+      // 将可观察变量赋值给局部变量，确保 GetX 能追踪到
+      final screenList = logic.screenList;
+      final tabController = logic.tabController.value;
+      // 如果列表为空或 TabController 未初始化，返回空容器
+      if (screenList.isEmpty || tabController == null) {
+        return SizedBox(height: 44.w);
+      }
+      return Container(
+        height: 44.w,
+        color: Colors.transparent,
+        margin: EdgeInsets.symmetric(horizontal: 16.w),
+        child: AnimatedBuilder(
+          animation: tabController,
+          builder: (context, child) {
+            return TabBar(
+              controller: tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start, // ⭐ 防止某些场景默认不是start
+              padding: EdgeInsets.zero,
+              labelPadding: EdgeInsets.zero,
+              indicator: const BoxDecoration(),
+              dividerColor: Colors.transparent,
+              labelColor: '#007BFE'.color,
+              unselectedLabelColor: '#8D8D8D'.color,
+              labelStyle: TextStyle(
+                fontSize: 14.w,
+                fontWeight: FontWeight.w400,
+              ),
+              unselectedLabelStyle: TextStyle(
+                fontSize: 14.w,
+                fontWeight: FontWeight.w400,
+              ),
+              onTap: (index) {
                 logic.switchTab(index);
               },
-              isSelected: logic.selectedTabIndex.value == index,
-              selectColor: "#D8F5FF".color,
-              unSelectColor: '#F4F4F4'.color,
-              selectTextColor: '#007BFE'.color,
-              unSelectTextColor: '#8D8D8D'.color,
-            ),
-          ),
+              tabs: List.generate(screenList.length, (index) {
+                final item = screenList[index];
+                final isSelected = tabController.index == index;
+                return Container(
+                  margin: EdgeInsets.only(
+                    right: paddingWithTab(index, screenList.length - 1),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 9.w),
+                  height: 24.w,
+                  decoration: BoxDecoration(
+                    color: isSelected ? '#D8F5FF'.color : '#F4F4F4'.color,
+                    borderRadius: BorderRadius.circular(12.w),
+                  ),
+                  child: Center(
+                    child: Text(
+                      item.name,
+                      style: TextStyle(
+                        color: isSelected ? '#007BFE'.color : '#8D8D8D'.color,
+                        fontSize: 14.w,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            );
+          },
         ),
-      ),
-    );
+      );
+    });
+  }
+
+  double paddingWithTab(int index, int total) {
+    if (index > 0 && index < total) {
+      return 12.w;
+    }
+    return 0;
   }
 }

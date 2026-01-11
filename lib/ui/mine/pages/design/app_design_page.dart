@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'design_logic.dart';
 import 'design_tab_page.dart';
-import '../../../widgets/tab_item_widget.dart';
+// import '../../../widgets/tab_item_widget.dart';
 import '../widgets/operation_bottom_bar.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import '../widgets/top_navigation_widget.dart';
@@ -106,18 +106,19 @@ class AppDesignPage extends StatelessWidget {
         // 移除内层嵌套的 Obx，外层 Obx 已经监听了 screenList 和 selectedTabIndex
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: Row(
-            children: List.generate(
-              logic.screenList.length,
-              (index) => TabItemWidget(
-                name: logic.screenList[index].name,
-                tapCallBack: () {
-                  logic.switchTab(index);
-                },
-                isSelected: logic.selectedTabIndex.value == index,
-              ),
-            ),
-          ),
+          child: Text("data"),
+          //  Row(
+          //   children: List.generate(
+          //     logic.screenList.length,
+          //     (index) => TabItemWidget(
+          //       name: logic.screenList[index].name,
+          //       tapCallBack: () {
+          //         logic.switchTab(index);
+          //       },
+          //       isSelected: logic.selectedTabIndex.value == index,
+          //     ),
+          //   ),
+          // ),
         );
       }),
     );

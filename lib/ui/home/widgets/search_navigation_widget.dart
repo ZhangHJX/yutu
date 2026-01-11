@@ -6,11 +6,11 @@ class SearchNavigationWidget extends StatelessWidget {
   const SearchNavigationWidget({
     super.key,
     required this.isEnabled,
-    this.children = const [],
+    this.child,
     this.onSearch,
     this.onClear,
   });
-  final List<Widget> children;
+  final Widget? child;
   final bool isEnabled;
   final Function(String)? onSearch;
   final VoidCallback? onClear;
@@ -54,9 +54,9 @@ class SearchNavigationWidget extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(height: 8.w),
+        SizedBox(height: 5.w),
 
-        ...children,
+        if (child != null) child!,
       ],
     );
   }

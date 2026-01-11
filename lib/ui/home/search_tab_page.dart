@@ -12,14 +12,12 @@ class SearchTabPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tagId = logic.screenList[logic.selectedTabIndex.value].id;
     final tabData = logic.tabDataMap[tagId];
     if (tabData == null) {
       return const PageEmptyState(title: '未找到匹配的模板~');
     }
-
-    // 使用多个独立的 Obx，避免嵌套
     return Obx(() {
+      // 使用多个独立的 Obx，避免嵌套
       final designList = tabData.dataList;
       final isLoading = tabData.isLoading.value;
       if (isLoading && designList.isEmpty) {

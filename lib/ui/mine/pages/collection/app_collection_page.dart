@@ -4,7 +4,7 @@ import 'collection_logic.dart';
 import '../widgets/operation_bottom_bar.dart';
 import '../../../widgets/page_empty_state.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
-import '../../../widgets/tab_item_widget.dart';
+// import '../../../widgets/tab_item_widget.dart';
 import '../widgets/top_navigation_widget.dart';
 import 'collection_tab_page.dart';
 
@@ -108,18 +108,20 @@ class AppCollectionPage extends StatelessWidget {
         // 移除内层嵌套的 Obx，外层 Obx 已经监听了 screenList 和 selectedTabIndex
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: Row(
-            children: List.generate(
-              logic.screenList.length,
-              (index) => TabItemWidget(
-                name: logic.screenList[index].name,
-                tapCallBack: () {
-                  logic.switchTab(index);
-                },
-                isSelected: logic.selectedTabIndex.value == index,
-              ),
-            ),
-          ),
+          child: Text("data"),
+
+          //  Row(
+          //   children: List.generate(
+          //     logic.screenList.length,
+          //     (index) => TabItemWidget(
+          //       name: logic.screenList[index].name,
+          //       tapCallBack: () {
+          //         logic.switchTab(index);
+          //       },
+          //       isSelected: logic.selectedTabIndex.value == index,
+          //     ),
+          //   ),
+          // ),
         );
       }),
     );
