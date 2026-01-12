@@ -21,9 +21,9 @@ class AppConfigInit extends StatelessWidget {
         enableLoadingWhenNoData: false,
         child: GetMaterialApp(
           unknownRoute: unknownRoute,
-          title: Global.appName,
+          title: '语图',
           theme: AppTheme.lightTheme(),
-          darkTheme: AppTheme.darkTheme(),
+          darkTheme: AppTheme.lightTheme(),
           supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
           localizationsDelegates: const [
             GlobalWidgetsLocalizations.delegate,

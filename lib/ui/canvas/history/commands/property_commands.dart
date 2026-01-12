@@ -82,6 +82,12 @@ class UpdateTextPropertiesCommand implements CanvasCommand {
     if (properties.containsKey('familyKey')) {
       element.familyKey = properties['familyKey'] as String;
     }
+    if (properties.containsKey('styleName')) {
+      element.styleName = properties['styleName'] as String;
+    }
+    if (properties.containsKey('fontId')) {
+      element.fontId = properties['fontId'] as int;
+    }
     if (properties.containsKey('textColor')) {
       element.textColor = properties['textColor'] as String;
     }

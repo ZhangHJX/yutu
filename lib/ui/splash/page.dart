@@ -1,4 +1,3 @@
-import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -22,7 +21,7 @@ class SplashPage extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              Global.appName,
+              '语图',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 200),

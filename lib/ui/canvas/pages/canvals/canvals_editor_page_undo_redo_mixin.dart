@@ -313,6 +313,28 @@ mixin CanvasEditorUndoRedoMixin<T extends StatefulWidget> on State<T> {
       );
     }
 
+    if (old.styleName != current.styleName) {
+      historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'styleName': old.styleName},
+          newProperties: {'styleName': current.styleName},
+        ),
+      );
+    }
+
+    if (old.fontId != current.fontId) {
+      historyManager.executeCommand(
+        UpdateTextPropertiesCommand(
+          boxes: boxes,
+          elementId: current.id,
+          oldProperties: {'fontId': old.fontId},
+          newProperties: {'fontId': current.fontId},
+        ),
+      );
+    }
+
     if (old.textColor != current.textColor) {
       historyManager.executeCommand(
         UpdateTextPropertiesCommand(

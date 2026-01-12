@@ -9,7 +9,8 @@ import 'dart:math' as math;
 /// 全局选择状态管理控制器： 负责管理当前选中的文本框ID、画布模型以及元素列表
 class CanvalsController extends GetxController {
   // 画布模型
-  final args = Get.arguments as Map<String, dynamic>;
+  final args =
+      (Get.arguments as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
   CanvasModel get canvasModel => args['model'] as CanvasModel;
   PageSource get type => args['type'] as PageSource;
   int get isOwn => (args['is_own'] ?? 0) as int;
