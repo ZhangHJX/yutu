@@ -6,7 +6,7 @@ import '../widgets/slider_based_progress_bar.dart';
 class SpacingAlignmentWidget extends StatefulWidget {
   final dynamic element;
   final Function(bool notify)? onPropertyChanged;
-  final Function(double, double, TextAlign) onSpacingAlignmentChanged;
+  final Function(double, double, TextAlign, bool) onSpacingAlignmentChanged;
 
   const SpacingAlignmentWidget({
     super.key,
@@ -48,7 +48,12 @@ class _SpacingAlignmentWidgetState extends State<SpacingAlignmentWidget> {
   }
 
   void _updateModel({bool notify = true}) {
-    widget.onSpacingAlignmentChanged(_lineHeight, _letterSpacing, _textAlign);
+    widget.onSpacingAlignmentChanged(
+      _lineHeight,
+      _letterSpacing,
+      _textAlign,
+      notify,
+    );
     widget.onPropertyChanged?.call(notify);
   }
 
@@ -106,8 +111,12 @@ class _SpacingAlignmentWidgetState extends State<SpacingAlignmentWidget> {
               if (value <= 0.0001) return;
               setState(() {
                 _lineHeight = value;
-                _updateModel();
+                _updateModel(notify: false);
               });
+            },
+            (value) {
+              if (value <= 0.0001) return;
+              _updateModel(notify: true);
             },
             min: 0.0,
             max: 3.0,
@@ -145,8 +154,12 @@ class _SpacingAlignmentWidgetState extends State<SpacingAlignmentWidget> {
             (value) {
               setState(() {
                 _letterSpacing = value;
-                _updateModel();
+                _updateModel(notify: false);
               });
+            },
+            (value) {
+              if (value <= 0.0001) return;
+              _updateModel(notify: true);
             },
             min: 0.0,
             max: 5.0,
@@ -244,7 +257,8 @@ class _SpacingAlignmentWidgetState extends State<SpacingAlignmentWidget> {
   // 创建渐变色滑块
   Widget _buildGradientSlider(
     double value,
-    Function(double) onChanged, {
+    Function(double) onChanged,
+    Function(double) onChangeEnd, {
     double min = 0.0,
     double max = 1.0,
   }) {
@@ -255,6 +269,7 @@ class _SpacingAlignmentWidgetState extends State<SpacingAlignmentWidget> {
       trackHeight: 14.w,
       thumbSize: 18.w,
       onChanged: onChanged,
+      onChangeEnd: onChangeEnd,
     );
   }
 }

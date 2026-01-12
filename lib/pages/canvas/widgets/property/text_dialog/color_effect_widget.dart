@@ -21,6 +21,7 @@ class ColorEffectWidget extends StatefulWidget {
     double,
     double,
     double,
+    bool,
   )
   onColorEffectChanged;
 
@@ -142,6 +143,7 @@ class _ColorEffectWidgetState extends State<ColorEffectWidget> {
       double.tryParse(_shadowYController.text) ?? 0,
       double.tryParse(_shadowBlurController.text) ?? 0,
       _shawAlpha,
+      notify,
     );
     widget.onPropertyChanged?.call(notify);
   }

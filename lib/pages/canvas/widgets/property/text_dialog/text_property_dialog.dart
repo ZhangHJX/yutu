@@ -105,7 +105,6 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
             data.fontSize = fontSize;
             data.styleName = styleName;
             data.fontId = fontId;
-            widget.onPropertyChanged?.call(true);
           },
         ),
       );
@@ -127,6 +126,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                 shadowY,
                 shadowBlur,
                 shawAlpha,
+                notify,
               ) {
                 final data = widget.element;
                 data.textColor = textColor;
@@ -140,7 +140,6 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
                 data.shawY = shadowY;
                 data.blurValue = shadowBlur;
                 data.shawAlpha = shawAlpha;
-                widget.onPropertyChanged?.call(true);
               },
         ),
       );
@@ -149,13 +148,13 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
         child: SpacingAlignmentWidget(
           element: widget.element,
           onPropertyChanged: widget.onPropertyChanged,
-          onSpacingAlignmentChanged: (lineHeight, letterSpacing, textAlign) {
-            final data = widget.element;
-            data.lineHeight = lineHeight;
-            data.fontSpace = letterSpacing;
-            data.align = textAlign;
-            widget.onPropertyChanged?.call(true);
-          },
+          onSpacingAlignmentChanged:
+              (lineHeight, letterSpacing, textAlign, notify) {
+                final data = widget.element;
+                data.lineHeight = lineHeight;
+                data.fontSpace = letterSpacing;
+                data.align = textAlign;
+              },
         ),
       );
     }

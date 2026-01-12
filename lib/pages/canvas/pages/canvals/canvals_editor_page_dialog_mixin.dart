@@ -93,9 +93,9 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
           refreshTextBoxAfterPropertyChange();
           if (update) {
             recordTextPropertyChange();
+            // 通知草稿管理器元素属性已变更
+            DraftManager().notifyElementPropertyChanged();
           }
-          // 通知草稿管理器元素属性已变更
-          DraftManager().notifyElementPropertyChanged();
         },
       ),
       alignment: Alignment.bottomCenter,

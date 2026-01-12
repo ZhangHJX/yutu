@@ -33,12 +33,18 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   final TextEditingController _fontSizeController = TextEditingController();
   // Tab控制器
   late TabController _tabController;
+  final focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _initializeFromModel();
+    focusNode.addListener(() {
+      if (!focusNode.hasFocus) {
+        _updateModel(notify: true);
+      }
+    });
   }
 
   /// 从模型初始化UI状态
@@ -58,6 +64,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   void dispose() {
     _fontSizeController.dispose();
     _tabController.dispose();
+    focusNode.dispose();
     super.dispose();
   }
 
@@ -438,7 +445,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                               fontWeight: FontWeight.w600,
                               height: 1.2,
                             ),
-                            onChanged: (_) => _updateModel(),
+                            onChanged: (_) => _updateModel(notify: false),
+                            focusNode: focusNode,
                             onTap: () {
                               if (logic.showFontWeightDropdown.value) {
                                 setState(() {
