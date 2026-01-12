@@ -47,11 +47,7 @@ class SearchTabPage extends StatelessWidget {
           mainAxisSpacing: 12.w,
           crossAxisSpacing: 9.w,
           padding: EdgeInsets.symmetric(horizontal: 15.w),
-          // padding: EdgeInsets.only(left: 15.w, right: 15.w, bottom: 30.w),
           itemCount: designList.length,
-          physics: const ClampingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
           itemBuilder: (context, index) {
             final item = designList[index];
             // 使用独立的响应式组件，避免在 itemBuilder 中嵌套 Obx

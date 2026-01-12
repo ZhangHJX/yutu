@@ -38,13 +38,7 @@ class HomePage extends StatelessWidget {
               child: SmartRefresher(
                 key: logic.refresherKey,
                 controller: logic.refreshController,
-                enablePullDown: true,
-                enablePullUp: logic.hasMore.value,
-                header: ClassicHeader(),
-                footer: ClassicFooter(
-                  loadStyle: LoadStyle.ShowWhenLoading,
-                  completeDuration: Duration(milliseconds: 500),
-                ),
+                enablePullUp: true,
                 onRefresh: () async {
                   await logic.homeRefresh();
                 },
@@ -52,19 +46,14 @@ class HomePage extends StatelessWidget {
                   await logic.onLoad();
                 },
                 child: CustomScrollView(
-                  physics: const ClampingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
                   slivers: [
                     // 精彩推荐区域
                     SliverToBoxAdapter(child: _buildWonderfulRecommendations()),
-
                     // Tab 栏（使用 SliverPersistentHeader 实现固定在顶部效果）
                     SliverPersistentHeader(
                       pinned: true, // 设置为 true 实现固定在顶部效果
                       delegate: _TabBarDelegate(child: _buildTabBar()),
                     ),
-
                     // 瀑布流内容列表
                     SliverToBoxAdapter(
                       child: Obx(() {
@@ -85,10 +74,11 @@ class HomePage extends StatelessWidget {
                             mainAxisSpacing: 14.h,
                             crossAxisSpacing: 9.w,
                             shrinkWrap: true,
-                            padding: EdgeInsets.zero,
+                            padding: EdgeInsets.only(bottom: 30.w),
                             primary: false,
-                            physics: const NeverScrollableScrollPhysics(),
+                            // physics: const NeverScrollableScrollPhysics(),
                             itemCount: tabData?.dataList.length,
+
                             itemBuilder: (context, index) {
                               final item = tabData?.dataList[index];
                               return HomePageItem(
@@ -112,9 +102,8 @@ class HomePage extends StatelessWidget {
                         );
                       }),
                     ),
-
                     // 底部间距
-                    SliverToBoxAdapter(child: SizedBox(height: 20.w)),
+                    SliverToBoxAdapter(child: SizedBox(height: 30.w)),
                   ],
                 ),
               ),

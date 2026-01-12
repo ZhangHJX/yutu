@@ -14,6 +14,7 @@ class MainPage extends StatelessWidget {
     return CVirtualBack(
       child: Scaffold(
         extendBodyBehindAppBar: true,
+        resizeToAvoidBottomInset: false,
         extendBody: true,
         body: Obx(
           () => IndexedStack(
