@@ -11,11 +11,46 @@ class CanvalsController extends GetxController {
   // 画布模型
   final args =
       (Get.arguments as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
-  CanvasModel get canvasModel => args['model'] as CanvasModel;
-  PageSource get type => args['type'] as PageSource;
-  int get isOwn => (args['is_own'] ?? 0) as int;
-  List<FontInfoModel> get fontList =>
-      (args['font'] ?? []) as List<FontInfoModel>;
+  
+  CanvasModel get canvasModel {
+    final model = args['model'];
+    if (model is CanvasModel) {
+      return model;
+    }
+    // 如果类型不匹配或不存在，返回默认的 CanvasModel
+    return CanvasModel();
+  }
+  
+  PageSource get type {
+    final typeValue = args['type'];
+    if (typeValue is PageSource) {
+      return typeValue;
+    }
+    // 如果类型不匹配或不存在，返回默认值
+    return PageSource.create;
+  }
+  
+  int get isOwn {
+    final value = args['is_own'];
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
+    }
+    return 0;
+  }
+  
+  List<FontInfoModel> get fontList {
+    final fontValue = args['font'];
+    if (fontValue is List) {
+      // 安全地转换列表，过滤掉非 FontInfoModel 类型的元素
+      return fontValue
+          .whereType<FontInfoModel>()
+          .toList();
+    }
+    return <FontInfoModel>[];
+  }
 
   PointerEvent? currentPoint; // 画布点击
 

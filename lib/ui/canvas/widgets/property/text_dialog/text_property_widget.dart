@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'package:voicetemplate/ui/canvas/widgets/property/text_dialog/widgets/spinning_widget.dart';
+import './widgets/spinning_widget.dart';
 import 'package:voicetemplate/ui/widgets/index.dart';
 import 'model/font_info_model.dart';
 import 'text_property_controller.dart';
