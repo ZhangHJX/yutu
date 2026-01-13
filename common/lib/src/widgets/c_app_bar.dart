@@ -80,14 +80,13 @@ class CAppBar extends StatelessWidget implements PreferredSizeWidget {
     if (automaticallyImplyLeading && leading == null) {
       final ModalRoute<dynamic>? parentRoute = ModalRoute.of(context);
       final bool canPop = parentRoute?.canPop ?? false;
-
       if (canPop) {
         leadingWidget = SizedBox.fromSize(
           size: Size(40.w, 44.w),
           child: IconButton(
             padding: .only(right: zeroLeadingPadding ? 0 : 5.w),
             icon: Image.asset(
-              'assets/images/mall/ic_black_back.png',
+              'assets/images/global/ic_black_back.png',
               width: 40.w,
               height: 44.w,
               color: leadingIconColor ?? color,
@@ -106,17 +105,24 @@ class CAppBar extends StatelessWidget implements PreferredSizeWidget {
       }
     }
 
-    final finalTextStyle = Theme.of(
-      context,
-    ).appBarTheme.titleTextStyle?.merge(titleTextStyle).merge(TextStyle(color: color));
+    final finalTextStyle = Theme.of(context).appBarTheme.titleTextStyle
+        ?.merge(titleTextStyle)
+        .merge(TextStyle(color: color));
 
     return AppBar(
-      title: title ?? (titleText != null ? Text(titleText!, style: finalTextStyle) : null),
+      title:
+          title ??
+          (titleText != null ? Text(titleText!, style: finalTextStyle) : null),
       centerTitle: centerTitle,
       backgroundColor: backgroundColor,
       leading: appendLeading == null
           ? leadingWidget
-          : Row(children: [if (leadingWidget != null) leadingWidget, appendLeading!]),
+          : Row(
+              children: [
+                if (leadingWidget != null) leadingWidget,
+                appendLeading!,
+              ],
+            ),
       automaticallyImplyLeading: false,
       actions: actions,
       elevation: elevation,

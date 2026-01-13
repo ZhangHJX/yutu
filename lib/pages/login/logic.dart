@@ -103,7 +103,7 @@ class LoginLogic extends GetxController {
         data: {'mobile': phone.value, 'password': password.value},
         converter: LoginResponse.fromJson,
         withToken: false,
-        showErrorToast: true,
+        // showErrorToast: true,
       );
       if (result.code == 0) {
         globalLogic.accessToken.value = result.data?.token ?? '';
@@ -124,7 +124,7 @@ class LoginLogic extends GetxController {
         data: {'mobile': phone.value, 'code': code.value},
         converter: LoginResponse.fromJson,
         withToken: false,
-        showErrorToast: true,
+        // showErrorToast: true,
       );
       if (result.code == 0) {
         globalLogic.accessToken.value = result.data?.token ?? '';
@@ -138,24 +138,26 @@ class LoginLogic extends GetxController {
 
   // 获取验证码
   Future<void> getVerificationCode(String phone) async {
-    isCountingDown.value = true;
     countDown.value = 60;
     try {
-      await http.post<CodeModel>(
+      final result = await http.post<CodeModel>(
         "/loginSms/send",
         data: {"mobile": phone},
         converter: CodeModel.fromJson,
         showErrorToast: true,
         withToken: false,
       );
-      Timer.periodic(Duration(seconds: 1), (timer) {
-        if (countDown.value > 0) {
-          countDown.value--;
-        } else {
-          timer.cancel();
-          isCountingDown.value = false;
-        }
-      });
+      if (result.code == 0) {
+        isCountingDown.value = true;
+        Timer.periodic(Duration(seconds: 1), (timer) {
+          if (countDown.value > 0) {
+            countDown.value--;
+          } else {
+            timer.cancel();
+            isCountingDown.value = false;
+          }
+        });
+      }
     } catch (e) {
       showToast('验证码发送失败');
       isCountingDown.value = false;

@@ -234,6 +234,8 @@ class LoginPage extends StatelessWidget {
                 child: TextField(
                   controller: _codeController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [LengthLimitingTextInputFormatter(4)],
+                  autofillHints: const [AutofillHints.oneTimeCode],
                   decoration: InputDecoration(
                     isCollapsed: true,
                     border: InputBorder.none,
