@@ -49,7 +49,7 @@ class CustomTabBarWithCenter extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      buildTabIcon(item, isSelected),
+                      buildTabIcon(item, isSelected, index),
                       const SizedBox(height: 2),
                       Text(
                         item.label,

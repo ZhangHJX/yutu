@@ -36,7 +36,7 @@ class CenterTabBarButton extends StatelessWidget {
           child: SizedBox(
             width: size * 0.7,
             height: size * 0.7,
-            child: buildTabIcon(item, true),
+            child: buildTabIcon(item, true, 3),
           ),
         ),
       ),

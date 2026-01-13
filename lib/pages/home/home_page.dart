@@ -159,65 +159,71 @@ class HomePage extends StatelessWidget {
               itemCount: logic.recommendList.length,
               itemBuilder: (context, index) {
                 final item = logic.recommendList[index];
-                return Container(
-                  width: 135.w,
-                  margin: EdgeInsets.only(right: 9.w),
-                  clipBehavior: Clip.antiAlias, // 或 Clip.hardEdge
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12.w),
+                return GestureDetector(
+                  onTap: () => Get.toNamed(
+                    AppRoutes.middle,
+                    arguments: {'id': item.id, "type": PageSource.home},
                   ),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: CachedNetworkImage(
-                          imageUrl: '${item.originalImage}${item.thumbnail}',
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: "#F5F5F5".color,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.w,
-                                color: "#9082FF".color,
+                  child: Container(
+                    width: 135.w,
+                    margin: EdgeInsets.only(right: 9.w),
+                    clipBehavior: Clip.antiAlias, // 或 Clip.hardEdge
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12.w),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: CachedNetworkImage(
+                            imageUrl: '${item.originalImage}${item.thumbnail}',
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: "#F5F5F5".color,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.w,
+                                  color: "#9082FF".color,
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: "#F5F5F5".color,
+                              child: Icon(
+                                Icons.broken_image,
+                                color: "#CCCCCC".color,
+                                size: 24.w,
                               ),
                             ),
                           ),
-                          errorWidget: (context, url, error) => Container(
-                            color: "#F5F5F5".color,
-                            child: Icon(
-                              Icons.broken_image,
-                              color: "#CCCCCC".color,
-                              size: 24.w,
-                            ),
-                          ),
                         ),
-                      ),
 
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          height: 30.w,
-                          alignment: Alignment.centerLeft,
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [Color(0xFFFFE0E0), Color(0xFFFFF0E0)],
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            height: 30.w,
+                            alignment: Alignment.centerLeft,
+                            padding: EdgeInsets.symmetric(horizontal: 12.w),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Color(0xFFFFE0E0), Color(0xFFFFF0E0)],
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            item.title,
-                            style: TextStyle(
-                              fontSize: 12.w,
-                              color: '#FFFFFF'.color,
-                              fontWeight: FontWeight.w500,
+                            child: Text(
+                              item.title,
+                              style: TextStyle(
+                                fontSize: 12.w,
+                                color: '#FFFFFF'.color,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               },

@@ -6,7 +6,7 @@ import 'package:voicetemplate/core/index.dart';
 import 'dart:async';
 import 'model/code_model.dart';
 
-class LoginLogic extends GetxController {
+class LoginLogic extends GetxController with WidgetsBindingObserver {
   /// 全局应用
   final globalLogic = Get.find<GlobalLogic>();
 
@@ -27,6 +27,10 @@ class LoginLogic extends GetxController {
   final countDown = 60.obs;
   // 计时器
   Timer? _timer;
+  // 倒计时开始时间戳（毫秒）
+  int? _countDownStartTime;
+  // 倒计时总时长（秒）
+  static const int _totalCountDownSeconds = 60;
 
   // 是否可以登录（响应式）
   final canLogin = false.obs;
@@ -34,6 +38,8 @@ class LoginLogic extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // 监听应用生命周期
+    WidgetsBinding.instance.addObserver(this);
     // 监听相关状态变化，自动更新 canLogin
     everAll([phone, code, password, isPasswordLogin], (_) {
       _updateCanLogin();
@@ -44,7 +50,17 @@ class LoginLogic extends GetxController {
   @override
   void onClose() {
     _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.onClose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed && isCountingDown.value) {
+      // 应用从后台恢复，重新计算倒计时
+      _resumeCountDown();
+    }
   }
 
   /// 更新 canLogin 状态
@@ -138,7 +154,7 @@ class LoginLogic extends GetxController {
 
   // 获取验证码
   Future<void> getVerificationCode(String phone) async {
-    countDown.value = 60;
+    countDown.value = _totalCountDownSeconds;
     try {
       final result = await http.post<CodeModel>(
         "/loginSms/send",
@@ -148,19 +164,73 @@ class LoginLogic extends GetxController {
         withToken: false,
       );
       if (result.code == 0) {
-        isCountingDown.value = true;
-        Timer.periodic(Duration(seconds: 1), (timer) {
-          if (countDown.value > 0) {
-            countDown.value--;
-          } else {
-            timer.cancel();
-            isCountingDown.value = false;
-          }
-        });
+        _startCountDown();
       }
     } catch (e) {
       showToast('验证码发送失败');
       isCountingDown.value = false;
+    }
+  }
+
+  /// 开始倒计时
+  void _startCountDown() {
+    _timer?.cancel();
+    _countDownStartTime = DateTime.now().millisecondsSinceEpoch;
+    isCountingDown.value = true;
+    countDown.value = _totalCountDownSeconds;
+    
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _updateCountDown();
+    });
+  }
+
+  /// 更新倒计时
+  void _updateCountDown() {
+    if (_countDownStartTime == null) {
+      _stopCountDown();
+      return;
+    }
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final elapsedSeconds = (now - _countDownStartTime!) ~/ 1000;
+    final remainingSeconds = _totalCountDownSeconds - elapsedSeconds;
+
+    if (remainingSeconds > 0) {
+      countDown.value = remainingSeconds;
+    } else {
+      _stopCountDown();
+    }
+  }
+
+  /// 停止倒计时
+  void _stopCountDown() {
+    _timer?.cancel();
+    _timer = null;
+    _countDownStartTime = null;
+    isCountingDown.value = false;
+    countDown.value = 0;
+  }
+
+  /// 应用从后台恢复时重新计算倒计时
+  void _resumeCountDown() {
+    if (_countDownStartTime == null) {
+      return;
+    }
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final elapsedSeconds = (now - _countDownStartTime!) ~/ 1000;
+    final remainingSeconds = _totalCountDownSeconds - elapsedSeconds;
+
+    if (remainingSeconds > 0) {
+      countDown.value = remainingSeconds;
+      // 如果计时器已停止，重新启动
+      if (_timer == null || !_timer!.isActive) {
+        _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          _updateCountDown();
+        });
+      }
+    } else {
+      _stopCountDown();
     }
   }
 

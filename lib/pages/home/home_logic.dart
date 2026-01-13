@@ -436,7 +436,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         '/homePage/design/draft/read',
         data: {'id': model.id},
         converter: DraftEditModel.fromJson,
-        showErrorToast: true,
+        showErrorToast: false,
       );
 
       if (result.code == 0 && result.data != null) {
