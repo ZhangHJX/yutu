@@ -34,6 +34,7 @@ class HomePage extends StatelessWidget {
               onTap: () => Get.toNamed(AppRoutes.search),
               child: SearchNavigationWidget(isEnabled: false),
             ),
+
             Expanded(
               child: SmartRefresher(
                 key: logic.refresherKey,
@@ -57,12 +58,17 @@ class HomePage extends StatelessWidget {
                     // 瀑布流内容列表
                     SliverToBoxAdapter(
                       child: Obx(() {
-                        if (logic.tabDataMap.isEmpty) {
-                          return const PageEmptyState();
+                        if (logic.tagList.isEmpty) {
+                          return const PageEmptyState(title: '未找到匹配的模板~');
                         }
                         final tagId =
                             logic.tagList[logic.selectedTabIndex.value].id;
                         final tabData = logic.tabDataMap[tagId];
+
+                        if (tabData == null || tabData.dataList.isEmpty) {
+                          return const PageEmptyState(title: '未找到匹配的模板~');
+                        }
+
                         return Padding(
                           padding: EdgeInsets.only(
                             left: 15.w,
@@ -76,13 +82,11 @@ class HomePage extends StatelessWidget {
                             shrinkWrap: true,
                             padding: EdgeInsets.only(bottom: 30.w),
                             primary: false,
-                            // physics: const NeverScrollableScrollPhysics(),
-                            itemCount: tabData?.dataList.length,
-
+                            itemCount: tabData.dataList.length,
                             itemBuilder: (context, index) {
-                              final item = tabData?.dataList[index];
+                              final item = tabData.dataList[index];
                               return HomePageItem(
-                                key: ValueKey(item?.id),
+                                key: ValueKey(item.id),
                                 model: item,
                                 source: PageSource.home,
                                 favoriteCallBack: () {
@@ -90,10 +94,10 @@ class HomePage extends StatelessWidget {
                                     Get.toNamed(AppRoutes.appLogin);
                                     return;
                                   }
-                                  if (item?.isFavorite == 1) {
-                                    logic.favoriteEventDialog(item?.id ?? 0);
+                                  if (item.isFavorite == 1) {
+                                    logic.favoriteEventDialog(item.id);
                                   } else {
-                                    logic.clickFavorite(item?.id ?? 0, true);
+                                    logic.clickFavorite(item.id, true);
                                   }
                                 },
                               );

@@ -5,13 +5,13 @@ class TopNavigationWidget extends StatelessWidget {
   const TopNavigationWidget({
     super.key,
     required this.title,
-    required this.rightTitle,
-    required this.onTap,
+    this.rightTitle,
+    this.onTap,
     this.child,
   });
 
   final String title;
-  final String rightTitle;
+  final String? rightTitle;
   final VoidCallback? onTap;
   final Widget? child;
 
@@ -55,7 +55,7 @@ class TopNavigationWidget extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.only(right: 20.w),
                   child: Text(
-                    rightTitle,
+                    rightTitle ?? '',
                     style: TextStyle(
                       fontSize: 13.w,
                       color: "#6C64FF".color,
