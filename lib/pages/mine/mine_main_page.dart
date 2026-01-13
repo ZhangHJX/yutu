@@ -2,6 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'mine_logic.dart';
 import 'pages/widgets/created_works_text.dart';
+import 'package:voicetemplate/core/index.dart';
 
 class MinePage extends StatefulWidget {
   const MinePage({super.key});
@@ -300,28 +301,40 @@ class _MinePageState extends State<MinePage> {
                           }
                           final ratio =
                               double.parse(parts[0]) / double.parse(parts[1]);
-                          return Material(
-                            color: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.w),
-                              side: BorderSide(
-                                width: 1,
-                                color: "#E8EBFF".color,
+                          return GestureDetector(
+                            onTap: () {
+                              Get.toNamed(
+                                AppRoutes.middle,
+                                arguments: {
+                                  'id': item.id,
+                                  "type": PageSource.design,
+                                },
+                              );
+                            },
+                            child: Material(
+                              color: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.w),
+                                side: BorderSide(
+                                  width: 1,
+                                  color: "#E8EBFF".color,
+                                ),
                               ),
-                            ),
-                            child: SizedBox(
-                              height: 86.w,
-                              width: 86.w * ratio,
-                              child: CachedNetworkImage(
-                                imageUrl:
-                                    '${item.originalImage}${item.thumbnail}',
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(
-                                  color: "#F5F5F5".color,
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.w,
-                                      color: "#9082FF".color,
+                              clipBehavior: Clip.antiAlias,
+                              child: SizedBox(
+                                height: 86.w,
+                                width: 86.w * ratio,
+                                child: CachedNetworkImage(
+                                  imageUrl:
+                                      '${item.originalImage}${item.thumbnail}',
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    color: "#F5F5F5".color,
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.w,
+                                        color: "#9082FF".color,
+                                      ),
                                     ),
                                   ),
                                 ),

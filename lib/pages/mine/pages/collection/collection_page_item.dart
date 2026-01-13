@@ -123,7 +123,9 @@ class CollectionPageItem extends StatelessWidget {
                         ),
 
                         CButton(
-                          height: 22.w,
+                          // backgroundColor: Colors.red,
+                          height: 25.w,
+                          padding: EdgeInsetsGeometry.symmetric(horizontal: 5),
                           textColor: Colors.white,
                           text: Text(
                             '${item.favoriteTotal}',
@@ -135,36 +137,17 @@ class CollectionPageItem extends StatelessWidget {
                           ),
                           spacing: 4.w,
                           icon: Image.asset(
-                            "assets/images/home/${item.isFavorite == 1 ? 'collection_favorite' : 'collection_no_favorite'}.png",
-                            width: 14.w,
-                            height: 14.w,
+                            "assets/images/home/${item.isFavorite == 1 ? 'collection_selected' : 'collection_unselected'}.png",
+                            width: 16.w,
+                            height: 15.3.w,
                             fit: BoxFit.cover,
                           ),
+                          onPressed: () => favoriteCallBack.call(),
                         ),
                       ],
                     ),
                   ],
                 ),
-              ),
-            ),
-
-            Positioned(
-              top: 6.w,
-              right: 6.w,
-              child: CButton(
-                width: 35.w,
-                height: 35.w,
-                icon: Image.asset(
-                  item.isFavorite == 1
-                      ? "assets/images/home/home_collectin_btn_finsh.png"
-                      : "assets/images/home/home_collectin_btn.png",
-                  width: 22.w,
-                  height: 22.w,
-                  fit: BoxFit.cover,
-                ),
-                onPressed: () {
-                  favoriteCallBack.call();
-                },
               ),
             ),
           ],
