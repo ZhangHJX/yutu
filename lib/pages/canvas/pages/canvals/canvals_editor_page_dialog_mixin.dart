@@ -149,9 +149,11 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
 
     SmartDialog.show(
       builder: (context) => ImagePropertyDialog(
+        currentContext,
         element: activeElement,
-        replaceImage: () {
-          replaceImage(currentContext);
+        onImageSelected: (String imagePath, double? width, double? height) {
+          // 将图片添加到画布
+          replaceImage(currentContext, imagePath);
         },
         onValueChanged: (update) {
           setState(() {}); // 触发界面重绘
@@ -333,7 +335,7 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
 
   /// 替换图片
   /// [context] BuildContext，用于显示图片选择器
-  void replaceImage(BuildContext context);
+  void replaceImage(BuildContext context, String filePath);
 
   /// 获取画布中心
   Offset getCanvasCenter();

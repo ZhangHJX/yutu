@@ -11,7 +11,7 @@ class CanvalsController extends GetxController {
   // 画布模型
   final args =
       (Get.arguments as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
-  
+
   CanvasModel get canvasModel {
     final model = args['model'];
     if (model is CanvasModel) {
@@ -20,7 +20,7 @@ class CanvalsController extends GetxController {
     // 如果类型不匹配或不存在，返回默认的 CanvasModel
     return CanvasModel();
   }
-  
+
   PageSource get type {
     final typeValue = args['type'];
     if (typeValue is PageSource) {
@@ -29,7 +29,7 @@ class CanvalsController extends GetxController {
     // 如果类型不匹配或不存在，返回默认值
     return PageSource.create;
   }
-  
+
   int get isOwn {
     final value = args['is_own'];
     if (value is int) {
@@ -40,14 +40,12 @@ class CanvalsController extends GetxController {
     }
     return 0;
   }
-  
+
   List<FontInfoModel> get fontList {
     final fontValue = args['font'];
     if (fontValue is List) {
       // 安全地转换列表，过滤掉非 FontInfoModel 类型的元素
-      return fontValue
-          .whereType<FontInfoModel>()
-          .toList();
+      return fontValue.whereType<FontInfoModel>().toList();
     }
     return <FontInfoModel>[];
   }

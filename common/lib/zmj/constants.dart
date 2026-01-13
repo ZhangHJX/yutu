@@ -34,6 +34,9 @@ const String fontDialog = 'TextPropertyDialogController';
 const String imageDialog = 'CanvalsImageDialog';
 const String saveDialog = 'CanvalsSaveTemplateDialog';
 
+// 图片属性
+const String propertyImgDialog = 'PropertyImgDialog';
+
 ///全局的分页数据管理
 const String globalPageSize = '20';
 

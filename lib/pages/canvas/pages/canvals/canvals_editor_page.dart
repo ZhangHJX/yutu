@@ -368,19 +368,15 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   /// 删除图片
   @override
   void deleteImage() {
-    // if (activeElement != null) {
-    //   final fullPath = CanvalsFileManager.getImageFullPathByFileName(
-    //     activeElement!.fileName,
-    //   );
-    //   CanvalsFileManager.deleteFileByPath(fullPath);
-    //   _canvasKey.currentState?.deleteBox(activeElement!.id);
-    //   SmartDialog.dismiss();
-    // }
+    if (activeElement != null) {
+      _canvasKey.currentState?.deleteBox(activeElement!.id);
+      SmartDialog.dismiss();
+    }
   }
 
   /// 替换图片
   @override
-  void replaceImage(BuildContext context) async {
+  void replaceImage(BuildContext context, String filePath) async {
     final res = await PermissionUtil.requestPhotoAlbumPermission();
     if (!res) {
       return;
@@ -388,18 +384,9 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
     if (!context.mounted) {
       return;
     }
-    // ImageStorageManager.chooseImages(
-    //   context: context,
-    //   onSuccess: (String fileName, double width, double height) {
-    //     final oldPath = CanvalsFileManager.getImageFullPathByFileName(
-    //       activeElement!.fileName,
-    //     );
-    //     CanvalsFileManager.deleteFileByPath(oldPath);
-    //     setState(() {
-    //       activeElement!.fileName = basename(fileName);
-    //     });
-    //   },
-    // );
+    setState(() {
+      activeElement!.filePath = filePath;
+    });
   }
 
   /// 显示图层弹框

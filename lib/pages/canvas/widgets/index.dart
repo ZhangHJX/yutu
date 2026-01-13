@@ -6,7 +6,7 @@ export 'dialog/canvals_layer_dialog.dart';
 export 'dialog/save/canvals_save_dialog.dart';
 export 'property/element_attribute_toolbar.dart';
 export 'property/canvals_property_dialog.dart';
-export 'property/image_property_dialog.dart';
+export 'property/img_dialog/image_property_dialog.dart';
 export 'property/shape_property_dialog.dart';
 export 'property/text_dialog/text_property_dialog.dart';
 export 'dialog/text_input_dialog.dart';

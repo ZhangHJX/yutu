@@ -1,21 +1,24 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-import 'widgets/slider_input_field.dart';
-import '../../model/index.dart';
+import '../widgets/slider_input_field.dart';
+import '../../../model/index.dart';
+import 'img_logic.dart';
 
 class ImagePropertyDialog extends StatefulWidget {
   final CanvasElement? element;
   final Function(bool notify)? onValueChanged;
   final VoidCallback? onDeleteImage;
-  final VoidCallback? replaceImage;
-
-  const ImagePropertyDialog({
+  final Function(String imageUrl, double? width, double? height)?
+  onImageSelected;
+  final BuildContext currentContext;
+  const ImagePropertyDialog(
+    this.currentContext, {
     super.key,
     this.element,
     this.onValueChanged,
     this.onDeleteImage,
-    this.replaceImage,
+    this.onImageSelected,
   });
 
   @override
@@ -23,6 +26,8 @@ class ImagePropertyDialog extends StatefulWidget {
 }
 
 class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
+  final logic = Get.put(ImgLogic(), tag: propertyImgDialog);
+
   final TextEditingController _widthController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   String? _imagePath;
@@ -34,6 +39,12 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
   void initState() {
     super.initState();
     _initializeFromModel();
+    logic.onUploadSuccess = (String imagePath, double width, double height) {
+      if (widget.onImageSelected != null) {
+        widget.onImageSelected!(imagePath, width, height);
+      }
+      SmartDialog.dismiss();
+    };
   }
 
   void _initializeFromModel() {
@@ -59,6 +70,9 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
   void dispose() {
     _widthController.dispose();
     _heightController.dispose();
+    if (Get.isRegistered<ImgLogic>(tag: propertyImgDialog)) {
+      Get.delete<ImgLogic>(tag: propertyImgDialog, force: true);
+    }
     super.dispose();
   }
 
@@ -329,10 +343,7 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
               // 替换按钮
               Expanded(
                 child: GestureDetector(
-                  onTap: () {
-                    widget.replaceImage?.call();
-                    SmartDialog.dismiss();
-                  },
+                  onTap: () => logic.pickerCanvalsImage(widget.currentContext),
                   child: Image.asset(
                     'assets/images/canvals/canvals_replace_icon.png',
                     width: 153.w,
