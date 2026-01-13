@@ -66,7 +66,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
       _canvalsController,
       screenshotController: _screenshotController,
     );
-
     debugPrint("--画布页面的初始化---initState---");
   }
 
@@ -183,6 +182,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
               canvasStatusManager: _canvasStatusManager,
               canvasKey: _canvasKey,
               canvasContainerKey: _canvasContainerKey,
+              onTap: () => toggleLayerDialog(false),
               child: Container(
                 width: ScreenTools.screenWidth,
                 height:
@@ -197,7 +197,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                       constraints.maxWidth,
                       constraints.maxHeight,
                     );
-
                     final canvasContent = Screenshot(
                       controller: _screenshotController,
                       child: ClipRect(
@@ -325,6 +324,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
           Obx(
             () => Positioned(
               left: 0,
+              right: 0,
               bottom: 66.w + ScreenTools.bottomBarHeight,
               child: ElementAttributeToolbar(
                 activeElement: activeElement,

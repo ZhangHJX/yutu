@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'canvas_custom_listener.dart';
 import '../pages/canvals/canvals_controller.dart';
 import 'canvas_status_manager.dart';
-import 'matrix_utils.dart';
 import '../model/index.dart';
 
 class CanvasPointerWrapper extends StatelessWidget {
@@ -14,6 +13,8 @@ class CanvasPointerWrapper extends StatelessWidget {
   final GlobalKey canvasKey;
   final GlobalKey canvasContainerKey;
 
+  final VoidCallback onTap;
+
   const CanvasPointerWrapper({
     super.key,
     required this.child,
@@ -21,6 +22,7 @@ class CanvasPointerWrapper extends StatelessWidget {
     required this.canvasStatusManager,
     required this.canvasKey,
     required this.canvasContainerKey,
+    required this.onTap,
   });
 
   @override
@@ -48,6 +50,9 @@ class CanvasPointerWrapper extends StatelessWidget {
       },
       onPointerDown: (event) {
         canvalsController.currentPoint = event;
+
+        // 点击事件的监听
+        onTap.call();
 
         if (canvalsController.selectedId.isNotEmpty) {
           final localPos = MatrixUtilsX.canvasLocal(

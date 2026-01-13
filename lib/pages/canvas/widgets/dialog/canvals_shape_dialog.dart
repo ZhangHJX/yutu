@@ -45,11 +45,12 @@ class _CanvalsShapeDialogState extends State<CanvalsShapeDialog> {
                 Positioned(
                   right: 10,
                   child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () {
                       SmartDialog.dismiss();
                     },
                     child: SizedBox(
-                      width: 30.w,
+                      width: 45.w,
                       height: 30.w,
                       child: Center(
                         child: Image.asset(

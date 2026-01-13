@@ -28,46 +28,51 @@ class _ElementAttributeToolbarState extends State<ElementAttributeToolbar> {
       return SizedBox.shrink();
     }
     return Container(
-      width: ScreenTools.screenWidth,
+      width: double.infinity,
+      padding: EdgeInsets.only(left: 20.w),
       height: 61.w,
       color: Colors.white,
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Padding(
-            padding: EdgeInsets.only(left: 20.w),
-            child: Text(
-              _getToolbarTitle(),
-              style: TextStyle(
-                fontSize: 16.w,
-                fontWeight: FontWeight.w500,
-                color: "#ff262626".color,
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                widget.onCollapse?.call(_getToolbarTitle());
+              },
+              child: Row(
+                children: [
+                  Text(
+                    _getToolbarTitle(),
+                    style: TextStyle(
+                      fontSize: 16.w,
+                      fontWeight: FontWeight.w500,
+                      color: "#ff262626".color,
+                    ),
+                  ),
+
+                  Spacer(),
+
+                  SizedBox(
+                    width: 35.w,
+                    height: 35.w,
+                    child: Center(
+                      child: Image.asset(
+                        'assets/images/canvals/canvals_up_icon.png',
+                        fit: BoxFit.fill,
+                        width: 14.w,
+                        height: 14.w,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
 
-          Spacer(),
-
           GestureDetector(
-            onTap: () {
-              widget.onCollapse?.call(_getToolbarTitle());
-            },
-            child: SizedBox(
-              width: 35.w,
-              height: 35.w,
-              child: Center(
-                child: Image.asset(
-                  'assets/images/canvals/canvals_up_icon.png',
-                  fit: BoxFit.fill,
-                  width: 14.w,
-                  height: 14.w,
-                ),
-              ),
-            ),
-          ),
-
-          SizedBox(width: 5.w),
-
-          GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
               widget.onClose?.call();
             },
