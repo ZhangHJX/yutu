@@ -129,51 +129,60 @@ class _MinePageState extends State<MinePage> {
         : icon;
     return Padding(
       padding: EdgeInsets.only(left: 22.w, top: 9.w, right: 20.w),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: logic.onTapPersonInfo,
-            child: Container(
-              width: 62.w,
-              height: 62.w,
-              padding: EdgeInsets.all(4.w),
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(
-                    "assets/images/mine/mine_info_icon_bg.png",
-                  ), // 或 NetworkImage(...)
-                  fit: BoxFit.cover, // 拉伸方式：cover / contain 等
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerUp: (_) {
+          if (!logic.global.isLogin) {
+            logic.login();
+          }
+        },
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () {
+                if (logic.global.isLogin) {
+                  logic.onTapPersonInfo();
+                }
+              },
+              child: Container(
+                width: 62.w,
+                height: 62.w,
+                padding: EdgeInsets.all(4.w),
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(
+                      "assets/images/mine/mine_info_icon_bg.png",
+                    ), // 或 NetworkImage(...)
+                    fit: BoxFit.cover, // 拉伸方式：cover / contain 等
+                  ),
                 ),
-              ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  CBorderImage(size: 54.w, imgUrl: avatar, isCircle: true),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    CBorderImage(size: 54.w, imgUrl: avatar, isCircle: true),
 
-                  if (logic.global.isLogin)
-                    Positioned(
-                      bottom: -6,
-                      right: -6,
-                      child: GestureDetector(
-                        onTap: logic.onTapPersonInfo,
-                        child: Image.asset(
-                          "assets/images/mine/mine_info_editor.png",
-                          width: 18.w,
-                          height: 18.w,
-                          fit: BoxFit.cover,
+                    if (logic.global.isLogin)
+                      Positioned(
+                        bottom: -6,
+                        right: -6,
+                        child: GestureDetector(
+                          onTap: logic.onTapPersonInfo,
+                          child: Image.asset(
+                            "assets/images/mine/mine_info_editor.png",
+                            width: 18.w,
+                            height: 18.w,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
-          SizedBox(width: 10.w),
+            SizedBox(width: 10.w),
 
-          Expanded(
-            child: GestureDetector(
-              onTap: logic.login,
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -199,8 +208,8 @@ class _MinePageState extends State<MinePage> {
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
