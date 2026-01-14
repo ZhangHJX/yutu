@@ -14,6 +14,7 @@ import 'canvals_editor_page_undo_redo_mixin.dart';
 import 'canvals_editor_page_dialog_mixin.dart';
 import '../../draft/index.dart';
 import '../../widgets/dialog/save/save_logic.dart';
+import 'package:voicetemplate/pages/canvas/fonts/font_manager.dart';
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -47,6 +48,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   @override
   void initState() {
     super.initState();
+
+    /// 清除字体
+    FontManager.to.clearHaveFonts();
+
     // 监听画布变换变化（统一写回 CanvasModel）
     _canvasStatusManager.onMatrixChanged = (matrix, scale, offset) {
       if (!mounted) return;

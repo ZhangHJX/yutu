@@ -27,13 +27,13 @@ class FontManager extends GetxController {
   final RxMap<int, FontFamilyMeta> allFonts = <int, FontFamilyMeta>{}.obs;
 
   /// 推荐字体（模板字体 + 最近使用）
-  RxList<FontFamilyMeta> recommendedFonts = <FontFamilyMeta>[].obs;
+  RxSet<FontFamilyMeta> recommendedFonts = <FontFamilyMeta>{}.obs;
 
   /// fontId -> 正在进行的“安装”任务（下载 + 解压 + 解析 + 落盘）
   final Map<int, Future<FontFamilyMeta>> _installingTasks = {};
 
   /// 最近使用的字体 id（用于推荐）
-  final List<int> _recentUsed = [];
+  Set<int> recentUsed = <int>{};
 
   /// 已经通过 FontLoader 注册过的 familyKey，避免重复 load
   final Set<String> _registeredFamilyKeys = <String>{};
@@ -106,7 +106,6 @@ class FontManager extends GetxController {
     if (localMeta != null && localMeta.version == version) {
       allFonts[info.id] = localMeta;
       fontStatus[info.id] = FontStatus.ready;
-      // markUsed(fontId);
       return localMeta;
     }
 
@@ -171,7 +170,6 @@ class FontManager extends GetxController {
       // 6. 使用内部 familyKey + FontLoader 注册到 Flutter 引擎
       await _registerFontFamily(result.meta);
 
-      // markUsed(fontId);
       onProgress?.call(1.0);
 
       // 安装成功后清理备份目录，避免磁盘占用和干扰后续安装
@@ -264,7 +262,6 @@ class FontManager extends GetxController {
   ///
   /// - 不更新 fontStatus（避免触发 UI 响应式更新）
   /// - 静默更新 allFonts（直接赋值，不触发响应式更新，但数据会是最新的）
-  /// - 不调用 markUsed（避免触发推荐列表更新）
   /// - 不加入 _installingTasks（避免被 UI 检测到）
   /// - 静默下载、安装、注册字体
   Future<FontFamilyMeta> _prepareFontSilent({
@@ -372,20 +369,22 @@ class FontManager extends GetxController {
 
   /// 记录单个字体：“最近使用”，用于推荐字体
   void markUsed(int fontId) {
-    debugPrint('markUsed====$_recentUsed recommendedFonts=$recommendedFonts');
-    if (!_recentUsed.contains(fontId)) {
-      _recentUsed.add(fontId);
+    debugPrint('markUsed====$recentUsed recommendedFonts=$recommendedFonts');
+    if (!recentUsed.contains(fontId)) {
+      recentUsed.add(fontId);
     }
     _rebuildRecommended();
   }
 
-  /// 接受字体数组
   void markUsedFonts(List<int> fontIds) {
     for (final fontId in fontIds) {
-      if (!_recentUsed.contains(fontId)) {
-        _recentUsed.add(fontId);
+      if (!recentUsed.contains(fontId)) {
+        recentUsed.add(fontId);
       }
     }
+    debugPrint(
+      'markUsedFonts====$recentUsed recommendedFonts=$recommendedFonts',
+    );
     _rebuildRecommended();
   }
 
@@ -393,13 +392,19 @@ class FontManager extends GetxController {
   void _rebuildRecommended() {
     final list = <FontFamilyMeta>[];
     // 最近使用的字体追加
-    for (final id in _recentUsed) {
+    for (final id in recentUsed) {
       final meta = allFonts[id];
       if (meta != null) {
         list.add(meta);
       }
     }
     recommendedFonts.assignAll(list);
+  }
+
+  /// 刚进入编辑器，
+  void clearHaveFonts() {
+    recentUsed.clear();
+    recommendedFonts.clear();
   }
 
   /// 使用 FontWeightMeta 中的 familyKey 单独注册每个字体文件到 Flutter 引擎

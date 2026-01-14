@@ -114,7 +114,9 @@ class GlobalLogic extends GetxController {
         '/homePage/user/refreshUserToken',
         converter: LoginResponse.fromJson,
       );
-      if (result.code == 0) {}
+      if (result.code == 0) {
+        fetchUserInfo();
+      }
       debugPrint(
         'updateUserToken====${result.code}=======${result.data?.token}',
       );

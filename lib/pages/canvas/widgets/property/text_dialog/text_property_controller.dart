@@ -37,42 +37,43 @@ class TextPropertyController extends GetxController {
     currentUseFonts();
     getFontListData();
     _countWorker = ever(FontManager.to.recommendedFonts, (value) {
-      final recommendedList = <FontInfoModel>[];
-      final fontMap = {for (var font in fontList) font.id: font};
-      // 按照推荐顺序添加
-      for (final meta in value) {
-        final font = fontMap[meta.fontId];
-        if (font != null) {
-          recommendedList.add(font);
-        }
-      }
-      recommendedFonts.value = recommendedList;
+      final tempFonts = FontManager.to.recommendedFonts.map((meta) {
+        final m = FontInfoModel(
+          id: meta.fontId,
+          version: meta.version,
+          name: meta.fontName,
+          image: meta.fontImage,
+          url: meta.downloadUrl,
+        );
+        return m;
+      });
+      recommendedFonts.assignAll(tempFonts);
     });
   }
 
   /// 获取已使用的字体
   void currentUseFonts() {
-    final canvasModel = canvalsControl.buildSnapshot();
-    if (canvasModel != null) {
-      final fontList = canvasModel.elements
-          .map((element) => FontManager.to.allFonts[element.fontId]) // ModelB?
-          .whereType<FontFamilyMeta>() // 过滤掉 null，并变成 ModelB
-          .map((meta) {
-            final m = FontInfoModel(
-              id: meta.fontId,
-              version: meta.version,
-              name: meta.fontName,
-              image: meta.fontImage,
-              url: meta.downloadUrl,
-            );
-            return m;
-          })
-          .toList();
-      if (fontList.isNotEmpty) {
-        recommendedFonts.assignAll(fontList);
+    debugPrint("-获取字体列表中数据----${FontManager.to.recommendedFonts.length}------");
+
+    if (FontManager.to.recommendedFonts.isEmpty) {
+      final canvasModel = canvalsControl.buildSnapshot();
+      if (canvasModel != null) {
+        final fontIds = canvasModel.elements.map((e) => e.fontId).toList();
+        FontManager.to.markUsedFonts(fontIds);
       }
+    } else {
+      final tempFonts = FontManager.to.recommendedFonts.map((meta) {
+        final m = FontInfoModel(
+          id: meta.fontId,
+          version: meta.version,
+          name: meta.fontName,
+          image: meta.fontImage,
+          url: meta.downloadUrl,
+        );
+        return m;
+      });
+      recommendedFonts.assignAll(tempFonts);
     }
-    debugPrint("打开了文字属性---获取字体列表中数据异常:");
   }
 
   /// 获取字体列表pop数据
