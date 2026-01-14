@@ -88,7 +88,6 @@ class DraftLogic extends GetxController {
       final result = await http.get(
         '/design/draft/index',
         query: {'page': '$currentPage', 'limit': globalPageSize},
-        showErrorToast: false,
       );
 
       if (result.code == 0 && result.data != null) {

@@ -109,7 +109,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
       final result = await http.get(
         '/homePage/index',
         converter: HomeModel.fromJson,
-        showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
         // 释放旧的 RefreshController 后再清除
@@ -255,7 +254,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
           'limit': globalPageSize,
           'tag_id': targetTagId,
         },
-        showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
         final listModel = CommonModel.fromJson(result.data);
@@ -436,7 +434,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         '/homePage/design/draft/read',
         data: {'id': model.id},
         converter: DraftEditModel.fromJson,
-        showErrorToast: false,
       );
 
       if (result.code == 0 && result.data != null) {

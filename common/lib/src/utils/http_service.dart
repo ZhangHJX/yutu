@@ -174,7 +174,7 @@ class HttpService {
     String path, {
     Options? options,
     bool isNake = false,
-    bool? showErrorToast,
+    bool showErrorToast = false,
     bool withToken = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? query,
@@ -197,7 +197,7 @@ class HttpService {
     dynamic data,
     Options? options,
     bool isNake = false,
-    bool? showErrorToast,
+    bool showErrorToast = false,
     bool withToken = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? query,

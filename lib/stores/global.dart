@@ -98,7 +98,6 @@ class GlobalLogic extends GetxController {
       final result = await http.post<UserModel>(
         '/homePage/user/index',
         converter: UserModel.fromJson,
-        showErrorToast: false,
       );
       if (result.code == 0) {
         userInfo.value = result.data ?? UserModel();
@@ -135,10 +134,7 @@ class GlobalLogic extends GetxController {
 
   /// 退出登录
   void logout() async {
-    final result = await http.post(
-      '/homePage/user/logout',
-      showErrorToast: true,
-    );
+    final result = await http.post('/homePage/user/logout');
     if (result.code == 0) {
       removeUserInfo();
     }

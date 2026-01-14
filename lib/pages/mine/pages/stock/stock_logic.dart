@@ -94,7 +94,6 @@ class StockLogic extends GetxController {
       final result = await http.get(
         '/user/material/index',
         query: {'page': '$currentPage', 'limit': globalPageSize},
-        showErrorToast: false,
       );
 
       if (result.code == 0 && result.data != null) {
@@ -168,7 +167,6 @@ class StockLogic extends GetxController {
   }
 
   /// 删除选中的草稿
-
   Future<void> deleteSelected() async {
     if (selectedIds.isEmpty) return;
     try {

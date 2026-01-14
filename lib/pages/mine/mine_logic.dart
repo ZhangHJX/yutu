@@ -44,7 +44,6 @@ class MineLogic extends GetxController {
       final result = await http.get(
         '/design/index',
         query: {'page': 1, 'limit': globalPageSize},
-        showErrorToast: false,
       );
 
       if (result.code == 0 && result.data != null) {

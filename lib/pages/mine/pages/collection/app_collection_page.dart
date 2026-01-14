@@ -37,6 +37,12 @@ class AppCollectionPage extends StatelessWidget {
               title: "我的收藏",
               rightTitle: logic.isBatchMode.value ? "全选" : "批量",
               onTap: () {
+                final dataState =
+                    logic.tabDataMap[logic.selectedTabIndex.value];
+                if (dataState != null && dataState.dataList.isEmpty) {
+                  showToast("当前无数据，无法处理");
+                  return;
+                }
                 if (logic.isBatchMode.value) {
                   logic.toggleSelectAll();
                 } else {
