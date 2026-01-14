@@ -14,15 +14,26 @@ class MiddlePage extends StatelessWidget {
       body: Obx(() {
         return Stack(
           children: [
-            Positioned.fill(
-              child: CachedNetworkImage(
-                imageUrl: logic.imgUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(color: Colors.white),
-                errorWidget: (context, url, error) =>
-                    Container(color: Colors.white),
-              ),
-            ),
+            Obx(() {
+              final imgSize = logic.getBgImageSize(
+                logic.middleInfo.value?.canvasSize ?? '1:1',
+              );
+              return Align(
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: imgSize.$1,
+                  height: imgSize.$2,
+                  child: CachedNetworkImage(
+                    imageUrl: logic.imgUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) =>
+                        Container(color: Colors.white),
+                    errorWidget: (context, url, error) =>
+                        Container(color: Colors.white),
+                  ),
+                ),
+              );
+            }),
 
             Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

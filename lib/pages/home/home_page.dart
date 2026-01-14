@@ -16,6 +16,17 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFFFFF), Color(0xFFE3EEF7)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
           Positioned(
             left: 0,
             right: 0,
@@ -27,21 +38,6 @@ class HomePage extends StatelessWidget {
             ),
           ),
 
-          Positioned.fill(
-            top: 240.w,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFFFFFF), Color(0xFFE3EEF7)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-          ),
           SafeArea(
             bottom: false,
             child: Column(
@@ -80,6 +76,7 @@ class HomePage extends StatelessWidget {
                           pinned: true, // 设置为 true 实现固定在顶部效果
                           delegate: _TabBarDelegate(child: _buildTabBar()),
                         ),
+
                         // 瀑布流内容列表
                         SliverToBoxAdapter(
                           child: Obx(() {
@@ -265,7 +262,8 @@ class HomePage extends StatelessWidget {
   Widget _buildTabBar() {
     return Container(
       height: 44.0,
-      color: Color.from(alpha: 1.0, red: 0.977, green: 0.984, blue: 0.992),
+      // color: Color.from(alpha: 1.0, red: 0.977, green: 0.984, blue: 0.992),
+      color: Colors.transparent,
       child: Stack(
         children: [
           // 可滚动的标签列表
@@ -313,10 +311,10 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   _TabBarDelegate({required this.child});
 
   @override
-  double get minExtent => 44.0; // 最小高度
+  double get minExtent => 44.w; // 最小高度
 
   @override
-  double get maxExtent => 44.0; // 最大高度
+  double get maxExtent => 44.w; // 最大高度
 
   @override
   Widget build(

@@ -317,7 +317,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
           ),
 
           // 缩放控制浮框（当缩放比例不是100%时显示，固定在顶部居中位置）
-          if ((_canvalsController.canvasModel.scale - 1.0).abs() > 0.01)
+          if ((_canvalsController.canvasModel.scale - 1.0).abs() > 0.01 ||
+              _canvalsController.canvasModel.x != 0)
             _buildScaleOverlay(),
 
           // 元素属性工具栏

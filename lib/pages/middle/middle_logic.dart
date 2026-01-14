@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
@@ -336,5 +338,17 @@ class MiddleLogic extends GetxController {
     }
     SmartDialog.dismiss();
     showToast('已取消下载');
+  }
+
+  (double, double) getBgImageSize(String canvasSize) {
+    final parts = canvasSize.split(':');
+    final width = double.parse(parts[0]);
+    final height = double.parse(parts[1]);
+    final scaleW = ScreenTools.screenWidth / width;
+    final scaleH = ScreenTools.screenHeight / height;
+    final double minScale = math.min(scaleW, scaleH);
+    final canvalsWidth = width * minScale;
+    final canvalsHeight = height * minScale;
+    return (canvalsWidth, canvalsHeight);
   }
 }
