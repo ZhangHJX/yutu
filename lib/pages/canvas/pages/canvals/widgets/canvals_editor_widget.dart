@@ -451,14 +451,14 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
               ),
 
           // 吸附参考线（最上层）
-          // if (_gestureManager.currentSnapLines.isNotEmpty)
-          //   Positioned.fill(
-          //     child: CustomPaint(
-          //       painter: SnapLinesPainter(
-          //         snapLines: _gestureManager.currentSnapLines,
-          //       ),
-          //     ),
-          //   ),
+          if (_gestureManager.currentSnapLines.isNotEmpty)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: SnapLinesPainter(
+                  snapLines: _gestureManager.currentSnapLines,
+                ),
+              ),
+            ),
         ],
       );
     });

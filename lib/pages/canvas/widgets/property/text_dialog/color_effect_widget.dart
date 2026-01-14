@@ -183,6 +183,7 @@ class _ColorEffectWidgetState extends State<ColorEffectWidget> {
           children: [
             GestureDetector(
               onTap: () {
+                FocusManager.instance.primaryFocus?.unfocus(); // 收起键盘
                 _openColorPicker(
                   initialColor: _textColor.color,
                   onColorSelected: (color) {
@@ -268,6 +269,7 @@ class _ColorEffectWidgetState extends State<ColorEffectWidget> {
           children: [
             GestureDetector(
               onTap: () {
+                FocusManager.instance.primaryFocus?.unfocus(); // 收起键盘
                 _openColorPicker(
                   initialColor: _borderColor.color,
                   onColorSelected: (color) {
