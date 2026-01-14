@@ -285,6 +285,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
           children: [
             GestureDetector(
               onTap: () {
+                FocusManager.instance.primaryFocus?.unfocus(); // 收起键盘
                 _openColorPicker(
                   initialColor: _fillColor.color,
                   onColorSelected: (color) {
@@ -370,6 +371,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
           children: [
             GestureDetector(
               onTap: () {
+                FocusManager.instance.primaryFocus?.unfocus(); // 收起键盘
                 _openColorPicker(
                   initialColor: _borderColor.color,
                   onColorSelected: (color) {

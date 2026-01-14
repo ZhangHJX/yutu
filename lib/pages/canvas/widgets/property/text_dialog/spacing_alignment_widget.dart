@@ -231,13 +231,7 @@ class _SpacingAlignmentWidgetState extends State<SpacingAlignmentWidget> {
       },
       child: Column(
         children: [
-          Image.asset(
-            imagePath,
-            width: 34.w,
-            height: 34.w,
-            fit: BoxFit.cover,
-            color: isSelected ? null : Colors.grey,
-          ),
+          Image.asset(imagePath, width: 34.w, height: 34.w, fit: BoxFit.cover),
 
           Text(
             label,

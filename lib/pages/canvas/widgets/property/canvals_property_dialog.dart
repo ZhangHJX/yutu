@@ -128,6 +128,7 @@ class _CanvalsPropertyDialogState extends State<CanvalsPropertyDialog>
                         right: 10.w,
                         top: 12.w,
                         child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
                           onTap: () {
                             SmartDialog.dismiss();
                           },
