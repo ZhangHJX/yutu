@@ -49,9 +49,10 @@ class _CanvalsShapeDialogState extends State<CanvalsShapeDialog> {
                     onTap: () {
                       SmartDialog.dismiss();
                     },
-                    child: SizedBox(
+                    child: Container(
                       width: 45.w,
-                      height: 30.w,
+                      height: 35.w,
+                      color: Colors.white,
                       child: Center(
                         child: Image.asset(
                           'assets/images/canvals/canvals_close_icon.png',

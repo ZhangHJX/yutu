@@ -34,7 +34,7 @@ class CanvasElementWidget extends StatelessWidget {
             File(PickerImageManager.loadCanvalsImage(data.filePath)),
             width: data.width,
             height: data.height,
-            fit: BoxFit.cover,
+            fit: BoxFit.fill,
           ),
         );
       case ElementType.rectangle:
