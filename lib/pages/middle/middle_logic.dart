@@ -11,7 +11,7 @@ import 'package:voicetemplate/file/index.dart';
 import 'package:voicetemplate/pages/canvas/draft/index.dart';
 import '../../stores/global.dart';
 import 'download/index.dart';
-import 'package:voicetemplate/pages/canvas/widgets/property/text_dialog/model/font_info_model.dart';
+import '../model/index.dart';
 
 class MiddleLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
@@ -27,7 +27,7 @@ class MiddleLogic extends GetxController {
 
   final isFavorite = 0.obs;
 
-  List<TagItemModel> get tagArray => middleInfo.value?.tagData ?? [];
+  List<ScreenItemModel> get tagArray => middleInfo.value?.tagData ?? [];
 
   /// 取消标志，用于取消正在进行的下载
   bool _isCancelled = false;
@@ -290,6 +290,10 @@ class MiddleLogic extends GetxController {
 
     // 根据当前屏幕重新计算画布矩阵
     canvalsModel.getMatrix4();
+    canvalsModel.title = middleInfo.value?.title ?? '';
+    canvalsModel.desc = middleInfo.value?.desc ?? '';
+    canvalsModel.sceneId = middleInfo.value?.sceneId ?? 0;
+    canvalsModel.tagData = middleInfo.value?.tagData ?? [];
 
     await DraftManager().initSaveDraft(canvalsModel);
     SmartDialog.dismiss();
@@ -349,6 +353,7 @@ class MiddleLogic extends GetxController {
     final double minScale = math.min(scaleW, scaleH);
     final canvalsWidth = width * minScale;
     final canvalsHeight = height * minScale;
+
     return (canvalsWidth, canvalsHeight);
   }
 }

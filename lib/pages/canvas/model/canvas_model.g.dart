@@ -27,6 +27,14 @@ CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
       const [],
   version: (json['version'] as num?)?.toDouble() ?? 1.0,
   timestamp: (json['timestamp'] as num?)?.toInt() ?? 0,
+  title: json['title'] as String? ?? '',
+  desc: json['desc'] as String? ?? '',
+  sceneId: (json['sceneId'] as num?)?.toInt() ?? 0,
+  tagData:
+      (json['tagData'] as List<dynamic>?)
+          ?.map((e) => ScreenItemModel.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
 );
 
 Map<String, dynamic> _$CanvasModelToJson(CanvasModel instance) =>
@@ -47,4 +55,8 @@ Map<String, dynamic> _$CanvasModelToJson(CanvasModel instance) =>
       'version': instance.version,
       'timestamp': instance.timestamp,
       'elements': instance.elements.map((e) => e.toJson()).toList(),
+      'title': instance.title,
+      'desc': instance.desc,
+      'sceneId': instance.sceneId,
+      'tagData': instance.tagData.map((e) => e.toJson()).toList(),
     };

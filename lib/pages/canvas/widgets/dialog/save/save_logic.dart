@@ -62,6 +62,12 @@ class SaveLogic extends GetxController {
     await getSceneResource();
     await getSuggestedTags();
     global.fetchUserInfo();
+    updateTemplateInfo();
+  }
+
+  void updateTemplateInfo() {
+    titleController.text = canvalsLogic.canvasModel.title;
+    descriptionController.text = canvalsLogic.canvasModel.desc;
   }
 
   /// 应用场景接口
@@ -72,7 +78,14 @@ class SaveLogic extends GetxController {
         final listModel = ScreenModel.fromJson(result.data);
         if (listModel.items.isNotEmpty) {
           scenarios.value = listModel.items;
-          sceneName.value = listModel.items.first.name;
+          final item = listModel.items.firstWhereOrNull(
+            (e) => e.id == canvalsLogic.canvasModel.sceneId,
+          );
+          if (item == null) {
+            sceneName.value = listModel.items.first.name;
+          } else {
+            sceneName.value = item.name;
+          }
           itemArray = scenarios.map((e) => e.name).toList();
         }
       }
@@ -88,6 +101,10 @@ class SaveLogic extends GetxController {
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
         suggestedTags.value = listModel.items;
+
+        final bIds = canvalsLogic.canvasModel.tagData.map((e) => e.id).toSet();
+        final tags = suggestedTags.where((e) => bIds.contains(e.id)).toList();
+        selectedTags.assignAll(tags);
       }
     } catch (e) {
       debugPrint('获取场景数据失败: $e');

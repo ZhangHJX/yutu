@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../model/index.dart';
 import '../../history/clone_tools/canvas_model_clone.dart';
-import '../../widgets/property/text_dialog/model/font_info_model.dart';
 import 'dart:math' as math;
 
 /// 全局选择状态管理控制器： 负责管理当前选中的文本框ID、画布模型以及元素列表

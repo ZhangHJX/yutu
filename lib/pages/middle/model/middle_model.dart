@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../../model/index.dart';
 part 'middle_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
@@ -30,11 +31,14 @@ class MiddleModel {
   @JsonKey(name: 'is_favorite', defaultValue: 0)
   final int isFavorite;
 
+  @JsonKey(name: 'scene_id', defaultValue: 0)
+  final int sceneId;
+
   @JsonKey(name: 'front_data', defaultValue: [])
   final List<FontItemModel> frontData;
 
   @JsonKey(name: 'tag_data', defaultValue: [])
-  final List<TagItemModel> tagData;
+  final List<ScreenItemModel> tagData;
 
   ///新增 是否是自己  0 否   1 是
   @JsonKey(name: 'is_own', defaultValue: 0)
@@ -57,6 +61,7 @@ class MiddleModel {
     required this.frontData,
     required this.tagData,
     required this.isOwn,
+    required this.sceneId,
   });
 
   factory MiddleModel.fromJson(Map<String, dynamic> json) =>
@@ -79,8 +84,9 @@ class MiddleModel {
     int? isOfficial,
     int? isFavorite,
     List<FontItemModel>? frontData,
-    List<TagItemModel>? tagData,
+    List<ScreenItemModel>? tagData,
     int? isOwn,
+    int? sceneId,
   }) {
     return MiddleModel(
       id: id ?? this.id,
@@ -99,6 +105,7 @@ class MiddleModel {
       frontData: frontData ?? this.frontData,
       tagData: tagData ?? this.tagData,
       isOwn: isOwn ?? this.isOwn,
+      sceneId: sceneId ?? this.sceneId,
     );
   }
 }
@@ -146,23 +153,5 @@ class FontItemModel {
       image: image ?? this.image,
       url: url ?? this.url,
     );
-  }
-}
-
-@JsonSerializable()
-class TagItemModel {
-  @JsonKey(defaultValue: 0)
-  final int id;
-  @JsonKey(defaultValue: '')
-  final String name;
-
-  TagItemModel({required this.id, required this.name});
-
-  factory TagItemModel.fromJson(Map<String, dynamic> json) =>
-      _$TagItemModelFromJson(json);
-  Map<String, dynamic> toJson() => _$TagItemModelToJson(this);
-
-  TagItemModel copyWith({int? id, String? name}) {
-    return TagItemModel(id: id ?? this.id, name: name ?? this.name);
   }
 }

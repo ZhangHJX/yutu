@@ -4,8 +4,7 @@ import 'package:vector_math/vector_math_64.dart';
 import 'package:common/common.dart';
 import 'canvas_element.dart';
 import 'dart:math' as math;
-
-// import 'package:objectbox/objectbox.dart';
+import '../../model/index.dart';
 
 part 'canvas_model.g.dart';
 
@@ -37,6 +36,12 @@ class CanvasModel {
 
   List<CanvasElement> elements;
 
+  // 新增
+  String title;
+  String desc;
+  int sceneId;
+  List<ScreenItemModel> tagData;
+
   CanvasModel({
     this.id = 0,
     this.uuid = '',
@@ -54,6 +59,10 @@ class CanvasModel {
     this.elements = const [],
     this.version = 1.0,
     this.timestamp = 0,
+    this.title = '',
+    this.desc = '',
+    this.sceneId = 0,
+    this.tagData = const [],
   });
 
   // 自动生成的 JSON 解析
@@ -115,6 +124,10 @@ class CanvasModel {
     int? timestamp,
     Matrix4? transform,
     List<CanvasElement>? elements,
+    String? title,
+    String? desc,
+    int? sceneId,
+    List<ScreenItemModel>? tagData,
   }) {
     return CanvasModel(
       id: id ?? this.id,
@@ -133,6 +146,10 @@ class CanvasModel {
       version: version ?? this.version,
       timestamp: timestamp ?? this.timestamp,
       elements: elements ?? List<CanvasElement>.from(this.elements),
+      title: title ?? this.title,
+      desc: desc ?? this.desc,
+      sceneId: sceneId ?? this.sceneId,
+      tagData: tagData ?? this.tagData,
     )..transform = transform ?? Matrix4.copy(this.transform);
   }
 }

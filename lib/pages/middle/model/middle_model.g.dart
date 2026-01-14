@@ -27,10 +27,11 @@ MiddleModel _$MiddleModelFromJson(Map<String, dynamic> json) => MiddleModel(
       [],
   tagData:
       (json['tag_data'] as List<dynamic>?)
-          ?.map((e) => TagItemModel.fromJson(e as Map<String, dynamic>))
+          ?.map((e) => ScreenItemModel.fromJson(e as Map<String, dynamic>))
           .toList() ??
       [],
   isOwn: (json['is_own'] as num?)?.toInt() ?? 0,
+  sceneId: (json['scene_id'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$MiddleModelToJson(MiddleModel instance) =>
@@ -48,6 +49,7 @@ Map<String, dynamic> _$MiddleModelToJson(MiddleModel instance) =>
       'favorite_total': instance.favoriteTotal,
       'is_official': instance.isOfficial,
       'is_favorite': instance.isFavorite,
+      'scene_id': instance.sceneId,
       'front_data': instance.frontData.map((e) => e.toJson()).toList(),
       'tag_data': instance.tagData.map((e) => e.toJson()).toList(),
       'is_own': instance.isOwn,
@@ -70,11 +72,3 @@ Map<String, dynamic> _$FontItemModelToJson(FontItemModel instance) =>
       'front_image': instance.image,
       'front_url': instance.url,
     };
-
-TagItemModel _$TagItemModelFromJson(Map<String, dynamic> json) => TagItemModel(
-  id: (json['id'] as num?)?.toInt() ?? 0,
-  name: json['name'] as String? ?? '',
-);
-
-Map<String, dynamic> _$TagItemModelToJson(TagItemModel instance) =>
-    <String, dynamic>{'id': instance.id, 'name': instance.name};
