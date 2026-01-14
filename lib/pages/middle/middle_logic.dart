@@ -290,19 +290,6 @@ class MiddleLogic extends GetxController {
     canvalsModel.getMatrix4();
 
     await DraftManager().initSaveDraft(canvalsModel);
-
-    final List<FontItemModel> fonts = middleInfo.value?.frontData ?? [];
-    final List<FontInfoModel> list = fonts.map((e) {
-      final m = FontInfoModel(
-        id: e.id,
-        version: e.version,
-        name: e.name,
-        image: e.image,
-        url: e.url,
-      );
-      return m;
-    }).toList();
-
     SmartDialog.dismiss();
 
     Get.toNamed(
@@ -311,7 +298,6 @@ class MiddleLogic extends GetxController {
         "model": canvalsModel,
         "type": type,
         "is_own": middleInfo.value?.isOwn,
-        "font": list,
       },
     )?.then((result) {
       if (result == true) {

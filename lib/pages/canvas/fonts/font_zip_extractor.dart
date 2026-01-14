@@ -6,6 +6,7 @@ import 'font_models.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
+import '../widgets/property/text_dialog/model/font_info_model.dart';
 
 /// Isolate 入参（只做“扫描 + 解析 + 组 meta”）
 /// 注意：不要把 File/Directory 之类复杂对象跨 isolate 传递，传路径字符串即可。
@@ -39,7 +40,7 @@ class FontZipExtractor {
   static Future<FontInstallResult> extractAndParse({
     required String zipPath,
     required String tempInstallDir,
-    required int fontId,
+    required FontInfoModel info,
     required String version,
     required String url,
   }) async {
@@ -65,18 +66,19 @@ class FontZipExtractor {
 
     final parseParams = _FontParseParams(
       installDir: outDir.path,
-      fontId: fontId,
+      fontId: info.id,
       version: version,
       url: url,
     );
 
     // ✅ 后台 isolate 做扫描/解析/建 meta（避免卡 UI）
-    return Isolate.run(() => _parseInIsolate(parseParams));
+    return Isolate.run(() => _parseInIsolate(parseParams, info));
   }
 
   /// isolate entry：只做纯 Dart 的 IO/解析/组装
   static Future<FontInstallResult> _parseInIsolate(
     _FontParseParams params,
+    FontInfoModel info,
   ) async {
     final rootDir = Directory(params.installDir);
     if (!await rootDir.exists()) {
@@ -130,6 +132,9 @@ class FontZipExtractor {
     final familyMeta = FontFamilyMeta(
       fontId: params.fontId,
       version: params.version,
+      fontName: info.name,
+      fontImage: info.image,
+      downloadUrl: info.url,
       weights: parsedWeights,
     );
 

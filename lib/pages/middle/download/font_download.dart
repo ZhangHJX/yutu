@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../../canvas/fonts/font_manager.dart';
 import '../../canvas/fonts/font_meta_store.dart';
 import '../model/middle_model.dart';
+import '../../canvas/widgets/property/text_dialog/model/font_info_model.dart';
 
 /// 字体下载服务
 /// 负责下载和管理字体文件
@@ -58,8 +59,15 @@ class FontDownload {
 
       // 使用 FontManager 下载字体（会自动处理版本检查和旧版本删除）
       try {
+        final info = FontInfoModel(
+          id: fontItem.id,
+          version: fontItem.version,
+          name: fontItem.name,
+          image: fontItem.image,
+          url: fontItem.url,
+        );
         await FontManager.to.prepareFont(
-          fontId: fontId,
+          info: info,
           version: requiredVersion,
           url: fontUrl,
           onProgress: (progress) {

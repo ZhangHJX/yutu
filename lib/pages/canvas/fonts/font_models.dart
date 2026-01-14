@@ -50,6 +50,15 @@ class FontFamilyMeta {
   /// 业务侧 fontId（来自模板/接口）
   final int fontId;
 
+  ///字体的名字
+  final String fontName;
+
+  ///字体下载地址
+  final String fontImage;
+
+  ///字体下载地址
+  final String downloadUrl;
+
   /// 业务侧版本号，避免旧 zip 叠加
   final String version;
 
@@ -59,18 +68,27 @@ class FontFamilyMeta {
   const FontFamilyMeta({
     required this.fontId,
     required this.version,
+    required this.fontName,
+    required this.fontImage,
+    required this.downloadUrl,
     required this.weights,
   });
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'fontId': fontId,
     'version': version,
+    'fontName': fontName,
+    'fontImage': fontImage,
+    'downloadUrl': downloadUrl,
     'weights': weights.map((e) => e.toJson()).toList(),
   };
 
   factory FontFamilyMeta.fromJson(Map<String, dynamic> json) => FontFamilyMeta(
     fontId: json['fontId'] as int,
     version: json['version'] as String,
+    fontName: json['fontName'] as String,
+    fontImage: json['fontImage'] as String,
+    downloadUrl: json['downloadUrl'] as String,
     weights: (json['weights'] as List<dynamic>)
         .map((e) => FontWeightMeta.fromJson(e as Map<String, dynamic>))
         .toList(growable: false),

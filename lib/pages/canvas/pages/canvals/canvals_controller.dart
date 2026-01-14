@@ -41,17 +41,7 @@ class CanvalsController extends GetxController {
     return 0;
   }
 
-  List<FontInfoModel> get fontList {
-    final fontValue = args['font'];
-    if (fontValue is List) {
-      // 安全地转换列表，过滤掉非 FontInfoModel 类型的元素
-      return fontValue.whereType<FontInfoModel>().toList();
-    }
-    return <FontInfoModel>[];
-  }
-
   PointerEvent? currentPoint; // 画布点击
-
   final RxList<CanvasElement> elements = <CanvasElement>[].obs;
 
   @override

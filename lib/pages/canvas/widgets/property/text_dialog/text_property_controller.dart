@@ -52,9 +52,27 @@ class TextPropertyController extends GetxController {
 
   /// 获取已使用的字体
   void currentUseFonts() {
-    if (canvalsControl.fontList.isNotEmpty) {
-      recommendedFonts.assignAll(canvalsControl.fontList);
+    final canvasModel = canvalsControl.buildSnapshot();
+    if (canvasModel != null) {
+      final fontList = canvasModel.elements
+          .map((element) => FontManager.to.allFonts[element.fontId]) // ModelB?
+          .whereType<FontFamilyMeta>() // 过滤掉 null，并变成 ModelB
+          .map((meta) {
+            final m = FontInfoModel(
+              id: meta.fontId,
+              version: meta.version,
+              name: meta.fontName,
+              image: meta.fontImage,
+              url: meta.downloadUrl,
+            );
+            return m;
+          })
+          .toList();
+      if (fontList.isNotEmpty) {
+        recommendedFonts.assignAll(fontList);
+      }
     }
+    debugPrint("打开了文字属性---获取字体列表中数据异常:");
   }
 
   /// 获取字体列表pop数据

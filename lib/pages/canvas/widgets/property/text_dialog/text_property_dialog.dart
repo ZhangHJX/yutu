@@ -211,6 +211,7 @@ class _TextPropertyDialogState extends State<TextPropertyDialog>
 
           // 关闭按钮
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
               SmartDialog.dismiss();
             },

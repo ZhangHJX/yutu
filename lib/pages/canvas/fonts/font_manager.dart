@@ -64,7 +64,7 @@ class FontManager extends GetxController {
     ValueChanged<double>? onProgress,
   }) {
     return prepareFont(
-      fontId: info.id,
+      info: info,
       version: info.version,
       url: info.url,
       onProgress: onProgress,
@@ -73,65 +73,65 @@ class FontManager extends GetxController {
 
   /// 准备/安装字体（原子提交）
   Future<FontFamilyMeta> prepareFont({
-    required int fontId,
+    required FontInfoModel info,
     required String version,
     required String url,
     ValueChanged<double>? onProgress,
   }) {
     // 单 fontId “单飞”：同一时间只有一个安装任务
-    final existing = _installingTasks[fontId];
+    final existing = _installingTasks[info.id];
     if (existing != null) return existing;
 
     final task = _prepareFontInternal(
-      fontId: fontId,
+      info: info,
       version: version,
       url: url,
       onProgress: onProgress,
     );
-    _installingTasks[fontId] = task;
+    _installingTasks[info.id] = task;
     task.whenComplete(() {
-      _installingTasks.remove(fontId);
+      _installingTasks.remove(info.id);
     });
     return task;
   }
 
   Future<FontFamilyMeta> _prepareFontInternal({
-    required int fontId,
+    required FontInfoModel info,
     required String version,
     required String url,
     ValueChanged<double>? onProgress,
   }) async {
     // 1. 如果本地已有且版本一致，直接返回
-    final localMeta = await FontMetaStore.instance.readMeta(fontId);
+    final localMeta = await FontMetaStore.instance.readMeta(info.id);
     if (localMeta != null && localMeta.version == version) {
-      allFonts[fontId] = localMeta;
-      fontStatus[fontId] = FontStatus.ready;
+      allFonts[info.id] = localMeta;
+      fontStatus[info.id] = FontStatus.ready;
       // markUsed(fontId);
       return localMeta;
     }
 
-    fontStatus[fontId] = FontStatus.downloading;
+    fontStatus[info.id] = FontStatus.downloading;
 
     // 2. 下载 zip
     final zipFile = await FontDownloadManager.instance.downloadFontZip(
-      fontId: fontId,
+      fontId: info.id,
       url: url,
       onProgress: (p) {
         onProgress?.call(p * 0.7); // 0~70% 下载进度
       },
     );
 
-    fontStatus[fontId] = FontStatus.installing;
+    fontStatus[info.id] = FontStatus.installing;
 
     // 3. 解压到临时安装目录  ../tmp/fonts_install/fontId/
     final installTmpDir = await DirectoryManager.getTempSubDirectory(
-      'fonts_install/$fontId',
+      'fonts_install/${info.id}}',
     );
 
     final result = await FontZipExtractor.extractAndParse(
       zipPath: zipFile.path,
       tempInstallDir: installTmpDir.path,
-      fontId: fontId,
+      info: info,
       version: version,
       url: url,
     );
@@ -139,7 +139,7 @@ class FontManager extends GetxController {
     onProgress?.call(0.85); // 解压+解析完成
 
     // 4. 原子替换到最终目录 ApplicationSupportDirectory/fonts/fontId
-    final targetDir = await FontMetaStore.instance.fontDir(fontId);
+    final targetDir = await FontMetaStore.instance.fontDir(info.id);
     debugPrint('原子替换到最终目录 $targetDir');
     Directory? backup;
     try {
@@ -165,8 +165,8 @@ class FontManager extends GetxController {
       // 5. 写 meta.json
       await FontMetaStore.instance.writeMeta(result.meta);
 
-      allFonts[fontId] = result.meta;
-      fontStatus[fontId] = FontStatus.ready;
+      allFonts[info.id] = result.meta;
+      fontStatus[info.id] = FontStatus.ready;
 
       // 6. 使用内部 familyKey + FontLoader 注册到 Flutter 引擎
       await _registerFontFamily(result.meta);
@@ -192,7 +192,7 @@ class FontManager extends GetxController {
         }
         await backup.rename(targetDir.path);
       }
-      fontStatus[fontId] = FontStatus.failed;
+      fontStatus[info.id] = FontStatus.failed;
       rethrow;
     } finally {
       // 清理临时目录
@@ -245,7 +245,7 @@ class FontManager extends GetxController {
         try {
           // 使用静默安装方法，不触发 UI 更新
           await _prepareFontSilent(
-            fontId: info.id,
+            info: info,
             version: info.version,
             url: info.url,
           );
@@ -268,38 +268,38 @@ class FontManager extends GetxController {
   /// - 不加入 _installingTasks（避免被 UI 检测到）
   /// - 静默下载、安装、注册字体
   Future<FontFamilyMeta> _prepareFontSilent({
-    required int fontId,
+    required FontInfoModel info,
     required String version,
     required String url,
   }) async {
     // 1. 如果本地已有且版本一致，直接返回（静默，不更新状态）
-    final localMeta = await FontMetaStore.instance.readMeta(fontId);
+    final localMeta = await FontMetaStore.instance.readMeta(info.id);
     if (localMeta != null && localMeta.version == version) {
       return localMeta;
     }
 
     // 2. 静默下载 zip（不更新 fontStatus）
     final zipFile = await FontDownloadManager.instance.downloadFontZip(
-      fontId: fontId,
+      fontId: info.id,
       url: url,
       onProgress: (_) {}, // 静默，不报告进度
     );
 
     // 3. 解压到临时安装目录
     final installTmpDir = await DirectoryManager.getTempSubDirectory(
-      'fonts_install/$fontId',
+      'fonts_install/${info.id}',
     );
 
     final result = await FontZipExtractor.extractAndParse(
       zipPath: zipFile.path,
       tempInstallDir: installTmpDir.path,
-      fontId: fontId,
+      info: info,
       version: version,
       url: url,
     );
 
     // 4. 原子替换到最终目录
-    final targetDir = await FontMetaStore.instance.fontDir(fontId);
+    final targetDir = await FontMetaStore.instance.fontDir(info.id);
     Directory? backup;
     try {
       if (await targetDir.exists()) {
@@ -323,7 +323,7 @@ class FontManager extends GetxController {
       // 6. 静默更新 allFonts（直接赋值，不触发响应式更新）
       // 注意：在 GetX 中，直接赋值 allFonts[fontId] = newMeta 不会触发响应式更新
       // 但数据会是最新的，下次 UI 读取时会拿到新数据
-      allFonts[fontId] = result.meta;
+      allFonts[info.id] = result.meta;
 
       // 7. 使用内部 familyKey + FontLoader 注册到 Flutter 引擎（静默）
       await _registerFontFamily(result.meta);
