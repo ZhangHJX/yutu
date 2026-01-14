@@ -13,6 +13,7 @@ class AutoScrollTabBar extends StatelessWidget {
   final String textSelectColor;
   final String itemBackColor;
   final String itemSelectBackColor;
+  final Color backGroundColor;
 
   const AutoScrollTabBar({
     super.key,
@@ -24,6 +25,7 @@ class AutoScrollTabBar extends StatelessWidget {
     this.textSelectColor = '#007BFE',
     this.itemBackColor = '#F4F4F4',
     this.itemSelectBackColor = '#D8F5FF',
+    this.backGroundColor = Colors.transparent,
   });
 
   @override
@@ -34,7 +36,7 @@ class AutoScrollTabBar extends StatelessWidget {
     }
     return Container(
       height: 44.w,
-      color: Colors.transparent,
+      color: backGroundColor,
       margin: EdgeInsets.only(left: 16.w, right: rightMargin.w),
       child: AnimatedBuilder(
         animation: tabController!,

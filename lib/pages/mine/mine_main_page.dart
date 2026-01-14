@@ -20,7 +20,16 @@ class _MinePageState extends State<MinePage> {
       backgroundColor: "#F5F5F5".color,
       body: Stack(
         children: [
-          _buildHeaderBackground(),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: Image.asset(
+              'assets/images/global/mine_top_bg.png',
+              fit: BoxFit.cover,
+              height: 240.w,
+            ),
+          ),
           SafeArea(
             child: Obx(() {
               final bool isLogin = logic.global.isLogin;
@@ -80,20 +89,6 @@ class _MinePageState extends State<MinePage> {
             }),
           ),
         ],
-      ),
-    );
-  }
-
-  /// 顶部渐变背景
-  Widget _buildHeaderBackground() {
-    return Container(
-      height: 146.w,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFB1D5FF), Color(0xFFF5F6FA)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
       ),
     );
   }
