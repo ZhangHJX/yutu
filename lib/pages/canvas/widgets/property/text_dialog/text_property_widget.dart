@@ -250,7 +250,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                     });
                   }
                 } catch (e) {
-                  FontManager.to.fontStatus[font.id] == FontStatus.failed;
+                  FontManager.to.fontStatus[font.id] = FontStatus.failed;
                   debugPrint('字体准备失败: $e');
                   showToast('字体下载失败，请重试');
                 }
@@ -292,7 +292,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                     ),
 
                     // 下载/安装中的加载指示器
-                    if ((isDownloading || isInstalling) && !isFailed)
+                    if (isDownloading || isInstalling)
                       Center(
                         child: SpinningWidget(
                           child: CAssetImage(

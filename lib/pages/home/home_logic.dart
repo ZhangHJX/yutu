@@ -25,6 +25,9 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   /// Tag列表（响应式）
   final tagList = <TagModel>[].obs;
 
+  /// 是否显示顶部导航中的 Tab（用于与中间 Tab 联动）
+  final RxBool showTopTab = false.obs;
+
   // 每个 tab 的数据状态（使用 tagId 作为 key，0 表示全部）
   final RxMap<int, TabDataState> tabDataMap = <int, TabDataState>{}.obs;
 
@@ -47,6 +50,9 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   RefreshController refreshController = RefreshController(
     initialRefresh: false,
   );
+
+  /// 滚动控制器，用于监听滚动位置
+  final ScrollController scrollController = ScrollController();
 
   /// 获取当前 tab 的 tagId
   int _getCurrentTagId() {
@@ -86,6 +92,8 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     // 释放 TabController
     tabController.value?.dispose();
     tabController.value = null;
+    // 释放 ScrollController
+    scrollController.dispose();
     _countWorker?.dispose();
     super.onClose();
   }
@@ -106,6 +114,20 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         homeRefresh();
       }
     });
+
+    // 监听滚动位置，用于控制顶部 Tab 的显示
+    scrollController.addListener(_onScroll);
+  }
+
+  /// 滚动监听回调
+  void _onScroll() {
+    // 计算推荐区域的大概高度：推荐标题高度42.w + 列表高度(201.w)
+    final recommendationHeight = 42.w + 201.w;
+    // 当滚动偏移超过推荐区域高度时，说明中间 Tab 已经滑到搜索框边缘
+    final shouldShowTopTab = scrollController.offset >= recommendationHeight;
+    if (showTopTab.value != shouldShowTopTab) {
+      showTopTab.value = shouldShowTopTab;
+    }
   }
 
   /// 加载首页数据

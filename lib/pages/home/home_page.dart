@@ -16,17 +16,6 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFFFFFF), Color(0xFFE3EEF7)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-          ),
           Positioned(
             left: 0,
             right: 0,
@@ -35,6 +24,22 @@ class HomePage extends StatelessWidget {
               'assets/images/global/top_navigation_bg.png',
               fit: BoxFit.cover,
               height: 240.w,
+            ),
+          ),
+
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 240.w,
+            bottom: 0,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFFFFF), Color(0xFFE3EEF7)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
             ),
           ),
 
@@ -52,7 +57,15 @@ class HomePage extends StatelessWidget {
                     child: SearchBarWidget(false, hintText: '搜索一下吧～'),
                   ),
                 ),
+
                 SizedBox(height: 8.w),
+
+                // 顶部 Tab，初始隐藏，当中间 Tab 滑到搜索框边缘时显示
+                Obx(
+                  () => logic.showTopTab.value
+                      ? _buildTabBar()
+                      : const SizedBox.shrink(),
+                ),
 
                 Expanded(
                   child: SmartRefresher(
@@ -66,15 +79,20 @@ class HomePage extends StatelessWidget {
                       await logic.onLoad();
                     },
                     child: CustomScrollView(
+                      controller: logic.scrollController,
                       slivers: [
                         // 精彩推荐区域
                         SliverToBoxAdapter(
                           child: _buildWonderfulRecommendations(),
                         ),
-                        // Tab 栏（使用 SliverPersistentHeader 实现固定在顶部效果）
-                        SliverPersistentHeader(
-                          pinned: true, // 设置为 true 实现固定在顶部效果
-                          delegate: _TabBarDelegate(child: _buildTabBar()),
+
+                        /// 修改中间的tab栏 - 当顶部 Tab 显示时，隐藏中间 Tab
+                        Obx(
+                          () => logic.showTopTab.value
+                              ? const SliverToBoxAdapter(
+                                  child: SizedBox.shrink(),
+                                )
+                              : SliverToBoxAdapter(child: _buildTabBar()),
                         ),
 
                         // 瀑布流内容列表
@@ -149,7 +167,7 @@ class HomePage extends StatelessWidget {
       children: [
         // 标题
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 15.w),
+          padding: EdgeInsets.only(left: 22.w, right: 11.w, bottom: 10.32.w),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -171,12 +189,10 @@ class HomePage extends StatelessWidget {
           ),
         ),
 
-        SizedBox(height: 10.w),
-
         // 横向滚动卡片
         Obx(() {
           return Container(
-            padding: EdgeInsets.only(left: 15.w, bottom: 9.w),
+            padding: EdgeInsets.only(left: 20.w, bottom: 9.w),
             height: 201.w,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -262,7 +278,8 @@ class HomePage extends StatelessWidget {
   Widget _buildTabBar() {
     return Container(
       height: 44.0,
-      color: Color.from(alpha: 1.0, red: 0.977, green: 0.984, blue: 0.992),
+      // color: Color.from(alpha: 1.0, red: 0.977, green: 0.984, blue: 0.992),
+      color: Colors.transparent,
       child: Stack(
         children: [
           // 可滚动的标签列表
@@ -300,37 +317,5 @@ class HomePage extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-// Tab 栏的 SliverPersistentHeaderDelegate
-class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-
-  _TabBarDelegate({required this.child});
-
-  @override
-  double get minExtent => 44.w; // 最小高度
-
-  @override
-  double get maxExtent => 44.w; // 最大高度
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return ClipRect(
-      child: Material(
-        color: Colors.transparent,
-        child: SizedBox(height: maxExtent, child: child),
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(_TabBarDelegate oldDelegate) {
-    return child != oldDelegate.child;
   }
 }
