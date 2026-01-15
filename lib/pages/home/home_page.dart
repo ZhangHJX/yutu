@@ -78,56 +78,56 @@ class HomePage extends StatelessWidget {
                         ),
 
                         // 瀑布流内容列表
-                        SliverToBoxAdapter(
-                          child: Obx(() {
-                            if (logic.tagList.isEmpty) {
-                              return const PageEmptyState(title: '未找到匹配的模板~');
-                            }
-                            final tagId =
-                                logic.tagList[logic.selectedTabIndex.value].id;
-                            final tabData = logic.tabDataMap[tagId];
-
-                            if (tabData == null || tabData.dataList.isEmpty) {
-                              return const PageEmptyState(title: '未找到匹配的模板~');
-                            }
-
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                left: 15.w,
-                                right: 15.w,
-                                top: 8.w,
-                              ),
-                              child: MasonryGridView.count(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: 14.h,
-                                crossAxisSpacing: 9.w,
-                                shrinkWrap: true,
-                                padding: EdgeInsets.only(bottom: 30.w),
-                                primary: false,
-                                itemCount: tabData.dataList.length,
-                                itemBuilder: (context, index) {
-                                  final item = tabData.dataList[index];
-                                  return HomePageItem(
-                                    key: ValueKey(item.id),
-                                    model: item,
-                                    source: PageSource.home,
-                                    favoriteCallBack: () {
-                                      if (!logic.global.isLogin) {
-                                        Get.toNamed(AppRoutes.appLogin);
-                                        return;
-                                      }
-                                      if (item.isFavorite == 1) {
-                                        logic.favoriteEventDialog(item.id);
-                                      } else {
-                                        logic.clickFavorite(item.id, true);
-                                      }
-                                    },
-                                  );
-                                },
-                              ),
+                        Obx(() {
+                          if (logic.tagList.isEmpty) {
+                            return const SliverToBoxAdapter(
+                              child: PageEmptyState(title: '未找到匹配的模板~'),
                             );
-                          }),
-                        ),
+                          }
+                          final tagId =
+                              logic.tagList[logic.selectedTabIndex.value].id;
+                          final tabData = logic.tabDataMap[tagId];
+
+                          if (tabData == null || tabData.dataList.isEmpty) {
+                            return const SliverToBoxAdapter(
+                              child: PageEmptyState(title: '未找到匹配的模板~'),
+                            );
+                          }
+
+                          return SliverPadding(
+                            padding: EdgeInsets.only(
+                              left: 15.w,
+                              right: 15.w,
+                              top: 8.w,
+                              bottom: 30.w,
+                            ),
+                            sliver: SliverMasonryGrid.count(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 14.h,
+                              crossAxisSpacing: 9.w,
+                              itemBuilder: (context, index) {
+                                final item = tabData.dataList[index];
+                                return HomePageItem(
+                                  key: ValueKey(item.id),
+                                  model: item,
+                                  source: PageSource.home,
+                                  favoriteCallBack: () {
+                                    if (!logic.global.isLogin) {
+                                      Get.toNamed(AppRoutes.appLogin);
+                                      return;
+                                    }
+                                    if (item.isFavorite == 1) {
+                                      logic.favoriteEventDialog(item.id);
+                                    } else {
+                                      logic.clickFavorite(item.id, true);
+                                    }
+                                  },
+                                );
+                              },
+                              childCount: tabData.dataList.length,
+                            ),
+                          );
+                        }),
                         // 底部间距
                         SliverToBoxAdapter(child: SizedBox(height: 30.w)),
                       ],
@@ -262,8 +262,7 @@ class HomePage extends StatelessWidget {
   Widget _buildTabBar() {
     return Container(
       height: 44.0,
-      // color: Color.from(alpha: 1.0, red: 0.977, green: 0.984, blue: 0.992),
-      color: Colors.transparent,
+      color: Color.from(alpha: 1.0, red: 0.977, green: 0.984, blue: 0.992),
       child: Stack(
         children: [
           // 可滚动的标签列表
@@ -322,7 +321,12 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return SizedBox(height: maxExtent, child: child);
+    return ClipRect(
+      child: Material(
+        color: Colors.transparent,
+        child: SizedBox(height: maxExtent, child: child),
+      ),
+    );
   }
 
   @override
