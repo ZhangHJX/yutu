@@ -40,6 +40,8 @@ class CanvalsController extends GetxController {
     return 0;
   }
 
+  final canPop = false.obs;
+
   PointerEvent? currentPoint; // 画布点击
   final RxList<CanvasElement> elements = <CanvasElement>[].obs;
 
@@ -211,4 +213,6 @@ class CanvalsController extends GetxController {
     canvalsWidth = canvasModel.width * minScale;
     canvalsHeight = canvasModel.height * minScale;
   }
+
+  void enableBack() => canPop.value = true;
 }

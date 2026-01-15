@@ -72,6 +72,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
     // 更新字号 - 保持为 double 类型以匹配 CanvasElement.fontSize
     final fontSize = double.tryParse(_fontSizeController.text) ?? 16.0;
     // 调用回调
+    debugPrint("==_updateModel==${logic.familyKey.value}=====");
     widget.onFontChanged(
       logic.familyKey.value, // ✅ 使用找到的 familyKey
       fontSize,
@@ -291,7 +292,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                     ),
 
                     // 下载/安装中的加载指示器
-                    if (isDownloading || isInstalling)
+                    if ((isDownloading || isInstalling) && !isFailed)
                       Center(
                         child: SpinningWidget(
                           child: CAssetImage(

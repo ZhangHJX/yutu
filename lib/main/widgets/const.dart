@@ -8,7 +8,7 @@ Widget buildTabIcon(TabBarItem item, bool selected, int index) {
       item.selectedFrames!.isNotEmpty) {
     return FrameSequenceAnim(
       frames: item.selectedFrames ?? [],
-      fps: 24,
+      fps: 18,
       loop: index == 3,
       width: item.width,
       height: item.height,

@@ -55,7 +55,7 @@ class LoginPage extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(height: 238.w),
+                  SizedBox(height: 250.w),
                   // 2. 输入区域
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 29.w),

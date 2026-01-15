@@ -58,7 +58,10 @@ class TextPropertyController extends GetxController {
     if (FontManager.to.recommendedFonts.isEmpty) {
       final canvasModel = canvalsControl.buildSnapshot();
       if (canvasModel != null) {
-        final fontIds = canvasModel.elements.map((e) => e.fontId).toList();
+        final fontIds = canvasModel.elements
+            .map((e) => e.fontId)
+            .where((id) => id > 0)
+            .toList();
         FontManager.to.markUsedFonts(fontIds);
       }
     } else {

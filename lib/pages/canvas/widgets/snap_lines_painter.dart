@@ -10,8 +10,8 @@ class SnapLinesPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color =
-          const Color(0xFFFF0080) // 粉红色参考线
+      ..color = Colors
+          .red // 粉红色参考线
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 

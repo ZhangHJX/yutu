@@ -369,7 +369,7 @@ class FontManager extends GetxController {
 
   /// 记录单个字体：“最近使用”，用于推荐字体
   void markUsed(int fontId) {
-    debugPrint('markUsed====$recentUsed recommendedFonts=$recommendedFonts');
+    debugPrint('markUsed====$recentUsed ');
     if (!recentUsed.contains(fontId)) {
       recentUsed.add(fontId);
     }

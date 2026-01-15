@@ -34,7 +34,7 @@ class MainLogic extends GetxController {
     );
     middleFrames.addAll(
       List.generate(
-        24,
+        12,
         (i) =>
             'assets/images/tabBar/center/${i.toString().padLeft(3, '0')}.png',
       ),

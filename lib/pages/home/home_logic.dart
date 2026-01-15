@@ -66,6 +66,9 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   Worker? _countWorker;
 
+  /// 网络状态监听
+  final connectivityService = ConnectivityService();
+
   @override
   void onReady() {
     FontManager.to.initFromDisk();
@@ -96,6 +99,12 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     /// 登录事件监听
     _countWorker = ever(global.accessToken, (token) {
       homeRefresh();
+    });
+    // 监听网络状态变化
+    connectivityService.onStatusChanged.listen((status) {
+      if (status != NetworkStatus.none) {
+        homeRefresh();
+      }
     });
   }
 

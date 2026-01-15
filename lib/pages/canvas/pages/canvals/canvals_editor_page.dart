@@ -174,201 +174,209 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false, // 防止键盘弹出时底部工具栏上移
-      backgroundColor: "#F6F2FB".color,
-      body: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            top: ScreenTools.statusBarHeight + 51.w,
-            child: CanvasPointerWrapper(
-              canvalsController: _canvalsController,
-              canvasStatusManager: _canvasStatusManager,
-              canvasKey: _canvasKey,
-              canvasContainerKey: _canvasContainerKey,
-              onTap: () => toggleLayerDialog(false),
-              child: Container(
-                width: ScreenTools.screenWidth,
-                height:
-                    ScreenTools.screenHeight -
-                    ScreenTools.statusBarHeight -
-                    ScreenTools.bottomBarHeight -
-                    117.w,
-                color: "#F6F2FB".color,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    _canvalsController.getCanvalsSize(
-                      constraints.maxWidth,
-                      constraints.maxHeight,
-                    );
-                    final canvasContent = Screenshot(
-                      controller: _screenshotController,
-                      child: ClipRect(
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              key: _canvasContainerKey,
-                              width: _canvalsController.canvalsWidth,
-                              height: _canvalsController.canvalsHeight,
-                              color: _canvalsController
-                                  .canvasModel
-                                  .fillColor
-                                  .color
-                                  .withValues(
-                                    alpha: _canvalsController
-                                        .canvasModel
-                                        .fillAlpha,
+    return Obx(() {
+      return PopScope(
+        canPop: canvalsController.canPop.value,
+        child: Scaffold(
+          resizeToAvoidBottomInset: false, // 防止键盘弹出时底部工具栏上移
+          backgroundColor: "#F6F2FB".color,
+          body: Stack(
+            children: [
+              Positioned(
+                left: 0,
+                top: ScreenTools.statusBarHeight + 51.w,
+                child: CanvasPointerWrapper(
+                  canvalsController: _canvalsController,
+                  canvasStatusManager: _canvasStatusManager,
+                  canvasKey: _canvasKey,
+                  canvasContainerKey: _canvasContainerKey,
+                  onTap: () => toggleLayerDialog(false),
+                  child: Container(
+                    width: ScreenTools.screenWidth,
+                    height:
+                        ScreenTools.screenHeight -
+                        ScreenTools.statusBarHeight -
+                        ScreenTools.bottomBarHeight -
+                        117.w,
+                    color: "#F6F2FB".color,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        _canvalsController.getCanvalsSize(
+                          constraints.maxWidth,
+                          constraints.maxHeight,
+                        );
+                        final canvasContent = Screenshot(
+                          controller: _screenshotController,
+                          child: ClipRect(
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  key: _canvasContainerKey,
+                                  width: _canvalsController.canvalsWidth,
+                                  height: _canvalsController.canvalsHeight,
+                                  color: _canvalsController
+                                      .canvasModel
+                                      .fillColor
+                                      .color
+                                      .withValues(
+                                        alpha: _canvalsController
+                                            .canvasModel
+                                            .fillAlpha,
+                                      ),
+                                ),
+                                Positioned.fill(
+                                  child: OverflowBox(
+                                    minWidth: 0,
+                                    minHeight: 0,
+                                    maxWidth: double.infinity,
+                                    maxHeight: double.infinity,
+                                    alignment: Alignment.topLeft,
+                                    child: Align(
+                                      alignment: Alignment.topLeft,
+                                      child: CanvasEditorWidget(
+                                        key: _canvasKey,
+                                        historyManager: historyManager,
+                                        onContentChanged: () {
+                                          if (mounted) {
+                                            setState(() {});
+                                            // 通知草稿管理器内容已变更
+                                            DraftManager()
+                                                .notifyElementsChanged();
+                                          }
+                                        },
+                                        canvasMatrix: _canvalsController
+                                            .canvasModel
+                                            .transform,
+                                      ),
+                                    ),
                                   ),
+                                ),
+                              ],
                             ),
-                            Positioned.fill(
-                              child: OverflowBox(
-                                minWidth: 0,
-                                minHeight: 0,
-                                maxWidth: double.infinity,
-                                maxHeight: double.infinity,
-                                alignment: Alignment.topLeft,
-                                child: Align(
+                          ),
+                        );
+
+                        final boxes = _canvalsController.elements;
+                        return Center(
+                          child: SizedBox(
+                            width: constraints.maxWidth,
+                            height: constraints.maxHeight,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Transform(
+                                  transform:
+                                      _canvalsController.canvasModel.transform,
                                   alignment: Alignment.topLeft,
-                                  child: CanvasEditorWidget(
-                                    key: _canvasKey,
-                                    historyManager: historyManager,
-                                    onContentChanged: () {
-                                      if (mounted) {
-                                        setState(() {});
-                                        // 通知草稿管理器内容已变更
-                                        DraftManager().notifyElementsChanged();
-                                      }
-                                    },
+                                  child: canvasContent,
+                                ),
+
+                                Obx(
+                                  () => TransformCanvas(
+                                    elements: boxes,
+                                    selectedId: _canvalsController.selectedId,
                                     canvasMatrix: _canvalsController
                                         .canvasModel
                                         .transform,
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    );
-
-                    final boxes = _canvalsController.elements;
-                    return Center(
-                      child: SizedBox(
-                        width: constraints.maxWidth,
-                        height: constraints.maxHeight,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Transform(
-                              transform:
-                                  _canvalsController.canvasModel.transform,
-                              alignment: Alignment.topLeft,
-                              child: canvasContent,
-                            ),
-
-                            Obx(
-                              () => TransformCanvas(
-                                elements: boxes,
-                                selectedId: _canvalsController.selectedId,
-                                canvasMatrix:
-                                    _canvalsController.canvasModel.transform,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
 
-          // 顶部导航栏
-          Positioned(
-            left: 0,
-            top: 0,
-            child: Obx(
-              () => CanvasAppBar(
-                _handleBack,
-                handleUndo,
-                handleRedo,
-                canUndo: canUndo,
-                canRedo: canRedo,
+              // 顶部导航栏
+              Positioned(
+                left: 0,
+                top: 0,
+                child: Obx(
+                  () => CanvasAppBar(
+                    _handleBack,
+                    handleUndo,
+                    handleRedo,
+                    canUndo: canUndo,
+                    canRedo: canRedo,
+                  ),
+                ),
               ),
-            ),
-          ),
 
-          // 底部tabBar
-          Positioned(
-            left: 0,
-            bottom: 0,
-            child: CanvasBottomBar(
-              onLayerTap: () {
-                _toggleLayerDialog(true);
-              },
-              onAddImage: () {
-                addImageDialog(context);
-              },
-              onAddShape: showShapeDialog,
-              onAddText: () {
-                showTextInputDialog(context);
-              },
-              onSave: showSaveTemplateDialog,
-              onExport: _captureAndSave,
-            ),
-          ),
-
-          // 缩放控制浮框（当缩放比例不是100%时显示，固定在顶部居中位置）
-          if ((_canvalsController.canvasModel.scale - 1.0).abs() > 0.01 ||
-              _canvalsController.canvasModel.x != 0)
-            _buildScaleOverlay(),
-
-          // 元素属性工具栏
-          Obx(
-            () => Positioned(
-              left: 0,
-              right: 0,
-              bottom: 66.w + ScreenTools.bottomBarHeight,
-              child: ElementAttributeToolbar(
-                activeElement: activeElement,
-                isCanvasSelected: _canvalsController.canvasModel.isSelected,
-                onClose: () {
-                  _canvalsController.select('');
-                  if (_canvalsController.canvasModel.isSelected) {
-                    setState(() {
-                      _canvalsController.canvasModel.isSelected = false;
-                    });
-                  }
-                },
-                onCollapse: (text) {
-                  toggleLayerDialog(false);
-                  if (text == "画布属性") {
-                    showCanvalsPropertyDialog();
-                  } else {
-                    // 根据元素类型显示不同的属性弹框
-                    if (activeElement?.type == ElementType.image) {
-                      showImagePropertyDialog(context);
-                    } else if (activeElement?.type == ElementType.rectangle ||
-                        activeElement?.type == ElementType.ellipse ||
-                        activeElement?.type == ElementType.line) {
-                      showShapePropertyDialog();
-                    } else {
-                      showTextPropertyDialog();
-                    }
-                  }
-                },
+              // 底部tabBar
+              Positioned(
+                left: 0,
+                bottom: 0,
+                child: CanvasBottomBar(
+                  onLayerTap: () {
+                    _toggleLayerDialog(true);
+                  },
+                  onAddImage: () {
+                    addImageDialog(context);
+                  },
+                  onAddShape: showShapeDialog,
+                  onAddText: () {
+                    showTextInputDialog(context);
+                  },
+                  onSave: showSaveTemplateDialog,
+                  onExport: _captureAndSave,
+                ),
               ),
-            ),
-          ),
 
-          // 图层弹框
-          if (_showLayerDialog) _buildLayerDialog(),
-        ],
-      ),
-    );
+              // 缩放控制浮框（当缩放比例不是100%时显示，固定在顶部居中位置）
+              if ((_canvalsController.canvasModel.scale - 1.0).abs() > 0.01 ||
+                  _canvalsController.canvasModel.x != 0)
+                _buildScaleOverlay(),
+
+              // 元素属性工具栏
+              Obx(
+                () => Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 66.w + ScreenTools.bottomBarHeight,
+                  child: ElementAttributeToolbar(
+                    activeElement: activeElement,
+                    isCanvasSelected: _canvalsController.canvasModel.isSelected,
+                    onClose: () {
+                      _canvalsController.select('');
+                      if (_canvalsController.canvasModel.isSelected) {
+                        setState(() {
+                          _canvalsController.canvasModel.isSelected = false;
+                        });
+                      }
+                    },
+                    onCollapse: (text) {
+                      toggleLayerDialog(false);
+                      if (text == "画布属性") {
+                        showCanvalsPropertyDialog();
+                      } else {
+                        // 根据元素类型显示不同的属性弹框
+                        if (activeElement?.type == ElementType.image) {
+                          showImagePropertyDialog(context);
+                        } else if (activeElement?.type ==
+                                ElementType.rectangle ||
+                            activeElement?.type == ElementType.ellipse ||
+                            activeElement?.type == ElementType.line) {
+                          showShapePropertyDialog();
+                        } else {
+                          showTextPropertyDialog();
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ),
+
+              // 图层弹框
+              if (_showLayerDialog) _buildLayerDialog(),
+            ],
+          ),
+        ),
+      );
+    });
   }
 
   /// 删除图片
@@ -600,11 +608,14 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
         await saveLogic.saveAsDraft();
 
         SmartDialog.dismiss(); // 关闭保存草稿对话框
+
+        canvalsController.enableBack();
+
         Get.back(); // 返回上一页
       });
       return;
     }
-
+    canvalsController.enableBack();
     DraftManager().deleteDraft();
     Get.back();
   }
