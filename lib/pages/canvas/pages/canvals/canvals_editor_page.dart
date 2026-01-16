@@ -585,7 +585,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
 
   /// 返回操作
   void _handleBack() {
-    if (DraftManager().ishChanage) {
+    if (DraftManager().isChange) {
       showIsSaveDraftDialog(() async {
         // 获取画布截图
         final imageBytes = await getCurrentCanvals();

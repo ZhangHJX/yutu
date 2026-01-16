@@ -8,7 +8,7 @@ class ElementSnapHelper {
   static bool enabled = true;
 
   /// 吸附阈值（像素距离）
-  static const double snapThreshold = 5.0;
+  static const double snapThreshold = 1;
 
   /// 中心点吸附的额外优先级（让中心对齐更容易触发）
   static const double centerSnapBonus = 1.5;

@@ -26,8 +26,6 @@ class CanvasElementWidget extends StatelessWidget {
 
   // 构建内容
   Widget _buildContent() {
-    debugPrint("==构建内容========${data.familyKey}=====");
-
     switch (data.type) {
       case ElementType.image:
         return Opacity(

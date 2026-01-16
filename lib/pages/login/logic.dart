@@ -178,7 +178,7 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
     _countDownStartTime = DateTime.now().millisecondsSinceEpoch;
     isCountingDown.value = true;
     countDown.value = _totalCountDownSeconds;
-    
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateCountDown();
     });
@@ -213,6 +213,8 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
 
   /// 应用从后台恢复时重新计算倒计时
   void _resumeCountDown() {
+    debugPrint('===========应用从后台恢复时重新计算倒计时========');
+
     if (_countDownStartTime == null) {
       return;
     }

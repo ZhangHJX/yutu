@@ -1,3 +1,5 @@
+import 'package:common/zmj/constants.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../utils/text_measure_util.dart';
 import '../history/index.dart';
@@ -16,10 +18,10 @@ class ElementGestureManager {
   final _GestureSession _session = _GestureSession();
   CanvasHistoryManager? historyManager;
   static const double dragStartThreshold = 5.0; // 开始拖动的距离阈值
-  
+
   // 吸附相关状态
   List<SnapLine> _currentSnapLines = [];
-  
+
   /// 获取当前的吸附参考线（用于UI绘制）
   List<SnapLine> get currentSnapLines => _currentSnapLines;
 
@@ -121,6 +123,9 @@ class ElementGestureManager {
 
   // 尺寸限制
   static const double maxSize = double.infinity;
+  static const double minSize = 1.0;
+
+  /// 画布元素的尺寸
   static const double minFontSize = 5.0; // 最小字体大小
   static const double minBoxSize = 5.0; // 最小文本框尺寸（用于非文本类型或后备）
 
@@ -333,17 +338,17 @@ class ElementGestureManager {
             _session.dragStartElementPosition != null) {
           final delta = event.localPosition - _session.dragStartPointer!;
           final position = _session.dragStartElementPosition! + delta;
-          
+
           // 检测吸附
           final snapResult = ElementSnapHelper.checkSnap(
             targetBox,
             position,
             boxes,
           );
-          
+
           // 更新吸附参考线
           _currentSnapLines = snapResult.snapLines;
-          
+
           // 应用吸附后的位置
           targetBox.x = snapResult.position.dx;
           targetBox.y = snapResult.position.dy;

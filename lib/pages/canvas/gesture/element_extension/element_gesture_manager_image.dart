@@ -9,19 +9,11 @@ extension _ImageElementGestureHelper on ElementGestureManager {
     double adjustedDx,
     double adjustedDy,
   ) {
-    return _updateResizeForNonText(
-      box,
-      state,
-      adjustedDx,
-      adjustedDy,
-    );
+    return _updateResizeForNonText(box, state, adjustedDx, adjustedDy);
   }
 
   /// 双指缩放图片元素
-  void _applyScaleForImage(
-    CanvasElement box,
-    ElementInteractionState state,
-  ) {
+  void _applyScaleForImage(CanvasElement box, ElementInteractionState state) {
     _applyScaleForNonText(box, state);
   }
 
@@ -42,18 +34,22 @@ extension _ImageElementGestureHelper on ElementGestureManager {
         final scaleY =
             (state.resizeStartHeight - adjustedDy) / state.resizeStartHeight;
         final scale = (scaleX + scaleY) / 2;
-        newWidth = (state.resizeStartWidth * scale)
-            .clamp(50.0, ElementGestureManager.maxSize);
-        newHeight =
-            (newWidth / state.resizeAspectRatio)
-                .clamp(50.0, ElementGestureManager.maxSize);
-        newWidth =
-            (newHeight * state.resizeAspectRatio)
-                .clamp(50.0, ElementGestureManager.maxSize);
+        newWidth = (state.resizeStartWidth * scale).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
+        newHeight = (newWidth / state.resizeAspectRatio).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
+        newWidth = (newHeight * state.resizeAspectRatio).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
         break;
       case 'top':
         newHeight = (state.resizeStartHeight - adjustedDy).clamp(
-          box.type == ElementType.line ? 20.0 : 50.0,
+          box.type == ElementType.line ? 20.0 : ElementGestureManager.minSize,
           ElementGestureManager.maxSize,
         );
         break;
@@ -63,18 +59,24 @@ extension _ImageElementGestureHelper on ElementGestureManager {
         final scaleY =
             (state.resizeStartHeight - adjustedDy) / state.resizeStartHeight;
         final scale = (scaleX + scaleY) / 2;
-        newWidth = (state.resizeStartWidth * scale)
-            .clamp(50.0, ElementGestureManager.maxSize);
-        newHeight =
-            (newWidth / state.resizeAspectRatio)
-                .clamp(50.0, ElementGestureManager.maxSize);
-        newWidth =
-            (newHeight * state.resizeAspectRatio)
-                .clamp(50.0, ElementGestureManager.maxSize);
+        newWidth = (state.resizeStartWidth * scale).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
+        newHeight = (newWidth / state.resizeAspectRatio).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
+        newWidth = (newHeight * state.resizeAspectRatio).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
         break;
       case 'right':
-        newWidth = (state.resizeStartWidth + adjustedDx)
-            .clamp(50.0, ElementGestureManager.maxSize);
+        newWidth = (state.resizeStartWidth + adjustedDx).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
         break;
       case 'bottom-right':
         final scaleX =
@@ -82,18 +84,22 @@ extension _ImageElementGestureHelper on ElementGestureManager {
         final scaleY =
             (state.resizeStartHeight + adjustedDy) / state.resizeStartHeight;
         final scale = (scaleX + scaleY) / 2;
-        newWidth = (state.resizeStartWidth * scale)
-            .clamp(50.0, ElementGestureManager.maxSize);
-        newHeight =
-            (newWidth / state.resizeAspectRatio)
-                .clamp(50.0, ElementGestureManager.maxSize);
-        newWidth =
-            (newHeight * state.resizeAspectRatio)
-                .clamp(50.0, ElementGestureManager.maxSize);
+        newWidth = (state.resizeStartWidth * scale).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
+        newHeight = (newWidth / state.resizeAspectRatio).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
+        newWidth = (newHeight * state.resizeAspectRatio).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
         break;
       case 'bottom':
         newHeight = (state.resizeStartHeight + adjustedDy).clamp(
-          box.type == ElementType.line ? 20.0 : 50.0,
+          box.type == ElementType.line ? 20.0 : ElementGestureManager.minSize,
           ElementGestureManager.maxSize,
         );
         break;
@@ -103,18 +109,24 @@ extension _ImageElementGestureHelper on ElementGestureManager {
         final scaleY =
             (state.resizeStartHeight + adjustedDy) / state.resizeStartHeight;
         final scale = (scaleX + scaleY) / 2;
-        newWidth = (state.resizeStartWidth * scale)
-            .clamp(50.0, ElementGestureManager.maxSize);
-        newHeight =
-            (newWidth / state.resizeAspectRatio)
-                .clamp(50.0, ElementGestureManager.maxSize);
-        newWidth =
-            (newHeight * state.resizeAspectRatio)
-                .clamp(50.0, ElementGestureManager.maxSize);
+        newWidth = (state.resizeStartWidth * scale).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
+        newHeight = (newWidth / state.resizeAspectRatio).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
+        newWidth = (newHeight * state.resizeAspectRatio).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
         break;
       case 'left':
-        newWidth = (state.resizeStartWidth - adjustedDx)
-            .clamp(50.0, ElementGestureManager.maxSize);
+        newWidth = (state.resizeStartWidth - adjustedDx).clamp(
+          ElementGestureManager.minSize,
+          ElementGestureManager.maxSize,
+        );
         break;
     }
 
@@ -122,16 +134,13 @@ extension _ImageElementGestureHelper on ElementGestureManager {
   }
 
   /// 非文本类型（图片 / 形状）的通用缩放逻辑
-  void _applyScaleForNonText(
-    CanvasElement box,
-    ElementInteractionState state,
-  ) {
+  void _applyScaleForNonText(CanvasElement box, ElementInteractionState state) {
     final newWidth = (state.initialWidth * box.scale).clamp(
-      50.0,
+      ElementGestureManager.minSize,
       double.infinity,
     );
     final newHeight = (state.initialHeight * box.scale).clamp(
-      50.0,
+      ElementGestureManager.minSize,
       double.infinity,
     );
 
@@ -151,5 +160,3 @@ extension _ImageElementGestureHelper on ElementGestureManager {
     box.height = newHeight;
   }
 }
-
-

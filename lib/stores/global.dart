@@ -15,10 +15,10 @@ class GlobalLogic extends GetxController {
   /// TabBarController 索引
   final tabIndex = 0.obs;
 
-  final accessToken = ''.obs;
   final userInfo = UserModel().obs;
 
   /// 用户是否登录
+  final accessToken = ''.obs;
   bool get isLogin => accessToken.value.isNotEmpty;
 
   /// 当前登录方式
@@ -114,7 +114,9 @@ class GlobalLogic extends GetxController {
         '/homePage/user/refreshUserToken',
         converter: LoginResponse.fromJson,
       );
-      if (result.code == 0) {
+      if (result.code == 0 && result.data?.token != null) {
+        // 更新 accessToken，这样拦截器就能获取到最新的 token
+        accessToken.value = result.data!.token;
         fetchUserInfo();
       }
       debugPrint(
@@ -154,8 +156,9 @@ class GlobalLogic extends GetxController {
     http.addInterceptor(
       InterceptorsWrapper(
         onRequest: (RequestOptions options, RequestInterceptorHandler handler) {
-          final token = box.read(tokenKey);
-          if (options.extra[withTokenKey] && token != null) {
+          // final token = box.read(tokenKey);
+          final token = accessToken.value;
+          if (options.extra[withTokenKey] && token.isNotEmpty) {
             options.headers['token'] = token;
           }
           return handler.next(options);

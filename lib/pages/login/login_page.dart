@@ -39,15 +39,16 @@ class LoginPage extends StatelessWidget {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: GestureDetector(
+                        behavior: HitTestBehavior.opaque, // 或 opaque
                         onTap: () => Get.back(),
                         child: SizedBox(
-                          width: 30.w,
-                          height: 30.w,
+                          width: 40.w,
+                          height: 40.w,
                           child: Center(
                             child: Image.asset(
                               'assets/images/login/login_back_icon.png',
-                              width: 26.w,
-                              height: 26.w,
+                              width: 8.w,
+                              height: 16.w,
                             ),
                           ),
                         ),

@@ -159,7 +159,6 @@ class SaveLogic extends GetxController {
       SmartDialog.showToast('请至少选择一个风格标签');
       return;
     }
-
     final canvalsModel = await DraftManager().loadDraft();
     if (canvalsModel == null) {
       showToast('画布信息不存在');
@@ -181,6 +180,7 @@ class SaveLogic extends GetxController {
       return;
     }
     isSaveActiion.value = false;
+    await DraftManager().saveCurrentCanvals();
     await zipResourceInDocuments(canvalsModel);
   }
 

@@ -23,7 +23,7 @@ class DraftManager {
   Timer? _saveTimer;
   bool _isAutoSaving = false;
 
-  bool ishChanage = false;
+  bool isChange = false;
 
   /// 防抖延迟时间（毫秒）
   static const int _debounceDelayMs = 500;
@@ -109,11 +109,6 @@ class DraftManager {
       );
 
       debugPrint('DraftManager: 草稿已保存到 ${draftDir.path}/draft.json');
-
-      // 保存画布截图
-      await _saveCanvasScreenshot(draftDir);
-
-      ishChanage = true;
     } catch (e, stackTrace) {
       debugPrint('DraftManager: 保存草稿失败: $e\n$stackTrace');
     } finally {
@@ -184,19 +179,18 @@ class DraftManager {
       // 如果目录不存在，视为已删除
       if (!await draftDir.exists()) {
         debugPrint('DraftManager: 草稿目录不存在，无需删除: ${draftDir.path}');
-        ishChanage = false;
+        isChange = false;
         return true;
       }
 
       // 删除整个草稿目录（包含 draft.json、截图等所有文件）
       await FileManager.deleteDirectory(draftDir, deleteDirectory: true);
       debugPrint('DraftManager: 草稿目录已删除: ${draftDir.path}');
-
-      ishChanage = false;
+      isChange = false;
       return true;
     } catch (e, stackTrace) {
       debugPrint('DraftManager: 删除草稿失败: $e\n$stackTrace');
-      ishChanage = false;
+      isChange = false;
       return false;
     }
   }
@@ -267,6 +261,7 @@ class DraftManager {
   /// 通知画布属性已变更
   /// 当画布属性（如填充颜色、透明度等）改变时调用此方法
   void notifyCanvasPropertyChanged() {
+    isChange = true;
     _scheduleSave();
   }
 
@@ -274,6 +269,7 @@ class DraftManager {
   ///
   /// 当元素属性改变时调用此方法
   void notifyElementPropertyChanged() {
+    isChange = true;
     _scheduleSave();
   }
 
@@ -281,6 +277,13 @@ class DraftManager {
   ///
   /// 当添加、删除、移动元素时调用此方法
   void notifyElementsChanged() {
+    isChange = true;
     _scheduleSave();
+  }
+
+  /// 保存当前画布截图
+  Future<void> saveCurrentCanvals() async {
+    final draftDir = await _getDraftDirectory();
+    await _saveCanvasScreenshot(draftDir);
   }
 }

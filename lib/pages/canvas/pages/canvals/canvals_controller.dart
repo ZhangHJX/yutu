@@ -1,12 +1,15 @@
+import 'dart:async';
+
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:voicetemplate/pages/canvas/draft/index.dart';
 import '../../model/index.dart';
 import '../../history/clone_tools/canvas_model_clone.dart';
 import 'dart:math' as math;
 
 /// 全局选择状态管理控制器： 负责管理当前选中的文本框ID、画布模型以及元素列表
-class CanvalsController extends GetxController {
+class CanvalsController extends GetxController with WidgetsBindingObserver {
   // 画布模型
   final args =
       (Get.arguments as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};
@@ -45,9 +48,22 @@ class CanvalsController extends GetxController {
   PointerEvent? currentPoint; // 画布点击
   final RxList<CanvasElement> elements = <CanvasElement>[].obs;
 
+  /// 草稿保存处理
+  Timer? _saveDebounceTimer;
+  int _lastSaveTime = 0;
+  static const int _minSaveIntervalMs = 2000; // 2秒
+
+  @override
+  void onClose() {
+    _saveDebounceTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.onClose();
+  }
+
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     // 如果画布模型中已经包含元素（例如从草稿恢复），将其同步到响应式列表
     if (canvasModel.elements.isNotEmpty) {
       elements.assignAll(canvasModel.elements);
@@ -215,4 +231,40 @@ class CanvalsController extends GetxController {
   }
 
   void enableBack() => canPop.value = true;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      _saveCanvasWithDebounce();
+    }
+  }
+
+  /// 防抖保存画布截图（避免频繁保存）
+  void _saveCanvasWithDebounce() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    // 检查距离上次保存是否超过最小间隔
+    if (now - _lastSaveTime < _minSaveIntervalMs) {
+      debugPrint("===距离上次保存时间过短，跳过本次保存==");
+      return;
+    }
+
+    // 取消之前的定时器
+    _saveDebounceTimer?.cancel();
+
+    // 设置新的定时器，延迟 500ms 保存
+    // 如果在这期间又触发了，会取消并重新计时
+    _saveDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      final currentTime = DateTime.now().millisecondsSinceEpoch;
+      // 再次检查时间间隔（防止定时器执行时已经超过间隔）
+      if (currentTime - _lastSaveTime >= _minSaveIntervalMs) {
+        _lastSaveTime = currentTime;
+        debugPrint("===开始保存画布截图==");
+        DraftManager().saveCurrentCanvals();
+      } else {
+        debugPrint("===定时器执行时发现时间间隔不足，跳过保存==");
+      }
+    });
+  }
 }
