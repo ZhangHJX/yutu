@@ -416,7 +416,12 @@ class ElementGestureManager {
         state.resizeAnchorPoint == null) {
       return;
     }
-    final delta = currentPosition - state.resizeStartPosition!;
+    final rawDelta = currentPosition - state.resizeStartPosition!;
+
+    final delta = Offset(
+      rawDelta.dx * resizeSensitivity,
+      rawDelta.dy * resizeSensitivity,
+    );
 
     // 把位移转换到【元素本地坐标系】（去掉旋转影响）
     final cos = math.cos(-box.rotation);
@@ -483,13 +488,15 @@ class ElementGestureManager {
     final currentScale = _computeScale();
     final scale = (currentScale / _session.lastScaleDistance).clamp(0.5, 2.0);
 
+    final adjustedScale = 1.0 + (scale - 1.0) * elementSensitivity;
+
     final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
     final state = _stateForBox(selectedBox);
     if (selectedBox.locked) {
       return false;
     }
 
-    selectedBox.scale *= scale;
+    selectedBox.scale *= adjustedScale;
     selectedBox.scale = selectedBox.scale.clamp(0.1, 10.0);
 
     _session.lastScaleDistance = currentScale;

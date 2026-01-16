@@ -56,3 +56,7 @@ double calculateAspectRatio(double width, String canvasSize) {
 
 /// 中间页数据来源
 enum PageSource { home, search, design, favorite, create, draft }
+
+/// 拖动灵敏度修改
+const double elementSensitivity = 0.2;
+const double resizeSensitivity = 0.7;
