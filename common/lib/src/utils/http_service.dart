@@ -154,7 +154,7 @@ class HttpService {
 
       if (isNake) {
         return BaseModel.fromJson(
-          {'code': 200, 'message': 'Success!', 'data': response.data},
+          {'code': 200, 'message': 'success', 'data': response.data},
           converter ?? (j) => j as T,
           showErrorToast ?? autoShowErrorToast,
         );

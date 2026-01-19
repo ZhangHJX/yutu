@@ -1,5 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class ProfileInput extends StatefulWidget {
   final String label;
@@ -84,6 +85,9 @@ class _ProfileInputState extends State<ProfileInput> {
                       controller: widget.controller,
                       readOnly: widget.readOnly,
                       maxLines: widget.maxLines,
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(widget.maxLength),
+                      ],
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,

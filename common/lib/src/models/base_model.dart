@@ -44,7 +44,11 @@ class BaseModel<T> {
         data = fromJsonT({dstValueKey: rawData});
       }
     } finally {
-      if (showErrorToast && message.isNotEmpty) showToast(message);
+      if ((code != 0 || code != 200 || code != -1)) {
+        if (message.isNotEmpty) showToast(message);
+      } else {
+        if (showErrorToast && message.isNotEmpty) showToast(message);
+      }
     }
 
     return BaseModel(code: code, message: message, data: data);

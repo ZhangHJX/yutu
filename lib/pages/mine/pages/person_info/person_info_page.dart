@@ -94,7 +94,7 @@ class PersonInfoPage extends StatelessWidget {
                             label: "个性签名",
                             controller: logic.signatureCtrl,
                             maxLines: 5,
-                            maxLength: 30,
+                            maxLength: 40,
                             showCounter: true,
                             hint: "输入你的签名吧~",
                             changeValue: (value) {

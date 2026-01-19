@@ -14,6 +14,12 @@ void main() async {
   // 显示状态栏 + 底部导航栏（如果你也隐藏了的话）
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent, // 状态栏透明
+    ),
+  );
+
   // 设置多语言
   Intl.defaultLocale = 'zh_CN';
   await initializeDateFormatting('zh_CN');

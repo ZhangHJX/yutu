@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../utils/image_text_btn.dart';
+// import 'dart:math';
 
 /// 画布底部工具栏
 class CanvasBottomBar extends StatelessWidget {
@@ -9,8 +9,9 @@ class CanvasBottomBar extends StatelessWidget {
   final VoidCallback onAddShape;
   final VoidCallback onAddText;
   final VoidCallback onSave;
-  final VoidCallback? onExport;
-  final GlobalKey? layerButtonKey;
+  final VoidCallback onExport;
+
+  // final _rnd = Random();
 
   const CanvasBottomBar({
     super.key,
@@ -19,8 +20,7 @@ class CanvasBottomBar extends StatelessWidget {
     required this.onAddShape,
     required this.onAddText,
     required this.onSave,
-    this.onExport,
-    this.layerButtonKey,
+    required this.onExport,
   });
 
   @override
@@ -30,71 +30,20 @@ class CanvasBottomBar extends StatelessWidget {
         Container(
           height: 66.w,
           width: ScreenTools.screenWidth,
+          padding: EdgeInsets.only(left: 10.w, right: 10.w),
           color: Colors.white,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              SizedBox(width: 21.w),
               Row(
                 children: [
-                  ImageTextBtn(
-                    key: layerButtonKey,
-                    imageUrl: 'assets/images/canvals/edit_tuceng_icon.png',
-                    text: "图层",
-                    spacing: 0,
-                    imageSize: 32.w,
-                    textStyle: TextStyle(
-                      color: Color(0xFF9E9E9E),
-                      fontSize: 12.w,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    onTap: onLayerTap,
-                    direction: Axis.vertical,
-                  ),
-                  SizedBox(width: 22.w),
-                  ImageTextBtn(
-                    imageUrl: 'assets/images/canvals/edit_image_icon.png',
-                    text: "加图",
-                    spacing: 0,
-                    imageSize: 32.w,
-                    textStyle: TextStyle(
-                      color: Color(0xFF9E9E9E),
-                      fontSize: 12.w,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    onTap: onAddImage,
-                    direction: Axis.vertical,
-                  ),
-                  SizedBox(width: 22.w),
-                  ImageTextBtn(
-                    imageUrl: 'assets/images/canvals/edit_shape_icon.png',
-                    text: "形状",
-                    spacing: 0,
-                    imageSize: 32.w,
-                    textStyle: TextStyle(
-                      color: Color(0xFF9E9E9E),
-                      fontSize: 12.w,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    onTap: onAddShape,
-                    direction: Axis.vertical,
-                  ),
-                  SizedBox(width: 22.w),
-                  ImageTextBtn(
-                    imageUrl: 'assets/images/canvals/edit_text_icon.png',
-                    text: "文字",
-                    spacing: 0,
-                    imageSize: 32.w,
-                    textStyle: TextStyle(
-                      color: Color(0xFF9E9E9E),
-                      fontSize: 12.w,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    onTap: onAddText,
-                    direction: Axis.vertical,
-                  ),
+                  getTextAndIconButton('图层', 'edit_tuceng_icon', onLayerTap),
+                  getTextAndIconButton('加图', 'edit_image_icon', onAddImage),
+                  getTextAndIconButton('形状', 'edit_shape_icon', onAddShape),
+                  getTextAndIconButton('文字', 'edit_text_icon', onAddText),
                 ],
               ),
-              SizedBox(width: 14.w),
+
               Row(
                 children: [
                   CButton(
@@ -102,29 +51,28 @@ class CanvasBottomBar extends StatelessWidget {
                       'assets/images/canvals/edit_save_icon.png',
                       width: 62.w,
                       height: 28.w,
+                      fit: BoxFit.cover,
                     ),
                     onPressed: onSave,
                   ),
-                  SizedBox(width: 8.w),
+
+                  SizedBox(width: 4.w),
+
                   CButton(
                     icon: Image.asset(
                       'assets/images/canvals/edit_export_icon.png',
                       width: 62.w,
                       height: 28.w,
+                      fit: BoxFit.cover,
                     ),
-                    onPressed:
-                        onExport ??
-                        () {
-                          debugPrint("edit_export_icon-------");
-                        },
+                    onPressed: onExport,
                   ),
-                  SizedBox(width: 14),
                 ],
               ),
             ],
           ),
         ),
-    
+
         Container(
           color: Colors.white,
           height: ScreenTools.bottomBarHeight,
@@ -133,4 +81,39 @@ class CanvasBottomBar extends StatelessWidget {
       ],
     );
   }
+
+  Widget getTextAndIconButton(
+    String title,
+    String imgName,
+    VoidCallback onTap,
+  ) {
+    return CButton(
+      // backgroundColor: randomColor(),
+      iconPosition: CIconPosition.top,
+      padding: EdgeInsets.symmetric(horizontal: 8.w),
+      text: Text(
+        title,
+        style: TextStyle(
+          color: const Color(0xFF9E9E9E),
+          fontSize: 12.w,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      icon: Image.asset(
+        'assets/images/canvals/$imgName.png',
+        width: 32.w,
+        height: 32.w,
+      ),
+      onPressed: onTap,
+    );
+  }
+
+  // Color randomColor({double alpha = 1}) {
+  //   return Color.fromARGB(
+  //     (alpha * 255).round(),
+  //     _rnd.nextInt(256),
+  //     _rnd.nextInt(256),
+  //     _rnd.nextInt(256),
+  //   );
+  // }
 }

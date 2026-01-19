@@ -9,7 +9,7 @@ class MainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final logic = Get.put(MainLogic());
+    final logic = Get.put(MainLogic(), permanent: true);
 
     return CVirtualBack(
       child: Scaffold(

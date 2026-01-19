@@ -153,7 +153,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
           child: GridView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
+              crossAxisCount: 4,
               mainAxisSpacing: 12.w,
               crossAxisSpacing: 14.w,
               childAspectRatio: 1.0, //宽高比为2

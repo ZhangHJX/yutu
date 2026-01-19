@@ -165,6 +165,8 @@ class LoginPage extends StatelessWidget {
                   Spacer(),
                   //  协议勾选区域
                   _buildAgreementArea(),
+
+                  SizedBox(height: 30.w),
                 ],
               ),
             ),

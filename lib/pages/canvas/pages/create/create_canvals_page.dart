@@ -5,6 +5,7 @@ import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../../model/index.dart';
 import 'package:uuid/uuid.dart';
 import 'package:voicetemplate/core/index.dart';
+import 'max_value_formatter.dart';
 
 class CreateCanvalsPage extends StatefulWidget {
   const CreateCanvalsPage({super.key});
@@ -150,6 +151,14 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
         arguments: {"model": canvalsModel, "type": PageSource.create},
       );
     } else {
+      final int widthValue = int.tryParse(_widthController.text.trim()) ?? 0;
+      final int heightValue = int.tryParse(_heightController.text.trim()) ?? 0;
+
+      if (widthValue < 100 || heightValue < 100) {
+        showToast("画布宽高不能小于100");
+        return;
+      }
+
       if (_widthController.text.isEmpty) {
         showToast("请输入宽度值");
         return;
@@ -530,6 +539,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
                     TextField(
                       controller: _widthController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [MaxValueFormatter(4000)],
                       decoration: InputDecoration(
                         hintText: '如:1080',
                         hintStyle: TextStyle(
@@ -601,6 +611,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
                     TextField(
                       controller: _heightController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [MaxValueFormatter(4000)],
                       decoration: InputDecoration(
                         hintText: '如:1920',
                         hintStyle: TextStyle(
@@ -664,7 +675,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
         24.w,
         26.w,
         24.w,
-        ScreenTools.bottomBarHeight,
+        ScreenTools.bottomBarHeight > 0 ? ScreenTools.bottomBarHeight : 10.w,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
