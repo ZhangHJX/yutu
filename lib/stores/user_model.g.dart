@@ -18,6 +18,9 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   designDraftFileSizeLimit:
       json['design_draft_file_size_limit'] as String? ?? '',
   designDraftFileSize: json['design_draft_file_size'] as String? ?? '',
+  userMmaterialFileSizeLimit:
+      json['user_material_file_size_limit'] as String? ?? '',
+  userMaterialFileSize: json['user_material_file_size'] as String? ?? '',
 );
 
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
@@ -31,4 +34,6 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'design_file_size': instance.designFileSize,
   'design_draft_file_size_limit': instance.designDraftFileSizeLimit,
   'design_draft_file_size': instance.designDraftFileSize,
+  'user_material_file_size_limit': instance.userMmaterialFileSizeLimit,
+  'user_material_file_size': instance.userMaterialFileSize,
 };

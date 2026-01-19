@@ -55,14 +55,15 @@ class AppStockPage extends StatelessWidget {
             Obx(() {
               final userInfo = logic.global.userInfo.value;
 
-              final designSize = userInfo.designSize;
-              final designSizeLimit = userInfo.designSizeLimit;
+              final materialSize = userInfo.materialSize;
+              final materialSizeLimit = userInfo.materialSizeLimit;
               final usageRatio =
-                  designSize / (designSizeLimit > 0 ? designSizeLimit : 1);
+                  materialSize /
+                  (materialSizeLimit > 0 ? materialSizeLimit : 1);
               return StorageSpaceCard(
                 usageRatio: usageRatio,
-                sizeLimit: designSizeLimit,
-                fileSize: designSize,
+                sizeLimit: materialSizeLimit,
+                fileSize: materialSize,
               );
             }),
 

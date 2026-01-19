@@ -23,6 +23,12 @@ class UserModel {
   @JsonKey(name: 'design_draft_file_size')
   final String designDraftFileSize;
 
+  @JsonKey(name: 'user_material_file_size_limit')
+  final String userMmaterialFileSizeLimit;
+
+  @JsonKey(name: 'user_material_file_size')
+  final String userMaterialFileSize;
+
   UserModel({
     this.id = 0,
     this.nickname = '',
@@ -34,6 +40,8 @@ class UserModel {
     this.designFileSize = '',
     this.designDraftFileSizeLimit = '',
     this.designDraftFileSize = '',
+    this.userMmaterialFileSizeLimit = '',
+    this.userMaterialFileSize = '',
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) =>
@@ -66,6 +74,9 @@ class UserModel {
 
   int get draftSize => _kbStringToMbInt(designDraftFileSize);
   int get draftSizeLimit => _kbStringToMbInt(designDraftFileSizeLimit);
+
+  int get materialSize => _kbStringToMbInt(userMaterialFileSize);
+  int get materialSizeLimit => _kbStringToMbInt(userMmaterialFileSizeLimit);
 
   // --------- helpers ---------
   static int _kbStringToMbInt(String kbStr) {

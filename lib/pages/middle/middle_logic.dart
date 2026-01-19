@@ -100,15 +100,26 @@ class MiddleLogic extends GetxController {
         showErrorToast: false,
       );
       if (result.code == 0) {
-        showToast("收藏成功");
+        // 根据操作类型展示不同文案
+        if (shouldFavorite) {
+          showToast("收藏成功");
+        }
 
         // 更新 isFavorite 状态
         final newFavoriteStatus = shouldFavorite ? 1 : 0;
         isFavorite.value = newFavoriteStatus;
-        // 同步更新 middleInfo 中的 isFavorite
+
+        // 同步更新 middleInfo 中的 isFavorite 与 favoriteTotal
         if (middleInfo.value != null) {
+          final currentTotal = middleInfo.value!.favoriteTotal;
+          // 收藏 +1，取消 -1，且不小于 0
+          final newFavoriteTotal = shouldFavorite
+              ? currentTotal + 1
+              : (currentTotal > 0 ? currentTotal - 1 : 0);
+
           middleInfo.value = middleInfo.value!.copyWith(
             isFavorite: newFavoriteStatus,
+            favoriteTotal: newFavoriteTotal,
           );
         }
       }

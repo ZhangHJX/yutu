@@ -253,7 +253,7 @@ class HomePage extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              item.title,
+                              limitTitleByLength(item.title),
                               style: TextStyle(
                                 fontSize: 12.w,
                                 color: '#FFFFFF'.color,
@@ -272,6 +272,12 @@ class HomePage extends StatelessWidget {
         }),
       ],
     );
+  }
+
+  String limitTitleByLength(String s, {int max = 6}) {
+    if (s.length <= max) return s;
+    // 超过 6：取前 5 + …
+    return '${s.substring(0, max - 1)}…';
   }
 
   // 构建 Tab 栏

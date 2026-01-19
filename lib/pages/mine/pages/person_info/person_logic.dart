@@ -233,23 +233,25 @@ class PersonLogic extends GetxController {
     }
     showLoading("修改中");
     try {
-      final result = await http.post(
-        '/user/edit',
-        data: data,
-        showErrorToast: true,
-      );
+      final result = await http.post('/user/edit', data: data);
       if (result.code == 0) {
         global.updateUserInfo(
           nickname: nickname.value,
           sign: signature.value,
           avatar: fileAvarPath,
         );
+        SmartDialog.dismiss(status: SmartStatus.loading);
+        showToast("修改成功");
         Get.back();
+      } else {
+        SmartDialog.dismiss(status: SmartStatus.loading);
+        showToast("修改失败");
       }
       await PickerImageManager.deleteDirectory();
     } catch (e) {
       await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss(status: SmartStatus.loading);
+      showToast("修改失败");
       debugPrint('===========  error: $e');
     }
   }

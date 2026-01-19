@@ -173,7 +173,6 @@ class DraftLogic extends GetxController {
       final result = await http.post(
         '/design/draft/destroys',
         data: {'ids': selectedIds.toList().join(',')},
-        showErrorToast: true,
       );
 
       if (result.code == 0) {
@@ -183,10 +182,16 @@ class DraftLogic extends GetxController {
         // 清除选择并退出批量模式
         clearSelection();
         refreshUserInfo();
+
+        SmartDialog.dismiss(status: SmartStatus.loading);
+        showToast('删除成功');
+      } else {
+        SmartDialog.dismiss(status: SmartStatus.loading);
+        showToast('删除失败');
       }
-      SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {
       SmartDialog.dismiss(status: SmartStatus.loading);
+      showToast('删除失败');
       debugPrint('删除设计失败: $e');
     }
   }

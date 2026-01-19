@@ -175,9 +175,13 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
 
     return GestureDetector(
       onTap: () {
-        // 更新单选选中状态
         setState(() {
-          _selectedIndex = index;
+          // 再次点击同一个 item 时，支持取消选中
+          if (_selectedIndex == index) {
+            _selectedIndex = null;
+          } else {
+            _selectedIndex = index;
+          }
         });
       },
       child: Container(

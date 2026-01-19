@@ -51,6 +51,7 @@ class SaveLogic extends GetxController {
 
   final isSaveActiion = false.obs;
 
+  /// 是否可以保存画布
   final isCanSave = false.obs;
 
   // 用于监听的工作器
@@ -185,11 +186,16 @@ class SaveLogic extends GetxController {
 
   /// 保存模版
   void saveTemplate() async {
+    if (!isCanSave.value) {
+      return;
+    }
+
     final canvalsModel = await DraftManager().loadDraft();
     if (canvalsModel == null) {
       showToast('画布信息不存在');
       return;
     }
+
     if (canvalsImage == null) {
       showToast('画布截图未成功');
       return;
@@ -205,6 +211,7 @@ class SaveLogic extends GetxController {
       showToast('画布信息不存在');
       return;
     }
+
     isSaveActiion.value = false;
     await DraftManager().saveCurrentCanvals();
     await zipResourceInDocuments(canvalsModel);

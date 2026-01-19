@@ -128,7 +128,7 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
   Future<void> getTabTags() async {
     try {
       tabIsLoading.value = true;
-      final result = await http.post('/tag/index', showErrorToast: false);
+      final result = await http.post('/tag/index');
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
         final model = ScreenItemModel(id: 0, name: '全部');
@@ -194,7 +194,6 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
           'limit': globalPageSize,
           'tag_id': targetTagId,
         },
-        showErrorToast: false,
       );
 
       if (result.code == 0 && result.data != null) {
@@ -276,11 +275,11 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
   Future<void> deleteSelected() async {
     if (selectedIds.isEmpty) return;
     try {
+      showLoading("删除中");
       // 发送删除请求，将选中的uuid列表作为参数
       final result = await http.post(
         '/design/destroys',
         data: {'ids': selectedIds.toList().join(',')},
-        showErrorToast: true,
       );
 
       if (result.code == 0) {
@@ -294,8 +293,16 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
         }
         // 清除选择并退出批量模式
         clearSelection();
+
+        SmartDialog.dismiss(status: SmartStatus.loading);
+        showToast('删除成功');
+      } else {
+        SmartDialog.dismiss(status: SmartStatus.loading);
+        showToast('删除失败');
       }
     } catch (e) {
+      SmartDialog.dismiss(status: SmartStatus.loading);
+      showToast('删除失败');
       debugPrint('删除设计失败: $e');
     }
   }
@@ -306,7 +313,6 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
       final result = await http.post(
         shouldFavorite ? '/design/favorite-store' : '/design/favorite-destroy',
         data: {"link_id": '$itemId'},
-        showErrorToast: false,
       );
 
       if (result.code == 0) {

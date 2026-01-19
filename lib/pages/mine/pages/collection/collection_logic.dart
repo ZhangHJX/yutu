@@ -193,7 +193,6 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
           'limit': globalPageSize,
           'tag_id': targetTagId,
         },
-        showErrorToast: false,
       );
 
       if (result.code == 0 && result.data != null) {
@@ -274,11 +273,12 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
   Future<void> deleteSelected() async {
     if (selectedIds.isEmpty) return;
     try {
+      showLoading("删除中");
+
       // 发送删除请求，将选中的uuid列表作为参数
       final result = await http.post(
         '/user/favorite/destroys',
         data: {'ids': selectedIds.toList().join(',')},
-        showErrorToast: true,
       );
 
       if (result.code == 0) {
@@ -292,8 +292,15 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
         }
         // 清除选择并退出批量模式
         clearSelection();
+        SmartDialog.dismiss(status: SmartStatus.loading);
+        showToast('删除成功');
+      } else {
+        SmartDialog.dismiss(status: SmartStatus.loading);
+        showToast('删除失败');
       }
     } catch (e) {
+      SmartDialog.dismiss(status: SmartStatus.loading);
+      showToast('删除失败');
       debugPrint('删除设计失败: $e');
     }
   }
