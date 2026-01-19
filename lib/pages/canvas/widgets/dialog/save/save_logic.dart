@@ -13,12 +13,15 @@ import 'package:voicetemplate/pages/middle/manager/index.dart';
 import 'package:voicetemplate/stores/global.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
 import 'package:voicetemplate/core/index.dart';
+import 'package:uuid/uuid.dart';
 
 class SaveLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
 
   // 获取画布控制器
   final canvalsLogic = Get.find<CanvalsController>();
+
+  final Uuid uuid = Uuid();
 
   /// 画布的图片信息
   late final Uint8List? canvalsImage;
@@ -39,7 +42,7 @@ class SaveLogic extends GetxController {
   final showScenarioDropdown = false.obs;
   RxString sceneName = ''.obs;
 
-  RxBool tempteIsCreate = true.obs;
+  RxBool tempteIsNewCreate = true.obs;
   RxBool draftIsCreate = true.obs;
 
   ///风格标签
@@ -397,33 +400,39 @@ class SaveLogic extends GetxController {
         'cavals',
       );
       final idsStr = model.elements.map((e) => e.fontId).toSet().join(',');
+
       if (canvalsLogic.type != PageSource.create) {
         if (canvalsLogic.isOwn == 1) {
-          tempteIsCreate.value = false;
+          tempteIsNewCreate.value = false;
         }
       }
 
-      var params = {
-        "uuid": model.uuid,
-        "edit_time": '${model.timestamp}',
-        "title": titleController.text.trim(),
-        "desc": descriptionController.text.trim(),
-        "canvas": model.ratio,
-        "canvas_size": '${model.width}:${model.height}',
-        "is_clear": model.clarity,
-        "scene_id": '${screenModel.id}',
-        "tag_ids": selectedTags.isEmpty
-            ? ''
-            : selectedTags.map((e) => e.id).join(','),
-        "img_id": '$imageResourceId',
-        "zip_id": '$fileResourceId',
-        "img_file_size": '$imageMemorySize',
-        "zip_file_size": "$fileMemorySize",
-        "front_ids": idsStr,
-        "design_draft_id": '${model.id}',
-      };
-
-      if (!tempteIsCreate.value) {
+      var params = {};
+      if (tempteIsNewCreate.value) {
+        params = {
+          "uuid": canvalsLogic.type == PageSource.create
+              ? model.uuid
+              : uuid.v4(),
+          "edit_time": '${model.timestamp}',
+          "title": titleController.text.trim(),
+          "desc": descriptionController.text.trim(),
+          "canvas": model.ratio,
+          "canvas_size": '${model.width}:${model.height}',
+          "is_clear": model.clarity,
+          "scene_id": '${screenModel.id}',
+          "tag_ids": selectedTags.isEmpty
+              ? ''
+              : selectedTags.map((e) => e.id).join(','),
+          "img_id": '$imageResourceId',
+          "zip_id": '$fileResourceId',
+          "img_file_size": '$imageMemorySize',
+          "zip_file_size": "$fileMemorySize",
+          "front_ids": idsStr,
+          "design_draft_id": canvalsLogic.type == PageSource.draft
+              ? model.id
+              : 0,
+        };
+      } else {
         params = {
           "id": '${model.id}',
           "edit_time": '${model.timestamp}',
@@ -442,7 +451,7 @@ class SaveLogic extends GetxController {
       }
 
       final result = await http.post<SaveResponse>(
-        tempteIsCreate.value ? '/design/store' : '/design/update',
+        tempteIsNewCreate.value ? '/design/store' : '/design/update',
         data: params,
         converter: SaveResponse.fromJson,
       );
@@ -495,23 +504,27 @@ class SaveLogic extends GetxController {
         draftIsCreate.value = false;
       }
 
-      var params = {
-        "uuid": model.uuid,
-        "edit_time": '${model.timestamp}',
-        "title": '',
-        "desc": '',
-        "canvas": model.ratio,
-        "canvas_size": '${model.width}:${model.height}',
-        "is_clear": model.clarity,
-        "scene_id": '',
-        "tag_ids": '',
-        "img_id": '$imageResourceId',
-        "zip_id": '$fileResourceId',
-        "img_file_size": '$imageMemorySize',
-        "zip_file_size": "$fileMemorySize",
-        "front_ids": idsStr,
-      };
-      if (!draftIsCreate.value) {
+      var params = {};
+      if (draftIsCreate.value) {
+        params = {
+          "uuid": canvalsLogic.type == PageSource.create
+              ? model.uuid
+              : uuid.v4(),
+          "edit_time": '${model.timestamp}',
+          "title": '',
+          "desc": '',
+          "canvas": model.ratio,
+          "canvas_size": '${model.width}:${model.height}',
+          "is_clear": model.clarity,
+          "scene_id": '',
+          "tag_ids": '',
+          "img_id": '$imageResourceId',
+          "zip_id": '$fileResourceId',
+          "img_file_size": '$imageMemorySize',
+          "zip_file_size": "$fileMemorySize",
+          "front_ids": idsStr,
+        };
+      } else {
         params = {
           "id": '${model.id}',
           "edit_time": '${model.timestamp}',
