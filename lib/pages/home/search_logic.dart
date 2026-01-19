@@ -264,6 +264,10 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
         showErrorToast: false,
       );
       if (result.code == 0) {
+        if (shouldFavorite) {
+          showToast("收藏成功");
+        }
+
         // 更新 isFavorite 状态
         final newFavoriteStatus = shouldFavorite ? 1 : 0;
 

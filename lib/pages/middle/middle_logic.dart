@@ -100,6 +100,8 @@ class MiddleLogic extends GetxController {
         showErrorToast: false,
       );
       if (result.code == 0) {
+        showToast("收藏成功");
+
         // 更新 isFavorite 状态
         final newFavoriteStatus = shouldFavorite ? 1 : 0;
         isFavorite.value = newFavoriteStatus;
