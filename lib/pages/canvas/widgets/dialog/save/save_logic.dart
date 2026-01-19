@@ -79,13 +79,11 @@ class SaveLogic extends GetxController {
     titleController.addListener(_checkCanSave);
 
     // 监听描述变化
-    descriptionController.addListener(_checkCanSave);
+    // descriptionController.addListener(_checkCanSave);
+    //    selectedTags,
 
     // 监听应用场景变化
-    _validationWorker = everAll([
-      sceneName,
-      selectedTags,
-    ], (_) => _checkCanSave());
+    _validationWorker = everAll([sceneName], (_) => _checkCanSave());
 
     // 初始化时检查一次
     _checkCanSave();
@@ -94,12 +92,13 @@ class SaveLogic extends GetxController {
   /// 检查是否可以保存（标题、描述、应用场景、风格标签都有值）
   void _checkCanSave() {
     final hasTitle = titleController.text.trim().isNotEmpty;
-    final hasDescription = descriptionController.text.trim().isNotEmpty;
     final hasScene = sceneName.value.isNotEmpty;
-    final hasTags = selectedTags.isNotEmpty;
 
-    final canSave = hasTitle && hasDescription && hasScene && hasTags;
+    // final hasDescription = descriptionController.text.trim().isNotEmpty;
+    // final canSave = hasTitle && hasDescription && hasScene && hasTags;
+    // final hasTags = selectedTags.isNotEmpty;
 
+    final canSave = hasTitle && hasScene;
     if (isCanSave.value != canSave) {
       isCanSave.value = canSave;
     }
@@ -300,7 +299,6 @@ class SaveLogic extends GetxController {
           },
         ),
         useBaseUrl: false,
-        showErrorToast: false,
         isNake: true,
       );
 
@@ -332,7 +330,6 @@ class SaveLogic extends GetxController {
           "field_type": isSaveActiion.value ? "design_img" : "design_draft_img",
         },
         converter: UploadOssModel.fromJson,
-        showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
         await uploadImageFile(result.data!, canvalsImage!, model, zipPath);
@@ -448,10 +445,11 @@ class SaveLogic extends GetxController {
         tempteIsCreate.value ? '/design/store' : '/design/update',
         data: params,
         converter: SaveResponse.fromJson,
-        showErrorToast: true,
       );
       debugPrint("===模版保存是否成功====${result.code}=====");
       if (result.code == 0 && result.data != null) {
+        SmartDialog.dismiss(status: SmartStatus.loading);
+
         // 模版保存成功后，资源保存到本地
         await TemplateStoreManager.instance.saveOrUpdateTemplate(
           model,
@@ -463,6 +461,8 @@ class SaveLogic extends GetxController {
           await DraftStoreManager.instance.deleteDraftById(model.id);
         }
 
+        showToast("保存成功");
+
         if (draftIsCreate.value) {
           Get.until((route) => route.isFirst);
         } else {
@@ -471,12 +471,15 @@ class SaveLogic extends GetxController {
         FileManager.deleteFileByPath(sourceDir.path);
         FileManager.deleteFileByPath(filePath);
       } else {
+        SmartDialog.dismiss(status: SmartStatus.loading);
+        showToast("保存失败");
         FileManager.deleteFileByPath(filePath);
       }
       SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {
-      FileManager.deleteFileByPath(filePath);
       SmartDialog.dismiss(status: SmartStatus.loading);
+      showToast("保存失败");
+      FileManager.deleteFileByPath(filePath);
     }
   }
 
@@ -523,7 +526,6 @@ class SaveLogic extends GetxController {
       final result = await http.post<SaveResponse>(
         draftIsCreate.value ? '/design/draft/store' : '/design/draft/update',
         data: params,
-        showErrorToast: true,
         converter: SaveResponse.fromJson,
       );
 
@@ -537,6 +539,9 @@ class SaveLogic extends GetxController {
         } else {
           debugPrint('===草稿保存或更新成功===');
         }
+
+        showToast("保存成功");
+
         if (draftIsCreate.value) {
           Get.until((route) => route.isFirst);
         } else {

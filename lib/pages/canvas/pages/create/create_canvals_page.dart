@@ -1,5 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../utils/gradient_border.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../../model/index.dart';
@@ -539,7 +540,10 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
                     TextField(
                       controller: _widthController,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [MaxValueFormatter(4000)],
+                      inputFormatters: [
+                        MaxValueFormatter(4000),
+                        LengthLimitingTextInputFormatter(4),
+                      ],
                       decoration: InputDecoration(
                         hintText: '如:1080',
                         hintStyle: TextStyle(
@@ -611,7 +615,10 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
                     TextField(
                       controller: _heightController,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [MaxValueFormatter(4000)],
+                      inputFormatters: [
+                        MaxValueFormatter(4000),
+                        LengthLimitingTextInputFormatter(4),
+                      ],
                       decoration: InputDecoration(
                         hintText: '如:1920',
                         hintStyle: TextStyle(

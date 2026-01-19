@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
-
+import 'package:voicetemplate/core/index.dart';
 import 'middle_logic.dart';
 
 class MiddlePage extends StatelessWidget {
@@ -66,6 +66,11 @@ class MiddlePage extends StatelessWidget {
                               logic.type != PageSource.draft)
                             GestureDetector(
                               onTap: () {
+                                if (!logic.global.isLogin) {
+                                  Get.toNamed(AppRoutes.appLogin);
+                                  return;
+                                }
+
                                 if (logic.isFavorite.value == 1) {
                                   logic.favoriteEventDialog();
                                 } else {

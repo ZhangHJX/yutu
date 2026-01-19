@@ -234,17 +234,17 @@ class ImageLogic extends GetxController {
           "img_file_size": '$fileSize',
           "canvas_size": '$width:$height',
         },
-        showErrorToast: true,
       );
       if (result.code == 0) {
         await savePickerImage(ossModel, filePath, width, height);
+        showToast("上传成功");
       } else {
         SmartDialog.dismiss(status: SmartStatus.loading);
         PickerImageManager.deleteDirectory();
       }
     } catch (e) {
       SmartDialog.dismiss(status: SmartStatus.loading);
-      await PickerImageManager.deleteDirectory();
+      PickerImageManager.deleteDirectory();
     }
   }
 

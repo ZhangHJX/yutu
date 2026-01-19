@@ -65,9 +65,6 @@ class HttpService {
   static HttpService? _instance;
   late Dio _dio;
 
-  /// 全局配置：是否自动显示错误Toast提示
-  bool autoShowErrorToast = true;
-
   // 处理错误
   void _handleError(DioException error, {bool? showErrorToast}) {
     String? errorMessage = error.response?.data?['message'];
@@ -91,15 +88,9 @@ class HttpService {
           errorMessage = '发生错误: ${error.message}';
       }
     }
-
     // 显示错误信息
     if (kDebugMode) {
       print('😩😩😩网络请求发生错误: ${error.message}');
-    }
-
-    final shouldShowToast = showErrorToast ?? autoShowErrorToast;
-    if (shouldShowToast) {
-      showToast(errorMessage);
     }
   }
 
@@ -110,7 +101,7 @@ class HttpService {
 
     /// 处理后台直接返回data这种裸数据的情况
     bool isNake = false,
-    bool? showErrorToast,
+    bool showErrorToast = false,
     String method = 'GET',
     bool withToken = true,
     CancelToken? cancelToken,
@@ -156,13 +147,13 @@ class HttpService {
         return BaseModel.fromJson(
           {'code': 200, 'message': 'success', 'data': response.data},
           converter ?? (j) => j as T,
-          showErrorToast ?? autoShowErrorToast,
+          showErrorToast,
         );
       }
       return BaseModel.fromJson(
         response.data,
         converter ?? (j) => j as T,
-        showErrorToast ?? autoShowErrorToast,
+        showErrorToast,
       );
     } on DioException catch (e) {
       _handleError(e, showErrorToast: showErrorToast);
@@ -224,7 +215,7 @@ class HttpService {
     dynamic data,
     Options? options,
     bool isNake = false,
-    bool? showErrorToast,
+    bool showErrorToast = false,
     bool withToken = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? query,
@@ -253,7 +244,7 @@ class HttpService {
     dynamic data,
     Options? options,
     bool isNake = false,
-    bool? showErrorToast,
+    bool showErrorToast = false,
     bool withToken = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? query,
@@ -275,7 +266,7 @@ class HttpService {
     dynamic data,
     Options? options,
     bool isNake = false,
-    bool? showErrorToast,
+    bool showErrorToast = false,
     bool withToken = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? query,
@@ -305,7 +296,7 @@ class HttpService {
     Options? options,
     CancelToken? cancelToken,
     ProgressCallback? onSendProgress,
-    bool? showErrorToast,
+    bool showErrorToast = false,
     bool withToken = true,
   }) => request<T>(
     path,
@@ -327,7 +318,7 @@ class HttpService {
     Options? options,
     CancelToken? cancelToken,
     ProgressCallback? onReceiveProgress,
-    bool? showErrorToast,
+    bool showErrorToast = false,
     bool withToken = true,
   }) async {
     try {

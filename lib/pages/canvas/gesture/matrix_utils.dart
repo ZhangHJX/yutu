@@ -120,8 +120,13 @@ extension MatrixUtilsXGesture on MatrixUtilsX {
       }
     }
 
-    // ③ 本体命中（使用元素本地坐标，避免受画布变换影响）
-    final local = MatrixUtilsX.canvasToElement(canvasPos, box.transform);
+    // ③ 本体命中（先将画布容器本地坐标转换为画布逻辑坐标，再转换为元素本地坐标）
+    // canvasPos 是画布容器本地坐标，需要先转换为画布逻辑坐标（考虑画布的 transform）
+    final canvasLogicalPos = MatrixUtilsX.screenToCanvas(
+      canvasPos,
+      canvasMatrix,
+    );
+    final local = MatrixUtilsX.canvasToElement(canvasLogicalPos, box.transform);
     if (local.dx >= 0 &&
         local.dx <= box.width &&
         local.dy >= 0 &&

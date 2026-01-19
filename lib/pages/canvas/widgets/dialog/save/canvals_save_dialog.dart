@@ -137,9 +137,9 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
 
                           // 模版描述
                           _buildInputField(
-                            label: '*模版描述',
+                            label: '模版描述',
                             controller: logic.descriptionController,
-                            hintText: '输入模版描述',
+                            hintText: '输入模版描述(可选填)',
                           ),
 
                           SizedBox(height: 12.w),
@@ -362,7 +362,7 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
         Row(
           children: [
             Text(
-              '*风格标签',
+              '风格标签',
               style: TextStyle(
                 fontSize: 16.w,
                 fontWeight: FontWeight.w500,
@@ -389,7 +389,10 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
             runSpacing: 8.w,
             children: logic.suggestedTags.map((model) {
               return GestureDetector(
-                onTap: () => logic.toggleTag(model),
+                onTap: () {
+                  FocusManager.instance.primaryFocus?.unfocus(); // 先收起键盘
+                  logic.toggleTag(model);
+                },
                 child: Container(
                   padding: EdgeInsets.only(
                     left: 9.5.w,
