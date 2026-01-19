@@ -66,7 +66,6 @@ class ImageLogic extends GetxController {
       final result = await http.get(
         '/user/material/index',
         query: {'page': '$currentPage', 'limit': globalPageSize},
-        showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
         final listModel = ImageListModels.fromJson(result.data);
@@ -161,7 +160,6 @@ class ImageLogic extends GetxController {
           "field_type": "material_user_img",
         },
         converter: UploadOssModel.fromJson,
-        showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
         String mimeType = mimeTypeMap[fileType] ?? "";
@@ -178,7 +176,6 @@ class ImageLogic extends GetxController {
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
     } catch (e) {
-      debugPrint('========获取图片上传url报错=====$e==');
       await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss(status: SmartStatus.loading);
     }
@@ -205,7 +202,6 @@ class ImageLogic extends GetxController {
           },
         ),
         useBaseUrl: false,
-        showErrorToast: false,
         isNake: true,
       );
 
@@ -213,14 +209,12 @@ class ImageLogic extends GetxController {
       if (res.isSuccess || (res.code == 200)) {
         await requestImage(filePath, ossModel, fileSize, width, height);
       } else {
-        showToast("图片上传失败"); // 上传失败
-        await PickerImageManager.deleteDirectory();
         SmartDialog.dismiss(status: SmartStatus.loading);
+        await PickerImageManager.deleteDirectory();
       }
     } catch (e) {
-      showToast("图片上传失败");
-      await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss(status: SmartStatus.loading);
+      await PickerImageManager.deleteDirectory();
     }
   }
 
@@ -240,18 +234,17 @@ class ImageLogic extends GetxController {
           "img_file_size": '$fileSize',
           "canvas_size": '$width:$height',
         },
-        showErrorToast: false,
+        showErrorToast: true,
       );
       if (result.code == 0) {
         await savePickerImage(ossModel, filePath, width, height);
       } else {
-        await PickerImageManager.deleteDirectory();
         SmartDialog.dismiss(status: SmartStatus.loading);
+        PickerImageManager.deleteDirectory();
       }
     } catch (e) {
-      showToast("图片上传失败");
-      await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss(status: SmartStatus.loading);
+      await PickerImageManager.deleteDirectory();
     }
   }
 
@@ -276,18 +269,18 @@ class ImageLogic extends GetxController {
       final cavalsPath = p.join(PickerImageManager.cavalsPath, fileFormat);
       await copyImageFilePath(fromPath: filePath, toPath: cavalsPath);
 
+      SmartDialog.dismiss(status: SmartStatus.loading);
+
       // 先关闭 loading 对话框，再触发回调关闭图片选择对话框
       await PickerImageManager.deleteDirectory();
-      SmartDialog.dismiss(status: SmartStatus.loading);
 
       // 3. 将图片名、宽高通过 onUploadSuccess 传递到画布数据中，dialog 弹框消失
       if (onUploadSuccess != null) {
         onUploadSuccess!(fileFormat, width, height);
       }
     } catch (e) {
-      showToast("图片上传失败");
-      await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss(status: SmartStatus.loading);
+      await PickerImageManager.deleteDirectory();
     }
   }
 
@@ -329,7 +322,7 @@ class ImageLogic extends GetxController {
     return src.copy(toPath);
   }
 
-  /// 显示是否保存为草稿
+  /// 显示是否保存为素材
   void showMaterialMemoryDialog() {
     final textWidget = RichText(
       textAlign: TextAlign.center,

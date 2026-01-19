@@ -52,7 +52,6 @@ class SaveLogic extends GetxController {
   void onClose() {
     titleController.dispose();
     descriptionController.dispose();
-    debugPrint("-保存模版----onClose------");
     super.onClose();
   }
 
@@ -73,7 +72,7 @@ class SaveLogic extends GetxController {
   /// 应用场景接口
   Future<void> getSceneResource() async {
     try {
-      final result = await http.post('/scene/index', showErrorToast: false);
+      final result = await http.post('/scene/index');
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
         if (listModel.items.isNotEmpty) {
@@ -97,7 +96,7 @@ class SaveLogic extends GetxController {
   /// 风格标签
   Future<void> getSuggestedTags() async {
     try {
-      final result = await http.post('/tag/index', showErrorToast: false);
+      final result = await http.post('/tag/index');
       if (result.code == 0 && result.data != null) {
         final listModel = ScreenModel.fromJson(result.data);
         suggestedTags.value = listModel.items;
@@ -220,10 +219,8 @@ class SaveLogic extends GetxController {
         final draftLimit =
             double.tryParse(global.userInfo.value.designDraftFileSizeLimit) ??
             0;
-
-        debugPrint('保存页面，压缩后的文件大小是多少 ==$zipKB===$draftSize ====$draftLimit');
-        SmartDialog.dismiss(status: SmartStatus.loading);
         if (draftSize >= draftLimit) {
+          SmartDialog.dismiss(status: SmartStatus.loading);
           SmartDialog.dismiss();
           showDraftMemoryDialog();
         } else {
@@ -231,26 +228,30 @@ class SaveLogic extends GetxController {
         }
       }
     } catch (e, st) {
-      // 你可以换成自己的日志/上报
-      debugPrint('zipResourceInDocuments error: $e\n$st');
       SmartDialog.dismiss(status: SmartStatus.loading);
+      debugPrint('zipResourceInDocuments error: $e\n$st');
     }
   }
 
   /// 获取压缩包上传地址
   Future<void> getZipResource(CanvasModel model, String zipPath) async {
-    final result = await http.post<UploadOssModel>(
-      '/upload/generateUploadUrl',
-      data: {
-        "type": isSaveActiion.value ? "design" : 'design_draft',
-        "file_type": 'zip',
-        "field_type": isSaveActiion.value ? "design_zip" : 'design_draft_zip',
-      },
-      converter: UploadOssModel.fromJson,
-      showErrorToast: true,
-    );
-    if (result.code == 0 && result.data != null) {
-      await uploadZipFile(result.data!, model, zipPath);
+    try {
+      final result = await http.post<UploadOssModel>(
+        '/upload/generateUploadUrl',
+        data: {
+          "type": isSaveActiion.value ? "design" : 'design_draft',
+          "file_type": 'zip',
+          "field_type": isSaveActiion.value ? "design_zip" : 'design_draft_zip',
+        },
+        converter: UploadOssModel.fromJson,
+      );
+      if (result.code == 0 && result.data != null) {
+        await uploadZipFile(result.data!, model, zipPath);
+      } else {
+        SmartDialog.dismiss(status: SmartStatus.loading);
+      }
+    } catch (e) {
+      SmartDialog.dismiss(status: SmartStatus.loading);
     }
   }
 
@@ -284,14 +285,13 @@ class SaveLogic extends GetxController {
         fileResourceId = ossModel.resourceId;
         getImageRemotePath(model, zipPath);
       } else {
-        debugPrint('文件上传失败"');
-        FileManager.deleteFileByPath(zipPath);
         SmartDialog.dismiss(status: SmartStatus.loading);
+        FileManager.deleteFileByPath(zipPath);
       }
     } catch (e) {
       debugPrint('图片上传失败---$e');
-      FileManager.deleteFileByPath(zipPath);
       SmartDialog.dismiss(status: SmartStatus.loading);
+      FileManager.deleteFileByPath(zipPath);
     }
   }
 
@@ -316,8 +316,8 @@ class SaveLogic extends GetxController {
       }
     } catch (e) {
       debugPrint('获取图片信息报错---$e');
-      FileManager.deleteFileByPath(zipPath);
       SmartDialog.dismiss(status: SmartStatus.loading);
+      FileManager.deleteFileByPath(zipPath);
     }
   }
 
@@ -340,7 +340,6 @@ class SaveLogic extends GetxController {
           },
         ),
         useBaseUrl: false,
-        showErrorToast: false,
         isNake: true,
       );
 
@@ -354,13 +353,12 @@ class SaveLogic extends GetxController {
           await createAndUpdateDraft(zipPath, model);
         }
       } else {
-        debugPrint('图片上传失败----${res.code}');
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
     } catch (e) {
       debugPrint('图片上传失败---$e');
-      FileManager.deleteFileByPath(zipPath);
       SmartDialog.dismiss(status: SmartStatus.loading);
+      FileManager.deleteFileByPath(zipPath);
     }
   }
 
@@ -382,8 +380,6 @@ class SaveLogic extends GetxController {
           tempteIsCreate.value = false;
         }
       }
-
-      debugPrint('===保存模版时的id=${model.id}==');
 
       var params = {
         "uuid": model.uuid,

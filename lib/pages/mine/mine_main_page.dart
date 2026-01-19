@@ -52,7 +52,7 @@ class _MinePageState extends State<MinePage> {
                           /// 登录状态：文案跟随内容在滚动区域中
                           if (isLogin) ...[
                             Text(
-                              '语音厅设计助手 V1.0\n让设计更简单',
+                              '语音厅设计助手 V${logic.version.value}\n让设计更简单',
                               style: TextStyle(
                                 fontSize: 11.w,
                                 color: "#9E9E9E".color,

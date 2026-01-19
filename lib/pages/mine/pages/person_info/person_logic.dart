@@ -159,7 +159,6 @@ class PersonLogic extends GetxController {
         '/upload/generateUploadUrl',
         data: {"type": "user", "file_type": fileType, "field_type": "avatar"},
         converter: UploadOssModel.fromJson,
-        showErrorToast: false,
       );
       if (result.code == 0) {
         String mimeType = mimeTypeMap[fileType] ?? "";
@@ -171,8 +170,7 @@ class PersonLogic extends GetxController {
       }
     } catch (e) {
       await PickerImageManager.deleteDirectory();
-      // 上传失败，恢复原始头像
-      SmartDialog.dismiss();
+      SmartDialog.dismiss(status: SmartStatus.loading);
     }
   }
 
@@ -182,7 +180,6 @@ class PersonLogic extends GetxController {
     String mimeType,
   ) async {
     try {
-      debugPrint('======res===== 开始${ossModel.signUrl} ');
       final file = File(filePath);
       final bytes = await file.readAsBytes();
       final res = await http.put(
@@ -202,13 +199,11 @@ class PersonLogic extends GetxController {
         fileId = ossModel.resourceId;
         avatar.value = filePath;
       }
-      await PickerImageManager.deleteDirectory();
-      SmartDialog.dismiss();
+      SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {
-      showToast("图片上传失败");
-      debugPrint('======出错了===== $e ');
       await PickerImageManager.deleteDirectory();
-      SmartDialog.dismiss();
+      SmartDialog.dismiss(status: SmartStatus.loading);
+      showToast("图片上传失败");
     }
   }
 
@@ -243,7 +238,6 @@ class PersonLogic extends GetxController {
         data: data,
         showErrorToast: true,
       );
-      SmartDialog.dismiss();
       if (result.code == 0) {
         global.updateUserInfo(
           nickname: nickname.value,
@@ -252,8 +246,10 @@ class PersonLogic extends GetxController {
         );
         Get.back();
       }
+      await PickerImageManager.deleteDirectory();
     } catch (e) {
-      SmartDialog.dismiss();
+      await PickerImageManager.deleteDirectory();
+      SmartDialog.dismiss(status: SmartStatus.loading);
       debugPrint('===========  error: $e');
     }
   }

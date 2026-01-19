@@ -4,6 +4,7 @@ import 'package:voicetemplate/core/index.dart';
 import '../../stores/global.dart';
 import '../model/common_model.dart';
 import 'dart:async';
+import '../utils/app_info/app_info_utils.dart';
 
 class MineLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
@@ -14,6 +15,8 @@ class MineLogic extends GetxController {
   late final StreamSubscription _sub;
 
   Worker? _countWorker;
+
+  RxString version = '1.0.0'.obs;
 
   @override
   void onClose() {
@@ -36,14 +39,25 @@ class MineLogic extends GetxController {
         updatePersonInfo();
       }
     });
+
+    getCurrentAppVersion();
+  }
+
+  void getCurrentAppVersion() async {
+    version.value = await AppInfoUtils.getAppVersion();
   }
 
   /// 加载图片列表
   Future<void> loadDesignList({bool refresh = false}) async {
+    if (!global.isLogin) {
+      return;
+    }
+
     try {
       final result = await http.get(
         '/design/index',
         query: {'page': 1, 'limit': globalPageSize},
+        showErrorToast: false,
       );
 
       if (result.code == 0 && result.data != null) {

@@ -3,6 +3,21 @@ import 'dart:math';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
+/// 在 loading 关闭后显示 toast
+/// 用于确保 loading 消失后再显示错误提示
+Future<void> showToastAfterLoading(
+  String msg, {
+  Alignment? alignment = Alignment.center,
+  SmartToastType? type = SmartToastType.onlyRefresh,
+  Duration delay = const Duration(milliseconds: 300),
+}) async {
+  // 先关闭可能正在显示的 loading
+  SmartDialog.dismiss(status: SmartStatus.loading);
+  // 延迟一小段时间，确保 loading 关闭动画完成后再显示 toast
+  await Future.delayed(delay);
+  return showToast(msg, alignment: alignment, type: type);
+}
+
 Future<void> showToast(
   String msg, {
   Alignment? alignment = .center,
@@ -14,7 +29,10 @@ Future<void> showToast(
     alignment: alignment,
     builder: (context) => Container(
       padding: .symmetric(horizontal: 16.w, vertical: 12.w),
-      decoration: BoxDecoration(color: Colors.black.withAlpha(153), borderRadius: .circular(8.w)),
+      decoration: BoxDecoration(
+        color: Colors.black.withAlpha(153),
+        borderRadius: .circular(8.w),
+      ),
       child: Text(
         msg,
         style: .new(color: Colors.white, fontSize: 14.w, fontWeight: .w500),
@@ -30,7 +48,10 @@ Future<void> showLoading(String msg, {bool showMask = true}) {
     builder: (context) => Center(
       child: Container(
         padding: .all(20.w),
-        decoration: BoxDecoration(color: Colors.black.withAlpha(153), borderRadius: .circular(8.w)),
+        decoration: BoxDecoration(
+          color: Colors.black.withAlpha(153),
+          borderRadius: .circular(8.w),
+        ),
         child: Column(
           mainAxisSize: .min,
           children: [
@@ -42,7 +63,11 @@ Future<void> showLoading(String msg, {bool showMask = true}) {
             SizedBox(height: 12.w),
             Text(
               msg,
-              style: .new(color: Colors.white, fontSize: 14.w, fontWeight: .w500),
+              style: .new(
+                color: Colors.white,
+                fontSize: 14.w,
+                fontWeight: .w500,
+              ),
             ),
           ],
         ),
@@ -104,7 +129,10 @@ Future<bool> showMyDialog(
     builder: (context) => Container(
       margin: .symmetric(horizontal: 26.w),
       padding: .only(left: 12.w, right: 12.w, top: 22.w, bottom: 16.w),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: .circular(14.w)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: .circular(14.w),
+      ),
       child: Column(
         mainAxisSize: .min,
         children: [
@@ -115,12 +143,20 @@ Future<bool> showMyDialog(
           ),
           SizedBox(height: 28.w),
           DefaultTextStyle(
-            style: .new(fontSize: 16.w, height: 1, color: Colors.white, fontWeight: .w500),
+            style: .new(
+              fontSize: 16.w,
+              height: 1,
+              color: Colors.white,
+              fontWeight: .w500,
+            ),
             child: Row(
-              textDirection: isConfirmRight ? TextDirection.ltr : TextDirection.rtl,
+              textDirection: isConfirmRight
+                  ? TextDirection.ltr
+                  : TextDirection.rtl,
               spacing: 15.w,
               children: [
-                if (!isConfirmOnly) _buildCancelWidget(cancelTap, cancelWidget, cancelText),
+                if (!isConfirmOnly)
+                  _buildCancelWidget(cancelTap, cancelWidget, cancelText),
                 _buildConfirmWidget(confirmTap, confirmWidget, confirmText),
               ],
             ),
@@ -132,7 +168,11 @@ Future<bool> showMyDialog(
   return isConfirm;
 }
 
-Widget _buildConfirmWidget(VoidCallback confirmTap, Widget? confirmWidget, String? confirmText) {
+Widget _buildConfirmWidget(
+  VoidCallback confirmTap,
+  Widget? confirmWidget,
+  String? confirmText,
+) {
   return Expanded(
     child: GestureDetector(
       onTap: confirmTap,
@@ -153,7 +193,11 @@ Widget _buildConfirmWidget(VoidCallback confirmTap, Widget? confirmWidget, Strin
   );
 }
 
-Widget _buildCancelWidget(VoidCallback cancelTap, Widget? cancelWidget, String? cancelText) {
+Widget _buildCancelWidget(
+  VoidCallback cancelTap,
+  Widget? cancelWidget,
+  String? cancelText,
+) {
   return Expanded(
     child: GestureDetector(
       onTap: cancelTap,

@@ -8,11 +8,13 @@ class TopNavigationWidget extends StatelessWidget {
     this.rightTitle,
     this.onTap,
     this.child,
+    this.back,
   });
 
   final String title;
   final String? rightTitle;
   final VoidCallback? onTap;
+  final VoidCallback? back;
   final Widget? child;
 
   @override
@@ -36,7 +38,8 @@ class TopNavigationWidget extends StatelessWidget {
                   width: 26.w,
                   height: 26.w,
                 ),
-                onPressed: () {
+                onPressed: () async {
+                  back?.call();
                   EventBusManager.share.emit(AppEventType.mineRefresh);
                   Get.back();
                 },

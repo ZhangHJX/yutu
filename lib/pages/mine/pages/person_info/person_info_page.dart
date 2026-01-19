@@ -5,6 +5,7 @@ import 'person_info_input.dart';
 import 'person_info_avatar.dart';
 import 'person_logic.dart';
 import '../widgets/top_navigation_widget.dart';
+import 'package:voicetemplate/pages/utils/file/index.dart';
 
 class PersonInfoPage extends StatelessWidget {
   PersonInfoPage({super.key});
@@ -41,7 +42,13 @@ class PersonInfoPage extends StatelessWidget {
               final scrollBottomPadding = buttonBottom + 100.w;
               return Column(
                 children: [
-                  TopNavigationWidget(title: "个人资料"),
+                  TopNavigationWidget(
+                    title: "个人资料",
+                    back: () async {
+                      debugPrint("==个人资料===哈哈哈哈哈===");
+                      await PickerImageManager.deleteDirectory();
+                    },
+                  ),
 
                   SizedBox(height: 12.w),
                   Expanded(
