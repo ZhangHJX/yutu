@@ -519,17 +519,19 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
               SizedBox(width: 20.w),
 
               // 保存按钮
-              Expanded(
-                child: GestureDetector(
-                  onTap: logic.saveTemplate,
-                  child: Image.asset(
-                    'assets/images/canvals/canvals_save_icon.png',
-                    width: 153.w,
-                    height: 40.w,
-                    fit: BoxFit.fill,
+              Obx(() {
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: logic.saveTemplate,
+                    child: Image.asset(
+                      'assets/images/canvals/${logic.isCanSave.value ? 'canvals_save_icon' : 'canvals_no_save'}.png',
+                      width: 153.w,
+                      height: 40.w,
+                      fit: BoxFit.fill,
+                    ),
                   ),
-                ),
-              ),
+                );
+              }),
             ],
           ),
         ),

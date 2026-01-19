@@ -48,8 +48,14 @@ class SaveLogic extends GetxController {
 
   final isSaveActiion = false.obs;
 
+  final isCanSave = false.obs;
+
+  // 用于监听的工作器
+  Worker? _validationWorker;
+
   @override
   void onClose() {
+    _validationWorker?.dispose();
     titleController.dispose();
     descriptionController.dispose();
     super.onClose();
@@ -58,10 +64,45 @@ class SaveLogic extends GetxController {
   @override
   void onInit() async {
     super.onInit();
+
+    _setupValidationListener(); // 设置监听
+
     await getSceneResource();
     await getSuggestedTags();
     global.fetchUserInfo();
     updateTemplateInfo();
+  }
+
+  /// 设置验证监听，当标题、描述、应用场景、风格标签都有值时更新 isCanSave
+  void _setupValidationListener() {
+    // 监听标题变化
+    titleController.addListener(_checkCanSave);
+
+    // 监听描述变化
+    descriptionController.addListener(_checkCanSave);
+
+    // 监听应用场景变化
+    _validationWorker = everAll([
+      sceneName,
+      selectedTags,
+    ], (_) => _checkCanSave());
+
+    // 初始化时检查一次
+    _checkCanSave();
+  }
+
+  /// 检查是否可以保存（标题、描述、应用场景、风格标签都有值）
+  void _checkCanSave() {
+    final hasTitle = titleController.text.trim().isNotEmpty;
+    final hasDescription = descriptionController.text.trim().isNotEmpty;
+    final hasScene = sceneName.value.isNotEmpty;
+    final hasTags = selectedTags.isNotEmpty;
+
+    final canSave = hasTitle && hasDescription && hasScene && hasTags;
+
+    if (isCanSave.value != canSave) {
+      isCanSave.value = canSave;
+    }
   }
 
   void updateTemplateInfo() {
@@ -142,22 +183,6 @@ class SaveLogic extends GetxController {
 
   /// 保存模版
   void saveTemplate() async {
-    if (titleController.text.trim().isEmpty) {
-      showToast('请输入模版标题');
-      return;
-    }
-    if (descriptionController.text.trim().isEmpty) {
-      showToast('请输入模版描述');
-      return;
-    }
-    if (sceneName.isEmpty) {
-      SmartDialog.showToast('应用场景不能为空');
-      return;
-    }
-    if (selectedTags.isEmpty) {
-      SmartDialog.showToast('请至少选择一个风格标签');
-      return;
-    }
     final canvalsModel = await DraftManager().loadDraft();
     if (canvalsModel == null) {
       showToast('画布信息不存在');
