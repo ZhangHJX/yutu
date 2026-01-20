@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-import '../../../../widgets/gradient_text.dart';
+import 'package:voicetemplate/pages/widgets/index.dart';
 import 'save_logic.dart';
 
 class CanvalsSaveTemplateDialog extends StatefulWidget {
@@ -116,6 +116,7 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                             label: '*模版标题',
                             controller: logic.titleController,
                             hintText: '输入模版标题',
+                            maxLength: 15,
                           ),
 
                           SizedBox(height: 12.w),
@@ -125,6 +126,7 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
                             label: '模版描述',
                             controller: logic.descriptionController,
                             hintText: '输入模版描述(可选填)',
+                            maxLength: 40,
                           ),
 
                           SizedBox(height: 12.w),
@@ -158,7 +160,9 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
     required String label,
     required TextEditingController controller,
     required String hintText,
+    int? maxLength,
   }) {
+    final lengthLimit = maxLength ?? 15;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -181,19 +185,48 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
             borderRadius: BorderRadius.circular(18.w),
             border: Border.all(color: "#FFE6E6E6".color, width: 1.w),
           ),
-          child: TextField(
-            controller: controller,
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: TextStyle(color: "#ff6C6C6C".color, fontSize: 14.w),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 12.w,
-                vertical: 12.w,
-              ),
-            ),
+          child: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, child) {
+              final currentLength = value.text.characters.length;
+              return Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      inputFormatters: maxLength != null
+                          ? [CharacterLengthLimitingFormatter(maxLength)]
+                          : null,
+                      decoration: InputDecoration(
+                        hintText: hintText,
+                        hintStyle: TextStyle(
+                          color: "#ff6C6C6C".color,
+                          fontSize: 14.w,
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 12.w,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (maxLength != null)
+                    Padding(
+                      padding: EdgeInsets.only(right: 12.w),
+                      child: Text(
+                        '$currentLength/$lengthLimit',
+                        style: TextStyle(
+                          color: "#ff9E9E9E".color,
+                          fontSize: 14.w,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
         ),
       ],
