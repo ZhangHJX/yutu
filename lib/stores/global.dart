@@ -98,7 +98,6 @@ class GlobalLogic extends GetxController {
       final result = await http.post<UserModel>(
         '/homePage/user/index',
         converter: UserModel.fromJson,
-        showErrorToast: false,
       );
       if (result.code == 0) {
         userInfo.value = result.data ?? UserModel();

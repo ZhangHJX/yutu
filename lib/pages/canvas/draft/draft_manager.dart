@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:screenshot/screenshot.dart';
@@ -285,5 +286,11 @@ class DraftManager {
   Future<void> saveCurrentCanvals() async {
     final draftDir = await _getDraftDirectory();
     await _saveCanvasScreenshot(draftDir);
+  }
+
+  /// 获取画布截图
+  Future<Uint8List?> getCurrentCanvals() async {
+    final imageBytes = await _screenshotController?.capture(pixelRatio: 3.0);
+    return imageBytes;
   }
 }

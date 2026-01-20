@@ -34,7 +34,7 @@ class BaseModel<T> {
     if (code == -1) {
       EventBusManager.share.emit(AppEventType.logout);
     }
-    debugPrint("=====$json=====接口返回信息=====$message");
+    debugPrint("=====$json=====接口返回信息===${HttpStatus.ok}===$message");
 
     try {
       if (rawData is Map) {
@@ -43,14 +43,13 @@ class BaseModel<T> {
         data = fromJsonT({dstValueKey: rawData});
       }
     } finally {
-      if (getIsShowToast(code)) {
-        debugPrint("你走的是哪个 toast 提示====上====");
-        if (message.isNotEmpty) showToastAfterLoading(message);
-      } else {
+      if (HttpStatus.ok == 200) {
         if (showErrorToast && message.isNotEmpty) {
           debugPrint("你走的是哪个 toast 提示====下====");
           showToastAfterLoading(message);
         }
+      } else {
+        showToastAfterLoading(message);
       }
     }
 
@@ -66,17 +65,6 @@ class BaseModel<T> {
   final int code;
   final String message;
   final T? data;
-}
-
-bool getIsShowToast(int code) {
-  switch (code) {
-    case 0:
-    case 200:
-    case -1:
-      return false;
-    default:
-      return true;
-  }
 }
 
 T Function(Map<String, dynamic>) primitiveConverter<T>() =>

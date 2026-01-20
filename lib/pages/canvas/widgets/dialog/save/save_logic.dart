@@ -24,7 +24,6 @@ class SaveLogic extends GetxController {
   final Uuid uuid = Uuid();
 
   /// 画布的图片信息
-  late final Uint8List? canvalsImage;
   int imageMemorySize = 0; // 单位字节 kb
   int imageResourceId = 0; // 图片的id
 
@@ -196,10 +195,6 @@ class SaveLogic extends GetxController {
       return;
     }
 
-    if (canvalsImage == null) {
-      showToast('画布截图未成功');
-      return;
-    }
     isSaveActiion.value = true;
     await zipResourceInDocuments(canvalsModel);
   }
@@ -342,7 +337,12 @@ class SaveLogic extends GetxController {
         converter: UploadOssModel.fromJson,
       );
       if (result.code == 0 && result.data != null) {
-        await uploadImageFile(result.data!, canvalsImage!, model, zipPath);
+        final canvalsImage = await DraftManager().getCurrentCanvals();
+        if (canvalsImage == null) {
+          showToast('画布截图失败');
+          return;
+        }
+        await uploadImageFile(result.data!, canvalsImage, model, zipPath);
       } else {
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
@@ -457,12 +457,14 @@ class SaveLogic extends GetxController {
         };
       }
 
+      debugPrint("===模版保存是否成功====$params=====");
+
       final result = await http.post<SaveResponse>(
         tempteIsNewCreate.value ? '/design/store' : '/design/update',
         data: params,
         converter: SaveResponse.fromJson,
       );
-      debugPrint("===模版保存是否成功====${result.code}=====");
+
       if (result.code == 0 && result.data != null) {
         SmartDialog.dismiss(status: SmartStatus.loading);
 
@@ -476,9 +478,9 @@ class SaveLogic extends GetxController {
         if (canvalsLogic.type == PageSource.draft) {
           await DraftStoreManager.instance.deleteDraftById(model.id);
         }
-
         showToast("保存成功");
 
+        EventBusManager.share.emit(AppEventType.mineRefresh);
         if (draftIsCreate.value) {
           Get.until((route) => route.isFirst);
         } else {
@@ -543,6 +545,8 @@ class SaveLogic extends GetxController {
         };
       }
 
+      debugPrint("===草稿保存是否成功====$params=====");
+
       final result = await http.post<SaveResponse>(
         draftIsCreate.value ? '/design/draft/store' : '/design/draft/update',
         data: params,
@@ -561,6 +565,8 @@ class SaveLogic extends GetxController {
         }
 
         showToast("保存成功");
+
+        EventBusManager.share.emit(AppEventType.mineRefresh);
 
         if (draftIsCreate.value) {
           Get.until((route) => route.isFirst);

@@ -195,7 +195,9 @@ class _MinePageState extends State<MinePage> {
                   SizedBox(height: 4.w),
 
                   if (logic.global.isLogin)
-                    CreatedWorksText(count: logic.global.userInfo.value.count),
+                    CreatedWorksText(
+                      count: logic.global.userInfo.value.designCount,
+                    ),
                   if (!logic.global.isLogin)
                     Text(
                       '登录后获取更多功能信息',

@@ -9,7 +9,6 @@ class UserModel {
   String avatar;
   String sign;
   String mobile;
-  int count;
 
   @JsonKey(name: 'design_file_size_limit')
   final String designFileSizeLimit;
@@ -29,13 +28,16 @@ class UserModel {
   @JsonKey(name: 'user_material_file_size')
   final String userMaterialFileSize;
 
+  @JsonKey(name: 'design_count')
+  final int designCount;
+
   UserModel({
     this.id = 0,
     this.nickname = '',
     this.avatar = '',
     this.sign = '',
     this.mobile = '',
-    this.count = 0,
+    this.designCount = 0,
     this.designFileSizeLimit = '',
     this.designFileSize = '',
     this.designDraftFileSizeLimit = '',
@@ -56,7 +58,7 @@ class UserModel {
     String? avatar,
     String? sign,
     String? mobile,
-    int? count,
+    int? designCount,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -64,7 +66,7 @@ class UserModel {
       avatar: avatar ?? this.avatar,
       sign: sign ?? this.sign,
       mobile: mobile ?? this.mobile,
-      count: count ?? this.count,
+      designCount: designCount ?? this.designCount,
     );
   }
 

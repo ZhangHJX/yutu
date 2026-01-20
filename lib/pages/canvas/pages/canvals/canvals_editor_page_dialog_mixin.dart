@@ -257,13 +257,9 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
   /// 显示保存模版弹框
   void showSaveTemplateDialog() async {
     toggleLayerDialog(false);
+    canvalsController.deselect();
     SmartDialog.show(
-      builder: (context) => CanvalsSaveTemplateDialog(
-        handleImageCallBack: () async {
-          debugPrint("--移除标签-handleImageCallBack--");
-          return await getCurrentCanvals();
-        },
-      ),
+      builder: (context) => CanvalsSaveTemplateDialog(),
       alignment: Alignment.bottomCenter,
       animationType: SmartAnimationType.centerFade_otherSlide,
       animationTime: Duration(milliseconds: 250),
@@ -339,9 +335,6 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
 
   /// 获取画布中心
   Offset getCanvasCenter();
-
-  /// 获取当前画布的截图（用于保存模板）
-  Future<Uint8List?> getCurrentCanvals();
 
   /// 刷新文本框，重新计算尺寸（当属性变化时）
   /// 注意：属性值已经在 TextPropertyDialog 中实时更新，这里只需要重新计算尺寸并刷新UI

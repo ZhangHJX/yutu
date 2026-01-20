@@ -52,7 +52,6 @@ class MineLogic extends GetxController {
     if (!global.isLogin) {
       return;
     }
-
     try {
       final result = await http.get(
         '/design/index',
@@ -124,6 +123,8 @@ class MineLogic extends GetxController {
   }
 
   Future<void> updatePersonInfo() async {
+    debugPrint("===updatePersonInfo===哈好啊哈哈啊好好=======");
+
     // 调接口刷新
     await global.fetchUserInfo();
     loadDesignList();

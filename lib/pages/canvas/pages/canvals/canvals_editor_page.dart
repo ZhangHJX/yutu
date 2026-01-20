@@ -447,12 +447,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
     }
   }
 
-  @override
-  Future<Uint8List?> getCurrentCanvals() async {
-    final imageBytes = await _screenshotController.capture(pixelRatio: 3.0);
-    return imageBytes;
-  }
-
   /// 构建缩放控制浮框（当缩放比例不是100%时显示）
   Widget _buildScaleOverlay() {
     return Positioned(
@@ -587,12 +581,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   void _handleBack() {
     if (DraftManager().isChange) {
       showIsSaveDraftDialog(() async {
-        // 获取画布截图
-        final imageBytes = await getCurrentCanvals();
-        if (imageBytes == null) {
-          showToast('画布截图失败');
-          return;
-        }
         // 创建或获取 SaveLogic 实例
         SaveLogic saveLogic;
         if (Get.isRegistered<SaveLogic>(tag: saveDialog)) {
@@ -600,9 +588,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
         } else {
           saveLogic = Get.put(SaveLogic(), tag: saveDialog);
         }
-
-        // 设置画布截图
-        saveLogic.canvalsImage = imageBytes;
 
         // 调用保存草稿方法
         await saveLogic.saveAsDraft();
