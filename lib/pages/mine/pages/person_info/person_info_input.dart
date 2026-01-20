@@ -116,9 +116,15 @@ class _ProfileInputState extends State<ProfileInput> {
                   valueListenable: widget.controller,
                   builder: (context, value, child) {
                     final current = value.text.characters.length;
-                    return Text(
-                      "$current/${widget.maxLength}",
-                      style: TextStyle(fontSize: 14.w, color: "#848484".color),
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 10.w),
+                      child: Text(
+                        "$current/${widget.maxLength}",
+                        style: TextStyle(
+                          fontSize: 14.w,
+                          color: "#848484".color,
+                        ),
+                      ),
                     );
                   },
                 ),

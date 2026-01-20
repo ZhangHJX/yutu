@@ -20,11 +20,6 @@ class PersonLogic extends GetxController {
   int filemeMemorySize = 0; // 单位字节 kb
   int fileId = 0; // resource_id
 
-  /// 原始值（用于比较哪些字段被修改了）
-  String _originalAvatar = "";
-  String _originalNickname = "";
-  String _originalSignature = "";
-
   /// 输入控制器
   final nicknameCtrl = TextEditingController();
   final signatureCtrl = TextEditingController();
@@ -50,12 +45,12 @@ class PersonLogic extends GetxController {
     phoneCtrl.text = phone.value;
     phoneBound.value = phone.value.isNotEmpty;
 
-    // 保存原始值用于比较
-    _originalAvatar = icon.isEmpty
-        ? "assets/images/mine/mine_info_empty.png"
-        : icon;
-    _originalNickname = global.nickname ?? "";
-    _originalSignature = global.sign ?? "";
+    // // 保存原始值用于比较
+    // _originalAvatar = icon.isEmpty
+    //     ? "assets/images/mine/mine_info_empty.png"
+    //     : icon;
+    // _originalNickname = global.nickname ?? "";
+    // _originalSignature = global.sign ?? "";
   }
 
   /// 上传头像 BuildContext context
@@ -212,24 +207,12 @@ class PersonLogic extends GetxController {
       showToast("请输入昵称");
       return;
     }
-    // 构建只包含修改过的字段的数据
     final Map<String, dynamic> data = {};
-    // 比较并只添加修改过的字段
-    if (nickname.value != _originalNickname) {
-      data["nickname"] = nickname.value;
-    }
-    if (signature.value != _originalSignature) {
-      data["sign"] = signature.value;
-    }
-    // 头像比较：需要处理默认头像的情况
-    if (avatar.value != _originalAvatar) {
+    data["nickname"] = nickname.value;
+    data["sign"] = signature.value;
+    if (avatar.value.isNotEmpty) {
       data["resource_id"] = fileId;
       data["file_size"] = "$filemeMemorySize"; // 后台要的大小是KB
-    }
-    debugPrint('file_size==$data====');
-    if (data.isEmpty) {
-      showToast("未修改用户信息");
-      return;
     }
     showLoading("修改中");
     try {

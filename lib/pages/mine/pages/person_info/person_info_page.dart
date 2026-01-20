@@ -1,5 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'person_info_input.dart';
 import 'person_info_avatar.dart';
@@ -69,14 +70,79 @@ class PersonInfoPage extends StatelessWidget {
 
                           SizedBox(height: 24.w),
 
-                          ProfileInput(
-                            label: "昵称",
-                            controller: logic.nicknameCtrl,
-                            hint: "输入昵称",
-                            maxLength: 15,
-                            changeValue: (value) {
-                              logic.nickname.value = value;
-                            },
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.only(left: 10.w),
+                                child: Text(
+                                  '昵称',
+                                  style: TextStyle(
+                                    fontSize: 16.w,
+                                    color: "#232535".color,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+
+                              SizedBox(height: 15),
+
+                              Container(
+                                padding: EdgeInsets.only(
+                                  left: 13.w,
+                                  right: 13.w,
+                                  top: 1.w,
+                                  bottom: 1.w,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: logic.nicknameCtrl,
+                                        inputFormatters: [
+                                          LengthLimitingTextInputFormatter(15),
+                                        ],
+                                        decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          focusedBorder: InputBorder.none,
+                                          hintText: '输入昵称',
+                                          hintStyle: TextStyle(
+                                            color: "#848484".color,
+                                            fontSize: 14.w,
+                                          ),
+                                        ),
+                                        style: TextStyle(
+                                          color: "#848484".color,
+                                        ),
+                                        onChanged: (value) {
+                                          logic.nickname.value = value;
+                                        },
+                                      ),
+                                    ),
+                                    ValueListenableBuilder<TextEditingValue>(
+                                      valueListenable: logic.nicknameCtrl,
+                                      builder: (context, value, child) {
+                                        final current =
+                                            value.text.characters.length;
+                                        return Text(
+                                          "$current/15",
+                                          style: TextStyle(
+                                            fontSize: 14.w,
+                                            color: "#848484".color,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
 
                           SizedBox(height: 16.w),
@@ -110,7 +176,7 @@ class PersonInfoPage extends StatelessWidget {
                           ),
                           SizedBox(height: 33.w),
                           Text(
-                            '提示：修改的头像、呢称和个性签名将提交审核，审核\n通过后自动生效。请勿上传违规内容。',
+                            '提示：修改的头像、昵称和个性签名将提交审核，审核\n通过后自动生效。请勿上传违规内容。',
                             style: TextStyle(
                               fontWeight: FontWeight.w500,
                               fontSize: 11.w,
