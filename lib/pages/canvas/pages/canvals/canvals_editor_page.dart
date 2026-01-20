@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/index.dart';
