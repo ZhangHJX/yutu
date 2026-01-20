@@ -183,13 +183,16 @@ class DraftLogic extends GetxController {
         clearSelection();
         refreshUserInfo();
 
+        SmartDialog.dismiss();
         SmartDialog.dismiss(status: SmartStatus.loading);
         showToast('删除成功');
       } else {
+        SmartDialog.dismiss();
         SmartDialog.dismiss(status: SmartStatus.loading);
         showToast('删除失败');
       }
     } catch (e) {
+      SmartDialog.dismiss();
       SmartDialog.dismiss(status: SmartStatus.loading);
       showToast('删除失败');
       debugPrint('删除设计失败: $e');
