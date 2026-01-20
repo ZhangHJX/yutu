@@ -101,9 +101,7 @@ class MiddleLogic extends GetxController {
       );
       if (result.code == 0) {
         // 根据操作类型展示不同文案
-        if (shouldFavorite) {
-          showToast("收藏成功");
-        }
+        showToast(shouldFavorite ? "收藏成功" : "取消收藏成功");
 
         // 更新 isFavorite 状态
         final newFavoriteStatus = shouldFavorite ? 1 : 0;

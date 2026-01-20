@@ -319,9 +319,7 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
       );
 
       if (result.code == 0) {
-        if (shouldFavorite) {
-          showToast("收藏成功");
-        }
+        showToast(shouldFavorite ? "收藏成功" : "取消收藏成功");
 
         // 更新 isFavorite 状态
         final newFavoriteStatus = shouldFavorite ? 1 : 0;
