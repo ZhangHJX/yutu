@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:implicitly_animated_reorderable_list_2/implicitly_animated_reorderable_list_2.dart';
+import 'package:implicitly_animated_reorderable_list_2/transitions.dart';
 import '../../pages/canvals/canvals_controller.dart';
 import '../../utils/gradient_border.dart';
 import '../../model/index.dart';
@@ -93,53 +95,64 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
 
           Expanded(
             child: ClipRect(
-              child: CustomScrollView(
-                slivers: [
-                  SliverReorderableList(
-                    onReorder: (oldIndex, newIndex) {
-                      // 处理边界情况：当拖动到最底部时，newIndex 可能等于 itemCount
-                      // 需要限制在有效范围内
-                      final adjustedNewIndex =
-                          newIndex > widget.layers.length - 1
-                          ? widget.layers.length - 1
-                          : newIndex;
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ImplicitlyAnimatedReorderableList<CanvasElement>(
+                      items: widget.layers.reversed.toList(),
+                      areItemsTheSame: (a, b) => a.id == b.id,
+                      onReorderFinished: (item, from, to, newItems) {
+                        if (widget.layers.isEmpty) return;
 
-                      // 转换为实际数据中的索引（反转）
-                      // 列表显示：顶部(index=0) -> 底部(index=layers.length-1)
-                      // 数据存储：顶部(reversedIndex=0) -> 底部(reversedIndex=layers.length-1)
-                      // 所以：reversedIndex = layers.length - 1 - displayIndex
-                      final reversedOldIndex =
-                          widget.layers.length - 1 - oldIndex;
-                      final reversedNewIndex =
-                          widget.layers.length - 1 - adjustedNewIndex;
+                        final adjustedTo =
+                            to.clamp(0, widget.layers.length - 1);
 
-                      // 边界检查：确保索引有效
-                      if (reversedOldIndex < 0 ||
-                          reversedOldIndex >= widget.layers.length ||
-                          reversedNewIndex < 0 ||
-                          reversedNewIndex >= widget.layers.length) {
-                        return;
-                      }
+                        // 显示列表是反转的，这里将显示索引转换为实际数据索引
+                        final reversedOldIndex =
+                            widget.layers.length - 1 - from;
+                        final reversedNewIndex =
+                            widget.layers.length - 1 - adjustedTo;
 
-                      // 调用回调，传递实际数据中的索引
-                      widget.onLayerReorder(reversedOldIndex, reversedNewIndex);
-                    },
-                    itemBuilder: (context, index) {
-                      // 反转索引，让最上面的图层显示在列表顶部
-                      final reversedIndex = widget.layers.length - 1 - index;
-                      final layer = widget.layers[reversedIndex];
+                        if (reversedOldIndex < 0 ||
+                            reversedOldIndex >= widget.layers.length ||
+                            reversedNewIndex < 0 ||
+                            reversedNewIndex >= widget.layers.length) {
+                          return;
+                        }
 
-                      return _buildLayerItem(
-                        key: ValueKey(layer.id),
-                        layer: layer,
-                        index: reversedIndex,
-                        displayIndex: index,
-                      );
-                    },
-                    itemCount: widget.layers.length,
+                        widget.onLayerReorder(
+                          reversedOldIndex,
+                          reversedNewIndex,
+                        );
+                      },
+                      itemBuilder: (context, itemAnimation, layer, index) {
+                        // 反转索引，让最上面的图层显示在列表顶部
+                        final reversedIndex =
+                            widget.layers.length - 1 - index;
+
+                        return Reorderable(
+                          key: ValueKey(layer.id),
+                          builder: (context, dragAnimation, inDrag) {
+                            return SizeFadeTransition(
+                              animation: itemAnimation,
+                              curve: Curves.easeInOut,
+                              child: Handle(
+                                delay: const Duration(milliseconds: 150),
+                                child: _buildLayerItem(
+                                  key: ValueKey(layer.id),
+                                  layer: layer,
+                                  index: reversedIndex,
+                                  displayIndex: index,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
-                  SliverToBoxAdapter(child: _buildLayerSuper()),
-                  SliverPadding(padding: EdgeInsets.only(bottom: 13.w)),
+                  _buildLayerSuper(),
+                  SizedBox(height: 13.w),
                 ],
               ),
             ),
