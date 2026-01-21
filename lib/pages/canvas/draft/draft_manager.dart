@@ -287,10 +287,4 @@ class DraftManager {
     final draftDir = await _getDraftDirectory();
     await _saveCanvasScreenshot(draftDir);
   }
-
-  /// 获取画布截图
-  Future<Uint8List?> getCurrentCanvals() async {
-    final imageBytes = await _screenshotController?.capture(pixelRatio: 3.0);
-    return imageBytes;
-  }
 }

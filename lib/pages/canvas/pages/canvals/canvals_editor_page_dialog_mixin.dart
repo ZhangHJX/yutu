@@ -255,11 +255,10 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
   }
 
   /// 显示保存模版弹框
-  void showSaveTemplateDialog() async {
-    toggleLayerDialog(false);
-    canvalsController.deselect();
+  void showSaveTemplateDialog(Uint8List? canvalsImage) async {
     SmartDialog.show(
-      builder: (context) => CanvalsSaveTemplateDialog(),
+      builder: (context) =>
+          CanvalsSaveTemplateDialog(canvalsImage: canvalsImage),
       alignment: Alignment.bottomCenter,
       animationType: SmartAnimationType.centerFade_otherSlide,
       animationTime: Duration(milliseconds: 250),

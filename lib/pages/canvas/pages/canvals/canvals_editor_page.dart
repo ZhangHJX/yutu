@@ -320,7 +320,16 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                   onAddText: () {
                     showTextInputDialog(context);
                   },
-                  onSave: showSaveTemplateDialog,
+                  onSave: () async {
+                    toggleLayerDialog(false);
+                    canvalsController.deselect();
+
+                    final canvalsImage = await _screenshotController.capture(
+                      pixelRatio: 3.0,
+                    );
+
+                    showSaveTemplateDialog(canvalsImage);
+                  },
                   onExport: _captureAndSave,
                 ),
               ),
@@ -587,15 +596,14 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
         } else {
           saveLogic = Get.put(SaveLogic(), tag: saveDialog);
         }
+        saveLogic.canvalsImage = await _screenshotController.capture(
+          pixelRatio: 3.0,
+        );
 
+        showLoading("保存中...");
         // 调用保存草稿方法
         await saveLogic.saveAsDraft();
-
-        SmartDialog.dismiss(); // 关闭保存草稿对话框
-
         canvalsController.enableBack();
-
-        Get.back(); // 返回上一页
       });
       return;
     }

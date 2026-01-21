@@ -144,7 +144,7 @@ class AppStockPage extends StatelessWidget {
                     OperationBottomBar(
                       cancelEvent: logic.clearSelection,
                       deleteEvent: logic.deleteSelected,
-                      typeName: "设计",
+                      typeName: "素材",
                     ),
                   if (ScreenTools.bottomBarHeight > 0 &&
                       logic.isBatchMode.value)

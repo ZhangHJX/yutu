@@ -48,13 +48,15 @@ class SaveLogic extends GetxController {
   final suggestedTags = <ScreenItemModel>[].obs;
   final selectedTags = <ScreenItemModel>[].obs;
 
-  final isSaveActiion = false.obs;
+  final isSaveTemplate = false.obs;
 
   /// 是否可以保存画布
   final isCanSave = false.obs;
 
   // 用于监听的工作器
   Worker? _validationWorker;
+
+  Uint8List? canvalsImage;
 
   @override
   void onClose() {
@@ -195,27 +197,30 @@ class SaveLogic extends GetxController {
       return;
     }
 
-    isSaveActiion.value = true;
+    isSaveTemplate.value = true;
+    showLoading("保存中...");
     await zipResourceInDocuments(canvalsModel);
   }
 
   /// 保存为草稿
-  Future<void> saveAsDraft() async {
+  Future<void> saveAsDraft({bool isCanvals = false}) async {
     final canvalsModel = await DraftManager().loadDraft();
     if (canvalsModel == null) {
       showToast('画布信息不存在');
+      SmartDialog.dismiss(status: SmartStatus.loading);
       return;
     }
+    if (!isCanvals) {
+      showLoading("保存中...");
+    }
 
-    isSaveActiion.value = false;
+    isSaveTemplate.value = false;
     await DraftManager().saveCurrentCanvals();
     await zipResourceInDocuments(canvalsModel);
   }
 
   /// 处理压缩包资源
   Future<void> zipResourceInDocuments(CanvasModel model) async {
-    showLoading("保存中...");
-
     try {
       final docsDir = await getApplicationDocumentsDirectory();
       final sourceDir = await DirectoryManager.getDocumentsSubDirectory(
@@ -236,7 +241,7 @@ class SaveLogic extends GetxController {
         includeBaseDirectory: true,
       );
 
-      if (isSaveActiion.value) {
+      if (isSaveTemplate.value) {
         getZipResource(model, zipFile.path);
       } else {
         final int zipBytes = await zipFile.length(); // 压缩包大小（字节）
@@ -268,9 +273,11 @@ class SaveLogic extends GetxController {
       final result = await http.post<UploadOssModel>(
         '/upload/generateUploadUrl',
         data: {
-          "type": isSaveActiion.value ? "design" : 'design_draft',
+          "type": isSaveTemplate.value ? "design" : 'design_draft',
           "file_type": 'zip',
-          "field_type": isSaveActiion.value ? "design_zip" : 'design_draft_zip',
+          "field_type": isSaveTemplate.value
+              ? "design_zip"
+              : 'design_draft_zip',
         },
         converter: UploadOssModel.fromJson,
       );
@@ -330,19 +337,20 @@ class SaveLogic extends GetxController {
       final result = await http.post<UploadOssModel>(
         '/upload/generateUploadUrl',
         data: {
-          "type": isSaveActiion.value ? "design" : "design_draft",
+          "type": isSaveTemplate.value ? "design" : "design_draft",
           "file_type": 'png',
-          "field_type": isSaveActiion.value ? "design_img" : "design_draft_img",
+          "field_type": isSaveTemplate.value
+              ? "design_img"
+              : "design_draft_img",
         },
         converter: UploadOssModel.fromJson,
       );
       if (result.code == 0 && result.data != null) {
-        final canvalsImage = await DraftManager().getCurrentCanvals();
         if (canvalsImage == null) {
           showToast('画布截图失败');
           return;
         }
-        await uploadImageFile(result.data!, canvalsImage, model, zipPath);
+        await uploadImageFile(result.data!, canvalsImage!, model, zipPath);
       } else {
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
@@ -379,7 +387,7 @@ class SaveLogic extends GetxController {
       if (res.isSuccess || (res.code == 200)) {
         imageMemorySize = (bytes.length / 1024).ceil(); // 向上取整
         imageResourceId = ossModel.resourceId;
-        if (isSaveActiion.value) {
+        if (isSaveTemplate.value) {
           await createAndUpdateTemplate(zipPath, model);
         } else {
           await createAndUpdateDraft(zipPath, model);
@@ -508,11 +516,9 @@ class SaveLogic extends GetxController {
         'cavals',
       );
       final idsStr = model.elements.map((e) => e.fontId).toSet().join(',');
-
       if (canvalsLogic.type == PageSource.draft) {
         draftIsCreate.value = false;
       }
-
       var params = {};
       if (draftIsCreate.value) {
         params = {
@@ -545,8 +551,6 @@ class SaveLogic extends GetxController {
         };
       }
 
-      debugPrint("===草稿保存是否成功====$params=====");
-
       final result = await http.post<SaveResponse>(
         draftIsCreate.value ? '/design/draft/store' : '/design/draft/update',
         data: params,
@@ -554,16 +558,16 @@ class SaveLogic extends GetxController {
       );
 
       if (result.code == 0 && result.data != null) {
-        final success = await DraftStoreManager.instance.saveOrUpdateDraft(
-          model,
-          result.data!.id,
-        );
-        if (!success) {
-          debugPrint('===草稿保存或更新失败===');
+        if (draftIsCreate.value) {
+          await DraftStoreManager.instance.saveOrUpdateDraft(
+            model,
+            result.data!.id,
+          );
         } else {
-          debugPrint('===草稿保存或更新成功===');
+          await DraftStoreManager.instance.saveOrUpdateDraft(model, model.id);
         }
 
+        SmartDialog.dismiss(status: SmartStatus.loading);
         showToast("保存成功");
 
         EventBusManager.share.emit(AppEventType.mineRefresh);
@@ -579,8 +583,8 @@ class SaveLogic extends GetxController {
       } else {
         FileManager.deleteFileByPath(filePath);
         debugPrint('草稿保存失败====${result.code}');
+        SmartDialog.dismiss(status: SmartStatus.loading);
       }
-      SmartDialog.dismiss(status: SmartStatus.loading);
     } catch (e) {
       debugPrint('草稿保存失败--$e');
       FileManager.deleteFileByPath(filePath);

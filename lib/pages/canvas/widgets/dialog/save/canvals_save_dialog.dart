@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
@@ -5,7 +6,9 @@ import 'package:voicetemplate/pages/widgets/index.dart';
 import 'save_logic.dart';
 
 class CanvalsSaveTemplateDialog extends StatefulWidget {
-  const CanvalsSaveTemplateDialog({super.key});
+  const CanvalsSaveTemplateDialog({super.key, required this.canvalsImage});
+
+  final Uint8List? canvalsImage;
 
   @override
   State<CanvalsSaveTemplateDialog> createState() =>
@@ -16,6 +19,12 @@ class _CanvalsSaveTemplateDialogState extends State<CanvalsSaveTemplateDialog> {
   final logic = Get.put(SaveLogic(), tag: saveDialog);
   // 用于定位下拉列表的目标组件
   final GlobalKey _scenarioDropdownKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    logic.canvalsImage = widget.canvalsImage;
+  }
 
   @override
   void dispose() {
