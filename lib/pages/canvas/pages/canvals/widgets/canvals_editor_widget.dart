@@ -84,51 +84,10 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     DraftManager().notifyElementsChanged();
   }
 
-  /// 计算适合画布的图片尺寸
-  /// [imageSize] 图片原始尺寸
-  /// [maxWidth] 画布最大宽度
-  /// [maxHeight] 画布最大高度
-  /// 返回缩放后的尺寸，保持宽高比
-  Size _calculateFitSize(Size imageSize, double maxWidth, double maxHeight) {
-    // 设置最大显示尺寸（比如不超过画布的80%）
-    final maxDisplayWidth = maxWidth * 0.8;
-    final maxDisplayHeight = maxHeight * 0.8;
-
-    double width = imageSize.width;
-    double height = imageSize.height;
-
-    // 如果图片太大，按比例缩小
-    if (width > maxDisplayWidth || height > maxDisplayHeight) {
-      final widthRatio = maxDisplayWidth / width;
-      final heightRatio = maxDisplayHeight / height;
-      final ratio = widthRatio < heightRatio ? widthRatio : heightRatio;
-
-      width = width * ratio;
-      height = height * ratio;
-    }
-
-    debugPrint('_calculateFitSize 获取到的尺寸是多少: $width === $height');
-
-    // 设置最小尺寸（比如至少100像素）
-    const minSize = 100.0;
-    if (width < minSize) {
-      final ratio = minSize / width;
-      width = minSize;
-      height = height * ratio;
-    }
-    if (height < minSize) {
-      final ratio = minSize / height;
-      height = height * ratio;
-      width = width * ratio;
-    }
-
-    return Size(width, height);
-  }
-
   Future<void> addShape(ElementType type, Offset center) async {
     String shapeName = '';
-    double boxWidth = 150.w;
-    double boxHeight = 150.w;
+    double boxWidth = 150;
+    double boxHeight = 150;
 
     if (type == ElementType.rectangle) {
       shapeName = '矩形';
@@ -136,14 +95,14 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
     if (type == ElementType.ellipse) {
       shapeName = '椭圆';
-      boxWidth = 150.w;
-      boxHeight = 87.w;
+      boxWidth = 150;
+      boxHeight = 87;
     }
 
     if (type == ElementType.line) {
       shapeName = '线条';
-      boxWidth = 216.w;
-      boxHeight = 20.w;
+      boxWidth = 216;
+      boxHeight = 20;
     }
 
     final newId = _selectionController.generateId();
@@ -184,18 +143,24 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     _selectionController.center = center;
 
     // 根据类型确定宽高
-    double finalWidth = 200.w; // 默认宽度
-    double finalHeight = 200.w; // 默认高度
+    double finalWidth = 200; // 默认宽度
+    double finalHeight = 200; // 默认高度
 
     // 如果是图片类型，根据图片实际尺寸计算
+    final imgW = _selectionController.imageWidth;
+    final imgH = _selectionController.imageHeight;
+
+    final canvalsW = _selectionController.canvalsWidth;
+    final canvalsH = _selectionController.canvalsHeight;
+
     if (type == ElementType.image) {
-      final fitSize = _calculateFitSize(
-        Size(_selectionController.imageWidth, _selectionController.imageHeight),
-        _selectionController.canvalsWidth,
-        _selectionController.canvalsHeight,
-      );
-      finalWidth = fitSize.width;
-      finalHeight = fitSize.height;
+      if (canvalsW > canvalsH) {
+        finalHeight = canvalsH * 0.6;
+        finalWidth = finalHeight * (imgW / imgH);
+      } else {
+        finalWidth = canvalsW * 0.6;
+        finalHeight = finalWidth * (imgH / imgW);
+      }
     } else {
       // 文本类型，使用默认字体属性计算尺寸
       Size textSize = TextMeasureUtil.measureText(

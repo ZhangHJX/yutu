@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:common/common.dart';
 
@@ -129,8 +130,14 @@ class CanvasElement {
 
   /// 用当前 position / rotation / scale 更新 Matrix4 position 为元素左上角；这里构造一个围绕元素中心的变换矩阵
   void updateMatrix4() {
-    final cx = x + width / 2;
-    final cy = y + height / 2;
+    // 使用 .w 做屏幕适配：将逻辑尺寸转换成当前设备的实际像素
+    final scaledX = x.w;
+    final scaledY = y.w;
+    final scaledWidth = width.w;
+    final scaledHeight = height.w;
+
+    final cx = scaledX + scaledWidth / 2;
+    final cy = scaledY + scaledHeight / 2;
 
     transform = Matrix4.identity()
       // 1) 平移到元素中心
@@ -140,19 +147,19 @@ class CanvasElement {
       // 3) 缩放（围绕中心）
       ..scaleByVector3(Vector3(scale, scale, 1))
       // 4) 把原点移回左上角
-      ..translateByVector3(Vector3(-width / 2, -height / 2, 0));
+      ..translateByVector3(Vector3(-scaledWidth / 2, -scaledHeight / 2, 0));
   }
 
-  /// 元素本地坐标系下的矩形（以左上角为原点）
-  Rect get localRect => Rect.fromLTWH(0, 0, width, height);
+  /// 元素本地坐标系下的矩形（以左上角为原点），同样做适配
+  Rect get localRect => Rect.fromLTWH(0, 0, width.w, height.w);
 
   /// 元素本地坐标系下的四个顶点（以左上角为原点） 顺序：TL, TR, BR, BL
   List<Offset> get localCorners => [
     const Offset(0, 0),
-    Offset(width, 0),
-    Offset(width, height),
-    Offset(0, height),
+    Offset(width.w, 0),
+    Offset(width.w, height.w),
+    Offset(0, height.w),
   ];
 
-  Offset get position => Offset(x, y);
+  Offset get position => Offset(x.w, y.w);
 }

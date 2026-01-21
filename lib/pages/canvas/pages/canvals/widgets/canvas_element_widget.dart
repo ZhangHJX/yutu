@@ -1,5 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:voicetemplate/pages/utils/file/index.dart';
 import 'canvas_text_widget.dart';
 import '../../../model/index.dart';
@@ -12,13 +13,15 @@ class CanvasElementWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     data.updateMatrix4();
+    final scaledWidth = data.width.w;
+    final scaledHeight = data.height.w;
     return Transform(
       transform: data.transform,
       alignment:
           Alignment.topLeft, // Matrix 已经把原点移到了元素左上角，这里用 topLeft 避免再次做居中偏移
       child: SizedBox(
-        width: data.width,
-        height: data.height,
+        width: scaledWidth,
+        height: scaledHeight,
         child: data.hidden ? null : _buildContent(),
       ),
     );
@@ -32,17 +35,29 @@ class CanvasElementWidget extends StatelessWidget {
           opacity: data.fileAlpha,
           child: Image.file(
             File(PickerImageManager.loadCanvalsImage(data.filePath)),
-            width: data.width,
-            height: data.height,
+            width: data.width.w,
+            height: data.height.w,
             fit: BoxFit.fill,
           ),
         );
+
+      // debugPrint("==图片的高度是多少？？==${data.width}====${data.height}==");
+
+      // return Opacity(
+      //   opacity: data.fileAlpha,
+      //   child: Container(
+      //     color: Colors.red,
+      //     width: data.width.w,
+      //     height: data.height.w,
+      //   ),
+      // );
+
       case ElementType.rectangle:
         return Opacity(
           opacity: data.fillAlpha,
           child: Container(
-            width: data.width,
-            height: data.height,
+            width: data.width.w,
+            height: data.height.w,
             decoration: BoxDecoration(
               color: data.fillColor.color.withValues(alpha: data.fillAlpha),
               border: Border.all(
@@ -70,8 +85,8 @@ class CanvasElementWidget extends StatelessWidget {
         return Opacity(
           opacity: data.fillAlpha,
           child: Container(
-            width: data.width,
-            height: data.height,
+            width: data.width.w,
+            height: data.height.w,
             decoration: BoxDecoration(
               color: data.fillColor.color,
               border: Border.all(
@@ -101,8 +116,8 @@ class CanvasElementWidget extends StatelessWidget {
           child: Opacity(
             opacity: data.fillAlpha,
             child: Container(
-              width: data.width,
-              height: data.height - 18.5.w,
+              width: data.width.w,
+              height: data.height.w - 18.5.w,
               decoration: BoxDecoration(
                 color: data.fillColor.color,
                 border: Border.all(
@@ -127,8 +142,8 @@ class CanvasElementWidget extends StatelessWidget {
         );
       case ElementType.text:
         return Container(
-          width: data.width,
-          height: data.height,
+          width: data.width.w,
+          height: data.height.w,
           color: Colors.transparent,
           alignment: Alignment.topLeft,
           child: CanvasTextWidget(
