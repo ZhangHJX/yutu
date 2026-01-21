@@ -151,9 +151,10 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
       builder: (context) => ImagePropertyDialog(
         currentContext,
         element: activeElement,
-        onImageSelected: (String imagePath, double? width, double? height) {
+        replaceImage: () {
           // 将图片添加到画布
-          replaceImage(currentContext, imagePath);
+          debugPrint("=====图片添加到画布=====");
+          // replaceImage(currentContext, imagePath);
         },
         onValueChanged: (update) {
           setState(() {}); // 触发界面重绘
