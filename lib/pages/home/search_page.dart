@@ -36,6 +36,12 @@ class SearchPage extends StatelessWidget {
                   logic.searchText.value = '';
                   logic.onRefresh();
                 },
+                onChanged: (value) {
+                  if (value.isEmpty) {
+                    FocusManager.instance.primaryFocus?.unfocus(); // 收起键盘
+                    logic.searchText.value = '';
+                  }
+                },
               ),
 
               Obx(() {

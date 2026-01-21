@@ -5,6 +5,7 @@ import '../../stores/global.dart';
 import '../model/common_model.dart';
 import 'dart:async';
 import '../utils/app_info/app_info_utils.dart';
+import '../widgets/index.dart';
 
 class MineLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
@@ -109,7 +110,26 @@ class MineLogic extends GetxController {
   void goToAppInfo() => Get.toNamed(AppRoutes.appInfoPage);
 
   /// 退出登录
-  void logout() => global.logout();
+  void logout() => favoriteEventDialog();
+
+  /// 取消收藏事件
+  void favoriteEventDialog() {
+    SmartDialog.show(
+      builder: (context) => ConfirmPopWidget(
+        title: "温馨提示",
+        subTitle: "是否确认退出登录?",
+        sureAction: () => global.logout(),
+        marginTop: 46,
+      ),
+      alignment: Alignment.center,
+      animationType: SmartAnimationType.centerFade_otherSlide,
+      animationTime: Duration(milliseconds: 250),
+      maskColor: "#000000".color.withValues(alpha: 0.5),
+      clickMaskDismiss: false,
+      useAnimation: true,
+      usePenetrate: false,
+    );
+  }
 
   /// 常用工具事件
   void _showComingSoon(String title) {
@@ -125,7 +145,6 @@ class MineLogic extends GetxController {
   Future<void> updatePersonInfo() async {
     debugPrint("===updatePersonInfo===哈好啊哈哈啊好好=======");
 
-    // 调接口刷新
     await global.fetchUserInfo();
     loadDesignList();
   }

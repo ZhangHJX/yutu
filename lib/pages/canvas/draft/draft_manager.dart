@@ -287,4 +287,8 @@ class DraftManager {
     final draftDir = await _getDraftDirectory();
     await _saveCanvasScreenshot(draftDir);
   }
+
+  Future<void> saveNoElementCanvals() async {
+    await _saveDraft();
+  }
 }

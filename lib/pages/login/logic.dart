@@ -10,6 +10,8 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
   /// 全局应用
   final globalLogic = Get.find<GlobalLogic>();
 
+  final String? source = Get.arguments is String ? Get.arguments : null;
+
   // 输入内容
   final phone = ''.obs;
   final code = ''.obs;
@@ -119,11 +121,15 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
         data: {'mobile': phone.value, 'password': password.value},
         converter: LoginResponse.fromJson,
         withToken: false,
-        // showErrorToast: true,
       );
       if (result.code == 0) {
         globalLogic.accessToken.value = result.data?.token ?? '';
         await globalLogic.fetchUserInfo();
+
+        if (source != null && source!.isNotEmpty) {
+          EventBusManager.share.emit<String>(AppEventType.login, data: source);
+        }
+
         Get.back();
       }
       // 返回上一个页面
@@ -145,6 +151,11 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
       if (result.code == 0) {
         globalLogic.accessToken.value = result.data?.token ?? '';
         await globalLogic.fetchUserInfo();
+
+        if (source != null && source!.isNotEmpty) {
+          EventBusManager.share.emit<String>(AppEventType.login, data: source);
+        }
+
         Get.back();
       }
     } catch (e) {

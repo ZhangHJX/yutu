@@ -190,37 +190,29 @@ class SaveLogic extends GetxController {
     if (!isCanSave.value) {
       return;
     }
-
-    final canvalsModel = await DraftManager().loadDraft();
-    if (canvalsModel == null) {
-      showToast('画布信息不存在');
-      return;
-    }
-
     isSaveTemplate.value = true;
     showLoading("保存中...");
-    await zipResourceInDocuments(canvalsModel);
+    await zipResourceInDocuments();
   }
 
   /// 保存为草稿
   Future<void> saveAsDraft({bool isCanvals = false}) async {
-    final canvalsModel = await DraftManager().loadDraft();
-    if (canvalsModel == null) {
-      showToast('画布信息不存在');
-      SmartDialog.dismiss(status: SmartStatus.loading);
-      return;
-    }
     if (!isCanvals) {
       showLoading("保存中...");
     }
-
     isSaveTemplate.value = false;
     await DraftManager().saveCurrentCanvals();
-    await zipResourceInDocuments(canvalsModel);
+    await zipResourceInDocuments();
   }
 
   /// 处理压缩包资源
-  Future<void> zipResourceInDocuments(CanvasModel model) async {
+  Future<void> zipResourceInDocuments() async {
+    CanvasModel? model = await DraftManager().loadDraft();
+    if (model == null) {
+      await DraftManager().saveNoElementCanvals();
+      model = await DraftManager().loadDraft();
+    }
+
     try {
       final docsDir = await getApplicationDocumentsDirectory();
       final sourceDir = await DirectoryManager.getDocumentsSubDirectory(
@@ -242,7 +234,7 @@ class SaveLogic extends GetxController {
       );
 
       if (isSaveTemplate.value) {
-        getZipResource(model, zipFile.path);
+        getZipResource(model!, zipFile.path);
       } else {
         final int zipBytes = await zipFile.length(); // 压缩包大小（字节）
         final double zipKB = zipBytes / 1024;
@@ -258,7 +250,7 @@ class SaveLogic extends GetxController {
           SmartDialog.dismiss();
           showDraftMemoryDialog();
         } else {
-          getZipResource(model, zipFile.path);
+          getZipResource(model!, zipFile.path);
         }
       }
     } catch (e, st) {

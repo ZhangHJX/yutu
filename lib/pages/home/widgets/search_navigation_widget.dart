@@ -7,11 +7,13 @@ class SearchNavigationWidget extends StatefulWidget {
     this.onSearch,
     this.onClear,
     this.controller,
+    required this.onChanged,
   });
 
   final Function(String)? onSearch;
   final TextEditingController? controller;
   final VoidCallback? onClear;
+  final Function(String) onChanged;
 
   @override
   State<SearchNavigationWidget> createState() => _SearchNavigationWidgetState();
@@ -132,6 +134,7 @@ class _SearchNavigationWidgetState extends State<SearchNavigationWidget> {
                         style: TextStyle(fontSize: 12.w, color: Colors.black),
                         onSubmitted: (value) => _handleSearch(),
                         onChanged: (value) {
+                          widget.onChanged.call(value);
                           if (_isSearching) {
                             setState(() {
                               _isSearching = !_isSearching;

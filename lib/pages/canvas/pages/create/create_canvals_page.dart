@@ -7,6 +7,7 @@ import '../../model/index.dart';
 import 'package:uuid/uuid.dart';
 import 'package:voicetemplate/core/index.dart';
 import 'max_value_formatter.dart';
+import 'package:voicetemplate/stores/global.dart';
 
 class CreateCanvalsPage extends StatefulWidget {
   const CreateCanvalsPage({super.key});
@@ -23,6 +24,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
   final TextEditingController _heightController = TextEditingController();
   late AnimationController _animationController;
   late Animation<double> _heightAnimation;
+
+  final global = Get.find<GlobalLogic>();
 
   // 预设比例数据
   final List<Map<String, dynamic>> _aspectRatios = [

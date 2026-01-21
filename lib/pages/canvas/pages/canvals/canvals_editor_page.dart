@@ -1,5 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+
 import '../../widgets/index.dart';
 import 'widgets/canvals_editor_widget.dart';
 import 'canvals_controller.dart';
@@ -14,6 +15,7 @@ import 'canvals_editor_page_dialog_mixin.dart';
 import '../../draft/index.dart';
 import '../../widgets/dialog/save/save_logic.dart';
 import 'package:voicetemplate/pages/canvas/fonts/font_manager.dart';
+import 'package:voicetemplate/pages/canvas/utils/index.dart';
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -43,6 +45,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
 
   @override
   void toggleLayerDialog(bool isLayer) => _toggleLayerDialog(isLayer);
+
+  final throttler = Throttler(interval: const Duration(milliseconds: 2000));
 
   @override
   void initState() {
@@ -76,6 +80,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   @override
   void dispose() {
     // 停止自动保存并保存最后一次
+    throttler.dispose();
     DraftManager().stopAutoSave();
     super.dispose();
   }
@@ -320,15 +325,17 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                   onAddText: () {
                     showTextInputDialog(context);
                   },
-                  onSave: () async {
-                    toggleLayerDialog(false);
-                    canvalsController.deselect();
+                  onSave: () {
+                    throttler(() async {
+                      toggleLayerDialog(false);
+                      canvalsController.deselect();
 
-                    final canvalsImage = await _screenshotController.capture(
-                      pixelRatio: 3.0,
-                    );
+                      final canvalsImage = await _screenshotController.capture(
+                        pixelRatio: 3.0,
+                      );
 
-                    showSaveTemplateDialog(canvalsImage);
+                      showSaveTemplateDialog(canvalsImage);
+                    });
                   },
                   onExport: _captureAndSave,
                 ),
@@ -427,6 +434,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
     final res = await PermissionUtil.requestPhotoAlbumPermission();
     if (res) {
       try {
+        showLoading("导出中...");
         final imageBytes = await _screenshotController.capture(pixelRatio: 3.0);
         if (imageBytes != null) {
           final result = await ImageGallerySaverPlus.saveImage(
@@ -435,12 +443,17 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
             name: "canvas_${DateTime.now().millisecondsSinceEpoch}",
           );
           if (result['isSuccess']) {
-            showToast('图片已保存到相册');
+            Future.delayed(const Duration(seconds: 2), () {
+              SmartDialog.dismiss(status: SmartStatus.loading);
+              showToast('图片已保存到相册');
+            });
             return;
           }
         }
+        SmartDialog.dismiss(status: SmartStatus.loading);
         showToast('保存失败');
       } catch (e) {
+        SmartDialog.dismiss(status: SmartStatus.loading);
         showToast('保存失败');
       }
     } else {

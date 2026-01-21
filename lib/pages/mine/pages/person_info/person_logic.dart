@@ -218,11 +218,19 @@ class PersonLogic extends GetxController {
     try {
       final result = await http.post('/user/edit', data: data);
       if (result.code == 0) {
-        global.updateUserInfo(
-          nickname: nickname.value,
-          sign: signature.value,
-          avatar: fileAvarPath,
-        );
+        if (fileAvarPath.isNotEmpty) {
+          global.updateUserInfo(
+            nickname: nickname.value,
+            sign: signature.value,
+            avatar: fileAvarPath,
+          );
+        } else {
+          global.updateUserInfo(
+            nickname: nickname.value,
+            sign: signature.value,
+          );
+        }
+
         SmartDialog.dismiss(status: SmartStatus.loading);
         showToast("修改成功");
         Get.back();

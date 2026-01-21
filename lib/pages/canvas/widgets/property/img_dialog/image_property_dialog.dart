@@ -1,9 +1,12 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../widgets/slider_input_field.dart';
 import '../../../model/index.dart';
 import 'img_logic.dart';
+import '../../../pages/canvals/canvals_controller.dart';
+import 'package:voicetemplate/pages/widgets/index.dart';
 
 class ImagePropertyDialog extends StatefulWidget {
   final CanvasElement? element;
@@ -35,6 +38,8 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
   double? _imageHeight;
   double _imageAlpha = 1.0;
 
+  late CanvalsController _controller;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +50,7 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
       }
       SmartDialog.dismiss();
     };
+    _controller = Get.find<CanvalsController>();
   }
 
   void _initializeFromModel() {
@@ -189,13 +195,22 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
                                 child: TextField(
                                   controller: _widthController,
                                   keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    RangeIntFormatter(
+                                      min: 0,
+                                      max: (_controller.canvasModel.width * 2)
+                                          .toInt(),
+                                    ),
+                                  ],
                                   onChanged: (value) {
                                     final width = double.tryParse(value);
+                                    debugPrint("==哈哈哈哈===$width====");
                                     setState(() {
                                       _imageWidth = width;
                                       _updateModel();
                                     });
                                   },
+
                                   decoration: InputDecoration(
                                     hintText: '如:200',
                                     hintStyle: TextStyle(
@@ -261,6 +276,13 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
                                 child: TextField(
                                   controller: _heightController,
                                   keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    RangeIntFormatter(
+                                      min: 0,
+                                      max: (_controller.canvasModel.height * 2)
+                                          .toInt(),
+                                    ),
+                                  ],
                                   onChanged: (value) {
                                     final height = double.tryParse(value);
                                     setState(() {

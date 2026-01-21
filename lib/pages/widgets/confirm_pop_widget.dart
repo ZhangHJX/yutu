@@ -10,6 +10,8 @@ class ConfirmPopWidget extends StatelessWidget {
   final VoidCallback? sureAction;
   final VoidCallback? cancelAction;
 
+  final int marginTop;
+
   const ConfirmPopWidget({
     super.key,
     required this.title,
@@ -19,6 +21,7 @@ class ConfirmPopWidget extends StatelessWidget {
     this.cancelAction,
     this.sureTitle = "确定",
     this.cancelTitle = "取消",
+    this.marginTop = 29,
   });
 
   @override
@@ -45,7 +48,7 @@ class ConfirmPopWidget extends StatelessWidget {
           ),
 
           Padding(
-            padding: EdgeInsets.only(top: 29.w),
+            padding: EdgeInsets.only(top: marginTop.w),
             child: _buildSubTitle(),
           ),
 

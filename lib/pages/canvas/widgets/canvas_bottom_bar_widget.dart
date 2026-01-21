@@ -1,6 +1,5 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-// import 'dart:math';
 
 /// 画布底部工具栏
 class CanvasBottomBar extends StatelessWidget {
@@ -10,8 +9,6 @@ class CanvasBottomBar extends StatelessWidget {
   final VoidCallback onAddText;
   final VoidCallback onSave;
   final VoidCallback onExport;
-
-  // final _rnd = Random();
 
   const CanvasBottomBar({
     super.key,
@@ -107,13 +104,4 @@ class CanvasBottomBar extends StatelessWidget {
       onPressed: onTap,
     );
   }
-
-  // Color randomColor({double alpha = 1}) {
-  //   return Color.fromARGB(
-  //     (alpha * 255).round(),
-  //     _rnd.nextInt(256),
-  //     _rnd.nextInt(256),
-  //     _rnd.nextInt(256),
-  //   );
-  // }
 }

@@ -23,6 +23,13 @@ class MainLogic extends GetxController {
     addLocationAssets();
     loadPage(global.tabIndex.value);
     global.tabIndex.listen(changeTabIndex);
+
+    EventBusManager.share.listenAll((e) {
+      debugPrint("=========登录进来了吗=========");
+      if (e.type == AppEventType.login && e.data == "middle") {
+        clickCenterBtn();
+      }
+    });
   }
 
   void addLocationAssets() {
@@ -53,7 +60,6 @@ class MainLogic extends GetxController {
     if (index == 1) {
       _onMinePageEnter();
     }
-
     if (pages[index] == null) {
       loadPage(index);
     }
@@ -82,7 +88,7 @@ class MainLogic extends GetxController {
 
   void clickCenterBtn() {
     if (!global.isLogin) {
-      Get.toNamed(AppRoutes.appLogin);
+      Get.toNamed(AppRoutes.appLogin, arguments: "middle");
       return;
     }
 
