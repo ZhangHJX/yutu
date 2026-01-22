@@ -73,11 +73,11 @@ class CanvasModel {
   Map<String, dynamic> toJson() => _$CanvasModelToJson(this);
 
   /// 根据视口偏移和缩放更新画布变换；注意：这里是“设值”，不是在原有矩阵上叠加，否则每一帧都会累乘，导致拖动/缩放越来越失控
-  void updateMatrix4(Matrix4 matrix, double scale, Offset offset) {
+  void updateMatrix4(Matrix4 matrix, double canvalScale, Offset offset) {
     transform = matrix;
     x = offset.dx;
     y = offset.dy;
-    scale = scale;
+    scale = canvalScale;
   }
 
   void getMatrix4() {

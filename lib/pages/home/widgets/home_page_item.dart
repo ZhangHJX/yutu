@@ -17,9 +17,13 @@ class HomePageItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String canvasSize = "1:1";
+    if (model != null && model!.canvasSize.isNotEmpty) {
+      canvasSize = model!.canvasSize;
+    }
     final imageH = calculateAspectRatio(
       (ScreenTools.screenWidth - 30.w - 9.w) / 2,
-      model?.canvasSize ?? '1:1',
+      canvasSize,
     );
 
     return GestureDetector(

@@ -161,28 +161,6 @@ class CanvasStatusManager {
     // 应用缩放到当前矩阵
     matrix = matrix.multiplied(scaleTransform);
 
-    // 调整平移以保持双指中心在屏幕上不动
-    // 计算缩放后基准点的屏幕位置
-    final scaledFocalScreen = matrix.transform3(
-      Vector3(_scaleStartFocalPoint!.dx, _scaleStartFocalPoint!.dy, 0),
-    );
-
-    // 计算需要补偿的平移
-    final compensation =
-        focalScreen - Offset(scaledFocalScreen.x, scaledFocalScreen.y);
-
-    // 限制补偿范围，避免浮点误差导致的大幅跳跃
-    final maxCompensation = 30.0; // 最大补偿 30 像素
-    final clampedCompensation = Offset(
-      compensation.dx.clamp(-maxCompensation, maxCompensation),
-      compensation.dy.clamp(-maxCompensation, maxCompensation),
-    );
-
-    // 添加补偿平移
-    matrix.translateByVector3(
-      Vector3(clampedCompensation.dx, clampedCompensation.dy, 0),
-    );
-
     // 更新起始距离为当前距离
     _scaleStartDistance = nowDistance;
     return true;
