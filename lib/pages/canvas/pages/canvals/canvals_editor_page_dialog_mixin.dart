@@ -152,9 +152,8 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
         currentContext,
         element: activeElement,
         replaceImage: () {
-          // 将图片添加到画布
-          debugPrint("=====图片添加到画布=====");
-          // replaceImage(currentContext, imagePath);
+          SmartDialog.dismiss();
+          addImageDialog(currentContext, isFromReplace: true);
         },
         onValueChanged: (update) {
           setState(() {}); // 触发界面重绘
@@ -205,21 +204,28 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
   }
 
   // 增加图片
-  void addImageDialog(BuildContext canvalsContext) async {
+  void addImageDialog(
+    BuildContext canvalsContext, {
+    bool isFromReplace = false,
+  }) async {
     toggleLayerDialog(false);
 
     SmartDialog.show(
       builder: (context) => CanvalsImageDialog(
         canvalsContext,
         onImageSelected: (String imagePath, double? width, double? height) {
-          // 将图片添加到画布
-          final canvalsController = Get.find<CanvalsController>();
-          canvalsController.addNewImage(
-            imagePath,
-            width ?? 200.0,
-            height ?? 200.0,
-            targetCenter: getCanvasCenter(),
-          );
+          if (isFromReplace) {
+            replaceImage(context, imagePath);
+          } else {
+            // 将图片添加到画布
+            final canvalsController = Get.find<CanvalsController>();
+            canvalsController.addNewImage(
+              imagePath,
+              width ?? 200.0,
+              height ?? 200.0,
+              targetCenter: getCanvasCenter(),
+            );
+          }
         },
       ),
       alignment: Alignment.bottomCenter,

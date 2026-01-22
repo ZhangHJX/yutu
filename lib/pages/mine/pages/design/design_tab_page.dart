@@ -48,17 +48,16 @@ class DesignTabPage extends StatelessWidget {
           onLoading: () async {
             await logic.onLoad();
           },
-          child: MasonryGridView.count(
-            crossAxisCount: 2,
+          child: MasonryGridView.builder(
+            gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+            ),
             mainAxisSpacing: 12.w,
             crossAxisSpacing: 9.w,
-            physics: const ClampingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
+            itemCount: designList.length,
             padding: EdgeInsetsDirectional.only(
               bottom: ScreenTools.bottomBarHeight,
             ),
-            itemCount: designList.length,
             itemBuilder: (context, index) {
               final item = designList[index];
               // 使用独立的响应式组件，避免在 itemBuilder 中嵌套 Obx
@@ -100,6 +99,10 @@ class _DesignItemWidget extends StatelessWidget {
           }
         },
         favoriteCallBack: () {
+          if (!logic.global.isLogin) {
+            Get.toNamed(AppRoutes.appLogin);
+            return;
+          }
           if (item.isFavorite == 1) {
             logic.favoriteEventDialog(item.id);
           } else {

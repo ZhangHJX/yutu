@@ -85,8 +85,7 @@ class AppStockPage extends StatelessWidget {
                   child: SmartRefresher(
                     key: logic.refresherKey,
                     controller: logic.refreshController,
-                    enablePullDown: true,
-                    enablePullUp: logic.hasMore.value,
+                    enablePullUp: true,
                     header: ClassicHeader(),
                     footer: ClassicFooter(
                       loadStyle: LoadStyle.ShowWhenLoading,

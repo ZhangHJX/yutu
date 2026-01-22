@@ -2,8 +2,11 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/pages/model/index.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
+import 'package:voicetemplate/stores/global.dart';
 
 class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
+  final global = Get.find<GlobalLogic>();
+
   /// 头部的tab
   final screenList = <ScreenItemModel>[].obs;
   // 当前选中的 tab 索引

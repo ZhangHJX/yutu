@@ -16,6 +16,7 @@ class SearchPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: '#F7F7F7'.color,
       body: SafeArea(
+        bottom: false,
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(

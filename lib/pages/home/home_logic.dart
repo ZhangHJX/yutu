@@ -28,8 +28,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   /// 是否显示顶部导航中的 Tab（用于与中间 Tab 联动）
   final RxBool showTopTab = false.obs;
 
-  // 每个 tab 的数据状态（使用 tagId 作为 key，0 表示全部）
-  final RxMap<int, TabDataState> tabDataMap = <int, TabDataState>{}.obs;
+  final tabList = <CommonItemModel>[].obs;
 
   // Tab 索引
   final selectedTabIndex = 0.obs;
@@ -41,10 +40,10 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   final isLocal = true.obs;
 
   /// 获取当前 tab 是否还有更多数据
-  RxBool get hasMore {
-    final tagId = _getCurrentTagId();
-    return tabDataMap[tagId]?.hasMore ?? true.obs;
-  }
+  // RxBool get hasMore {
+  //   final tagId = _getCurrentTagId();
+  //   return tabDataMap[tagId]?.hasMore ?? true.obs;
+  // }
 
   GlobalKey refresherKey = GlobalKey();
   RefreshController refreshController = RefreshController(
@@ -63,17 +62,24 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   }
 
   /// 获取或创建 tab 数据状态
-  TabDataState _getOrCreateTabData(int tagId) {
-    if (!tabDataMap.containsKey(tagId)) {
-      tabDataMap[tagId] = TabDataState();
-    }
-    return tabDataMap[tagId]!;
-  }
+  // HomeTabDataState _getOrCreateTabData(int tagId) {
+  //   if (!tabDataMap.containsKey(tagId)) {
+  //     tabDataMap[tagId] = HomeTabDataState();
+  //   }
+  //   return tabDataMap[tagId]!;
+  // }
 
   Worker? _countWorker;
 
   /// 网络状态监听
   final connectivityService = ConnectivityService();
+
+  /// 当前页码
+  int currentPage = 1;
+
+  /// 是否正在加载/更多数据
+  bool isLoading = false;
+  bool hasMore = true;
 
   @override
   void onReady() {
@@ -84,11 +90,8 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   @override
   void onClose() {
-    // 释放所有 tab 的 RefreshController
-    for (var tabData in tabDataMap.values) {
-      tabData.refreshController.dispose();
-    }
-    tabDataMap.clear();
+    // HomeTabDataState 没有 refreshController，不需要释放
+    // tabDataMap.clear();
     // 释放 TabController
     tabController.value?.dispose();
     tabController.value = null;
@@ -136,68 +139,57 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   }
 
   Future<void> loadHomeData({bool refresh = false}) async {
+    if (isLoading) {
+      return;
+    }
+    isLoading = true;
     try {
       final result = await http.get(
         '/homePage/index',
         converter: HomeModel.fromJson,
       );
       if (result.code == 0 && result.data != null) {
-        // 释放旧的 RefreshController 后再清除
-        for (var tabData in tabDataMap.values) {
-          tabData.refreshController.dispose();
-        }
-        tabDataMap.clear();
+        // HomeTabDataState 没有 refreshController，直接清除
+        tabList.clear();
+
+        currentPage = 1;
 
         recommendList.value = result.data!.recommendList;
         tagList.value = result.data!.tagList;
 
-        // 根据 isSelect 字段找到应该选中的 tab 索引
-        int selectedIndex = 0;
-
         // 初始化每个 tag 的数据到 tabDataMap
-        for (var index = 0; index < tagList.length; index++) {
-          final tag = tagList[index];
-          final tabData = _getOrCreateTabData(tag.id);
-          if (tag.list.isNotEmpty) {
-            // 如果 tag 的 list 不为空，初始化数据
-            tabData.dataList.value = tag.list;
-            tabData.isInitialized = true;
-            tabData.currentPage = 1;
-            tabData.hasMore.value = true;
-          }
+        final index = tagList.indexWhere((e) => e.isSelect == 1);
+        final tabData = index == -1 ? null : tagList[index];
 
-          // 根据后台的 isSelect 标识设置选中的 tab
-          if (tag.isSelect == 1) {
-            selectedIndex = index;
-          }
+        if (tabData != null && tabData.list.isNotEmpty) {
+          selectedTabIndex.value = index;
+          tabList.value = tabData.list;
+          hasMore = true;
+        } else {
+          hasMore = false;
         }
-
-        // 设置选中的 tab 索引
-        selectedTabIndex.value = selectedIndex;
-
         // 创建或更新 TabController
         _createOrUpdateTabController();
-        if (selectedIndex != 0) {
-          loadSceneList(refresh: true);
-        }
       }
-
+      debugPrint("==下拉刷新数据===$refresh=====$hasMore=");
+      isLoading = false;
       if (refresh) {
+        refreshController.resetNoData();
         refreshController.refreshCompleted();
       } else {
-        if (hasMore.value) {
+        if (hasMore) {
           refreshController.loadComplete();
         } else {
           refreshController.loadNoData();
         }
       }
     } catch (e) {
+      isLoading = false;
       if (refresh) {
-        refreshController.refreshFailed();
+        refreshController.refreshCompleted();
       } else {
-        refreshController.loadFailed();
+        refreshController.loadComplete();
       }
-      debugPrint('获取首页数据失败: $e');
     }
   }
 
@@ -246,13 +238,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     }
     // 更新选中索引
     selectedTabIndex.value = index;
-
-    // 切换 tab 时，如果该 tab 未初始化，则加载数据
-    final tagId = _getCurrentTagId();
-    final tabData = _getOrCreateTabData(tagId);
-    if (!tabData.isInitialized) {
-      loadSceneList(refresh: true);
-    }
+    loadSceneList(refresh: true);
   }
 
   /// 下拉刷新
@@ -269,59 +255,59 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   Future<void> loadSceneList({bool refresh = false}) async {
     // 确定要加载的 tagId
     final targetTagId = _getCurrentTagId();
-    final tabData = _getOrCreateTabData(targetTagId);
-    if (tabData.isLoading.value) {
+    if (refresh) {
+      currentPage = 1;
+    } else {
+      currentPage += 1;
+    }
+    if (isLoading) {
       return;
     }
-    if (refresh) {
-      tabData.currentPage = 1;
-    }
-    tabData.isLoading.value = true;
+    isLoading = true;
     try {
       final result = await http.get(
         '/homePage/tag-index',
         query: {
-          'page': '${tabData.currentPage}',
+          'page': '$currentPage',
           'limit': globalPageSize,
           'tag_id': targetTagId,
         },
       );
       if (result.code == 0 && result.data != null) {
         final listModel = CommonModel.fromJson(result.data);
-        // 更新当前 tag 的数据列表（响应式）
-        if (tabData.currentPage == 1) {
-          tabData.dataList.clear();
+        if (currentPage == 1) {
+          tabList.clear();
         }
-
         // 追加到列表数据后面
         if (listModel.items.isNotEmpty) {
-          tabData.dataList.addAll(listModel.items);
-          tabData.currentPage++;
-          tabData.hasMore.value = true;
+          tabList.addAll(listModel.items);
+          currentPage++;
+          hasMore = true;
         } else {
-          tabData.hasMore.value = false;
+          hasMore = false;
         }
-        tabData.isInitialized = true;
       }
-      // 更新刷新控制器状态 - 使用当前 tab 的 refreshController
+      isLoading = false;
+      // 更新刷新控制器状态 - 使用全局的 refreshController
       if (refresh) {
-        tabData.refreshController.refreshCompleted();
+        refreshController.resetNoData();
+        refreshController.refreshCompleted();
       } else {
-        if (hasMore.value) {
-          tabData.refreshController.loadComplete();
+        if (hasMore) {
+          refreshController.loadComplete();
         } else {
-          tabData.refreshController.loadNoData();
+          refreshController.loadNoData();
         }
       }
-      tabData.isLoading.value = false;
+      isLoading = false;
     } catch (e) {
-      tabData.isLoading.value = false;
+      isLoading = false;
       debugPrint('列表数据请求错误: $e');
-      // 处理错误状态 - 使用当前 tab 的 refreshController
+      // 处理错误状态 - 使用全局的 refreshController
       if (refresh) {
-        tabData.refreshController.refreshFailed();
+        refreshController.refreshCompleted();
       } else {
-        tabData.refreshController.loadFailed();
+        refreshController.loadComplete();
       }
     }
   }
@@ -336,60 +322,18 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         data: {"link_id": '$itemId'},
         showErrorToast: false,
       );
-
       if (result.code == 0) {
         showToast(shouldFavorite ? "收藏成功" : "取消收藏成功");
-
-        // 更新 isFavorite 状态
-        final newFavoriteStatus = shouldFavorite ? 1 : 0;
-
-        // 更新 recommendList 中的 item
-        final recommendIndex = recommendList.indexWhere(
-          (item) => item.id == itemId,
-        );
-        if (recommendIndex != -1) {
-          final oldItem = recommendList[recommendIndex];
-          recommendList[recommendIndex] = oldItem.copyWith(
-            isFavorite: newFavoriteStatus,
+        // 更新 tabDataMap 中每个 HomeTabDataState 的 dataList 中的 item
+        final index = tabList.indexWhere((item) => item.id == itemId);
+        final data = index == -1 ? null : tabList[index];
+        if (data != null) {
+          final favoriteTotal =
+              (data.favoriteTotal) + (shouldFavorite ? 1 : -1);
+          tabList[index] = data.copyWith(
+            isFavorite: shouldFavorite ? 1 : 0,
+            favoriteTotal: favoriteTotal,
           );
-        }
-
-        // 更新 tagList 中每个 TagModel 的 list 中的 item
-        final updatedTagList = <TagModel>[];
-        for (var tag in tagList) {
-          final tagIndex = tag.list.indexWhere((item) => item.id == itemId);
-          if (tagIndex != -1) {
-            final updatedList = List<CommonItemModel>.from(tag.list);
-            final oldItem = updatedList[tagIndex];
-            final favoriteTotal =
-                (oldItem.favoriteTotal) + (shouldFavorite ? 1 : -1);
-            updatedList[tagIndex] = oldItem.copyWith(
-              isFavorite: newFavoriteStatus,
-              favoriteTotal: favoriteTotal,
-            );
-            updatedTagList.add(tag.copyWith(list: updatedList));
-          } else {
-            updatedTagList.add(tag);
-          }
-        }
-        if (updatedTagList.isNotEmpty) {
-          tagList.value = updatedTagList;
-        }
-
-        // 更新 tabDataMap 中每个 TabDataState 的 dataList 中的 item
-        for (var tabData in tabDataMap.values) {
-          final dataIndex = tabData.dataList.indexWhere(
-            (item) => item.id == itemId,
-          );
-          if (dataIndex != -1) {
-            final oldItem = tabData.dataList[dataIndex];
-            final favoriteTotal =
-                (oldItem.favoriteTotal) + (shouldFavorite ? 1 : -1);
-            tabData.dataList[dataIndex] = oldItem.copyWith(
-              isFavorite: newFavoriteStatus,
-              favoriteTotal: favoriteTotal,
-            );
-          }
         }
       }
     } catch (e) {

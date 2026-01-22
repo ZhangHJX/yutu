@@ -73,18 +73,15 @@ class MyApp extends StatelessWidget {
       child: RefreshConfiguration(
         footerTriggerDistance: 15,
         headerBuilder: () => const ClassicHeader(),
-        footerBuilder: () => const ClassicFooter(),
-
-        hideFooterWhenNotFull: true,
+        footerBuilder: () => const ClassicFooter(noDataText: '没有更多数据了'),
         springDescription: SpringDescription(
           mass: 1,
           stiffness: 100,
           damping: 20,
         ),
-        maxOverScrollExtent: 100,
-        maxUnderScrollExtent: 0,
+        // maxOverScrollExtent: 100,
+        // maxUnderScrollExtent: 0,
         enableScrollWhenRefreshCompleted: true,
-
         child: GetMaterialApp(
           unknownRoute: unknownRoute,
           title: '语图',

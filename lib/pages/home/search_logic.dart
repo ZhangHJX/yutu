@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'model/home_model.dart';
 import '../model/index.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
+import '../../stores/global.dart';
 
 class SearchLogic extends GetxController with GetTickerProviderStateMixin {
+  final global = Get.find<GlobalLogic>();
+
   /// 顶部tab数据
   final RxBool tabIsLoading = false.obs;
 
@@ -232,6 +235,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
       }
       // 更新刷新控制器状态 - 使用当前 tab 的 refreshController
       if (refresh) {
+        tabData.refreshController.resetNoData();
         tabData.refreshController.refreshCompleted();
       } else {
         if (hasMore.value) {

@@ -97,21 +97,12 @@ class HomePage extends StatelessWidget {
 
                         // 瀑布流内容列表
                         Obx(() {
-                          if (logic.tagList.isEmpty) {
+                          final list = logic.tabList;
+                          if (list.isEmpty) {
                             return const SliverToBoxAdapter(
                               child: PageEmptyState(title: '未找到匹配的模板~'),
                             );
                           }
-                          final tagId =
-                              logic.tagList[logic.selectedTabIndex.value].id;
-                          final tabData = logic.tabDataMap[tagId];
-
-                          if (tabData == null || tabData.dataList.isEmpty) {
-                            return const SliverToBoxAdapter(
-                              child: PageEmptyState(title: '未找到匹配的模板~'),
-                            );
-                          }
-
                           return SliverPadding(
                             padding: EdgeInsets.only(
                               left: 15.w,
@@ -119,35 +110,44 @@ class HomePage extends StatelessWidget {
                               top: 8.w,
                               bottom: 30.w,
                             ),
-                            sliver: SliverMasonryGrid.count(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 14.h,
+                            sliver: SliverMasonryGrid(
+                              gridDelegate:
+                                  SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                  ),
+                              mainAxisSpacing: 14.w,
                               crossAxisSpacing: 9.w,
-                              itemBuilder: (context, index) {
-                                final item = tabData.dataList[index];
-                                return HomePageItem(
-                                  key: ValueKey(item.id),
-                                  model: item,
-                                  source: PageSource.home,
-                                  favoriteCallBack: () {
-                                    if (!logic.global.isLogin) {
-                                      Get.toNamed(AppRoutes.appLogin);
-                                      return;
-                                    }
-                                    if (item.isFavorite == 1) {
-                                      logic.favoriteEventDialog(item.id);
-                                    } else {
-                                      logic.clickFavorite(item.id, true);
-                                    }
-                                  },
-                                );
-                              },
-                              childCount: tabData.dataList.length,
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final item = logic.tabList[index];
+                                  return HomePageItem(
+                                    model: item,
+                                    source: PageSource.home,
+                                    favoriteCallBack: () {
+                                      if (!logic.global.isLogin) {
+                                        Get.toNamed(AppRoutes.appLogin);
+                                        return;
+                                      }
+                                      if (item.isFavorite == 1) {
+                                        logic.favoriteEventDialog(item.id);
+                                      } else {
+                                        logic.clickFavorite(item.id, true);
+                                      }
+                                    },
+                                  );
+                                },
+                                childCount: list.length,
+                                // 关键：重排后，通过 key 找到它现在的新 index
+                                findChildIndexCallback: (Key key) {
+                                  final id = (key as ValueKey).value;
+                                  return list.indexWhere((e) => e.id == id);
+                                },
+                              ),
                             ),
                           );
                         }),
                         // 底部间距
-                        SliverToBoxAdapter(child: SizedBox(height: 30.w)),
+                        // SliverToBoxAdapter(child: SizedBox(height: 30.w)),
                       ],
                     ),
                   ),

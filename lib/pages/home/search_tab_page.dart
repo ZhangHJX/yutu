@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'search_logic.dart';
 import '../widgets/page_empty_state.dart';
 import 'widgets/home_page_item.dart';
+import 'package:voicetemplate/core/index.dart';
 
 /// 可保活的 Tab 页面组件
 class SearchTabPage extends StatelessWidget {
@@ -30,32 +31,31 @@ class SearchTabPage extends StatelessWidget {
       return SmartRefresher(
         key: tabData.refresherKey,
         controller: tabData.refreshController,
-        enablePullDown: true,
-        enablePullUp: logic.hasMore.value,
-        footer: ClassicFooter(
-          loadStyle: LoadStyle.ShowWhenLoading,
-          completeDuration: Duration(milliseconds: 500),
-        ),
+        enablePullUp: true,
         onRefresh: () async {
           await logic.onRefresh();
         },
         onLoading: () async {
           await logic.onLoadMore();
         },
-        child: MasonryGridView.count(
-          crossAxisCount: 2,
+        child: MasonryGridView.builder(
+          gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+          ),
           mainAxisSpacing: 12.w,
           crossAxisSpacing: 9.w,
-          padding: EdgeInsets.symmetric(horizontal: 15.w),
           itemCount: designList.length,
           itemBuilder: (context, index) {
             final item = designList[index];
-            // 使用独立的响应式组件，避免在 itemBuilder 中嵌套 Obx
             return HomePageItem(
-              key: ValueKey(item.id),
+              key: ValueKey(item.id), // ✅ 排序变化也不乱
               model: item,
-              source: PageSource.search,
+              source: PageSource.home,
               favoriteCallBack: () {
+                if (!logic.global.isLogin) {
+                  Get.toNamed(AppRoutes.appLogin);
+                  return;
+                }
                 if (item.isFavorite == 1) {
                   logic.favoriteEventDialog(item.id);
                 } else {
