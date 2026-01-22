@@ -40,18 +40,6 @@ class CanvasElementWidget extends StatelessWidget {
             fit: BoxFit.fill,
           ),
         );
-
-      // debugPrint("==图片的高度是多少？？==${data.width}====${data.height}==");
-
-      // return Opacity(
-      //   opacity: data.fileAlpha,
-      //   child: Container(
-      //     color: Colors.red,
-      //     width: data.width.w,
-      //     height: data.height.w,
-      //   ),
-      // );
-
       case ElementType.rectangle:
         return Opacity(
           opacity: data.fillAlpha,

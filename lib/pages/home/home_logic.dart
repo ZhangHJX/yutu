@@ -39,12 +39,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   /// 草稿选择
   final isLocal = true.obs;
 
-  /// 获取当前 tab 是否还有更多数据
-  // RxBool get hasMore {
-  //   final tagId = _getCurrentTagId();
-  //   return tabDataMap[tagId]?.hasMore ?? true.obs;
-  // }
-
   GlobalKey refresherKey = GlobalKey();
   RefreshController refreshController = RefreshController(
     initialRefresh: false,
@@ -60,14 +54,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     }
     return tagList[selectedTabIndex.value].id;
   }
-
-  /// 获取或创建 tab 数据状态
-  // HomeTabDataState _getOrCreateTabData(int tagId) {
-  //   if (!tabDataMap.containsKey(tagId)) {
-  //     tabDataMap[tagId] = HomeTabDataState();
-  //   }
-  //   return tabDataMap[tagId]!;
-  // }
 
   Worker? _countWorker;
 
@@ -160,7 +146,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         // 初始化每个 tag 的数据到 tabDataMap
         final index = tagList.indexWhere((e) => e.isSelect == 1);
         final tabData = index == -1 ? null : tagList[index];
-
         if (tabData != null && tabData.list.isNotEmpty) {
           selectedTabIndex.value = index;
           tabList.value = tabData.list;
