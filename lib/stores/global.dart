@@ -3,6 +3,7 @@ import 'package:common/common.dart';
 import 'package:flutter/widgets.dart';
 import 'login_response.dart';
 import 'user_model.dart';
+import 'package:voicetemplate/core/index.dart';
 
 /// 登录方式
 enum LoginMode {
@@ -57,6 +58,9 @@ class GlobalLogic extends GetxController {
   String? get sign => userInfo.value.sign;
 
   final box = GetStorage();
+
+  /// 网络状态监听
+  final connectStatus = ConnectivityService();
 
   @override
   void onInit() {

@@ -77,7 +77,7 @@ class CanvasModel {
     transform = matrix;
     x = offset.dx;
     y = offset.dy;
-    this.scale = scale;
+    scale = scale;
   }
 
   void getMatrix4() {

@@ -21,7 +21,7 @@ class StockPageItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final itemWidth = (ScreenTools.screenWidth - 30.w - 9.w) / 2;
-    final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize ?? '');
+    final itemHeight = calculateAspectRatio(itemWidth, item.canvasSize);
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
@@ -34,7 +34,7 @@ class StockPageItem extends StatelessWidget {
                 SizedBox(
                   height: itemHeight,
                   child: CachedNetworkImage(
-                    imageUrl: item.image ?? '',
+                    imageUrl: item.image,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
                       color: "#F5F5F5".color,

@@ -51,9 +51,9 @@ class StockLogic extends GetxController {
 
   @override
   void onClose() {
-    super.onClose();
     _countWorker?.dispose();
     refreshController.dispose();
+    super.onClose();
   }
 
   /// 初始化一些假数据
@@ -114,23 +114,21 @@ class StockLogic extends GetxController {
       }
 
       // 更新刷新控制器状态
-      if (refresh) {
-        refreshController.refreshCompleted();
-      } else {
-        if (hasMore.value) {
-          refreshController.loadComplete();
-        } else {
-          refreshController.loadNoData();
-        }
-      }
       isLoading.value = false;
     } catch (e) {
       isLoading.value = false;
       debugPrint('草稿列表数据请求错误: $e');
-      if (refresh) {
-        refreshController.refreshFailed();
-      } else {
-        refreshController.loadFailed();
+    } finally {
+      if (!isClosed) {
+        if (refresh) {
+          refreshController.refreshCompleted();
+        } else {
+          if (hasMore.value) {
+            refreshController.loadComplete();
+          } else {
+            refreshController.loadNoData();
+          }
+        }
       }
     }
   }

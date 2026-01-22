@@ -13,17 +13,14 @@ class MineLogic extends GetxController {
   // 图片列表
   RxList<CommonItemModel> designList = <CommonItemModel>[].obs;
 
-  late final StreamSubscription _sub;
-
   Worker? _countWorker;
 
   RxString version = '1.0.0'.obs;
 
   @override
   void onClose() {
-    super.onClose();
-    _sub.cancel();
     _countWorker?.dispose();
+    super.onClose();
   }
 
   @override
@@ -34,7 +31,7 @@ class MineLogic extends GetxController {
     _countWorker = ever(global.accessToken, (token) {
       loadDesignList();
     });
-    _sub = EventBusManager.share.listenAll((e) {
+    EventBusManager.share.listenAll((e) {
       debugPrint('EventBusManager 我进来了');
       if (e.type == AppEventType.mineRefresh) {
         updatePersonInfo();

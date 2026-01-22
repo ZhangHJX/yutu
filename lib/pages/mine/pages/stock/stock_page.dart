@@ -86,28 +86,22 @@ class AppStockPage extends StatelessWidget {
                     key: logic.refresherKey,
                     controller: logic.refreshController,
                     enablePullUp: true,
-                    header: ClassicHeader(),
-                    footer: ClassicFooter(
-                      loadStyle: LoadStyle.ShowWhenLoading,
-                      completeDuration: Duration(milliseconds: 500),
-                    ),
                     onRefresh: () async {
                       await logic.onRefresh();
                     },
                     onLoading: () async {
                       await logic.onLoad();
                     },
-                    child: MasonryGridView.count(
-                      crossAxisCount: 2,
+                    child: MasonryGridView.builder(
+                      gridDelegate:
+                          SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                          ),
                       mainAxisSpacing: 12.w,
                       crossAxisSpacing: 9.w,
                       itemCount: logic.stockList.length,
-                      physics: const ClampingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics(),
-                      ),
                       itemBuilder: (context, index) {
                         final item = logic.stockList[index];
-
                         return Obx(() {
                           final isBatch = logic.isBatchMode.value;
                           final isSelected = logic.selectedIds.contains(

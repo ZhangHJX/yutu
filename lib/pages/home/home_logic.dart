@@ -57,9 +57,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   Worker? _countWorker;
 
-  /// 网络状态监听
-  final connectivityService = ConnectivityService();
-
   /// 当前页码
   int currentPage = 1;
 
@@ -98,7 +95,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
       homeRefresh();
     });
     // 监听网络状态变化
-    connectivityService.onStatusChanged.listen((status) {
+    global.connectStatus.onStatusChanged.listen((status) {
       if (status != NetworkStatus.none) {
         homeRefresh();
       }
@@ -299,6 +296,12 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   /// 收藏事件处理
   Future<void> clickFavorite(int itemId, bool shouldFavorite) async {
+    global.connectStatus.onStatusChanged.listen((status) {
+      if (status == NetworkStatus.none) {
+        showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
+      }
+    });
+
     try {
       final result = await http.post(
         shouldFavorite

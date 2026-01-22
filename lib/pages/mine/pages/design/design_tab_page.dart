@@ -35,13 +35,7 @@ class DesignTabPage extends StatelessWidget {
         child: SmartRefresher(
           key: tabData.refresherKey,
           controller: tabData.refreshController,
-          enablePullDown: true,
-          enablePullUp: logic.hasMore.value,
-
-          footer: ClassicFooter(
-            loadStyle: LoadStyle.ShowWhenLoading,
-            completeDuration: Duration(milliseconds: 500),
-          ),
+          enablePullUp: true,
           onRefresh: () async {
             await logic.onRefresh();
           },

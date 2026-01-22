@@ -4,6 +4,7 @@ import 'model/home_model.dart';
 import '../model/index.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
 import '../../stores/global.dart';
+import 'package:voicetemplate/core/index.dart';
 
 class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   final global = Get.find<GlobalLogic>();
@@ -259,6 +260,12 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
 
   /// 收藏事件处理
   Future<void> clickFavorite(int itemId, bool shouldFavorite) async {
+    global.connectStatus.onStatusChanged.listen((status) {
+      if (status == NetworkStatus.none) {
+        showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
+      }
+    });
+
     try {
       final result = await http.post(
         shouldFavorite

@@ -213,26 +213,22 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
         }
         tabData.isInitialized = true;
       }
-      // 更新刷新控制器状态 - 使用当前 tab 的 refreshController
-      if (refresh) {
-        tabData.refreshController.refreshCompleted();
-      } else {
-        if (hasMore.value) {
-          tabData.refreshController.loadComplete();
-        } else {
-          tabData.refreshController.loadNoData();
-        }
-      }
 
       tabData.isLoading.value = false;
     } catch (e) {
       tabData.isLoading.value = false;
       debugPrint('列表数据请求错误: $e');
-      // 处理错误状态 - 使用当前 tab 的 refreshController
-      if (refresh) {
-        tabData.refreshController.refreshFailed();
-      } else {
-        tabData.refreshController.loadFailed();
+    } finally {
+      if (!isClosed) {
+        if (refresh) {
+          tabData.refreshController.refreshCompleted();
+        } else {
+          if (hasMore.value) {
+            tabData.refreshController.loadComplete();
+          } else {
+            tabData.refreshController.loadNoData();
+          }
+        }
       }
     }
   }

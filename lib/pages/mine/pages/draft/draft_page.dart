@@ -84,30 +84,21 @@ class AppDraftPage extends StatelessWidget {
                   child: SmartRefresher(
                     key: logic.refresherKey,
                     controller: logic.refreshController,
-                    enablePullDown: true,
-                    enablePullUp: logic.hasMore.value,
-                    header: ClassicHeader(
-                      refreshStyle:
-                          RefreshStyle.Follow, // 或 RefreshStyle.Behind
-                    ),
-                    footer: ClassicFooter(
-                      loadStyle: LoadStyle.ShowWhenLoading,
-                      completeDuration: Duration(milliseconds: 500),
-                    ),
+                    enablePullUp: true,
                     onRefresh: () async {
                       await logic.onRefresh();
                     },
                     onLoading: () async {
                       await logic.onLoad();
                     },
-                    child: MasonryGridView.count(
-                      crossAxisCount: 2,
+                    child: MasonryGridView.builder(
+                      gridDelegate:
+                          SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                          ),
                       mainAxisSpacing: 12.w,
                       crossAxisSpacing: 9.w,
                       itemCount: logic.draftList.length,
-                      physics: const ClampingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics(),
-                      ),
                       itemBuilder: (context, index) {
                         final item = logic.draftList[index];
                         return Obx(() {
