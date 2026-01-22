@@ -1,6 +1,8 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:voicetemplate/pages/utils/file/index.dart';
 import 'canvas_text_widget.dart';
 import '../../../model/index.dart';

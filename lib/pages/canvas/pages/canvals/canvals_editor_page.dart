@@ -16,6 +16,7 @@ import '../../draft/index.dart';
 import '../../widgets/dialog/save/save_logic.dart';
 import 'package:voicetemplate/pages/canvas/fonts/font_manager.dart';
 import 'package:voicetemplate/pages/canvas/utils/index.dart';
+import 'package:voicetemplate/core/index.dart';
 
 class CanvasEditorPage extends StatefulWidget {
   const CanvasEditorPage({super.key});
@@ -601,6 +602,13 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   /// 返回操作
   void _handleBack() {
     if (DraftManager().isChange) {
+      canvalsController.global.connectStatus.onStatusChanged.listen((status) {
+        if (status == NetworkStatus.none) {
+          showToast("保存失败");
+          return;
+        }
+      });
+
       showIsSaveDraftDialog(() async {
         // 创建或获取 SaveLogic 实例
         SaveLogic saveLogic;

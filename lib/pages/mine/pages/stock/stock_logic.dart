@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../model/stock_model.dart';
 import 'package:voicetemplate/stores/global.dart';
 import 'package:voicetemplate/stores/user_model.dart';
+import 'package:voicetemplate/core/index.dart';
 
 class StockLogic extends GetxController {
   /// 全局
@@ -167,6 +168,14 @@ class StockLogic extends GetxController {
   /// 删除选中的草稿
   Future<void> deleteSelected() async {
     if (selectedIds.isEmpty) return;
+
+    global.connectStatus.onStatusChanged.listen((status) {
+      if (status == NetworkStatus.none) {
+        showToast("删除素材失败");
+        return;
+      }
+    });
+
     try {
       showLoading("删除中");
       // 发送删除请求，将选中的uuid列表作为参数

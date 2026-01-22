@@ -1,8 +1,12 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/pages/model/index.dart';
+import 'package:voicetemplate/core/index.dart';
+import 'package:voicetemplate/stores/global.dart';
 
 class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
+  final global = Get.find<GlobalLogic>();
+
   /// 头部的tab
   final screenList = <ScreenItemModel>[].obs;
   // 当前选中的 tab 索引
@@ -266,8 +270,16 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
   }
 
   /// 删除选中的设计
-  Future<void> deleteSelected() async {
+  Future<void> deleteSelected({bool isSingle = false}) async {
     if (selectedIds.isEmpty) return;
+
+    global.connectStatus.onStatusChanged.listen((status) {
+      if (status == NetworkStatus.none) {
+        showToast(isSingle ? '取消收藏失败' : "删除收藏失败");
+        return;
+      }
+    });
+
     try {
       showLoading("删除中");
 

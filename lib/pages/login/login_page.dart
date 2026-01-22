@@ -291,6 +291,7 @@ class LoginPage extends StatelessWidget {
                 () => TextField(
                   controller: _passwordController,
                   obscureText: !logic.isPasswordVisible.value,
+                  inputFormatters: [LengthLimitingTextInputFormatter(20)],
                   decoration: InputDecoration(
                     isCollapsed: true,
                     border: InputBorder.none,

@@ -4,6 +4,7 @@ import 'dart:async';
 import '../model/code_model.dart';
 import '../model/phone_model.dart';
 import '../../../stores/global.dart';
+import 'package:voicetemplate/core/index.dart';
 
 class ForgetLogic extends GetxController {
   /// 全局应用
@@ -48,6 +49,19 @@ class ForgetLogic extends GetxController {
         showToast("两次输入的密码不一致");
         return;
       }
+
+      if (!isValidPassword(password.value)) {
+        showToast("密码错误");
+        return;
+      }
+
+      global.connectStatus.onStatusChanged.listen((status) {
+        if (status == NetworkStatus.none) {
+          showToast("设置密码失败");
+          return;
+        }
+      });
+
       final result = await http.post(
         global.isLogin
             ? '/passwordSet/setPassword'
@@ -67,6 +81,10 @@ class ForgetLogic extends GetxController {
     } catch (e) {
       debugPrint('===========  error: $e');
     }
+  }
+
+  bool isValidPassword(String s) {
+    return RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{6,20}$').hasMatch(s);
   }
 
   ///1、获取手机号码

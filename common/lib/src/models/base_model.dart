@@ -45,7 +45,9 @@ class BaseModel<T> {
     } finally {
       if (HttpStatus.ok == 200) {
         if (showErrorToast && message.isNotEmpty) {
-          debugPrint("你走的是哪个 toast 提示====下====");
+          showToastAfterLoading(message);
+        }
+        if (code == -8) {
           showToastAfterLoading(message);
         }
       } else {

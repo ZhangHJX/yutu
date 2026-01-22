@@ -7,9 +7,12 @@ import 'package:voicetemplate/pages/canvas/draft/index.dart';
 import '../../model/index.dart';
 import '../../history/clone_tools/canvas_model_clone.dart';
 import 'dart:math' as math;
+import 'package:voicetemplate/stores/global.dart';
 
 /// 全局选择状态管理控制器： 负责管理当前选中的文本框ID、画布模型以及元素列表
 class CanvalsController extends GetxController with WidgetsBindingObserver {
+  final global = Get.find<GlobalLogic>();
+
   // 画布模型
   final args =
       (Get.arguments as Map?)?.cast<String, dynamic>() ?? <String, dynamic>{};

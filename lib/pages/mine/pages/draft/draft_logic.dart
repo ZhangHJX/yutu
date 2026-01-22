@@ -4,6 +4,7 @@ import '../../../model/common_model.dart';
 import 'package:voicetemplate/stores/global.dart';
 import 'package:voicetemplate/stores/user_model.dart';
 import 'package:voicetemplate/pages/middle/manager/index.dart';
+import 'package:voicetemplate/core/index.dart';
 
 class DraftLogic extends GetxController {
   /// 全局
@@ -161,6 +162,14 @@ class DraftLogic extends GetxController {
   /// 删除选中的设计
   Future<void> deleteSelected() async {
     if (selectedIds.isEmpty) return;
+
+    global.connectStatus.onStatusChanged.listen((status) {
+      if (status == NetworkStatus.none) {
+        showToast("删除草稿失败");
+        return;
+      }
+    });
+
     try {
       showLoading("删除中");
 

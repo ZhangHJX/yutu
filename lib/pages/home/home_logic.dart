@@ -299,6 +299,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     global.connectStatus.onStatusChanged.listen((status) {
       if (status == NetworkStatus.none) {
         showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
+        return;
       }
     });
 

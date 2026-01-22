@@ -149,6 +149,7 @@ class PasswordPage extends StatelessWidget {
             child: TextField(
               controller: _codeController,
               keyboardType: TextInputType.number,
+              inputFormatters: [LengthLimitingTextInputFormatter(4)],
               decoration: InputDecoration(
                 filled: true,
                 fillColor: "#F4F4F4".color,
@@ -203,6 +204,7 @@ class PasswordPage extends StatelessWidget {
             child: TextField(
               controller: _passwordOneController,
               obscureText: true,
+              inputFormatters: [LengthLimitingTextInputFormatter(20)],
               decoration: InputDecoration(
                 filled: true,
                 fillColor: "#F4F4F4".color,
@@ -242,10 +244,12 @@ class PasswordPage extends StatelessWidget {
             child: TextField(
               controller: _passwordTwoController,
               obscureText: true,
+              inputFormatters: [LengthLimitingTextInputFormatter(20)],
               decoration: InputDecoration(
                 filled: true,
                 fillColor: "#F4F4F4".color,
                 isCollapsed: true,
+
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,

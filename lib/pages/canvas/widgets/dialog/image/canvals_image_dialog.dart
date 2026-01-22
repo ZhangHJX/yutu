@@ -8,6 +8,7 @@ import 'package:voicetemplate/file/index.dart';
 import 'package:path/path.dart' as p;
 import 'dart:io';
 import 'manager/material_manager.dart';
+import 'package:voicetemplate/core/index.dart';
 
 class CanvalsImageDialog extends StatefulWidget {
   final Function(String imageUrl, double? width, double? height)?
@@ -316,6 +317,13 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
             ),
             borderRadius: 22.5.w,
             onPressed: () async {
+              logic.global.connectStatus.onStatusChanged.listen((status) {
+                if (status == NetworkStatus.none) {
+                  showToast("确认失败");
+                  return;
+                }
+              });
+
               final index = _selectedIndex;
               final list = logic.imageList;
 

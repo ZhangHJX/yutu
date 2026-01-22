@@ -8,7 +8,7 @@ import 'model/code_model.dart';
 
 class LoginLogic extends GetxController with WidgetsBindingObserver {
   /// 全局应用
-  final globalLogic = Get.find<GlobalLogic>();
+  final global = Get.find<GlobalLogic>();
 
   final String? source = Get.arguments is String ? Get.arguments : null;
 
@@ -105,6 +105,14 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
       showToast('请先同意用户协议和隐私政策');
       return;
     }
+
+    global.connectStatus.onStatusChanged.listen((status) {
+      if (status == NetworkStatus.none) {
+        showToast("登录失败");
+        return;
+      }
+    });
+
     if (isPasswordLogin.value) {
       handlePasswordLogin();
     } else {
@@ -114,6 +122,11 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
 
   // 处理密码登录
   Future<void> handlePasswordLogin() async {
+    if (!isValidPassword(password.value)) {
+      showToast("密码错误");
+      return;
+    }
+
     // 实现密码登录逻辑
     try {
       final result = await http.post<LoginResponse>(
@@ -123,8 +136,8 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
         withToken: false,
       );
       if (result.code == 0) {
-        globalLogic.accessToken.value = result.data?.token ?? '';
-        await globalLogic.fetchUserInfo();
+        global.accessToken.value = result.data?.token ?? '';
+        await global.fetchUserInfo();
 
         if (source != null && source!.isNotEmpty) {
           EventBusManager.share.emit<String>(AppEventType.login, data: source);
@@ -138,6 +151,10 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  bool isValidPassword(String s) {
+    return RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{6,20}$').hasMatch(s);
+  }
+
   // 处理验证码登录
   Future<void> handleCodeLogin() async {
     try {
@@ -149,8 +166,8 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
         // showErrorToast: true,
       );
       if (result.code == 0) {
-        globalLogic.accessToken.value = result.data?.token ?? '';
-        await globalLogic.fetchUserInfo();
+        global.accessToken.value = result.data?.token ?? '';
+        await global.fetchUserInfo();
 
         if (source != null && source!.isNotEmpty) {
           EventBusManager.share.emit<String>(AppEventType.login, data: source);

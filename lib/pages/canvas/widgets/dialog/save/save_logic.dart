@@ -187,6 +187,12 @@ class SaveLogic extends GetxController {
 
   /// 保存模版
   void saveTemplate() async {
+    global.connectStatus.onStatusChanged.listen((status) {
+      if (status == NetworkStatus.none) {
+        showToast("保存失败");
+        return;
+      }
+    });
     if (!isCanSave.value) {
       return;
     }
@@ -197,6 +203,13 @@ class SaveLogic extends GetxController {
 
   /// 保存为草稿
   Future<void> saveAsDraft({bool isCanvals = false}) async {
+    global.connectStatus.onStatusChanged.listen((status) {
+      if (status == NetworkStatus.none) {
+        showToast("保存失败");
+        return;
+      }
+    });
+
     if (!isCanvals) {
       showLoading("保存中...");
     }

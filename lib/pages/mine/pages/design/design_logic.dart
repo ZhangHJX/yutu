@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:voicetemplate/pages/model/index.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
 import 'package:voicetemplate/stores/global.dart';
+import 'package:voicetemplate/core/index.dart';
 
 class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
   final global = Get.find<GlobalLogic>();
@@ -273,6 +274,14 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
   /// 删除选中的设计
   Future<void> deleteSelected() async {
     if (selectedIds.isEmpty) return;
+
+    global.connectStatus.onStatusChanged.listen((status) {
+      if (status == NetworkStatus.none) {
+        showToast("删除设计失败");
+        return;
+      }
+    });
+
     try {
       showLoading("删除中");
       // 发送删除请求，将选中的uuid列表作为参数
@@ -311,6 +320,13 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
 
   /// 收藏事件处理
   Future<void> clickFavorite(int itemId, bool shouldFavorite) async {
+    global.connectStatus.onStatusChanged.listen((status) {
+      if (status == NetworkStatus.none) {
+        showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
+        return;
+      }
+    });
+
     try {
       final result = await http.post(
         shouldFavorite ? '/design/favorite-store' : '/design/favorite-destroy',

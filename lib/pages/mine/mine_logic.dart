@@ -32,12 +32,10 @@ class MineLogic extends GetxController {
       loadDesignList();
     });
     EventBusManager.share.listenAll((e) {
-      debugPrint('EventBusManager 我进来了');
       if (e.type == AppEventType.mineRefresh) {
         updatePersonInfo();
       }
     });
-
     getCurrentAppVersion();
   }
 
@@ -54,9 +52,7 @@ class MineLogic extends GetxController {
       final result = await http.get(
         '/design/index',
         query: {'page': 1, 'limit': globalPageSize},
-        showErrorToast: false,
       );
-
       if (result.code == 0 && result.data != null) {
         if (designList.isNotEmpty) {
           designList.clear();
@@ -140,8 +136,6 @@ class MineLogic extends GetxController {
   }
 
   Future<void> updatePersonInfo() async {
-    debugPrint("===updatePersonInfo===哈好啊哈哈啊好好=======");
-
     await global.fetchUserInfo();
     loadDesignList();
   }
