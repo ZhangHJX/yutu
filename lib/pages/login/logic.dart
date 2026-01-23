@@ -106,12 +106,10 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
       return;
     }
 
-    global.connectStatus.onStatusChanged.listen((status) {
-      if (status == NetworkStatus.none) {
-        showToast("登录失败");
-        return;
-      }
-    });
+    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+      showToast("登录失败");
+      return;
+    }
 
     if (isPasswordLogin.value) {
       handlePasswordLogin();
@@ -123,7 +121,7 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
   // 处理密码登录
   Future<void> handlePasswordLogin() async {
     if (!isValidPassword(password.value)) {
-      showToast("密码错误");
+      showToast("密码格式错误");
       return;
     }
 

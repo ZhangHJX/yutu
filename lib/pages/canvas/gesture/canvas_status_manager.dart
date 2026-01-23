@@ -131,9 +131,6 @@ class CanvasStatusManager {
     final nowDistance = _getDistance();
     if (nowDistance == 0) return false;
 
-    // 获取当前双指中心（屏幕坐标）
-    final focalScreen = _getFocalPoint();
-
     // 计算缩放比例（本次缩放的增量）
     final scaleDelta = nowDistance / _scaleStartDistance!;
     final currentScale = _getScale();

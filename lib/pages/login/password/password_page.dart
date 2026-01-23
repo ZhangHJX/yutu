@@ -2,7 +2,6 @@ import 'package:common/common.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'navigation_widget.dart';
 import 'logic.dart';
 
 class PasswordPage extends StatelessWidget {
@@ -18,68 +17,127 @@ class PasswordPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return KeyboardDismissOnTap(
       child: Scaffold(
+        backgroundColor: "#F5F5F5".color,
         resizeToAvoidBottomInset: false,
-        backgroundColor: Colors.white,
-        body: DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF9ADEFD), Color(0xFFF7F7F7)],
-              stops: [0.0, 0.15],
+        body: Stack(
+          children: [
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: Image.asset(
+                'assets/images/global/mine_top_bg.png',
+                fit: BoxFit.cover,
+                height: 240.w,
+              ),
             ),
-          ),
-          child: Column(
-            children: [
-              NavigationWidget(title: logic.global.isLogin ? "设置密码" : '忘记密码'),
 
-              SizedBox(height: 24.w),
+            SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  SizedBox(
+                    height: 51.w,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            EventBusManager.share.emit(
+                              AppEventType.mineRefresh,
+                            );
+                            Get.back();
+                          },
+                          child: SizedBox(
+                            width: 50.w,
+                            height: 40.w,
+                            child: Image.asset(
+                              'assets/images/global/ic_black_back.png',
+                              width: 26.w,
+                              height: 26.w,
+                            ),
+                          ),
+                        ),
 
-              _buildPhoneField(),
-              SizedBox(height: 16.w),
+                        Text(
+                          logic.global.isLogin ? "设置密码" : '忘记密码',
+                          style: TextStyle(
+                            fontSize: 16.w,
+                            color: "#232535".color,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
 
-              _buildYanZhengField(),
-              SizedBox(height: 16.w),
-
-              _buildNewPassworldField(),
-              SizedBox(height: 16.w),
-
-              _buildAgainPassworldField(),
-
-              Spacer(),
-
-              GestureDetector(
-                onTap: logic.changePassWord,
-                child: Container(
-                  height: 48.w,
-                  margin: EdgeInsets.only(
-                    left: 29.w,
-                    right: 29.w,
-                    bottom: 51.w,
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 29.w),
-                  decoration: BoxDecoration(
-                    color: "#64A2FF".color,
-                    image: DecorationImage(
-                      image: AssetImage('assets/images/login/login_btn_bg.png'),
-                      fit: BoxFit.cover,
+                        Container(
+                          color: Colors.transparent,
+                          width: 50.w,
+                          height: 40.w,
+                        ),
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(24.w),
                   ),
-                  child: Center(
+
+                  SizedBox(height: 24.w),
+
+                  _buildPhoneField(),
+                  SizedBox(height: 16.w),
+
+                  _buildYanZhengField(),
+                  SizedBox(height: 16.w),
+
+                  _buildNewPassworldField(),
+
+                  SizedBox(height: 6.w),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 29.w),
                     child: Text(
-                      '登录',
-                      style: TextStyle(
-                        fontSize: 16.w,
-                        fontWeight: FontWeight.w500,
-                        color: "#FFFFFF".color,
+                      '请输入6-20位之间，包含字母、数字的密码',
+                      style: TextStyle(fontSize: 12.w, color: "#7662FF".color),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                  SizedBox(height: 13.w),
+                  _buildAgainPassworldField(),
+
+                  Spacer(),
+
+                  GestureDetector(
+                    onTap: logic.changePassWord,
+                    child: Container(
+                      height: 48.w,
+                      margin: EdgeInsets.only(
+                        left: 29.w,
+                        right: 29.w,
+                        bottom: 51.w,
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 29.w),
+                      decoration: BoxDecoration(
+                        color: "#64A2FF".color,
+                        image: DecorationImage(
+                          image: AssetImage(
+                            'assets/images/login/login_btn_bg.png',
+                          ),
+                          fit: BoxFit.cover,
+                        ),
+                        borderRadius: BorderRadius.circular(24.w),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '登录',
+                          style: TextStyle(
+                            fontSize: 16.w,
+                            fontWeight: FontWeight.w500,
+                            color: "#FFFFFF".color,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -90,7 +148,7 @@ class PasswordPage extends StatelessWidget {
       height: 48.w,
       margin: EdgeInsets.symmetric(horizontal: 29.w),
       decoration: BoxDecoration(
-        color: "#F4F4F4".color,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24.w),
       ),
       padding: EdgeInsets.symmetric(horizontal: 26.w),
@@ -113,8 +171,6 @@ class PasswordPage extends StatelessWidget {
               inputFormatters: [LengthLimitingTextInputFormatter(11)],
               decoration: InputDecoration(
                 isCollapsed: true,
-                filled: true,
-                fillColor: "#F4F4F4".color,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -122,8 +178,13 @@ class PasswordPage extends StatelessWidget {
                 hintStyle: TextStyle(
                   fontSize: 14.w,
                   color: "#9E9E9E".color,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w500,
                 ),
+              ),
+              style: TextStyle(
+                color: '#474747'.color,
+                fontSize: 14.w,
+                fontWeight: FontWeight.w500,
               ),
               onChanged: (value) => logic.phone.value = value,
             ),
@@ -138,7 +199,7 @@ class PasswordPage extends StatelessWidget {
       height: 48.w,
       margin: EdgeInsets.symmetric(horizontal: 29.w),
       decoration: BoxDecoration(
-        color: "#F4F4F4".color,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24.w),
       ),
       padding: EdgeInsets.only(left: 26.w, right: 15.w),
@@ -151,8 +212,6 @@ class PasswordPage extends StatelessWidget {
               keyboardType: TextInputType.number,
               inputFormatters: [LengthLimitingTextInputFormatter(4)],
               decoration: InputDecoration(
-                filled: true,
-                fillColor: "#F4F4F4".color,
                 isCollapsed: true,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -163,6 +222,11 @@ class PasswordPage extends StatelessWidget {
                   color: "#9E9E9E".color,
                   fontWeight: FontWeight.w400,
                 ),
+              ),
+              style: TextStyle(
+                color: '#474747'.color,
+                fontSize: 14.w,
+                fontWeight: FontWeight.w500,
               ),
               onChanged: (value) => logic.code.value = value,
             ),
@@ -193,7 +257,7 @@ class PasswordPage extends StatelessWidget {
       height: 48.w,
       margin: EdgeInsets.symmetric(horizontal: 29.w),
       decoration: BoxDecoration(
-        color: "#F4F4F4".color,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24.w),
       ),
       padding: EdgeInsets.only(left: 26.w, right: 15.w),
@@ -206,18 +270,21 @@ class PasswordPage extends StatelessWidget {
               obscureText: true,
               inputFormatters: [LengthLimitingTextInputFormatter(20)],
               decoration: InputDecoration(
-                filled: true,
-                fillColor: "#F4F4F4".color,
                 isCollapsed: true,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                hintText: '请输入密码',
+                hintText: '请输入新密码',
                 hintStyle: TextStyle(
                   fontSize: 14.w,
                   color: "#9E9E9E".color,
                   fontWeight: FontWeight.w400,
                 ),
+              ),
+              style: TextStyle(
+                color: '#474747'.color,
+                fontSize: 14.w,
+                fontWeight: FontWeight.w500,
               ),
               onChanged: (value) => logic.password.value = value,
             ),
@@ -233,7 +300,7 @@ class PasswordPage extends StatelessWidget {
       height: 48.w,
       margin: EdgeInsets.symmetric(horizontal: 29.w),
       decoration: BoxDecoration(
-        color: "#F4F4F4".color,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24.w),
       ),
       padding: EdgeInsets.only(left: 26.w, right: 15.w),
@@ -246,10 +313,7 @@ class PasswordPage extends StatelessWidget {
               obscureText: true,
               inputFormatters: [LengthLimitingTextInputFormatter(20)],
               decoration: InputDecoration(
-                filled: true,
-                fillColor: "#F4F4F4".color,
                 isCollapsed: true,
-
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -259,6 +323,11 @@ class PasswordPage extends StatelessWidget {
                   color: "#9E9E9E".color,
                   fontWeight: FontWeight.w400,
                 ),
+              ),
+              style: TextStyle(
+                color: '#474747'.color,
+                fontSize: 14.w,
+                fontWeight: FontWeight.w500,
               ),
               onChanged: (value) => logic.again.value = value,
             ),

@@ -51,16 +51,14 @@ class ForgetLogic extends GetxController {
       }
 
       if (!isValidPassword(password.value)) {
-        showToast("密码错误");
+        showToast("密码格式错误");
         return;
       }
 
-      global.connectStatus.onStatusChanged.listen((status) {
-        if (status == NetworkStatus.none) {
-          showToast("设置密码失败");
-          return;
-        }
-      });
+      if (global.connectStatus.currentStatus == NetworkStatus.none) {
+        showToast("设置密码失败");
+        return;
+      }
 
       final result = await http.post(
         global.isLogin

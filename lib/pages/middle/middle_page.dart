@@ -184,7 +184,7 @@ class MiddlePage extends StatelessWidget {
                                   SizedBox(width: 5.w),
 
                                   Text(
-                                    '${logic.middleInfo.value?.favoriteTotal}收藏',
+                                    '${logic.middleInfo.value?.favoriteTotal ?? 0}收藏',
                                     style: TextStyle(
                                       fontSize: 12.w,
                                       color: Color(0xFFB759FF),

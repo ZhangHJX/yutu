@@ -93,6 +93,10 @@ class MiddleLogic extends GetxController {
 
   /// 收藏事件处理
   Future<void> clickFavoriteEvent(bool shouldFavorite) async {
+    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+      showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
+      return;
+    }
     try {
       final result = await http.post(
         getFavoriteUrlPath(type, shouldFavorite),

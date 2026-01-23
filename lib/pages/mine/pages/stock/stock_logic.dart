@@ -169,12 +169,10 @@ class StockLogic extends GetxController {
   Future<void> deleteSelected() async {
     if (selectedIds.isEmpty) return;
 
-    global.connectStatus.onStatusChanged.listen((status) {
-      if (status == NetworkStatus.none) {
-        showToast("删除素材失败");
-        return;
-      }
-    });
+    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+      showToast("删除素材失败");
+      return;
+    }
 
     try {
       showLoading("删除中");

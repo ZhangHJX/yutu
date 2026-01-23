@@ -294,13 +294,10 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   /// 收藏事件处理
   Future<void> clickFavorite(int itemId, bool shouldFavorite) async {
-    global.connectStatus.onStatusChanged.listen((status) {
-      if (status == NetworkStatus.none) {
-        showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
-        return;
-      }
-    });
-
+    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+      showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
+      return;
+    }
     try {
       final result = await http.post(
         shouldFavorite

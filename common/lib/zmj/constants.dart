@@ -35,7 +35,7 @@ const String imageDialog = 'CanvalsImageDialog';
 const String saveDialog = 'CanvalsSaveTemplateDialog';
 
 ///全局的分页数据管理
-const String globalPageSize = '20';
+const String globalPageSize = '10';
 
 double calculateAspectRatio(double width, String canvasSize) {
   final parts = canvasSize.split(':');

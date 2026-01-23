@@ -107,13 +107,10 @@ class ImageLogic extends GetxController {
 
   /// 上传图片 BuildContext context
   Future<void> pickerCanvalsImage(BuildContext context) async {
-    global.connectStatus.onStatusChanged.listen((status) {
-      if (status == NetworkStatus.none) {
-        showToast("上传图片失败");
-        return;
-      }
-    });
-
+    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+      showToast("上传图片失败");
+      return;
+    }
     try {
       // 权限请求
       final res = await PermissionUtil.requestPhotoAlbumPermission();

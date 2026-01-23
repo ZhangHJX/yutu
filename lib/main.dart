@@ -72,8 +72,8 @@ class MyApp extends StatelessWidget {
       designSize: const Size(375, 812),
       child: RefreshConfiguration(
         footerTriggerDistance: 15,
-        headerBuilder: () => const ClassicHeader(),
-        footerBuilder: () => const ClassicFooter(),
+        headerBuilder: () => ClassicHeader(),
+        footerBuilder: () => ClassicFooter(),
         springDescription: SpringDescription(
           mass: 1,
           stiffness: 100,

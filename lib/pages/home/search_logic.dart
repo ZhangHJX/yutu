@@ -128,8 +128,6 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
       tabIsLoading.value = true;
       final result = await http.get(
         '/homePage/search/index',
-        query: {'page': '1', 'limit': globalPageSize},
-        showErrorToast: false,
         converter: HomeModel.fromJson,
       );
       if (result.code == 0 && result.data != null) {
@@ -218,7 +216,6 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
           'title': searchText.value,
           'tag_id': targetTagId,
         },
-        showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
         final listModel = CommonModel.fromJson(result.data);
@@ -260,13 +257,10 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
 
   /// 收藏事件处理
   Future<void> clickFavorite(int itemId, bool shouldFavorite) async {
-    global.connectStatus.onStatusChanged.listen((status) {
-      if (status == NetworkStatus.none) {
-        showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
-        return;
-      }
-    });
-
+    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+      showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
+      return;
+    }
     try {
       final result = await http.post(
         shouldFavorite
