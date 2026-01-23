@@ -119,10 +119,8 @@ class _MinePageState extends State<MinePage> {
 
   /// 个人信息
   Widget _buildMineInfoContent() {
-    final icon = logic.global.avatar ?? "";
-    final avatar = icon.isEmpty
-        ? "assets/images/mine/mine_info_empty.png"
-        : icon;
+    final avatar =
+        logic.global.avatar ?? "assets/images/mine/mine_info_empty.png";
     return Padding(
       padding: EdgeInsets.only(left: 22.w, top: 9.w, right: 20.w),
       child: Listener(

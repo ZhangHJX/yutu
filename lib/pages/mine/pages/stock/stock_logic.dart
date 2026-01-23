@@ -57,6 +57,15 @@ class StockLogic extends GetxController {
     super.onClose();
   }
 
+  @override
+  void onReady() {
+    super.onReady();
+    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+      showToast("打开失败");
+      return;
+    }
+  }
+
   /// 初始化一些假数据
   @override
   void onInit() {
@@ -170,7 +179,7 @@ class StockLogic extends GetxController {
     if (selectedIds.isEmpty) return;
 
     if (global.connectStatus.currentStatus == NetworkStatus.none) {
-      showToast("删除素材失败");
+      showToast("删除失败");
       return;
     }
 

@@ -161,7 +161,6 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
         data: {'mobile': phone.value, 'code': code.value},
         converter: LoginResponse.fromJson,
         withToken: false,
-        // showErrorToast: true,
       );
       if (result.code == 0) {
         global.accessToken.value = result.data?.token ?? '';
@@ -186,11 +185,13 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
         "/loginSms/send",
         data: {"mobile": phone},
         converter: CodeModel.fromJson,
-        showErrorToast: true,
         withToken: false,
       );
       if (result.code == 0) {
+        showToast('验证码发送成功');
         _startCountDown();
+      } else {
+        showToast('验证码发送失败');
       }
     } catch (e) {
       showToast('验证码发送失败');

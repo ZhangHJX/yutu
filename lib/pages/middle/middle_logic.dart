@@ -41,6 +41,15 @@ class MiddleLogic extends GetxController {
   }
 
   @override
+  void onReady() {
+    super.onReady();
+    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+      showToast("打开失败");
+      return;
+    }
+  }
+
+  @override
   void onInit() {
     super.onInit();
     getMidelDetailData();
@@ -63,7 +72,6 @@ class MiddleLogic extends GetxController {
         getMiddleUrlPath(type),
         data: {"id": itemId},
         converter: MiddleModel.fromJson,
-        showErrorToast: false,
       );
       if (result.code == 0 && result.data != null) {
         middleInfo.value = result.data;
@@ -101,7 +109,6 @@ class MiddleLogic extends GetxController {
       final result = await http.post(
         getFavoriteUrlPath(type, shouldFavorite),
         data: {"link_id": itemId},
-        showErrorToast: false,
       );
       if (result.code == 0) {
         // 根据操作类型展示不同文案

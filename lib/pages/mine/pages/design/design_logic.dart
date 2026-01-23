@@ -48,6 +48,15 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
     return list.isNotEmpty && selectedIds.length == list.length;
   }
 
+  @override
+  void onReady() {
+    super.onReady();
+    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+      showToast("打开失败");
+      return;
+    }
+  }
+
   /// 初始化一些假数据
   @override
   void onInit() {
@@ -275,7 +284,7 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
   Future<void> deleteSelected() async {
     if (selectedIds.isEmpty) return;
     if (global.connectStatus.currentStatus == NetworkStatus.none) {
-      showToast("删除设计失败");
+      showToast("删除失败");
       return;
     }
 

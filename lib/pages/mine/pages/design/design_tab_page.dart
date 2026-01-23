@@ -78,7 +78,6 @@ class _DesignItemWidget extends StatelessWidget {
       final isSelected = logic.selectedIds.contains('${item.id}');
       final showCheck = logic.isBatchMode.value;
       return DesiginPageItem(
-        key: ValueKey(item.id), // ⭐️加上
         item: item,
         isSelected: isSelected,
         showCheck: showCheck,

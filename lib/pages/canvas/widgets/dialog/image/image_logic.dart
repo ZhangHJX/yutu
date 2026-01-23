@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:path/path.dart' as p;
 import 'package:common/common.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
@@ -7,6 +9,7 @@ import 'package:voicetemplate/file/index.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/stores/global.dart';
 import 'package:voicetemplate/core/index.dart';
+import 'package:crypto/crypto.dart';
 import 'dart:io';
 
 class ImageLogic extends GetxController {
@@ -108,7 +111,7 @@ class ImageLogic extends GetxController {
   /// 上传图片 BuildContext context
   Future<void> pickerCanvalsImage(BuildContext context) async {
     if (global.connectStatus.currentStatus == NetworkStatus.none) {
-      showToast("上传图片失败");
+      showToast("上传失败");
       return;
     }
     try {
@@ -211,7 +214,7 @@ class ImageLogic extends GetxController {
 
       /// 上传成功
       if (res.isSuccess || (res.code == 200)) {
-        await requestImage(filePath, ossModel, fileSize, width, height);
+        await requestImage(filePath, ossModel, fileSize, width, height, bytes);
       } else {
         SmartDialog.dismiss(status: SmartStatus.loading);
         await PickerImageManager.deleteDirectory();
@@ -229,16 +232,23 @@ class ImageLogic extends GetxController {
     int fileSize,
     double width,
     double height,
+    Uint8List bytes,
   ) async {
     try {
+      final hashValue = sha256.convert(bytes).toString();
+
+      debugPrint("=====把获取到的信息传给后台=====$hashValue====");
+
       final result = await http.post(
         '/user/material/store',
         data: {
           "img_id": '${ossModel.resourceId}',
           "img_file_size": '$fileSize',
           "canvas_size": '$width:$height',
+          "hash_value": hashValue,
         },
       );
+
       if (result.code == 0) {
         await savePickerImage(ossModel, filePath, width, height);
         showToast("上传成功");

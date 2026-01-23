@@ -370,6 +370,8 @@ class SaveLogic extends GetxController {
     CanvasModel model,
     String zipPath,
   ) async {
+    debugPrint('图片资源大小---${bytes.length}');
+
     try {
       String mimeType = mimeTypeMap["png"] ?? "";
       final res = await http.put(

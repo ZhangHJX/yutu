@@ -48,7 +48,6 @@ class SearchTabPage extends StatelessWidget {
           itemBuilder: (context, index) {
             final item = designList[index];
             return HomePageItem(
-              key: ValueKey(item.id), // ✅ 排序变化也不乱
               model: item,
               source: PageSource.home,
               favoriteCallBack: () {

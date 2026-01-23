@@ -47,6 +47,15 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   }
 
   @override
+  void onReady() {
+    super.onReady();
+    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+      showToast("打开失败");
+      return;
+    }
+  }
+
+  @override
   void onInit() {
     super.onInit();
     getTabTags();
@@ -267,7 +276,6 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
             ? '/homePage/search/favorite-store'
             : '/homePage/search/favorite-destroy',
         data: {"link_id": '$itemId'},
-        showErrorToast: false,
       );
       if (result.code == 0) {
         showToast(shouldFavorite ? "收藏成功" : "取消收藏成功");

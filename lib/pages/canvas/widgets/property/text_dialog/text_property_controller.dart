@@ -95,7 +95,6 @@ class TextPropertyController extends GetxController {
     try {
       final result = await http.post(
         '/front/index',
-        showErrorToast: false,
         converter: listConverter(FontInfoModel.fromJson),
       );
       if (result.code == 0 && result.data != null) {

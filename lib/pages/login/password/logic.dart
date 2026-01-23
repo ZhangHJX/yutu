@@ -56,7 +56,7 @@ class ForgetLogic extends GetxController {
       }
 
       if (global.connectStatus.currentStatus == NetworkStatus.none) {
-        showToast("设置密码失败");
+        showToast("设置失败");
         return;
       }
 
@@ -92,7 +92,6 @@ class ForgetLogic extends GetxController {
     final result = await http.post<PhoneModel>(
       "/passwordSet/index",
       converter: PhoneModel.fromJson,
-      showErrorToast: false,
       withToken: global.isLogin,
     );
     if (result.data != null) {
@@ -116,23 +115,28 @@ class ForgetLogic extends GetxController {
     isCountingDown.value = true;
     countDown.value = 60;
     try {
-      await http.post<CodeModel>(
+      final result = await http.post<CodeModel>(
         global.isLogin ? "/passwordSet/sendSms" : '/passwordChange/sendSms',
         data: global.isLogin ? {} : {'mobile': phone.value},
         converter: CodeModel.fromJson,
-        showErrorToast: true,
         withToken: global.isLogin,
       );
 
-      Timer.periodic(Duration(seconds: 1), (timer) {
-        if (countDown.value > 0) {
-          countDown.value--;
-        } else {
-          timer.cancel();
-          isCountingDown.value = false;
-        }
-      });
+      if (result.code == 0) {
+        showToast('验证码发送成功');
+        Timer.periodic(Duration(seconds: 1), (timer) {
+          if (countDown.value > 0) {
+            countDown.value--;
+          } else {
+            timer.cancel();
+            isCountingDown.value = false;
+          }
+        });
+      } else {
+        showToast('验证码发送失败');
+      }
     } catch (e) {
+      showToast('验证码发送失败');
       isCountingDown.value = false;
     }
   }

@@ -153,7 +153,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         // 创建或更新 TabController
         _createOrUpdateTabController();
       }
-      debugPrint("==下拉刷新数据===$refresh=====$hasMore=");
       isLoading = false;
       if (refresh) {
         refreshController.resetNoData();
@@ -304,7 +303,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
             ? '/homePage/favorite-store'
             : '/homePage/favorite-destroy',
         data: {"link_id": '$itemId'},
-        showErrorToast: false,
       );
       if (result.code == 0) {
         showToast(shouldFavorite ? "收藏成功" : "取消收藏成功");

@@ -107,7 +107,6 @@ class DraftDownloadService {
       // 获取所有字体列表
       final result = await http.post(
         '/front/index',
-        showErrorToast: false,
         converter: listConverter(FontInfoModel.fromJson),
       );
 

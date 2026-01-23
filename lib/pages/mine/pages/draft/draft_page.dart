@@ -107,7 +107,6 @@ class AppDraftPage extends StatelessWidget {
                             '${item.id}',
                           );
                           return DraftPageItem(
-                            key: ValueKey(item.id), // ⭐️加上
                             item: item,
                             showCheck: isBatch,
                             isSelected: isSelected,
