@@ -5,6 +5,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:path/path.dart' as p;
+import 'transform_tools.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -39,14 +40,30 @@ class ImageCameraUtils {
     if (originalFile == null) {
       return "";
     }
+
     final fileName = p.basenameWithoutExtension(originalFile.path);
     final ext = getFileExtensionFromPath(originalFile.path);
     final tempDir = await DirectoryManager.getTempSubDirectory("images");
-    final fullPath = p.join(tempDir.path, '$fileName.$ext');
 
-    ///copy到新的路径下
-    await originalFile.copy(fullPath);
-    return fullPath;
+    if (ext == 'gif') {
+      final Uint8List? origin = await asset.originBytes; // 可能为 null
+      final fullPath = p.join(tempDir.path, '$fileName.png');
+      if (origin != null && origin.isNotEmpty) {
+        final bytes = await TransformTools.gifToPngFrame(origin);
+        final file = File(fullPath);
+        if (bytes != null && bytes.isNotEmpty) {
+          await file.writeAsBytes(bytes, flush: true);
+        }
+        return file.path;
+      }
+      return '';
+    } else {
+      debugPrint("进入到图片类型的分支中");
+      final fullPath = p.join(tempDir.path, '$fileName.$ext');
+      //copy到新的路径下
+      await originalFile.copy(fullPath);
+      return fullPath;
+    }
   }
 
   ///3、获取 AssetEntity 对应文件的大小（单位：byte）

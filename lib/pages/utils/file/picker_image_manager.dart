@@ -32,7 +32,7 @@ class PickerImageManager {
       final List<AssetEntity>? result = await PickerImageManager.common(
         context,
       );
-      debugPrint('PickerImageManager---$result--');
+
       if (result != null) {
         AssetEntity asset = result.last;
         String filePath = await ImageCameraUtils.getAssetImageFilePath(asset);

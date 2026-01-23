@@ -239,8 +239,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     final targetTagId = _getCurrentTagId();
     if (refresh) {
       currentPage = 1;
-    } else {
-      currentPage += 1;
     }
     if (isLoading) {
       return;
