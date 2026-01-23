@@ -9,10 +9,10 @@ class TextMeasureUtil {
   /// [lineHeight] 行高（相对于字体大小的倍数，如 1.5 表示 1.5 倍行高）
   static Size measureText({
     required String text,
-    required double fontSize,
-    required String? fontFamily,
-    required double? letterSpacing,
-    required double? lineHeight,
+    double? fontSize = 16,
+    String? fontFamily = 'AlibabaPuHuiTi',
+    double? letterSpacing = 0,
+    double? lineHeight = 1.0,
   }) {
     final textStyle = TextStyle(
       fontSize: fontSize,

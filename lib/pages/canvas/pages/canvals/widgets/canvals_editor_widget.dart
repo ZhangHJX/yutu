@@ -163,13 +163,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
       }
     } else {
       // 文本类型，使用默认字体属性计算尺寸
-      Size textSize = TextMeasureUtil.measureText(
-        text: text,
-        fontSize: 16.w,
-        fontFamily: 'AlibabaPuHuiTi', // 默认字体
-        letterSpacing: 0, // 默认字间距
-        lineHeight: 1.0, // 默认行高
-      );
+      Size textSize = TextMeasureUtil.measureText(text: text);
       finalWidth = textSize.width;
       finalHeight = textSize.height;
     }

@@ -12,15 +12,13 @@ class CanvasElementWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     data.updateMatrix4();
-    final scaledWidth = data.width.w;
-    final scaledHeight = data.height.w;
     // Matrix 已经把原点移到了元素左上角，这里用 topLeft 避免再次做居中偏移
     return Transform(
       transform: data.transform,
       alignment: Alignment.topLeft,
       child: SizedBox(
-        width: scaledWidth,
-        height: scaledHeight,
+        width: data.width.w,
+        height: data.height.w,
         child: data.hidden ? null : _buildContent(),
       ),
     );
@@ -128,67 +126,37 @@ class CanvasElementWidget extends StatelessWidget {
           ),
         );
       case ElementType.text:
-        return StrokeText(
-          text: data.text,
-          textStyle: TextStyle(
-            fontFamily: data.familyKey,
-            fontSize: data.fontSize,
-            color: data.textColor.color.withValues(alpha: data.textAlpha),
-            height: data.lineHeight,
-            letterSpacing: data.fontSpace,
-            shadows: data.isShawOpen
-                ? [
-                    Shadow(
-                      color: data.shawColor.color.withValues(
-                        alpha: data.shawAlpha,
+        return SizedBox(
+          width: data.width.w,
+          height: data.height.w,
+          child: StrokeText(
+            text: data.text,
+            textStyle: TextStyle(
+              fontFamily: data.familyKey,
+              fontSize: data.fontSize.w,
+              color: data.textColor.color.withValues(alpha: data.textAlpha),
+              height: data.lineHeight,
+              letterSpacing: data.fontSpace,
+              shadows: data.isShawOpen
+                  ? [
+                      Shadow(
+                        color: data.shawColor.color.withValues(
+                          alpha: data.shawAlpha,
+                        ),
+                        offset: Offset(data.shawX, data.shawY),
+                        blurRadius: data.blurValue,
                       ),
-                      offset: Offset(data.shawX, data.shawY),
-                      blurRadius: data.blurValue,
-                    ),
-                  ]
-                : [],
+                    ]
+                  : [],
+            ),
+            textAlign: data.align,
+            strokeWidth: data.borderWidth.toDouble(),
+            strokeColor: data.borderWidth > 0
+                ? data.borderColor.color.withValues(alpha: data.borderAlpha)
+                : Colors.transparent,
+            maxLines: null,
           ),
-          textAlign: data.align,
-          strokeWidth: data.borderWidth.toDouble(),
-          strokeColor: data.borderWidth > 0
-              ? data.borderColor.color.withValues(alpha: data.borderAlpha)
-              : Colors.transparent,
         );
-
-      // return Container(
-      //   width: data.width.w,
-      //   height: data.height.w,
-      //   color: Colors.transparent,
-      //   alignment: Alignment.topLeft,
-      //   child: CanvasTextWidget(
-      //     text: data.text,
-      //     textStyle: TextStyle(
-      //       fontFamily: data.familyKey,
-      //       fontSize: data.fontSize,
-      //       color: data.textColor.color.withValues(alpha: data.textAlpha),
-      //       height: data.lineHeight,
-      //       letterSpacing: data.fontSpace,
-      //       shadows: data.isShawOpen
-      //           ? [
-      //               Shadow(
-      //                 color: data.shawColor.color.withValues(
-      //                   alpha: data.shawAlpha,
-      //                 ),
-      //                 offset: Offset(data.shawX, data.shawY),
-      //                 blurRadius: data.blurValue,
-      //               ),
-      //             ]
-      //           : [],
-      //     ),
-      //     textAlign: data.align,
-      //     strokeWidth: data.borderWidth.toDouble(),
-      //     strokeColor: data.borderWidth > 0
-      //         ? data.borderColor.color.withValues(alpha: data.borderAlpha)
-      //         : Colors.transparent,
-      //     fillColor: data.textColor.color.withValues(alpha: data.textAlpha),
-      //     maxLines: null,
-      //   ),
-      // );
     }
   }
 }
