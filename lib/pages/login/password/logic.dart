@@ -23,6 +23,9 @@ class ForgetLogic extends GetxController {
   final isCountingDown = false.obs;
   final countDown = 60.obs;
 
+  final isNewPasswordVisible = false.obs;
+  final isAgainPasswordVisible = false.obs;
+
   // 计时器
   Timer? _timer;
 
@@ -139,6 +142,15 @@ class ForgetLogic extends GetxController {
       showToast('验证码发送失败');
       isCountingDown.value = false;
     }
+  }
+
+  // 切换密码可见性
+  void toggleNewPasswordVisibility() {
+    isNewPasswordVisible.toggle();
+  }
+
+  void toggleAgainPasswordVisibility() {
+    isAgainPasswordVisible.toggle();
   }
 
   @override

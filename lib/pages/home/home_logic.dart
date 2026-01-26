@@ -88,16 +88,17 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   void onInit() {
     super.onInit();
     homeRefresh();
-    showDraftDialog();
 
     /// 登录事件监听
     _countWorker = ever(global.accessToken, (token) {
       homeRefresh();
+      showDraftDialog();
     });
     // 监听网络状态变化
     global.connectStatus.onStatusChanged.listen((status) {
       if (status != NetworkStatus.none) {
         homeRefresh();
+        showDraftDialog();
       }
     });
 
@@ -360,6 +361,8 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
       } else {
         requestServiceDraft(canvasModel);
       }
+    } else {
+      debugPrint('没有保存的草稿');
     }
   }
 
@@ -397,7 +400,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
       if (result.code == 0 && result.data != null) {
         debugPrint(
-          "本地草稿列表==${model.timestamp}====${result.data}===${result.data!.editTime}===",
+          "本地草稿列表==${model.timestamp}=====${result.data!.editTime}===",
         );
 
         if (model.timestamp > result.data!.editTime) {
@@ -472,12 +475,12 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   Future<void> loadDraftDialog() async {
     final draft = await DraftManager().loadDraft();
     if (draft == null) {
-      SmartDialog.dismiss();
+      SmartDialog.dismiss(status: SmartStatus.loading);
       return;
     }
     // 根据当前屏幕重新计算画布矩阵
     draft.getMatrix4();
-    SmartDialog.dismiss();
+    SmartDialog.dismiss(status: SmartStatus.loading);
     Get.toNamed(
       AppRoutes.canvalsPage,
       arguments: {"model": draft, "type": PageSource.draft},
@@ -488,10 +491,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   Future<void> loadServerDraft(DraftEditModel editModel) async {
     try {
       // 显示加载对话框
-      SmartDialog.showLoading(
-        msg: '正在准备草稿...',
-        maskColor: "#000000".color.withValues(alpha: 0.5),
-      );
+      showLoading('正在准备草稿...');
 
       // 准备服务器草稿（下载字体和压缩包）
       await DraftDownloadService.instance.prepareServerDraft(
@@ -504,14 +504,14 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
       // 关闭加载对话框
       SmartDialog.dismiss();
-
       // 加载草稿并跳转
       await loadDraftDialog();
     } catch (e) {
       SmartDialog.dismiss();
+      SmartDialog.dismiss(status: SmartStatus.loading);
       debugPrint('加载服务器草稿失败: $e');
       // 可以显示错误提示
-      SmartDialog.showToast('加载草稿失败，请重试');
+      showToast('加载草稿失败，请重试');
     }
   }
 }

@@ -75,7 +75,7 @@ class _MinePageState extends State<MinePage> {
                     Padding(
                       padding: EdgeInsets.only(bottom: 51.w),
                       child: Text(
-                        '语音厅设计助手 V1.0\n让设计更简单',
+                        '语音厅设计助手 V${logic.version.value}\n让设计更简单',
                         style: TextStyle(
                           fontSize: 11.w,
                           color: "#9E9E9E".color,
@@ -119,8 +119,6 @@ class _MinePageState extends State<MinePage> {
 
   /// 个人信息
   Widget _buildMineInfoContent() {
-    final avatar =
-        logic.global.avatar ?? "assets/images/mine/mine_info_empty.png";
     return Padding(
       padding: EdgeInsets.only(left: 22.w, top: 9.w, right: 20.w),
       child: Listener(
@@ -153,7 +151,17 @@ class _MinePageState extends State<MinePage> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    CBorderImage(size: 54.w, imgUrl: avatar, isCircle: true),
+                    Obx(() {
+                      final raw = logic.global.avatar;
+                      final avatar = (raw == null || raw.trim().isEmpty)
+                          ? "assets/images/mine/mine_info_empty.png"
+                          : raw;
+                      return CBorderImage(
+                        size: 54.w,
+                        imgUrl: avatar,
+                        isCircle: true,
+                      );
+                    }),
 
                     if (logic.global.isLogin)
                       Positioned(

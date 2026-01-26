@@ -232,9 +232,7 @@ class DraftDownloadService {
       }
 
       // 获取草稿目录
-      final draftDir = await DirectoryManager.getDocumentsSubDirectory(
-        'cavals',
-      );
+      final draftDir = await DirectoryManager.getDocumentsDirectory();
 
       // 清空草稿目录（删除旧草稿）
       if (await draftDir.exists()) {

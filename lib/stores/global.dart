@@ -120,7 +120,10 @@ class GlobalLogic extends GetxController {
       );
       if (result.code == 0 && result.data?.token != null) {
         // 更新 accessToken，这样拦截器就能获取到最新的 token
-        accessToken.value = result.data!.token;
+
+        if (accessToken.value != result.data!.token) {
+          accessToken.value = result.data!.token;
+        }
         fetchUserInfo();
       }
       debugPrint(

@@ -265,28 +265,49 @@ class PasswordPage extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _passwordOneController,
-              obscureText: true,
-              inputFormatters: [LengthLimitingTextInputFormatter(20)],
-              decoration: InputDecoration(
-                isCollapsed: true,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                hintText: '请输入新密码',
-                hintStyle: TextStyle(
+            child: Obx(() {
+              return TextField(
+                controller: _passwordOneController,
+                obscureText: !logic.isNewPasswordVisible.value,
+                inputFormatters: [LengthLimitingTextInputFormatter(20)],
+                decoration: InputDecoration(
+                  isCollapsed: true,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  hintText: '请输入新密码',
+                  hintStyle: TextStyle(
+                    fontSize: 14.w,
+                    color: "#9E9E9E".color,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                style: TextStyle(
+                  color: '#474747'.color,
                   fontSize: 14.w,
-                  color: "#9E9E9E".color,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w500,
+                ),
+                onChanged: (value) => logic.password.value = value,
+              );
+            }),
+          ),
+          Obx(
+            () => GestureDetector(
+              onTap: logic.toggleNewPasswordVisibility,
+              child: SizedBox(
+                width: 20.w,
+                height: 20.w,
+                child: Center(
+                  child: Image.asset(
+                    logic.isNewPasswordVisible.value
+                        ? 'assets/images/login/login_visibility.png'
+                        : 'assets/images/login/login_no_visibility.png',
+                    width: 18.w,
+                    height: 14.w,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-              style: TextStyle(
-                color: '#474747'.color,
-                fontSize: 14.w,
-                fontWeight: FontWeight.w500,
-              ),
-              onChanged: (value) => logic.password.value = value,
             ),
           ),
         ],
@@ -308,28 +329,49 @@ class PasswordPage extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _passwordTwoController,
-              obscureText: true,
-              inputFormatters: [LengthLimitingTextInputFormatter(20)],
-              decoration: InputDecoration(
-                isCollapsed: true,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                hintText: '再次输入密码',
-                hintStyle: TextStyle(
+            child: Obx(() {
+              return TextField(
+                controller: _passwordTwoController,
+                obscureText: !logic.isAgainPasswordVisible.value,
+                inputFormatters: [LengthLimitingTextInputFormatter(20)],
+                decoration: InputDecoration(
+                  isCollapsed: true,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  hintText: '再次输入密码',
+                  hintStyle: TextStyle(
+                    fontSize: 14.w,
+                    color: "#9E9E9E".color,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                style: TextStyle(
+                  color: '#474747'.color,
                   fontSize: 14.w,
-                  color: "#9E9E9E".color,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w500,
+                ),
+                onChanged: (value) => logic.again.value = value,
+              );
+            }),
+          ),
+          Obx(
+            () => GestureDetector(
+              onTap: logic.toggleAgainPasswordVisibility,
+              child: SizedBox(
+                width: 20.w,
+                height: 20.w,
+                child: Center(
+                  child: Image.asset(
+                    logic.isAgainPasswordVisible.value
+                        ? 'assets/images/login/login_visibility.png'
+                        : 'assets/images/login/login_no_visibility.png',
+                    width: 18.w,
+                    height: 14.w,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-              style: TextStyle(
-                color: '#474747'.color,
-                fontSize: 14.w,
-                fontWeight: FontWeight.w500,
-              ),
-              onChanged: (value) => logic.again.value = value,
             ),
           ),
         ],
