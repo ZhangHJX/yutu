@@ -38,15 +38,9 @@ class DraftLogic extends GetxController {
 
   final userInfo = UserModel().obs;
 
-  GlobalKey refresherKey = GlobalKey();
-  RefreshController refreshController = RefreshController(
-    initialRefresh: false,
-  );
-
   @override
   void onClose() {
     _countWorker?.dispose();
-    refreshController.dispose();
     super.onClose();
   }
 
@@ -64,7 +58,6 @@ class DraftLogic extends GetxController {
   void onInit() {
     super.onInit();
     refreshUserInfo();
-    onRefresh();
 
     _countWorker = ever(global.userInfo, (user) {
       userInfo.value = user;
@@ -75,21 +68,10 @@ class DraftLogic extends GetxController {
     await global.fetchUserInfo();
   }
 
-  /// 下拉刷新
-  Future<void> onRefresh() async {
-    await loadDataList(refresh: true);
-  }
-
-  /// 上拉加载更多
-  Future<void> onLoad({int? tagId}) async {
-    await loadDataList(refresh: false);
-  }
-
   /// 加载图片列表
   Future<void> loadDataList({bool refresh = false}) async {
-    if (isLoading.value) {
-      return;
-    }
+    if (isLoading.value) return;
+    if (!hasMore.value) return;
     if (refresh) {
       currentPage = 1;
     }
@@ -99,7 +81,6 @@ class DraftLogic extends GetxController {
         '/design/draft/index',
         query: {'page': '$currentPage', 'limit': globalPageSize},
       );
-
       if (result.code == 0 && result.data != null) {
         final listModel = CommonModel.fromJson(result.data);
         if (refresh) {
@@ -112,28 +93,11 @@ class DraftLogic extends GetxController {
         } else {
           hasMore.value = false;
         }
-      } else {
-        // 如果请求失败，也要更新 hasMore 状态
-        if (!refresh) {
-          hasMore.value = false;
-        }
       }
-      isLoading.value = false;
     } catch (e) {
-      isLoading.value = false;
       debugPrint('草稿列表数据请求错误: $e');
     } finally {
-      if (!isClosed) {
-        if (refresh) {
-          refreshController.refreshCompleted();
-        } else {
-          if (hasMore.value) {
-            refreshController.loadComplete();
-          } else {
-            refreshController.loadNoData();
-          }
-        }
-      }
+      isLoading.value = false;
     }
   }
 
@@ -220,4 +184,6 @@ class DraftLogic extends GetxController {
       await DraftStoreManager.instance.deleteDraftById(id);
     }
   }
+
+  Future<void> loadMore() async {}
 }

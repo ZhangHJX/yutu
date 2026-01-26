@@ -33,7 +33,6 @@ class DesignTabPage extends StatelessWidget {
       return Padding(
         padding: EdgeInsets.only(left: 15.w, right: 15.w, top: 12.w),
         child: SmartRefresher(
-          key: tabData.refresherKey,
           controller: tabData.refreshController,
           enablePullUp: true,
           onRefresh: () async {

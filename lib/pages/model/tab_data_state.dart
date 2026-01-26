@@ -1,5 +1,4 @@
 import 'package:common/common.dart';
-import 'package:flutter/material.dart';
 import 'common_model.dart';
 
 class TabDataState {
@@ -14,8 +13,6 @@ class TabDataState {
 
   /// 是否还有更多数据
   final RxBool hasMore = true.obs;
-
-  final GlobalKey refresherKey = GlobalKey();
 
   /// 刷新控制器（每个 tab 独立管理）
   final RefreshController refreshController = RefreshController(

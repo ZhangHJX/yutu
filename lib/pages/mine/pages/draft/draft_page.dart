@@ -8,10 +8,54 @@ import 'package:voicetemplate/core/index.dart';
 import 'draft_page_item.dart';
 import 'draft_logic.dart';
 
-class AppDraftPage extends StatelessWidget {
-  AppDraftPage({super.key});
+class AppDraftPage extends StatefulWidget {
+  const AppDraftPage({super.key});
 
-  final logic = Get.put(DraftLogic());
+  @override
+  State<AppDraftPage> createState() => _AppDraftPageState();
+}
+
+class _AppDraftPageState extends State<AppDraftPage> {
+  late final DraftLogic logic;
+  late final RefreshController _refreshController;
+  bool isFirstInit = true;
+
+  @override
+  void initState() {
+    super.initState();
+    logic = Get.put(DraftLogic());
+    _refreshController = RefreshController();
+    // _onRefresh();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isFirstInit) {
+        isFirstInit = false;
+        _onRefresh();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshController.dispose(); // ✅ controller 跟页面一起释放
+    // Get.delete<DraftLogic>(force: true); // ✅ 如需销毁 logic（看你是否全局复用）
+    super.dispose();
+  }
+
+  Future<void> _onRefresh() async {
+    await logic.loadDataList(refresh: true);
+    if (!mounted) return; // ✅ 避免页面已销毁还回调
+    _refreshController.refreshCompleted();
+  }
+
+  Future<void> _onLoading() async {
+    await logic.loadDataList();
+    if (!mounted) return;
+    if (logic.hasMore.value) {
+      _refreshController.loadComplete();
+    } else {
+      _refreshController.loadNoData();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,66 +115,72 @@ class AppDraftPage extends StatelessWidget {
 
             /// 2. 中间可滚动列表（用 Expanded 包起来）
             Expanded(
-              child: Obx(() {
-                if (logic.draftList.isEmpty && !logic.isLoading.value) {
-                  return PageEmptyState();
-                }
-                return Padding(
-                  padding: EdgeInsets.only(
-                    left: 15.w,
-                    right: 15.w,
-                    bottom: ScreenTools.bottomBarHeight,
-                  ),
-                  child: SmartRefresher(
-                    key: logic.refresherKey,
-                    controller: logic.refreshController,
-                    enablePullUp: true,
-                    onRefresh: () async {
-                      await logic.onRefresh();
-                    },
-                    onLoading: () async {
-                      await logic.onLoad();
-                    },
-                    child: MasonryGridView.builder(
-                      gridDelegate:
-                          SliverSimpleGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                          ),
-                      mainAxisSpacing: 12.w,
-                      crossAxisSpacing: 9.w,
-                      itemCount: logic.draftList.length,
-                      itemBuilder: (context, index) {
-                        final item = logic.draftList[index];
-                        return Obx(() {
-                          final isBatch = logic.isBatchMode.value;
-                          final isSelected = logic.selectedIds.contains(
-                            '${item.id}',
-                          );
-                          return DraftPageItem(
-                            item: item,
-                            showCheck: isBatch,
-                            isSelected: isSelected,
-                            onTap: () {
-                              if (isBatch) {
-                                logic.toggleItemSelection('${item.id}');
-                              } else {
-                                Get.toNamed(
-                                  AppRoutes.middle,
-                                  arguments: {
-                                    'id': item.id,
-                                    "type": PageSource.draft,
-                                  },
-                                );
-                              }
-                            },
-                            index: index,
-                          );
-                        });
-                      },
-                    ),
-                  ),
-                );
-              }),
+              child: SmartRefresher(
+                controller: _refreshController,
+                enablePullDown: true,
+                enablePullUp: true,
+                onRefresh: _onRefresh,
+                onLoading: _onLoading,
+                child: CustomScrollView(
+                  slivers: [
+                    Obx(() {
+                      final list = logic.draftList;
+                      final isLoading = logic.isLoading.value;
+
+                      if (list.isEmpty && !isLoading) {
+                        return SliverToBoxAdapter(child: PageEmptyState());
+                      }
+
+                      return SliverPadding(
+                        padding: EdgeInsets.only(
+                          left: 15.w,
+                          right: 15.w,
+                          bottom: ScreenTools.bottomBarHeight,
+                        ),
+                        sliver: SliverMasonryGrid(
+                          gridDelegate:
+                              const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                              ),
+                          mainAxisSpacing: 12.w,
+                          crossAxisSpacing: 9.w,
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final item = list[index];
+                            return Obx(() {
+                              final isBatch = logic.isBatchMode.value;
+                              final isSelected = logic.selectedIds.contains(
+                                '${item.id}',
+                              );
+                              return DraftPageItem(
+                                item: item,
+                                showCheck: isBatch,
+                                isSelected: isSelected,
+                                onTap: () {
+                                  if (isBatch) {
+                                    logic.toggleItemSelection('${item.id}');
+                                  } else {
+                                    Get.toNamed(
+                                      AppRoutes.middle,
+                                      arguments: {
+                                        'id': item.id,
+                                        "type": PageSource.draft,
+                                      },
+                                    );
+                                  }
+                                },
+                                index: index,
+                              );
+                            });
+                          }, childCount: list.length),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
             ),
 
             /// 3. 底部操作栏（全选 / 取消 / 删除）

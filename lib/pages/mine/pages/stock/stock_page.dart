@@ -7,9 +7,52 @@ import '../widgets/operation_bottom_bar.dart';
 import '../../../widgets/page_empty_state.dart';
 import '../widgets/top_navigation_widget.dart';
 
-class AppStockPage extends StatelessWidget {
-  AppStockPage({super.key});
-  final logic = Get.put(StockLogic());
+class AppStockPage extends StatefulWidget {
+  const AppStockPage({super.key});
+
+  @override
+  State<AppStockPage> createState() => _AppStockPageState();
+}
+
+class _AppStockPageState extends State<AppStockPage> {
+  late final StockLogic logic;
+  late final RefreshController _refreshController;
+  bool isFirstInit = true;
+
+  @override
+  void initState() {
+    super.initState();
+    logic = Get.put(StockLogic());
+    _refreshController = RefreshController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isFirstInit) {
+        isFirstInit = false;
+        _onRefresh();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onRefresh() async {
+    await logic.loadDataList(refresh: true);
+    if (!mounted) return;
+    _refreshController.refreshCompleted();
+  }
+
+  Future<void> _onLoading() async {
+    await logic.loadDataList();
+    if (!mounted) return;
+    if (logic.hasMore.value) {
+      _refreshController.loadComplete();
+    } else {
+      _refreshController.loadNoData();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,13 +96,13 @@ class AppStockPage extends StatelessWidget {
 
             /// 1. 存储空间组件
             Obx(() {
-              final userInfo = logic.global.userInfo.value;
-
+              final userInfo = logic.userInfo.value;
               final materialSize = userInfo.materialSize;
               final materialSizeLimit = userInfo.materialSizeLimit;
               final usageRatio =
                   materialSize /
                   (materialSizeLimit > 0 ? materialSizeLimit : 1);
+
               return StorageSpaceCard(
                 usageRatio: usageRatio,
                 sizeLimit: materialSizeLimit,
@@ -71,62 +114,67 @@ class AppStockPage extends StatelessWidget {
 
             /// 2. 中间可滚动列表（用 Expanded 包起来）
             Expanded(
-              child: Obx(() {
-                if (logic.stockList.isEmpty && !logic.isLoading.value) {
-                  return PageEmptyState();
-                }
+              child: SmartRefresher(
+                controller: _refreshController,
+                enablePullDown: true,
+                enablePullUp: true,
+                onRefresh: _onRefresh,
+                onLoading: _onLoading,
+                child: CustomScrollView(
+                  slivers: [
+                    Obx(() {
+                      final list = logic.stockList;
+                      final isLoading = logic.isLoading.value;
 
-                return Padding(
-                  padding: EdgeInsets.only(
-                    left: 15.w,
-                    right: 15.w,
-                    bottom: ScreenTools.bottomBarHeight,
-                  ),
-                  child: SmartRefresher(
-                    key: logic.refresherKey,
-                    controller: logic.refreshController,
-                    enablePullUp: true,
-                    onRefresh: () async {
-                      await logic.onRefresh();
-                    },
-                    onLoading: () async {
-                      await logic.onLoad();
-                    },
-                    child: MasonryGridView.builder(
-                      gridDelegate:
-                          SliverSimpleGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                          ),
-                      mainAxisSpacing: 12.w,
-                      crossAxisSpacing: 9.w,
-                      itemCount: logic.stockList.length,
-                      itemBuilder: (context, index) {
-                        final item = logic.stockList[index];
-                        return Obx(() {
-                          final isBatch = logic.isBatchMode.value;
-                          final isSelected = logic.selectedIds.contains(
-                            '${item.id}',
-                          );
-                          return StockPageItem(
-                            item: item,
-                            showCheck: isBatch,
-                            isSelected: isSelected,
-                            onTap: () {
-                              if (isBatch) {
-                                logic.toggleItemSelection('${item.id}');
-                              } else {
-                                // 非批量模式下可以进入详情 / 编辑
-                                // Get.to(...);
-                              }
-                            },
-                            index: index,
-                          );
-                        });
-                      },
-                    ),
-                  ),
-                );
-              }),
+                      if (list.isEmpty && !isLoading) {
+                        return SliverToBoxAdapter(child: PageEmptyState());
+                      }
+
+                      return SliverPadding(
+                        padding: EdgeInsets.only(
+                          left: 15.w,
+                          right: 15.w,
+                          bottom: ScreenTools.bottomBarHeight,
+                        ),
+                        sliver: SliverMasonryGrid(
+                          gridDelegate:
+                              const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                              ),
+                          mainAxisSpacing: 12.w,
+                          crossAxisSpacing: 9.w,
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final item = list[index];
+                            return Obx(() {
+                              final isBatch = logic.isBatchMode.value;
+                              final isSelected = logic.selectedIds.contains(
+                                '${item.id}',
+                              );
+                              return StockPageItem(
+                                item: item,
+                                showCheck: isBatch,
+                                isSelected: isSelected,
+                                onTap: () {
+                                  if (isBatch) {
+                                    logic.toggleItemSelection('${item.id}');
+                                  } else {
+                                    // 非批量模式下可以进入详情 / 编辑
+                                    // Get.to(...);
+                                  }
+                                },
+                                index: index,
+                              );
+                            });
+                          }, childCount: list.length),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
             ),
 
             /// 3. 底部操作栏（全选 / 取消 / 删除）
@@ -136,7 +184,10 @@ class AppStockPage extends StatelessWidget {
                   if (logic.isBatchMode.value)
                     OperationBottomBar(
                       cancelEvent: logic.clearSelection,
-                      deleteEvent: logic.deleteSelected,
+                      deleteEvent: () {
+                        SmartDialog.dismiss();
+                        logic.deleteSelected();
+                      },
                       typeName: "素材",
                     ),
                   if (ScreenTools.bottomBarHeight > 0 &&

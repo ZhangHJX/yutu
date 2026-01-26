@@ -114,6 +114,12 @@ class ImageLogic extends GetxController {
       showToast("上传失败");
       return;
     }
+    if (!global.isLogin) {
+      SmartDialog.dismiss();
+      Get.toNamed(AppRoutes.appLogin);
+      return;
+    }
+
     try {
       // 权限请求
       final res = await PermissionUtil.requestPhotoAlbumPermission();
@@ -236,9 +242,6 @@ class ImageLogic extends GetxController {
   ) async {
     try {
       final hashValue = sha256.convert(bytes).toString();
-
-      debugPrint("=====把获取到的信息传给后台=====$hashValue====");
-
       final result = await http.post(
         '/user/material/store',
         data: {

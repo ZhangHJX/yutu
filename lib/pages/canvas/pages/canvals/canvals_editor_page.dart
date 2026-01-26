@@ -180,6 +180,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      // 获取工具栏高度，用于更准确的适配
+      final topBarHeight = ScreenTools.statusBarHeight + 51.w;
+      final bottomBarHeight = 66.w + ScreenTools.bottomBarHeight;
+
       return PopScope(
         canPop: canvalsController.canPop.value,
         child: Scaffold(
@@ -187,9 +191,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
           backgroundColor: "#F6F2FB".color,
           body: Stack(
             children: [
-              Positioned(
-                left: 0,
-                top: ScreenTools.statusBarHeight + 51.w,
+              // 画布区域 - 使用 Positioned.fill 自动计算可用空间
+              Positioned.fill(
+                top: topBarHeight,
+                bottom: bottomBarHeight,
                 child: CanvasPointerWrapper(
                   canvalsController: _canvalsController,
                   canvasStatusManager: _canvasStatusManager,
@@ -197,15 +202,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                   canvasContainerKey: _canvasContainerKey,
                   onTap: () => toggleLayerDialog(false),
                   child: Container(
-                    width: ScreenTools.screenWidth,
-                    height:
-                        ScreenTools.screenHeight -
-                        ScreenTools.statusBarHeight -
-                        ScreenTools.bottomBarHeight -
-                        117.w,
+                    width: double.infinity,
+                    height: double.infinity,
                     color: "#F6F2FB".color,
                     child: LayoutBuilder(
                       builder: (context, constraints) {
+                        // 使用 LayoutBuilder 提供的实际约束，确保在不同机型上都能正确适配
                         _canvalsController.getCanvalsSize(
                           constraints.maxWidth,
                           constraints.maxHeight,
@@ -300,6 +302,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
               Positioned(
                 left: 0,
                 top: 0,
+                right: 0,
                 child: Obx(
                   () => CanvasAppBar(
                     _handleBack,
@@ -315,11 +318,17 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
               Positioned(
                 left: 0,
                 bottom: 0,
+                right: 0,
                 child: CanvasBottomBar(
                   onLayerTap: () {
                     _toggleLayerDialog(true);
                   },
                   onAddImage: () {
+                    if (!canvalsController.global.isLogin) {
+                      SmartDialog.dismiss();
+                      Get.toNamed(AppRoutes.appLogin);
+                      return;
+                    }
                     addImageDialog(context);
                   },
                   onAddShape: showShapeDialog,
@@ -327,6 +336,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                     showTextInputDialog(context);
                   },
                   onSave: () {
+                    if (!canvalsController.global.isLogin) {
+                      SmartDialog.dismiss();
+                      Get.toNamed(AppRoutes.appLogin);
+                      return;
+                    }
+
                     throttler(() async {
                       toggleLayerDialog(false);
                       canvalsController.deselect();
@@ -348,11 +363,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                 _buildScaleOverlay(),
 
               // 元素属性工具栏
-              Obx(
-                () => Positioned(
+              Obx(() {
+                final bottomBarHeight = 66.w + ScreenTools.bottomBarHeight;
+                return Positioned(
                   left: 0,
                   right: 0,
-                  bottom: 66.w + ScreenTools.bottomBarHeight,
+                  bottom: bottomBarHeight,
                   child: ElementAttributeToolbar(
                     activeElement: activeElement,
                     isCanvasSelected: _canvalsController.canvasModel.isSelected,
@@ -383,8 +399,8 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                       }
                     },
                   ),
-                ),
-              ),
+                );
+              }),
 
               // 图层弹框
               if (_showLayerDialog) _buildLayerDialog(),
@@ -505,9 +521,10 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
 
   /// 构建图层弹框
   Widget _buildLayerDialog() {
+    final bottomBarHeight = 66.w + ScreenTools.bottomBarHeight;
     return Positioned(
       left: 16.w,
-      bottom: 72.w + ScreenTools.bottomBarHeight, // 底部工具栏高度 + 10像素间距
+      bottom: bottomBarHeight + 6.w, // 底部工具栏高度 + 间距
       child: CanvalsLayerDialog(
         canvasModel: _canvalsController.canvasModel,
         layers: _canvalsController.elements,
@@ -608,6 +625,12 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
           return;
         }
       });
+
+      if (!canvalsController.global.isLogin) {
+        SmartDialog.dismiss();
+        Get.toNamed(AppRoutes.appLogin);
+        return;
+      }
 
       showIsSaveDraftDialog(() async {
         // 创建或获取 SaveLogic 实例

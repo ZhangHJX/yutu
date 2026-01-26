@@ -98,11 +98,6 @@ class SaveLogic extends GetxController {
   void _checkCanSave() {
     final hasTitle = titleController.text.trim().isNotEmpty;
     final hasScene = sceneName.value.isNotEmpty;
-
-    // final hasDescription = descriptionController.text.trim().isNotEmpty;
-    // final canSave = hasTitle && hasDescription && hasScene && hasTags;
-    // final hasTags = selectedTags.isNotEmpty;
-
     final canSave = hasTitle && hasScene;
     if (isCanSave.value != canSave) {
       isCanSave.value = canSave;
@@ -191,6 +186,11 @@ class SaveLogic extends GetxController {
       showToast("保存失败");
       return;
     }
+    if (!canvalsLogic.global.isLogin) {
+      SmartDialog.dismiss();
+      Get.toNamed(AppRoutes.appLogin);
+      return;
+    }
 
     if (!isCanSave.value) {
       return;
@@ -204,6 +204,11 @@ class SaveLogic extends GetxController {
   Future<void> saveAsDraft({bool isCanvals = false}) async {
     if (global.connectStatus.currentStatus == NetworkStatus.none) {
       showToast("保存失败");
+      return;
+    }
+    if (!canvalsLogic.global.isLogin) {
+      SmartDialog.dismiss();
+      Get.toNamed(AppRoutes.appLogin);
       return;
     }
 

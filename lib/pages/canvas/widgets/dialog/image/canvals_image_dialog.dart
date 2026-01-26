@@ -317,12 +317,16 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
             ),
             borderRadius: 22.5.w,
             onPressed: () async {
-              logic.global.connectStatus.onStatusChanged.listen((status) {
-                if (status == NetworkStatus.none) {
-                  showToast("确认失败");
-                  return;
-                }
-              });
+              if (logic.global.connectStatus.currentStatus ==
+                  NetworkStatus.none) {
+                showToast("确认失败");
+                return;
+              }
+              if (!logic.global.isLogin) {
+                SmartDialog.dismiss();
+                Get.toNamed(AppRoutes.appLogin);
+                return;
+              }
 
               final index = _selectedIndex;
               final list = logic.imageList;

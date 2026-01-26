@@ -440,6 +440,7 @@ class _MinePageState extends State<MinePage> {
 
   Widget _buildToolItem(MineToolsModel model) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: model.onTap,
       child: Column(
         children: [

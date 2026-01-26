@@ -29,7 +29,6 @@ class SearchTabPage extends StatelessWidget {
       }
       // 将响应式逻辑移到 itemBuilder 外部，使用独立的响应式 item 组件
       return SmartRefresher(
-        key: tabData.refresherKey,
         controller: tabData.refreshController,
         enablePullUp: true,
         onRefresh: () async {
