@@ -1,5 +1,4 @@
 import 'package:common/common.dart';
-import 'package:flutter/material.dart';
 import '../../../model/common_model.dart';
 import 'package:voicetemplate/stores/global.dart';
 import 'package:voicetemplate/stores/user_model.dart';
@@ -27,12 +26,7 @@ class DraftLogic extends GetxController {
 
   /// 是否处于批量模式
   final RxBool isBatchMode = false.obs;
-
-  int get selectedCount => selectedIds.length;
-
-  /// 是否全选
-  bool get isAllSelected =>
-      draftList.isNotEmpty && selectedIds.length == draftList.length;
+  final RxBool isAllSelected = false.obs;
 
   Worker? _countWorker;
 
@@ -85,8 +79,12 @@ class DraftLogic extends GetxController {
         final listModel = CommonModel.fromJson(result.data);
         if (refresh) {
           draftList.clear();
+          selectedIds.clear();
         }
         if (listModel.items.isNotEmpty) {
+          if (isAllSelected.value) {
+            selectedIds.addAll(listModel.items.map((e) => '${e.id}'));
+          }
           draftList.addAll(listModel.items);
           currentPage++;
           hasMore.value = true;
@@ -112,15 +110,25 @@ class DraftLogic extends GetxController {
   /// 单个 item 选中 / 取消
   void toggleItemSelection(String id) {
     if (selectedIds.contains(id)) {
+      if (isAllSelected.value) {
+        isAllSelected.value = false;
+      }
       selectedIds.remove(id);
     } else {
       selectedIds.add(id);
+    }
+
+    if (!isAllSelected.value) {
+      isAllSelected.value = (selectedIds.length == draftList.length);
     }
   }
 
   /// 全选
   void toggleSelectAll() {
-    if (isAllSelected) return;
+    if (isAllSelected.value) {
+      return;
+    }
+    isAllSelected.value = true;
     selectedIds
       ..clear()
       ..addAll(draftList.map((e) => '${e.id}'));
@@ -128,6 +136,7 @@ class DraftLogic extends GetxController {
 
   /// 取消
   void clearSelection() {
+    isAllSelected.value = false;
     isBatchMode.value = false;
     selectedIds.clear();
   }
@@ -147,11 +156,14 @@ class DraftLogic extends GetxController {
       // 发送删除请求，将选中的uuid列表作为参数
       final result = await http.post(
         '/design/draft/destroys',
-        data: {'ids': selectedIds.toList().join(',')},
+        data: {
+          'ids': selectedIds.toList().join(','),
+          'is_all': isAllSelected.value ? 1 : 0,
+        },
       );
 
       if (result.code == 0) {
-        await deleteSelectedDrafts();
+        // await deleteSelectedDrafts(isAll: isAll);
         // 删除成功，从当前tab的数据列表中移除已删除的项
         draftList.removeWhere((e) => selectedIds.contains('${e.id}'));
         // 清除选择并退出批量模式
@@ -174,16 +186,19 @@ class DraftLogic extends GetxController {
     }
   }
 
-  Future<void> deleteSelectedDrafts() async {
-    final ids = selectedIds.toList(growable: false); // 先拷贝
-    for (final idStr in ids) {
-      final id = int.tryParse(idStr);
-      if (id == null) {
-        continue;
+  Future<void> deleteSelectedDrafts({bool isAll = false}) async {
+    if (isAll) {
+      //全选模式下
+      await DraftStoreManager.instance.clearAllDrafts();
+    } else {
+      final ids = selectedIds.toList(growable: false); // 先拷贝
+      for (final idStr in ids) {
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          continue;
+        }
+        await DraftStoreManager.instance.deleteDraftById(id);
       }
-      await DraftStoreManager.instance.deleteDraftById(id);
     }
   }
-
-  Future<void> loadMore() async {}
 }

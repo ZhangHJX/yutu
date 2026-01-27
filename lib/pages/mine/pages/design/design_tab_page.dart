@@ -74,7 +74,7 @@ class _DesignItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     // 只监听需要的响应式变量
     return Obx(() {
-      final isSelected = logic.selectedIds.contains('${item.id}');
+      final isSelected = item.isSelected;
       final showCheck = logic.isBatchMode.value;
       return DesiginPageItem(
         item: item,
@@ -82,7 +82,7 @@ class _DesignItemWidget extends StatelessWidget {
         showCheck: showCheck,
         onTap: () {
           if (showCheck) {
-            logic.toggleItemSelection("${item.id}");
+            logic.toggleItemSelection(item.id);
           } else {
             Get.toNamed(
               AppRoutes.middle,
@@ -93,6 +93,9 @@ class _DesignItemWidget extends StatelessWidget {
         favoriteCallBack: () {
           if (!logic.global.isLogin) {
             Get.toNamed(AppRoutes.appLogin);
+            return;
+          }
+          if (logic.isBatchMode.value) {
             return;
           }
           if (item.isFavorite == 1) {

@@ -53,8 +53,8 @@ class DraftStoreManager {
     }
   }
 
-  /// 复制 Documents/cavals 目录到 Application Support/sqflite_draft/{uuid}
-  /// [uuid] 画布的 uuid，作为目标目录名
+  /// 复制 Documents/cavals 目录到 Application Support/sqflite_draft/{id}
+  /// [id] 画布的 id，作为目标目录名
   Future<void> _copyCavalsDirectory(int id) async {
     try {
       // 获取源目录：Documents/cavals
@@ -197,6 +197,50 @@ class DraftStoreManager {
     } catch (e) {
       AppLogger.error('DraftStoreManager: 拷贝草稿 cavals 目录失败:', e);
       return null;
+    }
+  }
+
+  /// 清空所有草稿（包括数据库记录和对应的文件目录）
+  /// 返回 true 表示数据库清空成功，false 表示数据库清空失败
+  /// 文件删除失败不会影响返回结果
+  Future<bool> clearAllDrafts() async {
+    try {
+      // 1. 清空数据库记录
+      final dbSuccess = await DraftStore.instance.clearAll();
+
+      // 2. 删除所有草稿文件目录（保留数据库文件）
+      try {
+        final supportDir = await DirectoryManager.getSupportDirectory();
+        final draftRootDir = Directory(
+          p.join(supportDir.path, 'sqflite_draft'),
+        );
+
+        if (await draftRootDir.exists()) {
+          await for (final entity in draftRootDir.list(recursive: false)) {
+            if (entity is Directory) {
+              await FileManager.deleteDirectory(entity, deleteDirectory: true);
+            } else if (entity is File) {
+              final name = p.basename(entity.path);
+              // 保留数据库文件，其余清理掉
+              if (name != 'drafts.db') {
+                await entity.delete();
+              }
+            }
+          }
+          AppLogger.info('DraftStoreManager: 所有草稿文件目录已清空');
+        }
+      } catch (e) {
+        AppLogger.error('DraftStoreManager: 清空草稿文件目录失败:', e);
+        // 文件删除失败不影响整体返回结果
+      }
+
+      if (dbSuccess) {
+        AppLogger.info('DraftStoreManager: 所有草稿已清空');
+      }
+      return dbSuccess;
+    } catch (e, stackTrace) {
+      AppLogger.error('DraftStoreManager: 清空所有草稿失败:', e, stackTrace);
+      return false;
     }
   }
 }

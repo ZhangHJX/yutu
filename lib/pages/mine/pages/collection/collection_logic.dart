@@ -17,18 +17,10 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
   /// TabController
   final Rxn<TabController> tabController = Rxn<TabController>();
 
-  /// 选中的草稿 id 集合
-  final RxSet<String> selectedIds = <String>{}.obs;
-
   /// 是否处于批量模式
   final RxBool isBatchMode = false.obs;
+  final RxBool isAllSelected = false.obs;
   final RxBool tabIsLoading = false.obs;
-
-  /// 获取当前 tab 的数据列表
-  RxList<CommonItemModel> get designList {
-    final tagId = _getCurrentTagId();
-    return tabDataMap[tagId]?.dataList ?? <CommonItemModel>[].obs;
-  }
 
   /// 获取当前 tab 是否正在加载
   RxBool get isLoading {
@@ -40,11 +32,6 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
   RxBool get hasMore {
     final tagId = _getCurrentTagId();
     return tabDataMap[tagId]?.hasMore ?? true.obs;
-  }
-
-  bool get isAllSelected {
-    final list = designList;
-    return list.isNotEmpty && selectedIds.length == list.length;
   }
 
   @override
@@ -214,7 +201,13 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
           tabData.dataList.clear();
         }
         if (listModel.items.isNotEmpty) {
-          tabData.dataList.addAll(listModel.items);
+          final itemsToAdd = isAllSelected.value
+              ? listModel.items
+                    .map((e) => e.copyWith(isSelected: true))
+                    .toList()
+              : listModel.items;
+
+          tabData.dataList.addAll(itemsToAdd);
           tabData.currentPage++;
           tabData.hasMore.value = true;
         } else {
@@ -250,40 +243,64 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
   }
 
   /// 单个 item 选中 / 取消
-  void toggleItemSelection(String id) {
-    if (selectedIds.contains(id)) {
-      selectedIds.remove(id);
-    } else {
-      selectedIds.add(id);
+  void toggleItemSelection(int id) {
+    bool tempSeletedAll = true;
+
+    for (final tabState in tabDataMap.values) {
+      tabState.dataList.assignAll(
+        tabState.dataList.map((e) {
+          bool selecteStatus = e.isSelected;
+          if (e.id == id) {
+            selecteStatus = !selecteStatus;
+          }
+          if (!selecteStatus) {
+            tempSeletedAll = false;
+          }
+          return e.copyWith(isSelected: selecteStatus);
+        }).toList(),
+      );
     }
+
+    isAllSelected.value = tempSeletedAll;
   }
 
   /// 全选
-  void toggleSelectAll() {
-    final list = designList;
-    if (list.isEmpty) return;
-    if (isAllSelected) {
-      // 如果已全选，则取消全选
-      selectedIds.clear();
-    } else {
-      // 否则全选当前tab的所有项
-      selectedIds.clear();
-      selectedIds.addAll(list.map((e) => '${e.id}').toList());
+  void selectAll() {
+    isAllSelected.value = true;
+    for (final tabState in tabDataMap.values) {
+      tabState.dataList.assignAll(
+        tabState.dataList.map((e) => e.copyWith(isSelected: true)).toList(),
+      );
     }
   }
 
   /// 取消
   void clearSelection() {
     isBatchMode.value = false;
-    selectedIds.clear();
+    isAllSelected.value = false;
+    for (final tabState in tabDataMap.values) {
+      tabState.dataList.assignAll(
+        tabState.dataList.map((e) => e.copyWith(isSelected: false)).toList(),
+      );
+    }
   }
 
   /// 删除选中的设计
   Future<void> deleteSelected({bool isSingle = false}) async {
-    if (selectedIds.isEmpty) return;
-
     if (global.connectStatus.currentStatus == NetworkStatus.none) {
       showToast(isSingle ? '取消收藏失败' : "删除收藏失败");
+      return;
+    }
+
+    final selectedIds = tabDataMap.values
+        .expand((tabState) => tabState.dataList)
+        .where((e) => e.isSelected == true)
+        .map((e) => e.id)
+        .toSet()
+        .toList();
+
+    if (selectedIds.isEmpty) {
+      showToast("未选中要删除的数据");
       return;
     }
 
@@ -293,19 +310,22 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
       // 发送删除请求，将选中的uuid列表作为参数
       final result = await http.post(
         '/user/favorite/destroys',
-        data: {'ids': selectedIds.toList().join(',')},
+        data: {
+          'ids': selectedIds.join(','),
+          'is_all': isAllSelected.value ? 1 : 0,
+        },
       );
 
       if (result.code == 0) {
         // 删除成功，从当前tab的数据列表中移除已删除的项
-        final tagId = _getCurrentTagId();
-        final tabData = tabDataMap[tagId];
-        if (tabData != null) {
-          tabData.dataList.removeWhere(
-            (item) => selectedIds.contains('${item.id}'),
-          );
+        for (final tabState in tabDataMap.values) {
+          tabState.dataList.removeWhere((e) => selectedIds.contains(e.id));
+          // 一般 removeWhere 会触发 RxList 更新；如果你遇到 UI 不刷新，再加：
+          // tabState.dataList.refresh();
         }
-        // 清除选择并退出批量模式
+
+        // 清除
+        // 选择并退出批量模式
         clearSelection();
         SmartDialog.dismiss();
         SmartDialog.dismiss(status: SmartStatus.loading);

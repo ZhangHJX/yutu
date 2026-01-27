@@ -51,6 +51,9 @@ class CommonItemModel {
   @JsonKey(name: 'is_official', defaultValue: 0)
   final int isOfficial;
 
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  bool isSelected;
+
   CommonItemModel({
     required this.id,
     required this.uuid,
@@ -64,6 +67,7 @@ class CommonItemModel {
     required this.favoriteTotal,
     required this.isFavorite,
     required this.isOfficial,
+    this.isSelected = false,
   });
 
   factory CommonItemModel.fromJson(Map<String, dynamic> json) =>
@@ -83,6 +87,7 @@ class CommonItemModel {
     int? favoriteTotal,
     int? isFavorite,
     int? isOfficial,
+    bool? isSelected,
   }) {
     return CommonItemModel(
       id: id ?? this.id,
@@ -97,6 +102,7 @@ class CommonItemModel {
       favoriteTotal: favoriteTotal ?? this.favoriteTotal,
       isFavorite: isFavorite ?? this.isFavorite,
       isOfficial: isOfficial ?? this.isOfficial,
+      isSelected: isSelected ?? this.isSelected,
     );
   }
 }

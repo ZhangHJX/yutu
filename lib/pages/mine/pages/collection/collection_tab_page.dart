@@ -70,7 +70,7 @@ class _DesignItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     // 只监听需要的响应式变量
     return Obx(() {
-      final isSelected = logic.selectedIds.contains('${item.id}');
+      final isSelected = item.isSelected;
       final showCheck = logic.isBatchMode.value;
       return CollectionPageItem(
         item: item,
@@ -78,7 +78,7 @@ class _DesignItemWidget extends StatelessWidget {
         showCheck: showCheck,
         onTap: () {
           if (showCheck) {
-            logic.toggleItemSelection("${item.id}");
+            logic.toggleItemSelection(item.id);
           } else {
             Get.toNamed(
               AppRoutes.middle,
@@ -88,12 +88,21 @@ class _DesignItemWidget extends StatelessWidget {
         },
         favoriteCallBack: () {
           if (item.isFavorite == 1) {
-            logic.toggleItemSelection("${item.id}");
+            if (!logic.global.isLogin) {
+              Get.toNamed(AppRoutes.appLogin);
+              return;
+            }
+            if (logic.isBatchMode.value) {
+              return;
+            }
+            logic.toggleItemSelection(item.id);
             SmartDialog.show(
               builder: (context) => ConfirmPopWidget(
                 title: '温馨提示',
                 subTitle: '确定要取消收藏吗？',
-                sureAction: logic.deleteSelected,
+                sureAction: () {
+                  logic.deleteSelected(isSingle: true);
+                },
               ),
               alignment: Alignment.center,
               animationType: SmartAnimationType.centerFade_otherSlide,
