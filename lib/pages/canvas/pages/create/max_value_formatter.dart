@@ -2,15 +2,20 @@ import 'package:common/common.dart';
 import 'package:flutter/services.dart';
 
 class MaxValueFormatter extends TextInputFormatter {
-  MaxValueFormatter(this.max);
+  MaxValueFormatter(this.max, this.from);
 
   final double max;
+  final String from;
   bool _showing = false;
 
   void _toastOnce(String msg) {
     if (_showing) return;
     _showing = true;
-    showToast('输入值不能大于4000').whenComplete(() {
+    String tips = '输入值不能大于${max.toInt()}';
+    if (from == "fontSize") {
+      tips = '字号不能大于${max.toInt()}';
+    }
+    showToast(tips).whenComplete(() {
       _showing = false;
     });
   }

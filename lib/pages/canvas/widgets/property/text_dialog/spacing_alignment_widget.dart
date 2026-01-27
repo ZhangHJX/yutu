@@ -106,7 +106,7 @@ class _SpacingAlignmentWidgetState extends State<SpacingAlignmentWidget> {
           SizedBox(height: 7.w),
 
           _buildGradientSlider(
-            _lineHeight,
+            _lineHeight > 3.0 ? 3.0 : _lineHeight,
             (value) {
               if (value <= 0.0001) return;
               setState(() {
@@ -150,7 +150,7 @@ class _SpacingAlignmentWidgetState extends State<SpacingAlignmentWidget> {
           SizedBox(height: 7.w),
 
           _buildGradientSlider(
-            _letterSpacing,
+            _letterSpacing > 5.0 ? 5.0 : _letterSpacing,
             (value) {
               setState(() {
                 _letterSpacing = value;
@@ -254,7 +254,7 @@ class _SpacingAlignmentWidgetState extends State<SpacingAlignmentWidget> {
     Function(double) onChanged,
     Function(double) onChangeEnd, {
     double min = 0.0,
-    double max = 1.0,
+    double max = 50.0,
   }) {
     return SliderBasedProgressBar(
       value: value,

@@ -544,7 +544,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
                       controller: _widthController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [
-                        MaxValueFormatter(4000),
+                        MaxValueFormatter(4000, 'createCanvals'),
                         LengthLimitingTextInputFormatter(4),
                       ],
                       decoration: InputDecoration(
@@ -619,7 +619,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
                       controller: _heightController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [
-                        MaxValueFormatter(4000),
+                        MaxValueFormatter(4000, 'createCanvals'),
                         LengthLimitingTextInputFormatter(4),
                       ],
                       decoration: InputDecoration(

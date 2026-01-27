@@ -1,5 +1,4 @@
 import 'package:common/common.dart';
-import 'package:flutter/material.dart';
 import 'model/font_info_model.dart';
 import '../../../fonts/font_manager.dart';
 import 'package:voicetemplate/pages/canvas/fonts/font_models.dart';

@@ -6,6 +6,8 @@ import 'model/font_info_model.dart';
 import 'text_property_controller.dart';
 import '../../../fonts/font_manager.dart';
 import '../../../fonts/font_models.dart';
+import '../../../pages/create/max_value_formatter.dart';
+
 
 /// 字体属性组件
 class TextPropertyWidget extends StatefulWidget {
@@ -434,9 +436,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                             controller: _fontSizeController,
                             keyboardType: TextInputType.number,
                             enabled: !logic.showFontWeightDropdown.value,
-                            inputFormatters: const [
-                              // FilteringTextInputFormatter.digitsOnly,
-                              // LengthLimitingTextInputFormatter(3),
+                            inputFormatters: [
+                              MaxValueFormatter(200, 'fontSize'),
                             ],
                             textAlign: TextAlign.left,
                             textAlignVertical: TextAlignVertical.center,
