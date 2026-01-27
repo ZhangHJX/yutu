@@ -75,7 +75,6 @@ class CanvalsController extends GetxController with WidgetsBindingObserver {
       // 确保模型中的元素列表引用响应式列表，便于后续保存快照
       canvasModel.elements = elements;
     }
-    debugPrint("--走过的路线---onInit---");
   }
 
   CanvasModel? buildSnapshot() {
@@ -249,7 +248,7 @@ class CanvalsController extends GetxController with WidgetsBindingObserver {
     final now = DateTime.now().millisecondsSinceEpoch;
     // 检查距离上次保存是否超过最小间隔
     if (now - _lastSaveTime < _minSaveIntervalMs) {
-      debugPrint("===距离上次保存时间过短，跳过本次保存==");
+      AppLogger.info('=距离上次保存时间过短，跳过本次保存=');
       return;
     }
 
@@ -263,10 +262,10 @@ class CanvalsController extends GetxController with WidgetsBindingObserver {
       // 再次检查时间间隔（防止定时器执行时已经超过间隔）
       if (currentTime - _lastSaveTime >= _minSaveIntervalMs) {
         _lastSaveTime = currentTime;
-        debugPrint("===开始保存画布截图==");
+        AppLogger.info('=开始保存画布截图=');
         DraftManager().saveCurrentCanvals();
       } else {
-        debugPrint("===定时器执行时发现时间间隔不足，跳过保存==");
+        AppLogger.info('=定时器执行时发现时间间隔不足，跳过保存=');
       }
     });
   }

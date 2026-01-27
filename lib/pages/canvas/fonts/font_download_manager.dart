@@ -21,7 +21,7 @@ class FontDownloadManager {
   }) {
     final existing = _ongoing[fontId];
     if (existing != null) {
-      debugPrint(
+      AppLogger.info(
         'FontDownloadManager: download already in progress for fontId: $fontId',
       );
       return existing;
@@ -32,7 +32,7 @@ class FontDownloadManager {
 
     future.whenComplete(() {
       _ongoing.remove(fontId);
-      debugPrint(
+      AppLogger.info(
         'FontDownloadManager: download task completed/removed for fontId: $fontId',
       );
     });
@@ -63,15 +63,20 @@ class FontDownloadManager {
     if (await targetFile.exists()) {
       try {
         await targetFile.delete();
-        debugPrint('FontDownloadManager: deleted existing file at $targetPath');
+        AppLogger.info(
+          'FontDownloadManager: deleted existing file at $targetPath',
+        );
       } catch (e) {
-        debugPrint('FontDownloadManager: failed to delete existing file: $e');
+        AppLogger.error(
+          'FontDownloadManager: failed to delete existing file:',
+          e,
+        );
       }
     }
 
     final downloader = FileDownloader();
 
-    debugPrint(
+    AppLogger.info(
       'FontDownloadManager: starting download - fontId: $fontId, taskId: $taskId, url: $url',
     );
 
@@ -92,7 +97,7 @@ class FontDownloadManager {
       },
     );
 
-    debugPrint(
+    AppLogger.info(
       'FontDownloadManager: download completed - fontId: $fontId, taskId: $taskId, status: ${result.status}, exception: ${result.exception}',
     );
 
@@ -101,7 +106,10 @@ class FontDownloadManager {
       try {
         await downloader.cancelTaskWithId(taskId);
       } catch (e) {
-        debugPrint('FontDownloadManager: error cancelling failed task: $e');
+        AppLogger.error(
+          'FontDownloadManager: error cancelling failed task:',
+          e,
+        );
       }
 
       // 如果文件存在但状态不是complete，也删除它
@@ -109,7 +117,10 @@ class FontDownloadManager {
         try {
           await targetFile.delete();
         } catch (e) {
-          debugPrint('FontDownloadManager: error deleting incomplete file: $e');
+          AppLogger.error(
+            'FontDownloadManager: error deleting incomplete file:',
+            e,
+          );
         }
       }
 
@@ -130,16 +141,17 @@ class FontDownloadManager {
       try {
         await targetFile.delete();
       } catch (e) {
-        debugPrint('FontDownloadManager: error deleting empty file: $e');
+        AppLogger.error('FontDownloadManager: error deleting empty file:', e);
       }
       throw Exception(
         'FontDownloadManager: downloaded file is empty (0 bytes)',
       );
     }
 
-    debugPrint(
+    AppLogger.info(
       'FontDownloadManager: download successful - fontId: $fontId, size=$size, path=$targetPath',
     );
+
     return targetFile;
   }
 }

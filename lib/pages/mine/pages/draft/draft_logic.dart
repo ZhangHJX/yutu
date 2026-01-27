@@ -95,7 +95,7 @@ class DraftLogic extends GetxController {
         }
       }
     } catch (e) {
-      debugPrint('草稿列表数据请求错误: $e');
+      AppLogger.error('草稿列表数据请求错误:', e);
     } finally {
       isLoading.value = false;
     }
@@ -170,7 +170,7 @@ class DraftLogic extends GetxController {
       SmartDialog.dismiss();
       SmartDialog.dismiss(status: SmartStatus.loading);
       showToast('删除失败');
-      debugPrint('删除设计失败: $e');
+      AppLogger.error('删除设计失败:', e);
     }
   }
 

@@ -56,7 +56,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         oldIndex >= boxes.length ||
         newIndex < 0 ||
         newIndex >= boxes.length) {
-      debugPrint(
+      AppLogger.info(
         '警告: 图层重排序索引越界: oldIndex=$oldIndex, newIndex=$newIndex, boxes.length=${boxes.length}',
       );
       return;
@@ -200,23 +200,23 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   }
 
   void setActive(String? id) {
-    debugPrint('设置激活状态: $id');
+    AppLogger.info('元素设置激活状态: $id');
     if (id != null && id.isNotEmpty) {
       // 如果点击的是当前已激活的文本框，则取消激活
       if (_selectionController.selectedId == id) {
         _selectionController.deselect();
-        debugPrint('取消激活状态: $id');
+        AppLogger.info('元素取消激活状态: $id');
         _selectionController.updateToolBar(false);
       } else {
         // 否则激活该文本框
         _selectionController.select(id);
-        debugPrint('激活新文本框: $id');
+        AppLogger.info('激活新文本框: $id');
         _selectionController.updateToolBar(true);
       }
     } else {
       // 如果id为空，取消激活
       _selectionController.deselect();
-      debugPrint('取消激活');
+      AppLogger.info('取消激活: $id');
       _selectionController.updateToolBar(false);
     }
   }
@@ -225,7 +225,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     // 检查元素是否存在
     final elementIndex = boxes.indexWhere((b) => b.id == id);
     if (elementIndex == -1) {
-      debugPrint('警告: 尝试删除不存在的元素: $id');
+      AppLogger.info('警告: 尝试删除不存在的元素: $id');
       return;
     }
 
@@ -257,7 +257,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     // 查找对应的文本框
     final boxIndex = boxes.indexWhere((b) => b.id == boxId);
     if (boxIndex == -1) {
-      debugPrint('警告: 尝试编辑不存在的文本框: $boxId');
+      AppLogger.info('警告: 尝试编辑不存在的文本框: $boxId');
       return;
     }
 
@@ -323,7 +323,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   void handlePointerDown(PointerDownEvent event) {
     _gestureManager.updateCanvasMatrix(widget.canvasMatrix);
 
-    debugPrint('_selectionController---${_selectionController.selectedId}--');
+    AppLogger.info('_selectionController-${_selectionController.selectedId}');
 
     _gestureManager.handlePointerDown(
       event,

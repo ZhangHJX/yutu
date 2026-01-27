@@ -25,14 +25,14 @@ class TemplateDownload extends BaseResourceDownload {
       // 1. 检查数据库是否有这条数据
       final templateModel = await TemplateStore.instance.getById(id);
       if (templateModel == null) {
-        debugPrint('TemplateDownload: 模板 $id 在数据库中不存在');
+        AppLogger.info('TemplateDownload: 模板 $id 在数据库中不存在');
         return (false, false);
       }
 
       // 2. 比较数据库中的时间戳和 MiddleModel 中的 editTime
       final timestampMatches = templateModel.timestamp == editTime;
       if (!timestampMatches) {
-        debugPrint(
+        AppLogger.info(
           'TemplateDownload: 模板 $id 时间戳不匹配，数据库: ${templateModel.timestamp}, 需要: $editTime',
         );
         return (true, false);
@@ -44,14 +44,14 @@ class TemplateDownload extends BaseResourceDownload {
       final exists = await resourceDir.exists();
 
       if (exists) {
-        debugPrint('TemplateDownload: 模板 $id 存在且时间戳匹配');
+        AppLogger.info('TemplateDownload: 模板 $id 存在且时间戳匹配');
         return (true, true);
       } else {
-        debugPrint('TemplateDownload: 模板 $id 数据库存在但文件不存在');
+        AppLogger.info('TemplateDownload: 模板 $id 数据库存在但文件不存在');
         return (true, false);
       }
     } catch (e) {
-      debugPrint('TemplateDownload: 检查模板资源失败: $e');
+      AppLogger.error('TemplateDownload: 检查模板资源失败:', e);
       return (false, false);
     }
   }
@@ -80,7 +80,7 @@ class TemplateDownload extends BaseResourceDownload {
 
     if (exists && timestampMatches) {
       // 时间戳匹配，直接使用本地文件
-      debugPrint('TemplateDownload: 模板 $id 时间戳匹配，使用本地文件');
+      AppLogger.info('TemplateDownload: 模板 $id 时间戳匹配，使用本地文件');
       onProgress?.call(1.0);
       return await getTemplateResourceFilePath(id);
     }
@@ -90,7 +90,7 @@ class TemplateDownload extends BaseResourceDownload {
       throw Exception('TemplateDownload: 资源URL为空');
     }
 
-    debugPrint('TemplateDownload: 开始下载模板资源文件 $id');
+    AppLogger.info('TemplateDownload: 开始下载模板资源文件 $id');
 
     // 3. 创建临时下载目录
     final tempDir = await DirectoryManager.getTempSubDirectory(
@@ -118,18 +118,19 @@ class TemplateDownload extends BaseResourceDownload {
       });
 
       onProgress?.call(1.0);
-      debugPrint('TemplateDownload: 模板资源文件 $id 下载完成');
+
+      AppLogger.info('TemplateDownload: 模板资源文件 $id 下载完成');
 
       return await getTemplateResourceFilePath(id);
     } catch (e) {
-      debugPrint('TemplateDownload: 模板资源文件下载失败: $e');
+      AppLogger.error('TemplateDownload: 模板资源文件下载失败:', e);
       rethrow;
     } finally {
       // 清理临时文件
       try {
         await FileManager.deleteFileByPath(zipFilePath);
       } catch (e) {
-        debugPrint('TemplateDownload: 清理临时文件失败: $e');
+        AppLogger.error('TemplateDownload: 清理临时文件失败: ', e);
       }
     }
   }
@@ -185,9 +186,10 @@ class TemplateDownload extends BaseResourceDownload {
       }
 
       onProgress?.call(1.0);
-      debugPrint('TemplateDownload: 模板资源文件解压完成: ${targetDir.path}');
+
+      AppLogger.info('TemplateDownload: 模板资源文件解压完成: ${targetDir.path}');
     } catch (e) {
-      debugPrint('TemplateDownload: 解压模板资源文件失败: $e');
+      AppLogger.error('TemplateDownload: 解压模板资源文件失败:', e);
       rethrow;
     }
   }
@@ -207,13 +209,13 @@ class TemplateDownload extends BaseResourceDownload {
       // 2. 保存或更新数据库记录
       final success = await TemplateStore.instance.save(managerModel);
       if (!success) {
-        debugPrint('TemplateDownload: 保存数据库记录失败, id=${model.id}');
+        AppLogger.info('TemplateDownload: 保存数据库记录失败, id=${model.id}');
         return false;
       }
-      debugPrint('TemplateDownload: 模板更新或保存成功, id=${model.id}');
+      AppLogger.info('TemplateDownload: 模板更新或保存成功, id=${model.id}');
       return true;
     } catch (e, stackTrace) {
-      debugPrint('TemplateResourceDownload: 保存模板失败: $e\n$stackTrace');
+      AppLogger.error('TemplateResourceDownload: 保存模板失败:', e, stackTrace);
       return false;
     }
   }

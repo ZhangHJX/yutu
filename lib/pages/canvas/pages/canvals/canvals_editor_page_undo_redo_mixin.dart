@@ -599,7 +599,6 @@ mixin CanvasEditorUndoRedoMixin<T extends StatefulWidget> on State<T> {
 
   /// 撤销操作
   void handleUndo() {
-    debugPrint("---handleUndo--");
     toggleLayerDialog(false);
     canvasKey.currentState?.undo();
   }

@@ -107,7 +107,7 @@ class GlobalLogic extends GetxController {
         userInfo.value = result.data ?? UserModel();
       }
     } catch (e) {
-      debugPrint('===获取用户信息失败===  error: $e');
+      AppLogger.error('=获取用户信息失败=', e);
     }
   }
 
@@ -126,11 +126,9 @@ class GlobalLogic extends GetxController {
         }
         fetchUserInfo();
       }
-      debugPrint(
-        'updateUserToken====${result.code}=======${result.data?.token}',
-      );
+      AppLogger.info('updateUserToken=${result.code}=${result.data?.token}');
     } catch (e) {
-      debugPrint('updateUserToken===========$e');
+      AppLogger.error('updateUserToken=更新token报错', e);
     }
   }
 

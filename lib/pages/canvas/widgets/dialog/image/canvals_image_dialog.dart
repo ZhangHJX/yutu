@@ -380,7 +380,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
                   logic.onUploadSuccess!(fileName, result.$1, result.$2);
                 }
               } catch (e, stackTrace) {
-                debugPrint('添加图片到画布失败: $e\n$stackTrace');
+                AppLogger.error('添加图片到画布失败:', e, stackTrace);
                 showToast('添加图片失败，请稍后重试');
                 SmartDialog.dismiss(status: SmartStatus.loading);
               }

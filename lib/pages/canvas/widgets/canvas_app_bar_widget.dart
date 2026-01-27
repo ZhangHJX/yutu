@@ -81,7 +81,6 @@ class CanvasAppBar extends StatelessWidget {
                       behavior: HitTestBehavior.opaque,
                       onTap: () {
                         if (canRedo) {
-                          debugPrint("=====哈哈哈哈哈哈======");
                           onRedo.call();
                         }
                       },

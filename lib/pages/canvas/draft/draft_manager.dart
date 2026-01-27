@@ -7,6 +7,7 @@ import 'package:screenshot/screenshot.dart';
 import '../model/index.dart';
 import '../pages/canvals/canvals_controller.dart';
 import '../../../file/index.dart';
+import 'package:common/common.dart';
 
 /// 草稿管理类
 /// - 负责自动保存和加载画布草稿（全局单例，整个应用只有一份草稿）
@@ -90,7 +91,7 @@ class DraftManager {
       // 构建完整的画布数据（包含元素列表）
       final snapshot = _controller!.buildSnapshot();
       if (snapshot == null) {
-        debugPrint('DraftManager: 无法构建画布快照');
+        AppLogger.info('DraftManager: 无法构建画布快照');
         return;
       }
 
@@ -107,10 +108,9 @@ class DraftManager {
         fileName: 'draft.json',
         content: jsonString,
       );
-
-      debugPrint('DraftManager: 草稿已保存到 ${draftDir.path}/draft.json');
+      AppLogger.info('DraftManager: 草稿已保存到 ${draftDir.path}/draft.json');
     } catch (e, stackTrace) {
-      debugPrint('DraftManager: 保存草稿失败: $e\n$stackTrace');
+      AppLogger.error('DraftManager: 保存草稿失败:', e, stackTrace);
     } finally {
       _isAutoSaving = false;
     }
@@ -120,7 +120,7 @@ class DraftManager {
   /// [draftDir] 草稿保存目录
   Future<void> _saveCanvasScreenshot(Directory draftDir) async {
     if (_screenshotController == null) {
-      debugPrint('DraftManager: 截图控制器未设置，跳过截图保存');
+      AppLogger.info('DraftManager: 截图控制器未设置，跳过截图保存');
       return;
     }
 
@@ -128,7 +128,7 @@ class DraftManager {
       // 使用截图控制器捕获画布
       final imageBytes = await _screenshotController!.capture(pixelRatio: 3.0);
       if (imageBytes == null) {
-        debugPrint('DraftManager: 截图捕获失败');
+        AppLogger.info('DraftManager: 截图捕获失败');
         return;
       }
 
@@ -137,9 +137,9 @@ class DraftManager {
       final screenshotFile = File(screenshotPath);
       await screenshotFile.writeAsBytes(imageBytes);
 
-      debugPrint('DraftManager: 画布截图已保存到 $screenshotPath');
+      AppLogger.info('DraftManager: 画布截图已保存到 $screenshotPath');
     } catch (e, stackTrace) {
-      debugPrint('DraftManager: 保存画布截图失败: $e\n$stackTrace');
+      AppLogger.error('DraftManager: 保存画布截图失败:', e, stackTrace);
       // 截图保存失败不影响草稿保存，只记录错误
     }
   }
@@ -157,16 +157,16 @@ class DraftManager {
       );
 
       if (jsonString == null) {
-        debugPrint('DraftManager: 草稿文件不存在: ${draftDir.path}/draft.json');
+        AppLogger.info('DraftManager: 草稿文件不存在: ${draftDir.path}/draft.json');
         return null;
       }
       // 解析为画布模型
       final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
       final canvasModel = CanvasModel.fromJson(jsonData);
-      debugPrint('DraftManager: 草稿已加载: ${draftDir.path}/draft.json');
+      AppLogger.info('DraftManager: 草稿已加载: ${draftDir.path}/draft.json');
       return canvasModel;
     } catch (e, stackTrace) {
-      debugPrint('DraftManager: 加载草稿失败: $e\n$stackTrace');
+      AppLogger.error('DraftManager: 加载草稿失败:', e, stackTrace);
       return null;
     }
   }
@@ -178,18 +178,20 @@ class DraftManager {
 
       // 如果目录不存在，视为已删除
       if (!await draftDir.exists()) {
-        debugPrint('DraftManager: 草稿目录不存在，无需删除: ${draftDir.path}');
+        AppLogger.info('DraftManager: 草稿目录不存在，无需删除: ${draftDir.path}');
         isChange = false;
         return true;
       }
 
       // 删除整个草稿目录（包含 draft.json、截图等所有文件）
       await FileManager.deleteDirectory(draftDir, deleteDirectory: true);
-      debugPrint('DraftManager: 草稿目录已删除: ${draftDir.path}');
+
+      AppLogger.info('DraftManager: 草稿目录已删除: ${draftDir.path}');
+
       isChange = false;
       return true;
     } catch (e, stackTrace) {
-      debugPrint('DraftManager: 删除草稿失败: $e\n$stackTrace');
+      AppLogger.error('DraftManager: 删除草稿失败:', e, stackTrace);
       isChange = false;
       return false;
     }
@@ -204,7 +206,7 @@ class DraftManager {
         fileName: 'draft.json',
       );
     } catch (e) {
-      debugPrint('DraftManager: 检查草稿失败: $e');
+      AppLogger.error('DraftManager: 检查草稿失败:', e);
       return false;
     }
   }
@@ -252,9 +254,9 @@ class DraftManager {
         fileName: 'draft.json',
         content: jsonString,
       );
-      debugPrint('DraftManager: 草稿已保存到 ${draftDir.path}/draft.json');
+      AppLogger.info('DraftManager: 草稿已保存到 ${draftDir.path}/draft.json');
     } catch (e, stackTrace) {
-      debugPrint('DraftManager: 保存草稿失败: $e\n$stackTrace');
+      AppLogger.error('DraftManager: 保存草稿失败:', e, stackTrace);
     }
   }
 

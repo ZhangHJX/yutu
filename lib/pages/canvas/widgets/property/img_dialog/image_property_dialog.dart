@@ -190,7 +190,6 @@ class _ImagePropertyDialogState extends State<ImagePropertyDialog> {
                                   ],
                                   onChanged: (value) {
                                     final width = double.tryParse(value);
-                                    debugPrint("==哈哈哈哈===$width====");
                                     setState(() {
                                       _imageWidth = width;
                                       _updateModel();

@@ -86,10 +86,10 @@ class ImageLogic extends GetxController {
       isLoading.value = false;
       // 更新刷新控制器状态
       if (refresh) {
-        debugPrint('更新刷新控制器状态: refresh ');
+        AppLogger.info('更新刷新控制器状态: refresh');
         refreshController.refreshCompleted();
       } else {
-        debugPrint('更新刷新控制器状态: hasMore ');
+        AppLogger.info('更新刷新控制器状态: hasMore');
         if (hasMore.value) {
           refreshController.loadComplete();
         } else {
@@ -98,7 +98,7 @@ class ImageLogic extends GetxController {
       }
     } catch (e) {
       hasMore.value = false;
-      debugPrint('加载图片列表失败: $e');
+      AppLogger.error('加载图片列表失败:', e);
       isLoading.value = false;
       if (refresh) {
         refreshController.refreshFailed();
@@ -152,7 +152,7 @@ class ImageLogic extends GetxController {
       );
     } catch (e, stackTrace) {
       showToast('读取照片路径报错，请重试');
-      debugPrint('从相册选择😟😟😟😟: $e $stackTrace');
+      AppLogger.error('从相册选择😟😟😟😟:', e, stackTrace);
       await PickerImageManager.deleteDirectory();
     }
   }

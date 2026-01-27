@@ -5,6 +5,7 @@ import '../../../canvas/model/index.dart';
 import '../../../../file/index.dart';
 import 'template_store.dart';
 import '../manager_model.dart';
+import 'package:common/common.dart';
 
 /// 模板存储管理类
 /// 负责：
@@ -36,20 +37,20 @@ class TemplateStoreManager {
       // 2. 保存或更新数据库记录
       final success = await TemplateStore.instance.save(managerModel);
       if (!success) {
-        debugPrint('TemplateStoreManager: 保存数据库记录失败, id=$id');
+        AppLogger.info('TemplateStoreManager: 保存数据库记录失败, id=$id');
         return false;
       }
 
       // 3. 复制 Documents/cavals 目录到 Application Support/templates/{id}
       await _copyCavalsDirectory(id);
 
-      debugPrint(
+      AppLogger.info(
         'TemplateStoreManager: 模板更新或保存成功, id=$id, uuid=${canvasModel.uuid}',
       );
 
       return true;
     } catch (e, stackTrace) {
-      debugPrint('TemplateStoreManager: 保存模板失败: $e\n$stackTrace');
+      AppLogger.error('TemplateStoreManager: 保存模板失败:', e, stackTrace);
       return false;
     }
   }
@@ -64,7 +65,7 @@ class TemplateStoreManager {
 
       // 检查源目录是否存在
       if (!await sourceCavalsDir.exists()) {
-        debugPrint(
+        AppLogger.info(
           'TemplateStoreManager: 源目录不存在，跳过文件复制: ${sourceCavalsDir.path}',
         );
         return;
@@ -90,9 +91,9 @@ class TemplateStoreManager {
       // 递归复制目录内容
       await _copyDirectoryRecursive(sourceCavalsDir, targetDir);
 
-      debugPrint('TemplateStoreManager: cavals 目录已复制到: ${targetDir.path}');
+      AppLogger.info('TemplateStoreManager: cavals 目录已复制到: ${targetDir.path}');
     } catch (e, stackTrace) {
-      debugPrint('TemplateStoreManager: 复制 cavals 目录失败: $e\n$stackTrace');
+      AppLogger.error('TemplateStoreManager: 复制 cavals 目录失败:', e, stackTrace);
       // 不抛出异常，文件复制失败不影响数据库保存
     }
   }
@@ -141,18 +142,20 @@ class TemplateStoreManager {
         final templateDir = Directory(p.join(templatesDir.path, '$id'));
         if (await templateDir.exists()) {
           await FileManager.deleteDirectory(templateDir, deleteDirectory: true);
-          debugPrint('TemplateStoreManager: 模板文件目录已删除: ${templateDir.path}');
+          AppLogger.info(
+            'TemplateStoreManager: 模板文件目录已删除: ${templateDir.path}',
+          );
         }
       } catch (e) {
-        debugPrint('TemplateStoreManager: 删除模板文件目录失败: $e');
+        AppLogger.error('TemplateStoreManager: 删除模板文件目录失败:', e);
         // 文件删除失败不影响返回结果
       }
       if (dbSuccess) {
-        debugPrint('TemplateStoreManager: 模板已删除, id=$id');
+        AppLogger.info('TemplateStoreManager: 模板已删除, id=$id');
       }
       return dbSuccess;
     } catch (e, stackTrace) {
-      debugPrint('TemplateStoreManager: 删除模板失败: $e\n$stackTrace');
+      AppLogger.error('TemplateStoreManager: 删除模板失败:', e, stackTrace);
       return false;
     }
   }
@@ -174,7 +177,7 @@ class TemplateStoreManager {
       final templateDir = Directory(p.join(templatesDir.path, '$id'));
 
       if (!await templateDir.exists()) {
-        debugPrint('TemplateStoreManager: 源模板目录不存在: ${templateDir.path}');
+        AppLogger.info('TemplateStoreManager: 源模板目录不存在: ${templateDir.path}');
         return null;
       }
 
@@ -193,13 +196,13 @@ class TemplateStoreManager {
       // 将 templates/{id} 下的内容复制到 Documents/cavals
       await _copyDirectoryRecursive(templateDir, targetCavalsDir);
 
-      debugPrint(
+      AppLogger.info(
         'TemplateStoreManager: 模板文件已从 $id 恢复到 Documents/cavals: ${targetCavalsDir.path}',
       );
 
       return targetCavalsDir.path;
     } catch (e) {
-      debugPrint('TemplateStoreManager: 拷贝模板 cavals 目录失败: $e');
+      AppLogger.error('TemplateStoreManager: 拷贝模板 cavals 目录失败:', e);
       return null;
     }
   }

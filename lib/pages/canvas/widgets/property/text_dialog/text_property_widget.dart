@@ -71,8 +71,8 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
   void _updateModel({bool notify = true}) {
     // 更新字号 - 保持为 double 类型以匹配 CanvasElement.fontSize
     final fontSize = double.tryParse(_fontSizeController.text) ?? 16.0;
-    // 调用回调
-    debugPrint("==_updateModel==${logic.familyKey.value}=====");
+    // 调用回调、
+    AppLogger.info('_updateModel==${logic.familyKey.value}');
     widget.onFontChanged(
       logic.familyKey.value, // ✅ 使用找到的 familyKey
       fontSize,
@@ -235,7 +235,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   final meta = await FontManager.to.prepareFontByInfo(
                     font,
                     onProgress: (progress) {
-                      debugPrint('字体 ${font.name} 下载进度: $progress');
+                      AppLogger.info('字体 ${font.name} 下载进度: $progress');
                     },
                   );
 
@@ -251,7 +251,7 @@ class _TextPropertyWidgetState extends State<TextPropertyWidget>
                   }
                 } catch (e) {
                   FontManager.to.fontStatus[font.id] = FontStatus.failed;
-                  debugPrint('字体准备失败: $e');
+                  AppLogger.error('字体准备失败: ', e);
                   showToast('字体下载失败，请重试');
                 }
               },

@@ -1,4 +1,5 @@
 import 'package:common/zmj/constants.dart';
+import 'package:common/common.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../utils/text_measure_util.dart';
@@ -148,7 +149,8 @@ class ElementGestureManager {
       if (_session.isScaling) {
         _resetDragState();
         _session.beginMode(_InteractionMode.idle);
-        debugPrint('⚠️ 单指按下时检测到残留的缩放状态，已重置');
+
+        AppLogger.info('⚠️ 单指按下时检测到残留的缩放状态，已重置');
       }
       _handleSinglePointerDown(event, boxes, selectedId);
     } else if (_session.pointers.length == 2) {
@@ -172,16 +174,17 @@ class ElementGestureManager {
     if (_session.isScaling) {
       _resetDragState();
       _session.beginMode(_InteractionMode.idle);
-      debugPrint('⚠️ 单指按下时检测到残留的缩放状态，已重置');
+      AppLogger.info('⚠️ 单指按下时检测到残留的缩放状态，已重置');
     }
 
     // 重置拖动状态并设置新的起始位置
     _session.dragStartPointer = event.localPosition;
 
-    debugPrint('_handleSinglePointerDown $selectedId---');
+    AppLogger.info('_handleSinglePointerDown $selectedId');
 
     CanvasElement selectedBox = boxes.firstWhere((box) {
-      debugPrint('selectedBox ${box.id}---');
+      AppLogger.info('selectedBox ${box.id}-');
+
       return box.id == selectedId;
     });
 
@@ -202,7 +205,7 @@ class ElementGestureManager {
         _session.markMoved();
         state.rotateLastPosition = event.localPosition;
         _captureSnapshot(selectedBox, rotation: true);
-        debugPrint('✅ 判定为旋转: $selectedId');
+        AppLogger.info('✅ 判定为旋转: $selectedId');
         return;
       } else if (hitTarget.startsWith('resize:')) {
         final handle = hitTarget.substring(7);
@@ -216,7 +219,8 @@ class ElementGestureManager {
           fontSpace: selectedBox.type == ElementType.text,
         );
         _startResize(selectedBox, handle, event.localPosition);
-        debugPrint('✅ 判定为缩放: $selectedId, 控制点: $handle');
+        AppLogger.info('✅ 判定为缩放: $selectedId, 控制点: $handle');
+
         return;
       } else if (hitTarget == 'content') {
         _preparePendingDrag(selectedBox, state);
@@ -259,7 +263,7 @@ class ElementGestureManager {
       fontSize: selectedBox.type == ElementType.text,
     );
 
-    debugPrint('双指缩放开始');
+    AppLogger.info('双指缩放开始');
   }
 
   /// 处理指针移动事件
@@ -275,7 +279,9 @@ class ElementGestureManager {
       if (_session.isScaling) {
         _resetDragState();
         _session.beginMode(_InteractionMode.idle);
-        debugPrint('⚠️ 单指移动时检测到残留的缩放状态，已重置');
+
+        AppLogger.info('⚠️ 单指移动时检测到残留的缩放状态，已重置');
+
         return false;
       }
       return _handleSinglePointerMove(event, boxes, selectedId);
@@ -285,7 +291,7 @@ class ElementGestureManager {
         return _handleDoublePointerMove(boxes, selectedId);
       } else {
         // 如果双指移动但状态不是缩放，可能是从其他状态切换过来的，重置状态
-        debugPrint('⚠️ 双指移动但交互状态不是 scale: ${_session.mode}');
+        AppLogger.info('⚠️ 双指移动但交互状态不是 scale: ${_session.mode}');
         _resetDragState();
         return false;
       }
@@ -310,9 +316,9 @@ class ElementGestureManager {
           _session.beginMode(_InteractionMode.drag);
           _session.dragStartPointer = event.localPosition;
           _session.markMoved();
-          debugPrint('✅ 移动超过阈值，从待定状态转为拖动');
+          AppLogger.info('✅ 移动超过阈值，从待定状态转为拖动');
         } else {
-          debugPrint('⚠️ 状态不一致：dragStartElementPosition 为空，重置拖动状态');
+          AppLogger.info('⚠️ 状态不一致：dragStartElementPosition 为空，重置拖动状态');
           _resetDragState();
           _session.beginMode(_InteractionMode.idle);
           return false;
@@ -353,7 +359,7 @@ class ElementGestureManager {
           targetBox.x = snapResult.position.dx;
           targetBox.y = snapResult.position.dy;
         } else {
-          debugPrint(
+          AppLogger.info(
             '⚠️ 拖动失败: dragStartPointer=${_session.dragStartPointer}, dragStartElementPosition=${_session.dragStartElementPosition}，重置状态',
           );
           _resetDragState();
@@ -481,7 +487,7 @@ class ElementGestureManager {
     if (selectedId.isEmpty) return false;
 
     if (!_session.isScaling) {
-      debugPrint('⚠️ 双指移动时交互状态不是 scale: ${_session.mode}');
+      AppLogger.info('⚠️ 双指移动时交互状态不是 scale: ${_session.mode}');
       return false;
     }
 
@@ -541,7 +547,7 @@ class ElementGestureManager {
       _resetDragState();
       _session.lastScaleDistance = 1.0;
       _session.beginMode(_InteractionMode.idle);
-      debugPrint('从双指切换到单指，已重置拖动状态');
+      AppLogger.info('从双指切换到单指，已重置拖动状态');
     }
 
     return false;
@@ -565,7 +571,7 @@ class ElementGestureManager {
       _session.resetPointers();
     }
     reset();
-    debugPrint('指针事件取消，重置所有状态');
+    AppLogger.info('指针事件取消，重置所有状态');
   }
 
   /// 清理交互状态
@@ -657,7 +663,7 @@ class ElementGestureManager {
             break;
         }
       } catch (e) {
-        debugPrint('记录命令时出错: $e');
+        AppLogger.error('记录命令时出错:', e);
       }
     }
 
@@ -667,18 +673,20 @@ class ElementGestureManager {
       state.resizingHandle = null;
       state.resizeStartPosition = null;
       state.resizeAnchorPoint = null;
-      debugPrint('调整大小结束');
+
+      AppLogger.info('调整大小结束');
     }
 
     if (completedMode == _InteractionMode.rotate && selectedId.isNotEmpty) {
       final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
       final state = _stateForBox(selectedBox);
       state.rotateLastPosition = null;
-      debugPrint('旋转结束');
+
+      AppLogger.info('旋转结束');
     }
 
     reset();
-    debugPrint('指针抬起，重置状态');
+    AppLogger.info('指针抬起，重置状态');
   }
 
   /// 重置拖动相关状态（用于从双指切换到单指等场景）

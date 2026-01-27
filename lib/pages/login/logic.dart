@@ -145,12 +145,8 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
       }
       // 返回上一个页面
     } catch (e) {
-      debugPrint('=========== xxxxxxxxx error: $e');
+      debugPrint('=$e');
     }
-  }
-
-  bool isValidPassword(String s) {
-    return RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{6,20}$').hasMatch(s);
   }
 
   // 处理验证码登录
@@ -240,8 +236,6 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
 
   /// 应用从后台恢复时重新计算倒计时
   void _resumeCountDown() {
-    debugPrint('===========应用从后台恢复时重新计算倒计时========');
-
     if (_countDownStartTime == null) {
       return;
     }

@@ -54,7 +54,10 @@ String formatDate(
       }
 
       // 昨天
-      if (DateUtils.isSameDay(dateTime, now.subtract(const Duration(days: 1)))) {
+      if (DateUtils.isSameDay(
+        dateTime,
+        now.subtract(const Duration(days: 1)),
+      )) {
         return '昨天 ${_formatHm(dateTime)}';
       }
 
@@ -82,12 +85,18 @@ String formatDate(
       }
 
       // 昨天
-      if (DateUtils.isSameDay(dateTime, now.subtract(const Duration(days: 1)))) {
+      if (DateUtils.isSameDay(
+        dateTime,
+        now.subtract(const Duration(days: 1)),
+      )) {
         return '昨天 ${_formatHm(dateTime)}';
       }
 
       // 前天
-      if (DateUtils.isSameDay(dateTime, now.subtract(const Duration(days: 2)))) {
+      if (DateUtils.isSameDay(
+        dateTime,
+        now.subtract(const Duration(days: 2)),
+      )) {
         return '前天 ${_formatHm(dateTime)}';
       }
 
@@ -108,7 +117,6 @@ String formatDate(
     // 不同年，返回年-月-日
     return '${_padLeft(dateTime.year)}-${_padLeft(dateTime.month)}-${_padLeft(dateTime.day)}${showTime ? ' ${_padLeft(dateTime.hour)}:${_padLeft(dateTime.minute)}' : ''}';
   } catch (e) {
-    debugPrint('========>>>formatDate error: $e');
     if (kReleaseMode) {
       return '';
     } else {

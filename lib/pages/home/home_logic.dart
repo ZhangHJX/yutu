@@ -280,7 +280,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
       isLoading = false;
     } catch (e) {
       isLoading = false;
-      debugPrint('列表数据请求错误: $e');
       // 处理错误状态 - 使用全局的 refreshController
       if (refresh) {
         refreshController.refreshCompleted();
@@ -318,7 +317,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         }
       }
     } catch (e) {
-      debugPrint('获取详情页数据失败: $e');
+      AppLogger.error('首页收藏事件网络请求报错', e);
     }
   }
 
@@ -343,24 +342,23 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
   /// 获取是否有草稿信息
   Future<void> showDraftDialog() async {
     if (!global.isLogin) {
-      debugPrint('未登录=====或者登录失败');
+      AppLogger.info('启动app查询是否有草稿信息：未登录，查询失败');
       return;
     }
     final isHave = await DraftManager().hasDraft();
     if (isHave) {
-      debugPrint('已经存在草稿列表: $isHave');
       final canvasModel = await DraftManager().loadDraft();
       if (canvasModel == null) {
         return;
       }
-      debugPrint('已经获取到草稿列表: ${canvasModel.id}');
+      AppLogger.info('是否有草稿信息：已经存在本地草稿===${canvasModel.id}');
       if (canvasModel.id == 0) {
         showSingleDraftDialog();
       } else {
         requestServiceDraft(canvasModel);
       }
     } else {
-      debugPrint('没有保存的草稿');
+      AppLogger.info('启动app查询是否有草稿信息：没有保存的草稿');
     }
   }
 
@@ -397,10 +395,9 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
       );
 
       if (result.code == 0 && result.data != null) {
-        debugPrint(
-          "本地草稿列表==${model.timestamp}=====${result.data!.editTime}===",
+        AppLogger.info(
+          '服务端和本地都有草稿，时间戳对比：${model.timestamp}==${result.data!.editTime}',
         );
-
         if (model.timestamp > result.data!.editTime) {
           showSingleDraftDialog();
         } else {
@@ -410,7 +407,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         showSingleDraftDialog();
       }
     } catch (e) {
-      debugPrint('==本地没有要编辑的草稿==  error: $e');
+      AppLogger.error('服务端保存了相关的草稿 接口查询失败', e);
     }
   }
 
@@ -479,6 +476,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     // 根据当前屏幕重新计算画布矩阵
     draft.getMatrix4();
     SmartDialog.dismiss(status: SmartStatus.loading);
+    AppLogger.info('异步加载草稿并跳转到画布页面 成功');
     Get.toNamed(
       AppRoutes.canvalsPage,
       arguments: {"model": draft, "type": PageSource.draft},
@@ -496,12 +494,9 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         editModel,
         onProgress: (progress) {
           // 可以在这里更新进度显示
-          AppLogger.instance.i(
-            '首页草稿DraftDownloadService: 进度 ${(progress * 100).toInt()}%',
-          );
+          AppLogger.info('首页草稿资源加载进度 ${(progress * 100).toInt()}%');
         },
       );
-
       // 关闭加载对话框
       SmartDialog.dismiss();
       // 加载草稿并跳转
@@ -509,7 +504,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     } catch (e) {
       SmartDialog.dismiss();
       SmartDialog.dismiss(status: SmartStatus.loading);
-      AppLogger.instance.e('首页草稿加在失败信息', e);
+      AppLogger.error('首页加载服务器草稿失败', e);
       // 可以显示错误提示
       showToast('加载草稿失败，请重试');
     }

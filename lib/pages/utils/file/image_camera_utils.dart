@@ -1,13 +1,12 @@
 import 'dart:typed_data' as typed_data;
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:path/path.dart' as p;
 import 'transform_tools.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:common/common.dart';
 
 class ImageCameraUtils {
   static const int maxSizeInMB = 10 * 1024 * 1024;
@@ -58,7 +57,7 @@ class ImageCameraUtils {
       }
       return '';
     } else {
-      debugPrint("进入到图片类型的分支中");
+      AppLogger.info('进入到图片类型的分支中');
       final fullPath = p.join(tempDir.path, '$fileName.$ext');
       //copy到新的路径下
       await originalFile.copy(fullPath);
@@ -75,18 +74,17 @@ class ImageCameraUtils {
       file ??= await asset.file;
 
       if (file == null) {
-        debugPrint('getAssetFileSize: 文件为 null, asset id = ${asset.id}');
+        AppLogger.info('getAssetFileSize: 文件为 null, asset id = ${asset.id}');
         return 0;
       }
       final int length = await file.length(); // 单位：byte
       final kbCeil = (length / 1024).ceil(); // 向上取整
 
-      debugPrint('getAssetFileSize: 文件为 null, asset id = ${asset.id}');
+      AppLogger.info('getAssetFileSize: 文件为 null, asset id = ${asset.id}');
 
       return kbCeil;
     } catch (e, s) {
-      debugPrint('getAssetFileSize: 异常: $e');
-      debugPrint('$s');
+      AppLogger.error('getAssetFileSize: 异常:', e, s);
       return 0;
     }
   }
@@ -140,7 +138,7 @@ class ImageCameraUtils {
         return (compressedPath, imgInfo.$1, imgInfo.$2, imgeSize.bitLength);
       } else {
         // 压缩失败，返回原文件路径
-        debugPrint('🤯🤯🤯图片压缩失败，使用原文件: $filePath');
+        AppLogger.info('🤯🤯🤯图片压缩失败，使用原文件: $filePath');
         return (
           filePath,
           asset.width.toDouble(),
@@ -149,7 +147,7 @@ class ImageCameraUtils {
         );
       }
     } catch (e) {
-      debugPrint('🤯🤯🤯图片压缩出错: $e，使用原文件: $filePath');
+      AppLogger.error('图片压缩出错 使用原文件: $filePath', e);
       return (
         filePath,
         asset.width.toDouble(),
@@ -177,7 +175,7 @@ class ImageCameraUtils {
       );
       return compressedBytes ?? typed_data.Uint8List(0);
     } catch (e) {
-      debugPrint('🤯🤯🤯图片压缩出错: $e');
+      AppLogger.error('图片压缩出错', e);
       return typed_data.Uint8List(0);
     }
   }
@@ -194,7 +192,7 @@ class ImageCameraUtils {
 
       return (image.width.toDouble(), image.height.toDouble());
     } catch (error, stackTrace) {
-      debugPrint('getImageSizeFromBytes error: $error $stackTrace');
+      AppLogger.error('getImageSizeFromBytes', error, stackTrace);
       return (asset.width.toDouble(), asset.height.toDouble());
     }
   }

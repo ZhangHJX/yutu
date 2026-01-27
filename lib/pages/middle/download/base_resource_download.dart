@@ -85,10 +85,10 @@ abstract class BaseResourceDownload {
         }
       }
 
-      debugPrint('BaseResourceDownloadService: 压缩包下载完成: $savePath');
+      AppLogger.info('BaseResourceDownloadService: 压缩包下载完成: $savePath');
     } catch (e) {
       _currentResourceTaskId = null;
-      debugPrint('BaseResourceDownloadService: 下载压缩包失败: $e');
+      AppLogger.error('BaseResourceDownloadService: 下载压缩包失败:', e);
       rethrow;
     }
   }
@@ -98,11 +98,11 @@ abstract class BaseResourceDownload {
     if (_currentResourceTaskId != null) {
       try {
         await _downloader.cancelTaskWithId(_currentResourceTaskId!);
-        debugPrint(
+        AppLogger.info(
           'BaseResourceDownloadService: 已取消资源文件下载任务: $_currentResourceTaskId',
         );
       } catch (e) {
-        debugPrint('BaseResourceDownloadService: 取消资源文件下载失败: $e');
+        AppLogger.error('BaseResourceDownloadService: 取消资源文件下载失败:', e);
       } finally {
         _currentResourceTaskId = null;
       }
@@ -142,7 +142,7 @@ abstract class BaseResourceDownload {
     try {
       final sourceDir = Directory(sourcePath);
       if (!await sourceDir.exists()) {
-        debugPrint('BaseResourceDownloadService: 源目录不存在: $sourcePath');
+        AppLogger.info('BaseResourceDownloadService: 源目录不存在: $sourcePath');
         return;
       }
 
@@ -162,11 +162,11 @@ abstract class BaseResourceDownload {
       // 因为 zip 解压后的内容就是 cavals 的内容，不需要查找子文件夹
       await copyDirectoryRecursive(sourceDir, targetCavalsDir);
 
-      debugPrint(
+      AppLogger.info(
         'BaseResourceDownloadService: 资源文件已复制到 Documents/cavals: ${targetCavalsDir.path}',
       );
     } catch (e) {
-      debugPrint('BaseResourceDownloadService: 复制资源文件到 cavals 失败: $e');
+      AppLogger.error('BaseResourceDownloadService: 复制资源文件到 cavals 失败:', e);
       rethrow;
     }
   }

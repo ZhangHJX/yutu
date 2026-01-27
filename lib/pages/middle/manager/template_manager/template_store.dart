@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:path/path.dart' as p;
 import '../manager_model.dart';
+import 'package:common/common.dart' hide Database;
 
 /// SQLite Store 管理类
 /// 负责模板数据的存储、更新、删除等操作
@@ -22,7 +22,7 @@ class TemplateStore {
   /// 初始化数据库
   Future<void> init() async {
     if (_isInitialized && _database != null) {
-      debugPrint('TemplateStore: 已经初始化，跳过');
+      AppLogger.info('TemplateStore: 已经初始化，跳过');
       return;
     }
 
@@ -44,9 +44,9 @@ class TemplateStore {
       );
 
       _isInitialized = true;
-      debugPrint('TemplateStore: 初始化成功, 数据库路径: $dbPath');
+      AppLogger.info('TemplateStore: 初始化成功, 数据库路径: $dbPath');
     } catch (e, stackTrace) {
-      debugPrint('TemplateStore: 初始化失败: $e\n$stackTrace');
+      AppLogger.error('TemplateStore: 初始化失败:', e, stackTrace);
       _isInitialized = false;
       rethrow;
     }
@@ -70,13 +70,13 @@ class TemplateStore {
       CREATE INDEX idx_timestamp ON $_tableName(timestamp)
     ''');
 
-    debugPrint('TemplateStore: 数据库表创建成功');
+    AppLogger.info('TemplateStore: 数据库表创建成功');
   }
 
   /// 数据库升级
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     // 当前版本变更较大，直接丢弃旧表重建
-    debugPrint('TemplateStore: 数据库升级: $oldVersion -> $newVersion, 重建表结构');
+    AppLogger.info('TemplateStore: 数据库升级: $oldVersion -> $newVersion, 重建表结构');
     await db.execute('DROP TABLE IF EXISTS $_tableName');
     await _onCreate(db, newVersion);
   }
@@ -100,7 +100,7 @@ class TemplateStore {
 
     try {
       if (model.id == 0) {
-        debugPrint('TemplateStore: 业务 id 为空，无法保存');
+        AppLogger.info('TemplateStore: 业务 id 为空，无法保存');
         return false;
       }
 
@@ -108,7 +108,7 @@ class TemplateStore {
       final existing = await getById(model.id);
       if (existing != null) {
         // 更新现有记录
-        debugPrint('TemplateStore: 更新记录, canvasId=${model.id}');
+        AppLogger.info('TemplateStore: 更新记录, canvasId=${model.id}');
         return await update(model);
       }
 
@@ -118,10 +118,10 @@ class TemplateStore {
         model.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
-      debugPrint('TemplateStore: 保存成功, canvasId=${model.id}');
+      AppLogger.info('TemplateStore: 保存成功, canvasId=${model.id}');
       return true;
     } catch (e, stackTrace) {
-      debugPrint('TemplateStore: 保存失败: $e\n$stackTrace');
+      AppLogger.error('TemplateStore: 保存失败:', e, stackTrace);
       return false;
     }
   }
@@ -137,7 +137,7 @@ class TemplateStore {
 
     try {
       if (model.id == 0) {
-        debugPrint('TemplateStore: 业务 id 为空，无法更新');
+        AppLogger.info('TemplateStore: 业务 id 为空，无法更新');
         return false;
       }
 
@@ -150,13 +150,13 @@ class TemplateStore {
       );
       final success = count > 0;
       if (success) {
-        debugPrint('TemplateStore: 更新成功, canvasId=${model.id}');
+        AppLogger.info('TemplateStore: 更新成功, canvasId=${model.id}');
       } else {
-        debugPrint('TemplateStore: 更新失败，记录不存在, canvasId=${model.id}');
+        AppLogger.info('TemplateStore: 更新失败，记录不存在, canvasId=${model.id}');
       }
       return success;
     } catch (e, stackTrace) {
-      debugPrint('TemplateStore: 更新失败: $e\n$stackTrace');
+      AppLogger.error('TemplateStore: 更新失败: ', e, stackTrace);
       return false;
     }
   }
@@ -170,7 +170,7 @@ class TemplateStore {
 
     try {
       if (id == 0) {
-        debugPrint('TemplateStore: 业务 id 为空，无法删除');
+        AppLogger.info('TemplateStore: 业务 id 为空，无法删除');
         return false;
       }
 
@@ -182,13 +182,13 @@ class TemplateStore {
       );
       final success = count > 0;
       if (success) {
-        debugPrint('TemplateStore: 删除成功, canvasId=$id');
+        AppLogger.info('TemplateStore: 删除成功, canvasId=$id');
       } else {
-        debugPrint('TemplateStore: 删除失败，记录不存在, canvasId=$id');
+        AppLogger.info('TemplateStore: 删除失败，记录不存在, canvasId=$id');
       }
       return success;
     } catch (e, stackTrace) {
-      debugPrint('TemplateStore: 删除失败: $e\n$stackTrace');
+      AppLogger.error('TemplateStore: 删除失败: ', e, stackTrace);
       return false;
     }
   }
@@ -218,7 +218,7 @@ class TemplateStore {
 
       return ManagerModel.fromMap(maps.first);
     } catch (e) {
-      debugPrint('TemplateStore: 获取失败: $e');
+      AppLogger.error('TemplateStore: 获取失败:', e);
       return null;
     }
   }
@@ -237,7 +237,7 @@ class TemplateStore {
       );
       return maps.map((map) => ManagerModel.fromMap(map)).toList();
     } catch (e) {
-      debugPrint('TemplateStore: 获取所有记录失败: $e');
+      AppLogger.error('TemplateStore: 获取所有记录失败:', e);
       return [];
     }
   }
@@ -250,10 +250,10 @@ class TemplateStore {
     }
     try {
       await _database!.delete(_tableName);
-      debugPrint('TemplateStore: 清空所有记录成功');
+      AppLogger.info('TemplateStore: 清空所有记录成功');
       return true;
     } catch (e) {
-      debugPrint('TemplateStore: 清空所有记录失败: $e');
+      AppLogger.error('TemplateStore: 清空所有记录失败:', e);
       return false;
     }
   }
@@ -264,9 +264,9 @@ class TemplateStore {
       await _database?.close();
       _database = null;
       _isInitialized = false;
-      debugPrint('TemplateStore: 数据库已关闭');
+      AppLogger.info('TemplateStore: 数据库已关闭');
     } catch (e) {
-      debugPrint('TemplateStore: 关闭失败: $e');
+      AppLogger.error('TemplateStore: 关闭失败:', e);
     }
   }
 }

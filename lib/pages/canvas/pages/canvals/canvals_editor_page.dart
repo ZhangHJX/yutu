@@ -75,7 +75,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
       _canvalsController,
       screenshotController: _screenshotController,
     );
-    debugPrint("--画布页面的初始化---initState---");
+    AppLogger.info('画布页面的初始化---initState');
   }
 
   @override
@@ -90,7 +90,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   @override
   void deleteShape() {
     if (activeElement != null) {
-      debugPrint('删除形状');
+      AppLogger.info('删除形状');
       _canvasKey.currentState?.deleteBox(activeElement!.id);
       SmartDialog.dismiss();
     }
@@ -171,7 +171,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   @override
   void deleteText() {
     if (activeElement != null) {
-      debugPrint('删除文本');
+      AppLogger.info('删除文本');
       _canvasKey.currentState?.deleteBox(activeElement!.id);
       SmartDialog.dismiss();
     }

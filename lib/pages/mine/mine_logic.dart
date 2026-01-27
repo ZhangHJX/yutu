@@ -63,7 +63,7 @@ class MineLogic extends GetxController {
         }
       }
     } catch (e) {
-      debugPrint('加载设计列表数据失败: $e');
+      AppLogger.error('我的模块首页 加载设计列表数据失败', e);
     }
   }
 

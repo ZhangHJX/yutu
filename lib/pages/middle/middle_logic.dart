@@ -67,7 +67,8 @@ class MiddleLogic extends GetxController {
 
   Future<void> getMiddleData() async {
     try {
-      debugPrint("==getMiddleData==${getMiddleUrlPath(type)}=======");
+      AppLogger.info('获取详情页数据的请求path: ${getMiddleUrlPath(type)}');
+
       final result = await http.post(
         getMiddleUrlPath(type),
         data: {"id": itemId},
@@ -78,7 +79,7 @@ class MiddleLogic extends GetxController {
         isFavorite.value = result.data!.isFavorite;
       }
     } catch (e) {
-      debugPrint('获取详情页数据失败: $e');
+      AppLogger.error('获取详情页数据失败:', e);
     }
   }
 
@@ -133,7 +134,7 @@ class MiddleLogic extends GetxController {
         }
       }
     } catch (e) {
-      debugPrint('获取详情页数据失败: $e');
+      AppLogger.error('详情页数据收藏报错', e);
     }
   }
 
@@ -198,7 +199,7 @@ class MiddleLogic extends GetxController {
       await DownloadService.instance.downloadFontsIfNeeded(
         model.frontData,
         onProgress: (progress) {
-          debugPrint('字体下载进度: ${(progress * 50).toStringAsFixed(1)}%');
+          AppLogger.info('字体下载进度: ${(progress * 50).toStringAsFixed(1)}%');
         },
         shouldCancel: () => _isCancelled,
       );
@@ -218,7 +219,7 @@ class MiddleLogic extends GetxController {
 
         if (exists && timestampMatches) {
           // 时间戳匹配，直接使用本地文件
-          debugPrint('MiddleLogic: 草稿 ${model.id} 时间戳匹配，使用本地文件');
+          AppLogger.info('MiddleLogic: 草稿 ${model.id} 时间戳匹配，使用本地文件');
           // 获取草稿资源路径
           final supportDir = await DirectoryManager.getSupportDirectory();
           resourcePath = p.join(
@@ -233,7 +234,7 @@ class MiddleLogic extends GetxController {
             model.id,
             model.editTime,
             onProgress: (progress) {
-              debugPrint(
+              AppLogger.info(
                 '资源文件下载进度: ${(50 + progress * 50).toStringAsFixed(1)}%',
               );
             },
@@ -250,7 +251,7 @@ class MiddleLogic extends GetxController {
 
         if (exists && timestampMatches) {
           // 文件已存在且时间戳匹配，直接使用
-          debugPrint('MiddleLogic: 模板资源文件 ${model.id} 已存在且时间戳匹配，使用本地文件');
+          AppLogger.info('MiddleLogic: 模板资源文件 ${model.id} 已存在且时间戳匹配，使用本地文件');
           final templatesDir = await DirectoryManager.getSupportSubDirectory(
             'templates',
           );
@@ -263,7 +264,7 @@ class MiddleLogic extends GetxController {
                 model.id,
                 model.editTime,
                 onProgress: (progress) {
-                  debugPrint(
+                  AppLogger.info(
                     '资源文件下载进度: ${(50 + progress * 50).toStringAsFixed(1)}%',
                   );
                 },
@@ -280,8 +281,7 @@ class MiddleLogic extends GetxController {
         SmartDialog.dismiss();
         return;
       }
-
-      debugPrint('MiddleLogic: 准备获取解压后的数据文件夹: $resourcePath');
+      AppLogger.info('MiddleLogic: 准备获取解压后的数据文件夹: $resourcePath');
 
       // 3. 将资源文件复制到 Documents/cavals 目录
       await DownloadService.instance.copyResourceToCavals(
@@ -293,7 +293,7 @@ class MiddleLogic extends GetxController {
       await pushCanvansDetail();
     } catch (e) {
       SmartDialog.dismiss();
-      debugPrint('准备模板失败: $e');
+      AppLogger.error('准备模板失败:', e);
       // 如果是取消操作，不显示错误提示
       if (_isCancelled || e.toString().contains('取消')) {
         return;
@@ -355,12 +355,13 @@ class MiddleLogic extends GetxController {
   /// 处理取消下载
   Future<void> _handleCancelDownload() async {
     _isCancelled = true;
-    debugPrint('MiddleLogic: 用户取消下载');
+    AppLogger.info('MiddleLogic: 用户取消下载');
+
     try {
       // 取消所有正在进行的下载（字体和资源）
       await DownloadService.instance.cancelAllDownloads();
     } catch (e) {
-      debugPrint('MiddleLogic: 取消下载失败: $e');
+      AppLogger.error('MiddleLogic: 取消下载失败: ', e);
     }
     SmartDialog.dismiss();
     showToast('已取消下载');

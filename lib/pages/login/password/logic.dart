@@ -80,17 +80,13 @@ class ForgetLogic extends GetxController {
         Get.back();
       }
     } catch (e) {
-      debugPrint('===========  error: $e');
+      AppLogger.error('设置和忘记密码接口报错', e);
     }
-  }
-
-  bool isValidPassword(String s) {
-    return RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{6,20}$').hasMatch(s);
   }
 
   ///1、获取手机号码
   void getPhoneNumber() async {
-    debugPrint('=====getPhoneNumber======');
+    AppLogger.info('获取手机号的接口');
 
     final result = await http.post<PhoneModel>(
       "/passwordSet/index",

@@ -44,7 +44,7 @@ class DraftDownloadService {
 
       onProgress?.call(1.0);
     } catch (e, stackTrace) {
-      debugPrint('DraftDownloadService: 准备服务器草稿失败: $e\n$stackTrace');
+      AppLogger.error('DraftDownloadService准备服务器草稿失败', e, stackTrace);
       rethrow;
     }
   }
@@ -75,7 +75,7 @@ class DraftDownloadService {
     );
 
     if (fontInfoList.isEmpty) {
-      debugPrint('DraftDownloadService: 未获取到字体信息');
+      AppLogger.info('DraftDownloadService: 未获取到字体信息');
       onProgress?.call(1.0);
       return;
     }
@@ -88,11 +88,11 @@ class DraftDownloadService {
       try {
         // FontManager 会自动检查本地是否已下载，如果已下载则跳过
         await FontManager.to.prepareFontByInfo(fontInfo);
-        debugPrint(
+        AppLogger.info(
           'DraftDownloadService: 字体 ${fontInfo.id} 准备完成 (${i + 1}/$totalFonts)',
         );
       } catch (e) {
-        debugPrint('DraftDownloadService: 字体 ${fontInfo.id} 下载失败: $e');
+        AppLogger.error('DraftDownloadService: 字体 ${fontInfo.id} 下载失败', e);
         // 单个字体失败不影响整体流程，继续下载其他字体
       }
 
@@ -117,7 +117,7 @@ class DraftDownloadService {
       }
       return [];
     } catch (e) {
-      debugPrint('DraftDownloadService: 获取字体信息失败: $e');
+      AppLogger.error('DraftDownloadService: 获取字体信息失败:', e);
       return [];
     }
   }
@@ -160,7 +160,7 @@ class DraftDownloadService {
           await zipFile.delete();
         }
       } catch (e) {
-        debugPrint('DraftDownloadService: 清理临时文件失败: $e');
+        AppLogger.error('DraftDownloadService: 清理临时文件失败:', e);
       }
     }
   }
@@ -213,9 +213,9 @@ class DraftDownloadService {
         }
       }
 
-      debugPrint('DraftDownloadService: 压缩包下载完成: $savePath');
+      AppLogger.info('DraftDownloadService: 压缩包下载完成: $savePath');
     } catch (e) {
-      debugPrint('DraftDownloadService: 下载压缩包失败: $e');
+      AppLogger.error('DraftDownloadService: 下载压缩包失败', e);
       rethrow;
     }
   }
@@ -249,9 +249,9 @@ class DraftDownloadService {
       );
 
       onProgress?.call(1.0);
-      debugPrint('DraftDownloadService: 压缩包解压完成: ${draftDir.path}');
+      AppLogger.info('DraftDownloadService: 压缩包解压完成: ${draftDir.path}');
     } catch (e) {
-      debugPrint('DraftDownloadService: 解压压缩包失败: $e');
+      AppLogger.error('DraftDownloadService: 解压压缩包失败', e);
       rethrow;
     }
   }

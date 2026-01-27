@@ -53,7 +53,7 @@ class TextPropertyController extends GetxController {
 
   /// 获取已使用的字体
   void currentUseFonts() {
-    debugPrint("-获取字体列表中数据----${FontManager.to.recommendedFonts.length}------");
+    AppLogger.info('获取字体列表中数据: ${FontManager.to.recommendedFonts.length}');
 
     if (FontManager.to.recommendedFonts.isEmpty) {
       final canvasModel = canvalsControl.buildSnapshot();
@@ -104,14 +104,14 @@ class TextPropertyController extends GetxController {
         await FontManager.to.warmUpdateInstalledFonts(modelArray);
       }
     } catch (e) {
-      debugPrint("-获取字体列表中数据异常: $e");
+      AppLogger.error('-获取字体列表中数据异常:', e);
     }
   }
 
   @override
   void onClose() {
     _countWorker?.dispose();
-    debugPrint("-获取字体列表中数据----onClose------");
+    AppLogger.info('-获取字体列表中数据-onClose-');
     super.onClose();
   }
 }

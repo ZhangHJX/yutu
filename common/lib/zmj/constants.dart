@@ -57,3 +57,7 @@ enum PageSource { home, search, design, favorite, create, draft }
 /// 拖动灵敏度修改
 const double elementSensitivity = 0.2;
 const double resizeSensitivity = 0.7;
+
+bool isValidPassword(String s) {
+  return RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{6,20}$').hasMatch(s);
+}

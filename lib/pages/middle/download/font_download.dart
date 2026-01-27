@@ -3,6 +3,7 @@ import '../../canvas/fonts/font_manager.dart';
 import '../../canvas/fonts/font_meta_store.dart';
 import '../model/middle_model.dart';
 import '../../canvas/widgets/property/text_dialog/model/font_info_model.dart';
+import 'package:common/common.dart';
 
 /// 字体下载服务
 /// 负责下载和管理字体文件
@@ -37,14 +38,14 @@ class FontDownload {
     // 检查字体是否已存在且版本匹配
     final exists = await checkFontExists(fontId, requiredVersion);
     if (exists) {
-      debugPrint(
+      AppLogger.info(
         'FontDownloadService: 字体 $fontId 版本 $requiredVersion 已存在，跳过下载',
       );
       onProgress?.call(1.0);
       return;
     }
 
-    debugPrint('FontDownloadService: 开始下载字体 $fontId 版本 $requiredVersion');
+    AppLogger.info('FontDownloadService: 开始下载字体 $fontId 版本 $requiredVersion');
 
     // 生成任务ID用于取消
     final taskId = 'font_${fontId}_${DateTime.now().millisecondsSinceEpoch}';
@@ -89,10 +90,10 @@ class FontDownload {
       }
 
       _currentFontTaskIds.remove(fontId);
-      debugPrint('FontDownloadService: 字体 $fontId 下载完成');
+      AppLogger.info('FontDownloadService: 字体 $fontId 下载完成');
     } catch (e) {
       _currentFontTaskIds.remove(fontId);
-      debugPrint('FontDownloadService: 字体 $fontId 下载失败: $e');
+      AppLogger.error('FontDownloadService: 字体 $fontId 下载失败:', e);
       rethrow;
     }
   }
@@ -101,7 +102,7 @@ class FontDownload {
   /// 注意：由于无法直接获取 FontDownloadManager 的任务ID，
   /// 实际的取消通过 shouldCancel 标志和抛出异常来实现
   Future<void> cancelAllFontDownloads() async {
-    debugPrint('FontDownloadService: 取消所有字体下载');
+    AppLogger.info('FontDownloadService: 取消所有字体下载');
     _currentFontTaskIds.clear();
   }
 
@@ -118,7 +119,7 @@ class FontDownload {
 
     // 检查是否应该取消
     if (shouldCancel != null && shouldCancel()) {
-      debugPrint('FontDownloadService: 字体下载已取消');
+      AppLogger.info('FontDownloadService: 字体下载已取消');
       throw Exception('下载已取消');
     }
 
@@ -163,7 +164,8 @@ class FontDownload {
             if (e.toString().contains('取消')) {
               throw e;
             }
-            debugPrint('FontDownloadService: 字体 ${fontItem.id} 下载失败: $e');
+            AppLogger.error('FontDownloadService: 字体 ${fontItem.id} 下载失败:', e);
+
             // 单个字体失败不影响整体流程，标记为完成
             fontProgressMap[taskIndex] = 1.0;
             updateTotalProgress();

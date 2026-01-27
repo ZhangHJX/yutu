@@ -129,7 +129,7 @@ class SaveLogic extends GetxController {
         }
       }
     } catch (e) {
-      debugPrint('获取场景数据失败: $e');
+      AppLogger.error('获取场景数据失败:', e);
     }
   }
 
@@ -146,7 +146,7 @@ class SaveLogic extends GetxController {
         selectedTags.assignAll(tags);
       }
     } catch (e) {
-      debugPrint('获取场景数据失败: $e');
+      AppLogger.error('获取场景数据失败: ', e);
     }
   }
 
@@ -159,7 +159,6 @@ class SaveLogic extends GetxController {
 
   /// 移除标签
   void removeTag(ScreenItemModel model) {
-    debugPrint("--移除标签---");
     selectedTags.remove(model);
   }
 
@@ -269,7 +268,7 @@ class SaveLogic extends GetxController {
       }
     } catch (e, st) {
       SmartDialog.dismiss(status: SmartStatus.loading);
-      debugPrint('zipResourceInDocuments error: $e\n$st');
+      AppLogger.error('zipResourceInDocuments error:', e, st);
     }
   }
 
@@ -330,7 +329,7 @@ class SaveLogic extends GetxController {
         FileManager.deleteFileByPath(zipPath);
       }
     } catch (e) {
-      debugPrint('图片上传失败---$e');
+      AppLogger.error('图片上传失败-', e);
       SmartDialog.dismiss(status: SmartStatus.loading);
       FileManager.deleteFileByPath(zipPath);
     }
@@ -361,7 +360,7 @@ class SaveLogic extends GetxController {
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
     } catch (e) {
-      debugPrint('获取图片信息报错---$e');
+      AppLogger.error('获取图片信息报错-', e);
       SmartDialog.dismiss(status: SmartStatus.loading);
       FileManager.deleteFileByPath(zipPath);
     }
@@ -374,7 +373,7 @@ class SaveLogic extends GetxController {
     CanvasModel model,
     String zipPath,
   ) async {
-    debugPrint('图片资源大小---${bytes.length}');
+    AppLogger.info('图片资源大小---${bytes.length}');
 
     try {
       String mimeType = mimeTypeMap["png"] ?? "";
@@ -404,7 +403,7 @@ class SaveLogic extends GetxController {
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
     } catch (e) {
-      debugPrint('图片上传失败---$e');
+      AppLogger.error('图片上传失败-', e);
       SmartDialog.dismiss(status: SmartStatus.loading);
       FileManager.deleteFileByPath(zipPath);
     }
@@ -472,9 +471,6 @@ class SaveLogic extends GetxController {
           "front_ids": idsStr,
         };
       }
-
-      debugPrint("===模版保存是否成功====$params=====");
-
       final result = await http.post<SaveResponse>(
         tempteIsNewCreate.value ? '/design/store' : '/design/update',
         data: params,
@@ -590,11 +586,12 @@ class SaveLogic extends GetxController {
         FileManager.deleteFileByPath(filePath);
       } else {
         FileManager.deleteFileByPath(filePath);
-        debugPrint('草稿保存失败====${result.code}');
+
+        AppLogger.info('草稿保存失败====${result.code}');
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
     } catch (e) {
-      debugPrint('草稿保存失败--$e');
+      AppLogger.error('草稿保存失败', e);
       FileManager.deleteFileByPath(filePath);
       SmartDialog.dismiss(status: SmartStatus.loading);
     }

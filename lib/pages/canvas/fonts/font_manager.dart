@@ -139,7 +139,7 @@ class FontManager extends GetxController {
 
     // 4. 原子替换到最终目录 ApplicationSupportDirectory/fonts/fontId
     final targetDir = await FontMetaStore.instance.fontDir(info.id);
-    debugPrint('原子替换到最终目录 $targetDir');
+    AppLogger.info('原子替换到最终目录 $targetDir');
     Directory? backup;
     try {
       /// 生成一个备份目录路径：
@@ -177,12 +177,12 @@ class FontManager extends GetxController {
         try {
           await backup.delete(recursive: true);
         } catch (e) {
-          debugPrint('FontManager cleanup backup error: $e');
+          AppLogger.error('FontManager cleanup backup error:', e);
         }
       }
       return result.meta;
     } catch (e) {
-      debugPrint('FontManager install error: $e');
+      AppLogger.error('FontManager install error:', e);
       // 回滚：恢复旧目录
       if (backup != null && await backup.exists()) {
         if (await targetDir.exists()) {
@@ -202,7 +202,7 @@ class FontManager extends GetxController {
         try {
           await zipFile.delete();
         } catch (e) {
-          debugPrint('FontManager delete zip error: $e');
+          AppLogger.error('FontManager delete zip error:', e);
         }
       }
     }
@@ -235,7 +235,7 @@ class FontManager extends GetxController {
           continue;
         }
 
-        debugPrint(
+        AppLogger.info(
           'FontManager: warm update fontId=${info.id}, '
           'localVersion=${localMeta.version}, remoteVersion=${info.version}',
         );
@@ -248,8 +248,9 @@ class FontManager extends GetxController {
             url: info.url,
           );
         } catch (e) {
-          debugPrint(
-            'FontManager: warm update failed for fontId=${info.id}, error=$e',
+          AppLogger.error(
+            'FontManager: warm update failed for fontId=${info.id}',
+            e,
           );
         }
       }
@@ -330,12 +331,12 @@ class FontManager extends GetxController {
         try {
           await backup.delete(recursive: true);
         } catch (e) {
-          debugPrint('FontManager cleanup backup error: $e');
+          AppLogger.error('FontManager cleanup backup error:', e);
         }
       }
       return result.meta;
     } catch (e) {
-      debugPrint('FontManager silent install error: $e');
+      AppLogger.error('FontManager silent install error:', e);
       // 回滚：恢复旧目录
       if (backup != null && await backup.exists()) {
         if (await targetDir.exists()) {
@@ -354,7 +355,7 @@ class FontManager extends GetxController {
         try {
           await zipFile.delete();
         } catch (e) {
-          debugPrint('FontManager delete zip error: $e');
+          AppLogger.error('FontManager delete zip error:', e);
         }
       }
     }
@@ -369,7 +370,7 @@ class FontManager extends GetxController {
 
   /// 记录单个字体：“最近使用”，用于推荐字体
   void markUsed(int fontId) {
-    debugPrint('markUsed====$recentUsed ');
+    AppLogger.info('markUsed====$recentUsed');
     if (!recentUsed.contains(fontId)) {
       recentUsed.add(fontId);
     }
@@ -382,7 +383,7 @@ class FontManager extends GetxController {
         recentUsed.add(fontId);
       }
     }
-    debugPrint(
+    AppLogger.info(
       'markUsedFonts====$recentUsed recommendedFonts=$recommendedFonts',
     );
     _rebuildRecommended();
@@ -419,7 +420,7 @@ class FontManager extends GetxController {
       final familyKey = weightMeta.familyKey;
 
       if (familyKey.isEmpty) {
-        debugPrint(
+        AppLogger.info(
           'FontManager: familyKey is empty for path=${weightMeta.relativePath}',
         );
         continue;
@@ -433,7 +434,7 @@ class FontManager extends GetxController {
       final filePath = p.join(dir.path, weightMeta.relativePath);
       final file = File(filePath);
       if (!await file.exists()) {
-        debugPrint(
+        AppLogger.info(
           'FontManager: font file missing for fontId=${meta.fontId}, path=$filePath',
         );
         continue;
@@ -447,22 +448,24 @@ class FontManager extends GetxController {
 
         _registeredFamilyKeys.add(familyKey);
         registeredCount++;
-        debugPrint(
+
+        AppLogger.info(
           'FontManager: registered familyKey=$familyKey for fontId=${meta.fontId}',
         );
       } catch (e) {
-        debugPrint(
-          'FontManager: failed to register familyKey=$familyKey for fontId=${meta.fontId}, path=$filePath, error=$e',
+        AppLogger.error(
+          'FontManager: failed to register familyKey=$familyKey for fontId=${meta.fontId}, path=$filePath',
+          e,
         );
       }
     }
 
     if (registeredCount == 0) {
-      debugPrint(
+      AppLogger.info(
         'FontManager: no valid font files to register for fontId=${meta.fontId}',
       );
     } else {
-      debugPrint(
+      AppLogger.info(
         'FontManager: registered $registeredCount font files for fontId=${meta.fontId}',
       );
     }

@@ -9,27 +9,22 @@ import 'package:intl/intl.dart';
 import './core/index.dart';
 
 void main() async {
+  // 记录应用启动开始时间（从 Flutter 绑定初始化开始）
+  final appStartTime = DateTime.now().millisecondsSinceEpoch;
+  
   WidgetsFlutterBinding.ensureInitialized();
 
-  /// 日志打印系统
-  await AppLogger.instance.init();
+  // 异步初始化日志系统（不阻塞启动流程）
+  AppLogger.instance.init().catchError((e) {
+    if (kDebugMode) {
+      debugPrint('日志系统初始化失败: $e');
+    }
+  });
 
-  // 显示状态栏 + 底部导航栏（如果你也隐藏了的话）
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent, // 状态栏透明
-    ),
-  );
+  // 初始化应用核心配置（包含在启动时间测试中）
+  await _initializeApp(appStartTime);
 
-  // 设置多语言
-  Intl.defaultLocale = 'zh_CN';
-  await initializeDateFormatting('zh_CN');
-
-  // 初始化应用
-  await _initializeApp();
-
-  // 设置错误处理，避免显示异常界面
+  // 设置错误处理
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
     if (kDebugMode) {
@@ -39,11 +34,13 @@ void main() async {
 
   // 运行应用
   runApp(const MyApp());
+
+  // 应用启动后，异步执行非关键初始化（不阻塞 UI 渲染）
+  _initializeNonCritical();
 }
 
-/// 初始化应用配置
-Future<void> _initializeApp() async {
-  final startTime = DateTime.now().millisecondsSinceEpoch;
+/// 初始化应用核心配置（关键路径，影响启动时间）
+Future<void> _initializeApp(int appStartTime) async {
   const envFileName = String.fromEnvironment(
     'ENV_FILE',
     defaultValue: '.env.prod',
@@ -55,12 +52,34 @@ Future<void> _initializeApp() async {
   // 加载环境变量
   await dotenv.load(fileName: 'env/$envFileName');
   final dstMap = Map.fromEntries(dotenv.env.entries);
-
-  AppLogger.info('App启动环境 $envFileName  $dstMap');
   await dotenv.load(fileName: 'env/.env', mergeWith: dstMap);
 
-  final cost = DateTime.now().millisecondsSinceEpoch - startTime;
-  AppLogger.info('App启动耗时 多长时间 $cost ms');
+  // 计算并记录启动耗时（从 Flutter 绑定初始化到核心配置完成）
+  final cost = DateTime.now().millisecondsSinceEpoch - appStartTime;
+  AppLogger.info('App核心初始化耗时: $cost ms');
+  AppLogger.info('App启动环境: $envFileName');
+}
+
+/// 初始化非关键配置（延迟执行，不阻塞启动）
+void _initializeNonCritical() {
+  // 使用微任务延迟执行，确保 UI 已经渲染
+  Future.microtask(() async {
+    // 显示状态栏 + 底部导航栏
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+      ),
+    );
+
+    // 设置多语言（可以延迟，因为首次使用时会自动加载）
+    Intl.defaultLocale = 'zh_CN';
+    initializeDateFormatting('zh_CN', null).then((_) {
+      if (kDebugMode) {
+        debugPrint('多语言初始化完成');
+      }
+    });
+  });
 }
 
 class MyApp extends StatelessWidget {

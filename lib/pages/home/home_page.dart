@@ -77,8 +77,6 @@ class HomePage extends StatelessWidget {
                       await logic.homeRefresh();
                     },
                     onLoading: () async {
-                      debugPrint('获取代理场景列表失败: onLoading');
-
                       await logic.onLoad();
                     },
                     child: CustomScrollView(

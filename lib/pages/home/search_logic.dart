@@ -173,7 +173,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
       tabIsLoading.value = false;
     } catch (e) {
       tabIsLoading.value = false;
-      debugPrint('获取场景数据失败: $e');
+      AppLogger.error('获取场景数据失败: ', e);
     }
   }
 

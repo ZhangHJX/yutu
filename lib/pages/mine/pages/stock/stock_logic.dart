@@ -1,5 +1,4 @@
 import 'package:common/common.dart';
-import 'package:flutter/material.dart';
 import '../../model/stock_model.dart';
 import 'package:voicetemplate/stores/global.dart';
 import 'package:voicetemplate/stores/user_model.dart';
@@ -94,7 +93,7 @@ class StockLogic extends GetxController {
         }
       }
     } catch (e) {
-      debugPrint('素材列表数据请求错误: $e');
+      AppLogger.error('素材列表数据请求错误:', e);
     } finally {
       isLoading.value = false;
     }
@@ -165,7 +164,7 @@ class StockLogic extends GetxController {
       SmartDialog.dismiss();
       SmartDialog.dismiss(status: SmartStatus.loading);
       showToast('删除失败');
-      debugPrint('删除设计失败: $e');
+      AppLogger.error('删除设计失败: ', e);
     }
   }
 }

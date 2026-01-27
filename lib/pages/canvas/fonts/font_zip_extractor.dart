@@ -119,7 +119,7 @@ class FontZipExtractor {
         parsedWeights.add(weightMeta);
       } catch (e) {
         // isolate 内 debugPrint 可用，但别太频繁
-        debugPrint('FontZipExtractor parse error: $e');
+        AppLogger.error('FontZipExtractor parse error:', e);
       }
     }
 

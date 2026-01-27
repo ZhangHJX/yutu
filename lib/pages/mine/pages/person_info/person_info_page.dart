@@ -46,7 +46,6 @@ class PersonInfoPage extends StatelessWidget {
                   TopNavigationWidget(
                     title: "个人资料",
                     back: () async {
-                      debugPrint("==个人资料===哈哈哈哈哈===");
                       await PickerImageManager.deleteDirectory();
                     },
                   ),

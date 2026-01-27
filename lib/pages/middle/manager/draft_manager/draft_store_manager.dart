@@ -1,10 +1,10 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import '../../../canvas/model/index.dart';
 import '../../../../file/index.dart';
 import 'draft_store.dart';
 import '../manager_model.dart';
+import 'package:common/common.dart';
 
 /// 草稿存储管理类
 /// 负责：
@@ -35,20 +35,20 @@ class DraftStoreManager {
       // 2. 保存或更新数据库记录
       final success = await DraftStore.instance.save(draftModel);
       if (!success) {
-        debugPrint('DraftStoreManager: 保存数据库记录失败, id=${canvasModel.id}');
+        AppLogger.info('DraftStoreManager: 保存数据库记录失败, id=${canvasModel.id}');
         return false;
       }
 
       // 3. 复制 Documents/cavals 目录到 Application Support/sqflite_draft/{id}
       await _copyCavalsDirectory(id);
 
-      debugPrint(
+      AppLogger.info(
         'DraftStoreManager: 草稿更新或保存成功, id=${canvasModel.id}, uuid=${canvasModel.uuid}',
       );
 
       return true;
     } catch (e, stackTrace) {
-      debugPrint('DraftStoreManager: 保存草稿失败: $e\n$stackTrace');
+      AppLogger.error('DraftStoreManager: 保存草稿失败:', e, stackTrace);
       return false;
     }
   }
@@ -63,7 +63,9 @@ class DraftStoreManager {
 
       // 检查源目录是否存在
       if (!await sourceCavalsDir.exists()) {
-        debugPrint('DraftStoreManager: 源目录不存在，跳过文件复制: ${sourceCavalsDir.path}');
+        AppLogger.info(
+          'DraftStoreManager: 源目录不存在，跳过文件复制: ${sourceCavalsDir.path}',
+        );
         return;
       }
 
@@ -85,9 +87,9 @@ class DraftStoreManager {
       // 递归复制目录内容
       await _copyDirectoryRecursive(sourceCavalsDir, targetDir);
 
-      debugPrint('DraftStoreManager: cavals 目录已复制到: ${targetDir.path}');
+      AppLogger.info('DraftStoreManager: cavals 目录已复制到: ${targetDir.path}');
     } catch (e, stackTrace) {
-      debugPrint('DraftStoreManager: 复制 cavals 目录失败: $e\n$stackTrace');
+      AppLogger.error('DraftStoreManager: 复制 cavals 目录失败:', e, stackTrace);
       // 不抛出异常，文件复制失败不影响数据库保存
     }
   }
@@ -135,18 +137,18 @@ class DraftStoreManager {
         );
         if (await draftDir.exists()) {
           await FileManager.deleteDirectory(draftDir, deleteDirectory: true);
-          debugPrint('DraftStoreManager: 草稿文件目录已删除: ${draftDir.path}');
+          AppLogger.info('DraftStoreManager: 草稿文件目录已删除: ${draftDir.path}');
         }
       } catch (e) {
-        debugPrint('DraftStoreManager: 删除草稿文件目录失败: $e');
+        AppLogger.error('DraftStoreManager: 删除草稿文件目录失败:', e);
         // 文件删除失败不影响返回结果
       }
       if (dbSuccess) {
-        debugPrint('DraftStoreManager: 草稿已删除, id=$id');
+        AppLogger.info('DraftStoreManager: 草稿已删除, id=$id');
       }
       return dbSuccess;
     } catch (e, stackTrace) {
-      debugPrint('DraftStoreManager: 删除草稿失败: $e\n$stackTrace');
+      AppLogger.error('DraftStoreManager: 删除草稿失败:', e, stackTrace);
       return false;
     }
   }
@@ -168,7 +170,7 @@ class DraftStoreManager {
       );
 
       if (!await draftDir.exists()) {
-        debugPrint('DraftStoreManager: 源草稿目录不存在: ${draftDir.path}');
+        AppLogger.info('DraftStoreManager: 源草稿目录不存在: ${draftDir.path}');
         return null;
       }
 
@@ -187,13 +189,13 @@ class DraftStoreManager {
       // 将 sqflite_draft/{uuid} 下的内容复制到 Documents/cavals
       await _copyDirectoryRecursive(draftDir, targetCavalsDir);
 
-      debugPrint(
+      AppLogger.info(
         'DraftStoreManager: 草稿文件已从 $id 恢复到 Documents/cavals: ${targetCavalsDir.path}',
       );
 
       return targetCavalsDir.path;
     } catch (e) {
-      debugPrint('DraftStoreManager: 拷贝草稿 cavals 目录失败: $e');
+      AppLogger.error('DraftStoreManager: 拷贝草稿 cavals 目录失败:', e);
       return null;
     }
   }

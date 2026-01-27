@@ -59,7 +59,7 @@ class PickerImageManager {
       }
     } catch (e, stackTrace) {
       showToast('读取照片路径报错，请重试');
-      debugPrint('读取照片路径报错，请重试: $e-----$stackTrace');
+      AppLogger.error('读取照片路径报错，请重试:', e, stackTrace);
     }
   }
 

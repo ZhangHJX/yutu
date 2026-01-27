@@ -25,7 +25,6 @@ class MainLogic extends GetxController {
     global.tabIndex.listen(changeTabIndex);
 
     EventBusManager.share.listenAll((e) {
-      debugPrint("=========登录进来了吗=========");
       if (e.type == AppEventType.login && e.data == "middle") {
         clickCenterBtn();
       }
@@ -79,10 +78,10 @@ class MainLogic extends GetxController {
 
   Widget buildPage(int index) {
     if (index == 0) {
-      debugPrint("HomePage-------");
+      AppLogger.info('点击进入了HomePage页面');
       return HomePage();
     }
-    debugPrint("MinePage-------");
+    AppLogger.info('点击进入了MinePage页面');
     return MinePage();
   }
 

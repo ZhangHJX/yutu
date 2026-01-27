@@ -156,7 +156,7 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
       tabIsLoading.value = false;
     } catch (e) {
       tabIsLoading.value = false;
-      debugPrint('获取场景数据失败: $e');
+      AppLogger.error('获取场景数据失败: ', e);
     }
   }
 
@@ -225,7 +225,7 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
       tabData.isLoading.value = false;
     } catch (e) {
       tabData.isLoading.value = false;
-      debugPrint('列表数据请求错误: $e');
+      AppLogger.error('列表数据请求错误:', e);
     } finally {
       if (!isClosed) {
         if (refresh) {
@@ -319,7 +319,7 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
       SmartDialog.dismiss();
       SmartDialog.dismiss(status: SmartStatus.loading);
       showToast('删除失败');
-      debugPrint('删除设计失败: $e');
+      AppLogger.error('删除设计失败:', e);
     }
   }
 }

@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 
 import '../../../file/index.dart';
 import 'font_models.dart';
+import 'package:common/common.dart';
 
 /// 负责读写本地的字体 meta.json，并做简单缓存
 /// 目录规范：
@@ -50,7 +51,7 @@ class FontMetaStore {
       _cache[fontId] = familyMeta;
       return familyMeta;
     } catch (e) {
-      debugPrint('FontMetaStore readMeta error: $e');
+      AppLogger.error('FontMetaStore readMeta error:', e);
       return null;
     }
   }
@@ -74,7 +75,7 @@ class FontMetaStore {
       try {
         await dir.delete(recursive: true);
       } catch (e) {
-        debugPrint('FontMetaStore deleteFont error: $e');
+        AppLogger.error('FontMetaStore deleteFont error:', e);
       }
     }
   }

@@ -69,13 +69,13 @@ class PersonLogic extends GetxController {
         onSuccess:
             (String filePath, double width, double height, int fileSize) {
               filemeMemorySize = fileSize;
-              debugPrint('从相册选择成功了: $filePath');
+              AppLogger.info('从相册选择成功了: $filePath');
               getUploadInfo(filePath);
             },
       );
     } catch (e, stackTrace) {
       showToast('读取照片路径报错，请重试');
-      debugPrint('从相册选择😟😟😟😟: $e $stackTrace');
+      AppLogger.error('从相册选择😟😟😟😟', e, stackTrace);
     }
   }
 
@@ -102,7 +102,6 @@ class PersonLogic extends GetxController {
   //         );
   //       } catch (e, stackTrace) {
   //         showToast('读取照片路径报错，请重试');
-  //         debugPrint('从相册选择😟😟😟😟: $e $stackTrace');
   //       }
   //     },
   //   ),
@@ -243,7 +242,7 @@ class PersonLogic extends GetxController {
       await PickerImageManager.deleteDirectory();
       SmartDialog.dismiss(status: SmartStatus.loading);
       showToast("修改失败");
-      debugPrint('===========  error: $e');
+      AppLogger.error('个人信息修改失败', e);
     }
   }
 }
