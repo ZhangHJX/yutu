@@ -2,6 +2,8 @@ name: common
 description: "A new Flutter package project."
 version: 0.0.1
 
+publish_to: none
+
 environment:
   sdk: ">=3.10.0 <4.0.0"
   flutter: ">=1.17.0"
@@ -9,7 +11,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+    
   flutter_screenutil: ^5.9.3
   flutter_image_compress: ^2.4.0
   location: ^8.0.0
@@ -43,8 +45,8 @@ dependencies:
   device_info_plus: ^12.2.0
   event_bus: ^2.0.1
   chinese_font_library: ^1.2.0
+  logger: ^2.6.2
 
-  
 
 
 dev_dependencies:

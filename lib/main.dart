@@ -11,9 +11,11 @@ import './core/index.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  /// 日志打印系统
+  await AppLogger.instance.init();
+
   // 显示状态栏 + 底部导航栏（如果你也隐藏了的话）
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent, // 状态栏透明
@@ -44,7 +46,7 @@ Future<void> _initializeApp() async {
   final startTime = DateTime.now().millisecondsSinceEpoch;
   const envFileName = String.fromEnvironment(
     'ENV_FILE',
-    defaultValue: '.env.dev',
+    defaultValue: '.env.prod',
   );
 
   // 初始化 GetStorage
@@ -52,15 +54,13 @@ Future<void> _initializeApp() async {
 
   // 加载环境变量
   await dotenv.load(fileName: 'env/$envFileName');
-  debugPrint('App启动环境1:$envFileName');
-
   final dstMap = Map.fromEntries(dotenv.env.entries);
-  debugPrint('App启动环境2:$dstMap');
 
+  AppLogger.info('App启动环境 $envFileName  $dstMap');
   await dotenv.load(fileName: 'env/.env', mergeWith: dstMap);
 
   final cost = DateTime.now().millisecondsSinceEpoch - startTime;
-  debugPrint('App启动耗时:$cost ms');
+  AppLogger.info('App启动耗时 多长时间 $cost ms');
 }
 
 class MyApp extends StatelessWidget {
@@ -111,4 +111,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-// 多语言适配  https://blog.csdn.net/zz00008888/article/details/145241603

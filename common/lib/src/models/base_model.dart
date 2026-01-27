@@ -1,11 +1,9 @@
 import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
-
+import 'package:flutter/foundation.dart';
 import '../utils/index.dart';
-
 import 'server_page_model.dart';
 import '../../zmj/index.dart';
+import '../logger/index.dart';
 
 typedef FutureListModel<T> = Future<BaseModel<ServerPageModel<T>>>;
 
@@ -34,7 +32,14 @@ class BaseModel<T> {
     if (code == -1) {
       EventBusManager.share.emit(AppEventType.logout);
     }
-    debugPrint("=====$json=====接口返回信息===${HttpStatus.ok}===$message");
+
+    if (code != 0 || HttpStatus.ok != 200) {
+      AppLogger.info('接口返回的message信息: code: $code  message: $message');
+    } else {
+      if (kDebugMode && AppLogger.instance.consoleLogger != null) {
+        AppLogger.instance.consoleLogger?.i('接口返回信息: $json');
+      }
+    }
 
     try {
       if (rawData is Map) {

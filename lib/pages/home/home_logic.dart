@@ -73,8 +73,6 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   @override
   void onClose() {
-    // HomeTabDataState 没有 refreshController，不需要释放
-    // tabDataMap.clear();
     // 释放 TabController
     tabController.value?.dispose();
     tabController.value = null;
@@ -498,7 +496,9 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
         editModel,
         onProgress: (progress) {
           // 可以在这里更新进度显示
-          debugPrint('DraftDownloadService: 进度 ${(progress * 100).toInt()}%');
+          AppLogger.instance.i(
+            '首页草稿DraftDownloadService: 进度 ${(progress * 100).toInt()}%',
+          );
         },
       );
 
@@ -509,7 +509,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     } catch (e) {
       SmartDialog.dismiss();
       SmartDialog.dismiss(status: SmartStatus.loading);
-      debugPrint('加载服务器草稿失败: $e');
+      AppLogger.instance.e('首页草稿加在失败信息', e);
       // 可以显示错误提示
       showToast('加载草稿失败，请重试');
     }

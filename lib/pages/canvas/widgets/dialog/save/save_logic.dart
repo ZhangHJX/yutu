@@ -253,14 +253,13 @@ class SaveLogic extends GetxController {
       } else {
         final int zipBytes = await zipFile.length(); // 压缩包大小（字节）
         final double zipKB = zipBytes / 1024;
-
         final draftSize =
             double.tryParse(global.userInfo.value.designDraftFileSize) ??
             0 + zipKB;
-        final draftLimit =
+        final draftSizeLimit =
             double.tryParse(global.userInfo.value.designDraftFileSizeLimit) ??
             0;
-        if (draftSize >= draftLimit) {
+        if (draftSize >= draftSizeLimit) {
           SmartDialog.dismiss(status: SmartStatus.loading);
           SmartDialog.dismiss();
           showDraftMemoryDialog();
@@ -634,6 +633,7 @@ class SaveLogic extends GetxController {
         subTitleWidget: textWidget,
         sureTitle: "跳转我的草稿",
         sureAction: () {
+          SmartDialog.dismiss();
           Get.toNamed(AppRoutes.draft);
         },
       ),

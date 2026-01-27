@@ -30,15 +30,15 @@ class HttpService {
       InterceptorsWrapper(
         onRequest: (RequestOptions options, RequestInterceptorHandler handler) {
           if (kDebugMode) {
-            print(
-              '👶👶👶----请求方式:${options.method} ${options.baseUrl}  ${options.path}',
-            );
-            print('👧👧👧请求头: ${options.headers}');
+            AppLogger.info('baseURL：${options.baseUrl} 路径：${options.path}');
+            AppLogger.info('请求方法${options.method} 请求头: ${options.headers}');
+
             if (options.data != null) {
-              print('👩👩👩请求参数: ${options.data}');
+              AppLogger.info('请求参数: ${options.data}');
             }
-            print('👨👨👨查询参数: ${options.queryParameters}');
-            print('🔥🔥🔥额外数据: ${options.extra}');
+
+            AppLogger.info('查询参数: ${options.queryParameters}');
+            AppLogger.info('额外数据: ${options.extra}');
           }
           return handler.next(options);
         },
@@ -87,10 +87,6 @@ class HttpService {
         default:
           errorMessage = '发生错误: ${error.message}';
       }
-    }
-    // 显示错误信息
-    if (kDebugMode) {
-      print('😩😩😩网络请求发生错误: ${error.message}');
     }
   }
 
@@ -156,6 +152,7 @@ class HttpService {
         showErrorToast,
       );
     } on DioException catch (e) {
+      AppLogger.error('网络请求错误信息', e.error);
       _handleError(e, showErrorToast: showErrorToast);
       rethrow;
     }

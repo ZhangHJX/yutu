@@ -135,12 +135,13 @@ class ImageLogic extends GetxController {
         onSuccess:
             (String filePath, double width, double height, int fileSize) {
               final materialSize =
-                  double.tryParse(global.userInfo.value.designFileSize) ??
+                  double.tryParse(global.userInfo.value.userMaterialFileSize) ??
                   0 + fileSize.toDouble();
               final materialLimit =
-                  double.tryParse(global.userInfo.value.designFileSizeLimit) ??
+                  double.tryParse(
+                    global.userInfo.value.userMmaterialFileSizeLimit,
+                  ) ??
                   0;
-
               if (materialSize >= materialLimit) {
                 SmartDialog.dismiss();
                 showMaterialMemoryDialog();
@@ -372,6 +373,7 @@ class ImageLogic extends GetxController {
         subTitleWidget: textWidget,
         sureTitle: "跳转我的素材",
         sureAction: () {
+          SmartDialog.dismiss();
           Get.toNamed(AppRoutes.design);
         },
       ),

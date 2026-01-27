@@ -7,3 +7,4 @@ export 'src/typedef/index.dart';
 export 'src/utils/index.dart';
 export 'src/widgets/index.dart';
 export 'zmj/index.dart';
+export 'src/logger/index.dart';
