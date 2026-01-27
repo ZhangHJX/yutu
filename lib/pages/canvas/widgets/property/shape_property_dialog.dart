@@ -4,6 +4,7 @@ import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../../utils/index.dart';
 import 'widgets/slider_input_field.dart';
 import '../../model/index.dart';
+import '../input_number_formatter.dart';
 
 class ShapePropertyDialog extends StatefulWidget {
   final CanvasElement? element;
@@ -738,6 +739,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                           controller: _shadowXController,
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
+                          inputFormatters: [InputNumberFormatter()],
                           onChanged: (value) {
                             final newValue = double.tryParse(value);
                             if (newValue != null) {
@@ -752,7 +754,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: 15.w,
+                              vertical: 14.5.w,
                             ),
                           ),
                           style: TextStyle(
@@ -801,6 +803,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                           controller: _shadowYController,
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
+                          inputFormatters: [InputNumberFormatter()],
                           onChanged: (value) {
                             final newValue = double.tryParse(value);
                             if (newValue != null) {
@@ -815,7 +818,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: 15.w,
+                              vertical: 14.5.w,
                             ),
                           ),
                           style: TextStyle(
@@ -859,11 +862,12 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
 
                     Expanded(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 5.w),
+                        padding: EdgeInsets.symmetric(horizontal: 3.w),
                         child: TextField(
                           controller: _shadowBlurController,
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
+                          inputFormatters: [InputNumberFormatter()],
                           onChanged: (value) {
                             final newValue = double.tryParse(value);
                             if (newValue != null) {
@@ -878,7 +882,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: 15.w,
+                              vertical: 14.5.w,
                             ),
                           ),
                           style: TextStyle(

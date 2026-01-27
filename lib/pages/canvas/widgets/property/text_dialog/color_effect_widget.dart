@@ -4,6 +4,7 @@ import '../widgets/color_picker_dialog.dart';
 import '../widgets/slider_input_field.dart';
 import '../widgets/border_width_formatter.dart';
 import '../widgets/color_value_formatter.dart';
+import '../../input_number_formatter.dart';
 
 /// 颜色效果组件
 class ColorEffectWidget extends StatefulWidget {
@@ -636,6 +637,7 @@ class _ColorEffectWidgetState extends State<ColorEffectWidget> {
                           controller: _shadowXController,
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
+                          inputFormatters: [InputNumberFormatter()],
                           onChanged: (value) {
                             if (value.isNotEmpty) {
                               final x = double.tryParse(value);
@@ -698,6 +700,7 @@ class _ColorEffectWidgetState extends State<ColorEffectWidget> {
                           controller: _shadowYController,
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
+                          inputFormatters: [InputNumberFormatter()],
                           onChanged: (value) {
                             if (value.isNotEmpty) {
                               final y = double.tryParse(value);
@@ -755,11 +758,12 @@ class _ColorEffectWidgetState extends State<ColorEffectWidget> {
 
                     Expanded(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 5.w),
+                        padding: EdgeInsets.symmetric(horizontal: 3.w),
                         child: TextField(
                           controller: _shadowBlurController,
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
+                          inputFormatters: [InputNumberFormatter()],
                           onChanged: (value) {
                             if (value.isNotEmpty) {
                               final blur = double.tryParse(value);
@@ -773,7 +777,7 @@ class _ColorEffectWidgetState extends State<ColorEffectWidget> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: 15.w,
+                              vertical: 14.5.w,
                             ),
                           ),
                           style: TextStyle(
