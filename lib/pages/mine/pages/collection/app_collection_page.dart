@@ -46,7 +46,7 @@ class AppCollectionPage extends StatelessWidget {
                     return;
                   }
                   if (logic.isBatchMode.value) {
-                    logic.selectAll();
+                    logic.toggleSelectAll();
                   } else {
                     logic.toggleBatchMode();
                   }

@@ -262,10 +262,15 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
     }
 
     isAllSelected.value = tempSeletedAll;
+
+    AppLogger.info('我的收藏：单个选中/取消==${isAllSelected.value}');
   }
 
   /// 全选
-  void selectAll() {
+  void toggleSelectAll() {
+    if (isAllSelected.value) {
+      return;
+    }
     isAllSelected.value = true;
     for (final tabState in tabDataMap.values) {
       tabState.dataList.assignAll(
@@ -304,6 +309,8 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
       return;
     }
 
+    AppLogger.info('收藏选中要删除的数据有哪些==$selectedIds');
+
     try {
       showLoading("删除中");
 
@@ -324,8 +331,6 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
           // tabState.dataList.refresh();
         }
 
-        // 清除
-        // 选择并退出批量模式
         clearSelection();
         SmartDialog.dismiss();
         SmartDialog.dismiss(status: SmartStatus.loading);

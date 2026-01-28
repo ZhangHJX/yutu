@@ -110,17 +110,13 @@ class DraftLogic extends GetxController {
   /// 单个 item 选中 / 取消
   void toggleItemSelection(String id) {
     if (selectedIds.contains(id)) {
-      if (isAllSelected.value) {
-        isAllSelected.value = false;
-      }
       selectedIds.remove(id);
     } else {
       selectedIds.add(id);
     }
 
-    if (!isAllSelected.value) {
-      isAllSelected.value = (selectedIds.length == draftList.length);
-    }
+    isAllSelected.value = (selectedIds.length == draftList.length);
+    AppLogger.info('素材操作：单个选中/取消==${isAllSelected.value}');
   }
 
   /// 全选
@@ -143,10 +139,13 @@ class DraftLogic extends GetxController {
 
   /// 删除选中的设计
   Future<void> deleteSelected() async {
-    if (selectedIds.isEmpty) return;
-
     if (global.connectStatus.currentStatus == NetworkStatus.none) {
       showToast("删除失败");
+      return;
+    }
+
+    if (selectedIds.isEmpty) {
+      showToast("未选中要删除的数据");
       return;
     }
 

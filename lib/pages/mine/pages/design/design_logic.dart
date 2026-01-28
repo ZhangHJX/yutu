@@ -270,10 +270,15 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
     }
 
     isAllSelected.value = tempSeletedAll;
+
+    AppLogger.info('我的设计：单个选中/取消==${isAllSelected.value}');
   }
 
   /// 全选
   void toggleSelectAll() {
+    if (isAllSelected.value) {
+      return;
+    }
     isAllSelected.value = true;
     for (final tabState in tabDataMap.values) {
       tabState.dataList.assignAll(
@@ -311,6 +316,8 @@ class AppDesiginLogic extends GetxController with GetTickerProviderStateMixin {
       showToast("未选中要删除的数据");
       return;
     }
+
+    AppLogger.info('我的设计选中要删除的数据有哪些==$selectedIds');
 
     try {
       showLoading("删除中");
