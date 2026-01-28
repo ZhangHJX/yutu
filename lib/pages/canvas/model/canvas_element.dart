@@ -161,5 +161,6 @@ class CanvasElement {
     Offset(0, height.w),
   ];
 
-  Offset get position => Offset(x.w, y.w);
+  // Offset get position => Offset(x.w, y.w);
+  Offset get position => Offset(x, y);
 }
