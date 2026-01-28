@@ -542,9 +542,6 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
           maxValue: 1.0,
           trackHeight: 8.w,
           thumbSize: 16.w,
-          formatter: (value) => '${(value * 100).toInt()}%',
-          parser: (text) =>
-              double.tryParse(text.replaceAll('%', '')) ?? 0.0 / 100.0,
           onChanged: (value) {
             setState(() {
               _fillAlpha = value;
@@ -567,9 +564,6 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
           maxValue: 1.0,
           trackHeight: 8.w,
           thumbSize: 16.w,
-          formatter: (value) => '${(value * 100).toInt()}%',
-          parser: (text) =>
-              double.tryParse(text.replaceAll('%', '')) ?? 0.0 / 100.0,
           onChanged: (value) {
             setState(() {
               _borderAlpha = value;
@@ -910,9 +904,6 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
       maxValue: 1.0,
       trackHeight: 8.w,
       thumbSize: 16.w,
-      formatter: (value) => '${(value * 100).toInt()}%',
-      parser: (text) =>
-          double.tryParse(text.replaceAll('%', '')) ?? 0.0 / 100.0,
       onChanged: (value) {
         setState(() {
           _shawAlpha = value;

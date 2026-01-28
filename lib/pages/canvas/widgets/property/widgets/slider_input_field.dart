@@ -1,6 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:voicetemplate/pages/canvas/widgets/input_number_formatter.dart';
 import 'slider_based_progress_bar.dart';
 
 /// 带标题和输入框的滑块组件
@@ -89,13 +90,15 @@ class SliderInputField extends StatefulWidget {
 class _SliderInputFieldState extends State<SliderInputField> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
+  late double _currentValue;
 
   @override
   void initState() {
     super.initState();
+    _currentValue = widget.value;
     _controller = TextEditingController();
     _focusNode = FocusNode();
-    _updateControllerText();
+    initInputValue(_currentValue);
     _focusNode.addListener(_onFocusChange);
   }
 
@@ -103,8 +106,12 @@ class _SliderInputFieldState extends State<SliderInputField> {
   void didUpdateWidget(SliderInputField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.value != widget.value) {
-      _updateControllerText();
+      initInputValue(_currentValue);
     }
+  }
+
+  void initInputValue(double value) {
+    _controller.text = '${(value * 100).toInt()}';
   }
 
   @override
@@ -113,13 +120,6 @@ class _SliderInputFieldState extends State<SliderInputField> {
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
-  }
-
-  void _updateControllerText() {
-    final text = widget.formatter != null
-        ? widget.formatter!(widget.value)
-        : widget.value.toStringAsFixed(1);
-    _controller.text = text;
   }
 
   void _onFocusChange() {
@@ -131,32 +131,18 @@ class _SliderInputFieldState extends State<SliderInputField> {
   void _handleInputSubmit() {
     final text = _controller.text.trim();
     if (text.isEmpty) {
-      _updateControllerText();
+      initInputValue(0);
       return;
     }
-
-    double? newValue;
-    if (widget.parser != null) {
-      newValue = widget.parser!(text);
-    } else {
-      newValue = double.tryParse(text);
-    }
-
-    if (newValue != null) {
-      // 限制值在范围内
-      newValue = newValue.clamp(widget.minValue, widget.maxValue);
-      widget.onChanged?.call(newValue);
-      _updateControllerText();
-    } else {
-      _updateControllerText();
-    }
+    double? newValue = (double.tryParse(text) ?? 0.0) / 100.0;
+    widget.onChanged?.call(newValue);
   }
 
-  String _formatValue(double value) {
-    if (widget.formatter != null) {
-      return widget.formatter!(value);
-    }
-    return value.toStringAsFixed(1);
+  void _onchangeTextFiled(double value) {
+    setState(() {
+      _currentValue = value;
+    });
+    widget.onChanged?.call(value);
   }
 
   @override
@@ -201,41 +187,56 @@ class _SliderInputFieldState extends State<SliderInputField> {
             Container(
               width: inputWidth,
               height: inputHeight,
-              decoration: widget.inputDecoration ?? defaultInputDecoration,
+              decoration: defaultInputDecoration,
               alignment: Alignment.center,
-              child: widget.editable
-                  ? TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      textAlign: TextAlign.center,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+\.?\d*'),
-                        ),
-                      ],
-                      style: widget.inputTextStyle ?? defaultInputTextStyle,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                        isDense: true,
-                      ),
-                      onSubmitted: (_) {
-                        _handleInputSubmit();
-                      },
-                      onEditingComplete: () {
-                        _handleInputSubmit();
-                      },
-                    )
-                  : Text(
-                      _formatValue(widget.value),
-                      style: widget.inputTextStyle ?? defaultInputTextStyle,
-                      textAlign: TextAlign.center,
+              padding: EdgeInsets.symmetric(horizontal: 5.w),
+              child: Stack(
+                alignment: Alignment.centerRight,
+                children: [
+                  TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    textAlign: TextAlign.right,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
+                      InputNumberFormatter(),
+                    ],
+                    style: defaultInputTextStyle,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.only(
+                        right: 12.w,
+                      ).copyWith(right: 18.w),
+                    ),
+
+                    onSubmitted: (_) {
+                      _handleInputSubmit();
+                    },
+                    onEditingComplete: () {
+                      _handleInputSubmit();
+                    },
+                    onChanged: (value) {
+                      double? changeValue =
+                          (double.tryParse(value) ?? 0.0) / 100;
+                      _onchangeTextFiled(changeValue);
+                    },
+                  ),
+
+                  Padding(
+                    padding: EdgeInsets.only(
+                      right: 6.w,
+                      left: 2.w,
+                    ), // 和输入框右侧内边距匹配
+                    child: Text("%", style: defaultInputTextStyle),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -243,16 +244,16 @@ class _SliderInputFieldState extends State<SliderInputField> {
         // 垂直间距
         SizedBox(height: verticalSpacing),
 
-        // 滑块
+        // 滑块：拖动时同步更新 TextField
         SliderBasedProgressBar(
-          value: widget.value,
+          value: _currentValue,
           minValue: widget.minValue,
           maxValue: widget.maxValue,
           trackHeight: trackHeight,
           thumbSize: thumbSize,
           onChanged: (value) {
+            initInputValue(value); // 滑块拖动 → 同步更新 TextField
             widget.onChanged?.call(value);
-            _updateControllerText();
           },
           onChangeEnd: (value) {
             widget.onChangeEnd?.call(value);
