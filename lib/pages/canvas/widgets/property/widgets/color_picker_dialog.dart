@@ -1,6 +1,9 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:flutter/cupertino.dart' show CupertinoTextField;
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
 /// HSV颜色选择器对话框
 class ColorPickerDialog extends StatefulWidget {
@@ -22,192 +25,134 @@ class ColorPickerDialog extends StatefulWidget {
 
 class _ColorPickerDialogState extends State<ColorPickerDialog> {
   late Color _currentColor;
+  late TextEditingController textController;
 
   @override
   void initState() {
     super.initState();
     _currentColor = widget.initialColor;
+    textController = TextEditingController(text: _currentColor.string);
+  }
+
+  @override
+  void dispose() {
+    textController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.w),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 标题栏
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.w),
+    return KeyboardDismissOnTap(
+      child: KeyboardVisibilityBuilder(
+        builder: (context, isKeyboardVisible) {
+          // 根据键盘是否可见动态计算底部边距
+          final keyboardHeight = isKeyboardVisible
+              ? MediaQuery.of(context).viewInsets.bottom
+              : 0.0;
+          return Container(
+            width: ScreenTools.screenWidth,
+            // ⭐ 动态调整底部边距，避免被键盘遮挡
+            margin: EdgeInsets.only(bottom: keyboardHeight),
             decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: "#ffE6E6E6".color, width: 1.w),
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16.w),
+                topRight: Radius.circular(16.w),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '选择颜色',
-                  style: TextStyle(
-                    fontSize: 18.w,
-                    fontWeight: FontWeight.w600,
-                    color: "#ff262626".color,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    SmartDialog.dismiss();
-                  },
-                  child: Icon(
-                    Icons.close,
-                    size: 24.w,
-                    color: "#ff999999".color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // 颜色选择器
-          Container(
-            padding: EdgeInsets.all(16.w),
-            child: ColorPicker(
-              pickerColor: _currentColor,
-              onColorChanged: (Color color) {
-                setState(() {
-                  _currentColor = color;
-                });
-              },
-              colorPickerWidth: 280.w,
-              pickerAreaHeightPercent: 0.7,
-              enableAlpha: false,
-              displayThumbColor: true,
-              paletteType: PaletteType.hsv,
-              labelTypes: const [],
-              pickerAreaBorderRadius: BorderRadius.circular(8.w),
-            ),
-          ),
-
-          // 颜色预览和Hex值
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            margin: EdgeInsets.only(bottom: 16.w),
-            child: Row(
-              children: [
-                // 颜色预览
+                // 标题栏
                 Container(
-                  width: 60.w,
-                  height: 50.w,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 16.w,
+                  ),
                   decoration: BoxDecoration(
-                    color: _currentColor,
-                    borderRadius: BorderRadius.circular(8.w),
-                    border: Border.all(color: "#ffE6E6E6".color, width: 1.w),
-                  ),
-                ),
-
-                SizedBox(width: 12.w),
-
-                // Hex值显示
-                Expanded(
-                  child: Container(
-                    height: 50.w,
-                    padding: EdgeInsets.symmetric(horizontal: 12.w),
-                    decoration: BoxDecoration(
-                      color: "#ffF5F5F5".color,
-                      borderRadius: BorderRadius.circular(8.w),
+                    border: Border(
+                      bottom: BorderSide(color: "#ffE6E6E6".color, width: 1.w),
                     ),
-                    child: Center(
-                      child: Text(
-                        _currentColor.string,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '选择颜色',
                         style: TextStyle(
-                          fontSize: 16.w,
+                          fontSize: 18.w,
                           fontWeight: FontWeight.w600,
-                          color: "#ff242424".color,
-                          letterSpacing: 1.2,
+                          color: "#ff262626".color,
                         ),
                       ),
-                    ),
+                      GestureDetector(
+                        onTap: () {
+                          widget.onColorChanged?.call(_currentColor);
+                          SmartDialog.dismiss(result: _currentColor);
+                        },
+                        child: Icon(
+                          Icons.close,
+                          size: 24.w,
+                          color: "#ff999999".color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 颜色选择器
+                Container(
+                  padding: EdgeInsets.symmetric(vertical: 16.w),
+                  child: Column(
+                    children: [
+                      ColorPicker(
+                        pickerColor: _currentColor,
+                        onColorChanged: (Color color) {
+                          setState(() {
+                            _currentColor = color;
+                          });
+                        },
+                        colorPickerWidth: ScreenTools.screenWidth - 32.w,
+                        pickerAreaHeightPercent: 0.5,
+                        enableAlpha: false,
+                        displayThumbColor: true,
+                        paletteType: PaletteType.hsvWithHue,
+                        labelTypes: const [],
+                        pickerAreaBorderRadius: BorderRadius.all(
+                          Radius.circular(10.w),
+                        ),
+                        hexInputController: textController,
+                        portraitOnly: true,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: CupertinoTextField(
+                          controller: textController,
+                          prefix: const Padding(
+                            padding: EdgeInsets.only(left: 8),
+                            child: Icon(Icons.tag),
+                          ),
+                          suffix: IconButton(
+                            icon: const Icon(Icons.content_paste_rounded),
+                            onPressed: () =>
+                                copyToClipboard(textController.text),
+                          ),
+                          maxLength: 9,
+                          inputFormatters: [
+                            UpperCaseTextFormatter(),
+                            FilteringTextInputFormatter.allow(
+                              RegExp(kValidHexPattern),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-
-          // 按钮组
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            margin: EdgeInsets.only(bottom: 16.w),
-            child: Row(
-              children: [
-                // 取消按钮
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      SmartDialog.dismiss();
-                    },
-                    child: Container(
-                      height: 44.w,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(22.w),
-                        border: Border.all(
-                          color: "#ffE6E6E6".color,
-                          width: 1.w,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '取消',
-                          style: TextStyle(
-                            fontSize: 16.w,
-                            fontWeight: FontWeight.w500,
-                            color: "#ff666666".color,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                SizedBox(width: 12.w),
-
-                // 确认按钮
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      widget.onColorChanged?.call(_currentColor);
-                      SmartDialog.dismiss(result: _currentColor);
-                    },
-                    child: Container(
-                      height: 44.w,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: ["#ff6C63FF".color, "#ffA77AFF".color],
-                        ),
-                        borderRadius: BorderRadius.circular(22.w),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '确认',
-                          style: TextStyle(
-                            fontSize: 16.w,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -224,8 +169,16 @@ Future<Color?> showColorPickerDialog(
       initialColor: initialColor,
       onColorChanged: onColorChanged,
     ),
-    alignment: Alignment.center,
+    alignment: Alignment.bottomCenter,
     maskColor: Colors.black.withValues(alpha: .5),
     clickMaskDismiss: false,
   );
+}
+
+void copyToClipboard(String input) {
+  String textToCopy = input.replaceFirst('#', '').toUpperCase();
+  if (textToCopy.startsWith('FF') && textToCopy.length == 8) {
+    textToCopy = textToCopy.replaceFirst('FF', '');
+  }
+  Clipboard.setData(ClipboardData(text: '#$textToCopy'));
 }
