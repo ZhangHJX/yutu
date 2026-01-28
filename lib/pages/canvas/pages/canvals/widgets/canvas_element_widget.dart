@@ -45,12 +45,14 @@ class CanvasElementWidget extends StatelessWidget {
             height: data.height.w,
             decoration: BoxDecoration(
               color: data.fillColor.color.withValues(alpha: data.fillAlpha),
-              border: Border.all(
-                color: data.borderColor.color.withValues(
-                  alpha: data.borderAlpha,
-                ),
-                width: data.borderWidth.toDouble(),
-              ),
+              border: data.borderWidth > 0
+                  ? Border.all(
+                      color: data.borderColor.color.withValues(
+                        alpha: data.borderAlpha,
+                      ),
+                      width: data.borderWidth.toDouble(),
+                    )
+                  : null,
               boxShadow: data.isShawOpen
                   ? [
                       BoxShadow(
@@ -59,7 +61,6 @@ class CanvasElementWidget extends StatelessWidget {
                         ),
                         offset: Offset(data.shawX, data.shawY),
                         blurRadius: data.blurValue,
-                        // spreadRadius: 0,
                       ),
                     ]
                   : null,
@@ -74,12 +75,14 @@ class CanvasElementWidget extends StatelessWidget {
             height: data.height.w,
             decoration: BoxDecoration(
               color: data.fillColor.color,
-              border: Border.all(
-                color: data.borderColor.color.withValues(
-                  alpha: data.borderAlpha,
-                ),
-                width: data.borderWidth.toDouble(),
-              ),
+              border: data.borderWidth > 0
+                  ? Border.all(
+                      color: data.borderColor.color.withValues(
+                        alpha: data.borderAlpha,
+                      ),
+                      width: data.borderWidth.toDouble(),
+                    )
+                  : null,
               boxShadow: data.isShawOpen
                   ? [
                       BoxShadow(
@@ -105,12 +108,14 @@ class CanvasElementWidget extends StatelessWidget {
               height: data.height.w - 18.5.w,
               decoration: BoxDecoration(
                 color: data.fillColor.color,
-                border: Border.all(
-                  color: data.borderColor.color.withValues(
-                    alpha: data.borderAlpha,
-                  ),
-                  width: data.borderWidth.toDouble(),
-                ),
+                border: data.borderWidth > 0
+                    ? Border.all(
+                        color: data.borderColor.color.withValues(
+                          alpha: data.borderAlpha,
+                        ),
+                        width: data.borderWidth.toDouble(),
+                      )
+                    : null,
                 boxShadow: data.isShawOpen
                     ? [
                         BoxShadow(
