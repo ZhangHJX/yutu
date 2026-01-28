@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'home_logic.dart';
@@ -242,23 +244,24 @@ class HomePage extends StatelessWidget {
                           left: 0,
                           right: 0,
                           bottom: 0,
-                          child: Container(
-                            height: 30.w,
-                            alignment: Alignment.centerLeft,
-                            padding: EdgeInsets.symmetric(horizontal: 12.w),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [Color(0xFFFFE0E0), Color(0xFFFFF0E0)],
-                              ),
-                            ),
-                            child: Text(
-                              limitTitleByLength(item.title),
-                              style: TextStyle(
-                                fontSize: 12.w,
-                                color: '#FFFFFF'.color,
-                                fontWeight: FontWeight.w500,
+                          child: ClipRect(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                              child: Container(
+                                height: 30.w,
+                                alignment: Alignment.centerLeft,
+                                color: Colors.white.withValues(
+                                  alpha: 0.18,
+                                ), // 半透明叠色
+                                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                                child: Text(
+                                  limitTitleByLength(item.title),
+                                  style: TextStyle(
+                                    fontSize: 12.w,
+                                    color: '#FFFFFF'.color,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
