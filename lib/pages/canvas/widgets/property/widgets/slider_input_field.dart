@@ -252,7 +252,7 @@ class _SliderInputFieldState extends State<SliderInputField> {
           trackHeight: trackHeight,
           thumbSize: thumbSize,
           onChanged: (value) {
-            initInputValue(value); // 滑块拖动 → 同步更新 TextField
+            _onSliderChangeValue(value); // 滑块拖动 → 同步更新 TextField
             widget.onChanged?.call(value);
           },
           onChangeEnd: (value) {
@@ -261,5 +261,12 @@ class _SliderInputFieldState extends State<SliderInputField> {
         ),
       ],
     );
+  }
+
+  void _onSliderChangeValue(double value) {
+    setState(() {
+      _currentValue = value;
+    });
+    _controller.text = '${(value * 100).toInt()}';
   }
 }

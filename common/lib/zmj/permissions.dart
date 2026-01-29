@@ -49,11 +49,9 @@ class PermissionUtil {
         if (status.isGranted || status.isLimited) {
           return true;
         }
-        if (status.isDenied || status.isRestricted) {
-          final requestStatus = await Permission.photos.request();
-          if (requestStatus.isGranted || requestStatus.isLimited) {
-            return true;
-          }
+        final requestStatus = await Permission.photos.request();
+        if (requestStatus.isGranted || requestStatus.isLimited) {
+          return true;
         }
       } else if (Platform.isAndroid) {
         final isAndroid13Plus = await _isAndroid13OrHigher();
@@ -67,7 +65,7 @@ class PermissionUtil {
             '权限状态详情: isGranted=${status.isGranted}, isDenied=${status.isDenied}, isPermanentlyDenied=${status.isPermanentlyDenied}, isRestricted=${status.isRestricted}',
           );
 
-          if (status.isGranted) {
+          if (status.isGranted || status.isLimited) {
             debugPrint('照片权限已授予');
             return true;
           }
@@ -108,7 +106,7 @@ class PermissionUtil {
             // 4. 权限请求完成后，关闭浮层
             SmartDialog.dismiss();
 
-            if (requestStatus.isGranted) {
+            if (requestStatus.isGranted || requestStatus.isLimited) {
               debugPrint('照片权限请求成功');
               return true;
             } else {
@@ -125,7 +123,7 @@ class PermissionUtil {
             '权限状态详情: isGranted=${status.isGranted}, isDenied=${status.isDenied}, isPermanentlyDenied=${status.isPermanentlyDenied}, isRestricted=${status.isRestricted}',
           );
 
-          if (status.isGranted) {
+          if (status.isGranted || status.isLimited) {
             debugPrint('存储权限已授予');
             return true;
           }
@@ -167,7 +165,7 @@ class PermissionUtil {
             // 4. 权限请求完成后，关闭浮层
             SmartDialog.dismiss();
 
-            if (requestStatus.isGranted) {
+            if (requestStatus.isGranted || requestStatus.isLimited) {
               debugPrint('存储权限请求成功');
               return true;
             } else {
