@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'dart:math';
+
 import 'package:common/common.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
@@ -163,6 +167,10 @@ class LoginPage extends StatelessWidget {
                   ),
 
                   Spacer(),
+
+                  // 第三方登录
+                  if (Platform.isIOS) _buildLoginWay(),
+
                   //  协议勾选区域
                   _buildAgreementArea(),
 
@@ -332,6 +340,85 @@ class LoginPage extends StatelessWidget {
         ),
       );
     });
+  }
+
+  Widget _buildLoginWay() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 30.w),
+      child: Column(
+        children: [
+          Text(
+            '其他登录方式',
+            style: TextStyle(color: '#9E9E9E'.color, fontSize: 12.w),
+          ),
+
+          SizedBox(height: 9.w),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  if (logic.isPasswordLogin.value) {
+                    return;
+                  }
+                  logic.onTogglePasswordLogin(
+                    _codeController,
+                    _passwordController,
+                  );
+                },
+                child: SizedBox(
+                  width: 42.w,
+                  height: 42.w,
+                  child: Image.asset(
+                    'assets/images/login/login_acount.png',
+                    width: 42.w,
+                    height: 42.w,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              SizedBox(width: 35.w),
+              GestureDetector(
+                onTap: () {
+                  if (!logic.isPasswordLogin.value) {
+                    return;
+                  }
+                  logic.onTogglePasswordLogin(
+                    _codeController,
+                    _passwordController,
+                  );
+                },
+                child: SizedBox(
+                  width: 42.w,
+                  height: 42.w,
+                  child: Image.asset(
+                    'assets/images/login/login_phone.png',
+                    width: 42.w,
+                    height: 42.w,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              SizedBox(width: 35.w),
+              GestureDetector(
+                onTap: logic.handleAppleSignIn,
+                child: SizedBox(
+                  width: 42.w,
+                  height: 42.w,
+                  child: Image.asset(
+                    'assets/images/login/login_apple.png',
+                    width: 42.w,
+                    height: 42.w,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildAgreementArea() {

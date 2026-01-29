@@ -1,10 +1,15 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:common/common.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/stores/login_response.dart';
 import '../../stores/global.dart';
 import 'package:voicetemplate/core/index.dart';
 import 'dart:async';
 import 'model/code_model.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class LoginLogic extends GetxController with WidgetsBindingObserver {
   /// 全局应用
@@ -36,6 +41,9 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
 
   // 是否可以登录（响应式）
   final canLogin = false.obs;
+
+  // 苹果登录是否正在请求中
+  bool _isLoading = false;
 
   @override
   void onInit() {
@@ -276,5 +284,76 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
 
   void onToggleAgreement() {
     isAgreement.toggle();
+  }
+
+  // 屏幕登录
+  Future<void> handleAppleSignIn() async {
+    if (_isLoading) return;
+    _isLoading = true;
+
+    try {
+      final rawNonce = generateNonce();
+      final nonce = sha256OfString(rawNonce);
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
+      );
+      final identityToken = credential.identityToken;
+      final authorizationCode = credential.authorizationCode;
+
+      if (identityToken == null || identityToken.isEmpty) {
+        throw const FormatException('未获取到 identityToken');
+      }
+
+      // final result = await loginToBackend(
+      //   identityToken: identityToken,
+      //   authorizationCode: authorizationCode,
+      //   rawNonce: rawNonce,
+      // );
+
+      // await persistTokens(result);
+
+      // ScaffoldMessenger.of(
+      //   context,
+      // ).showSnackBar(const SnackBar(content: Text('登录成功')));
+    } on SignInWithAppleAuthorizationException catch (e) {
+      // 用户取消、系统错误等
+      final msg = switch (e.code) {
+        AuthorizationErrorCode.canceled => '用户已取消登录',
+        AuthorizationErrorCode.failed => '登录失败，请重试',
+        AuthorizationErrorCode.invalidResponse => '无效响应，请重试',
+        AuthorizationErrorCode.notHandled => '系统未处理该请求，请稍后重试',
+        AuthorizationErrorCode.notInteractive => '当前环境无法完成登录，请返回页面后重试',
+        AuthorizationErrorCode.credentialExport => '凭证导出失败，请稍后重试',
+        AuthorizationErrorCode.credentialImport => '凭证导入失败，请稍后重试',
+        AuthorizationErrorCode.matchedExcludedCredential =>
+          '该设备已添加过该通行密钥，无需重复添加',
+        AuthorizationErrorCode.unknown => '未知错误，请稍后再试',
+      };
+      showToast(msg);
+    } catch (e) {
+      showToast('登录异常：${e.toString()}');
+    } finally {
+      _isLoading = false;
+    }
+  }
+
+  String generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
+  }
+
+  String sha256OfString(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
   }
 }
