@@ -748,7 +748,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: 14.5.w,
+                              vertical: 15.w,
                             ),
                           ),
                           style: TextStyle(
@@ -812,7 +812,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: 14.5.w,
+                              vertical: 15.w,
                             ),
                           ),
                           style: TextStyle(
@@ -876,7 +876,7 @@ class _ShapePropertyDialogState extends State<ShapePropertyDialog> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: 14.5.w,
+                              vertical: 15.w,
                             ),
                           ),
                           style: TextStyle(

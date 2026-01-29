@@ -745,7 +745,7 @@ class _ColorEffectWidgetState extends State<ColorEffectWidget> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Padding(
-                      padding: EdgeInsets.only(left: 12.w),
+                      padding: EdgeInsets.only(left: 12.w, top: 2.w),
                       child: Text(
                         '模糊',
                         style: TextStyle(
@@ -777,7 +777,7 @@ class _ColorEffectWidgetState extends State<ColorEffectWidget> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: 14.5.w,
+                              vertical: 15.w,
                             ),
                           ),
                           style: TextStyle(

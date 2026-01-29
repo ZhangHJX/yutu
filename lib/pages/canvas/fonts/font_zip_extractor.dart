@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:common/common.dart';
 import 'ttf_metadata_plus.dart';

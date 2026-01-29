@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/pages/utils/file/index.dart';
 import '../../../model/index.dart';
-import 'package:stroke_text/stroke_text.dart';
+import 'stroke_text.dart';
 import 'dart:io';
 
 class CanvasElementWidget extends StatelessWidget {
@@ -154,11 +154,11 @@ class CanvasElementWidget extends StatelessWidget {
                     ]
                   : [],
             ),
-            textAlign: data.align,
+            strokeColor: data.borderColor.color.withValues(
+              alpha: data.borderAlpha,
+            ),
             strokeWidth: data.borderWidth.toDouble(),
-            strokeColor: data.borderWidth > 0
-                ? data.borderColor.color.withValues(alpha: data.borderAlpha)
-                : Colors.transparent,
+            textAlign: data.align,
             maxLines: null,
           ),
         );
