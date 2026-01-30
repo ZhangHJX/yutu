@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:common/common.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:voicetemplate/pages/canvas/pages/canvals/canvals_controller.dart';
-import 'dart:typed_data';
 import 'package:voicetemplate/pages/model/index.dart';
 import 'package:voicetemplate/file/index.dart';
 import 'package:voicetemplate/pages/canvas/model/index.dart';
@@ -14,6 +14,23 @@ import 'package:voicetemplate/stores/global.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
 import 'package:voicetemplate/core/index.dart';
 import 'package:uuid/uuid.dart';
+
+/// 上传请求单独的超时时间（大文件上传）
+const _uploadSendTimeout = Duration(seconds: 120);
+
+/// 供 compute 调用的顶层函数：在 isolate 中打 zip，避免阻塞 UI
+Future<void> _createZipFromDirectoryInIsolate(
+  Map<String, String> params,
+) async {
+  final sourceDir = Directory(params['sourcePath']!);
+  final zipFile = File(params['zipPath']!);
+  await ZipFile.createFromDirectory(
+    sourceDir: sourceDir,
+    zipFile: zipFile,
+    recurseSubDirs: true,
+    includeBaseDirectory: true,
+  );
+}
 
 class SaveLogic extends GetxController {
   final global = Get.find<GlobalLogic>();
@@ -55,6 +72,9 @@ class SaveLogic extends GetxController {
 
   // 用于监听的工作器
   Worker? _validationWorker;
+
+  /// 上传进度 0.0 ~ 1.0（zip 上传），供 UI 显示进度条
+  final uploadProgress = 0.0.obs;
 
   Uint8List? canvalsImage;
 
@@ -240,15 +260,24 @@ class SaveLogic extends GetxController {
       if (await zipFile.exists()) {
         await zipFile.delete();
       }
-      await ZipFile.createFromDirectory(
-        sourceDir: sourceDir,
-        zipFile: zipFile,
-        recurseSubDirs: true,
-        includeBaseDirectory: true,
-      );
+
+      // Zip 打包放到 isolate，避免阻塞 UI；失败则回退到主 isolate
+      try {
+        await compute(_createZipFromDirectoryInIsolate, {
+          'sourcePath': sourceDir.path,
+          'zipPath': zipPath,
+        });
+      } catch (_) {
+        await ZipFile.createFromDirectory(
+          sourceDir: sourceDir,
+          zipFile: zipFile,
+          recurseSubDirs: true,
+          includeBaseDirectory: true,
+        );
+      }
 
       if (isSaveTemplate.value) {
-        getZipResource(model!, zipFile.path);
+        await _uploadZipAndImageParallel(model!, zipPath);
       } else {
         final int zipBytes = await zipFile.length(); // 压缩包大小（字节）
         final double zipKB = zipBytes / 1024;
@@ -263,7 +292,7 @@ class SaveLogic extends GetxController {
           SmartDialog.dismiss();
           showDraftMemoryDialog();
         } else {
-          getZipResource(model!, zipFile.path);
+          await _uploadZipAndImageParallel(model!, zipPath);
         }
       }
     } catch (e, st) {
@@ -272,140 +301,147 @@ class SaveLogic extends GetxController {
     }
   }
 
-  /// 获取压缩包上传地址
-  Future<void> getZipResource(CanvasModel model, String zipPath) async {
-    try {
-      final result = await http.post<UploadOssModel>(
-        '/upload/generateUploadUrl',
-        data: {
-          "type": isSaveTemplate.value ? "design" : 'design_draft',
-          "file_type": 'zip',
-          "field_type": isSaveTemplate.value
-              ? "design_zip"
-              : 'design_draft_zip',
-        },
-        converter: UploadOssModel.fromJson,
-      );
-      if (result.code == 0 && result.data != null) {
-        await uploadZipFile(result.data!, model, zipPath);
-      } else {
-        SmartDialog.dismiss(status: SmartStatus.loading);
-      }
-    } catch (e) {
-      SmartDialog.dismiss(status: SmartStatus.loading);
-    }
-  }
-
-  /// 上传资源压缩包到服务器
-  Future<void> uploadZipFile(
-    UploadOssModel ossModel,
+  /// 并行获取 zip / 图片上传 URL，再并行上传 zip 与图片，最后落库
+  Future<void> _uploadZipAndImageParallel(
     CanvasModel model,
     String zipPath,
   ) async {
-    final file = File(zipPath);
-    final bytes = await file.readAsBytes();
+    if (canvalsImage == null) {
+      SmartDialog.dismiss(status: SmartStatus.loading);
+      showToast('画布截图失败');
+      return;
+    }
+    uploadProgress.value = 0;
+
     try {
-      String mimeType = mimeTypeMap["zip"] ?? "";
-      final res = await http.put(
-        ossModel.signUrl,
-        data: bytes,
-        options: Options(
-          contentType: mimeType, // ✅ 正常 MIME
-          headers: {
-            Headers.contentLengthHeader: bytes.length, // 很多存储要求带上
+      // 1. 并行获取两个上传 URL
+      final zipUrlFuture = _requestZipUploadUrl();
+      final imageUrlFuture = _requestImageUploadUrl();
+      final results = await Future.wait([zipUrlFuture, imageUrlFuture]);
+      final zipOss = results[0];
+      final imageOss = results[1];
+
+      if (zipOss == null || imageOss == null) {
+        SmartDialog.dismiss(status: SmartStatus.loading);
+        showToast('获取资源上传地址失败');
+        AppLogger.info('保存时===获取资源上传地址失败');
+        return;
+      }
+
+      // 2. 并行上传 zip（流式 + 进度）与图片
+      await Future.wait([
+        _uploadZipFileStream(
+          zipOss,
+          zipPath,
+          onSendProgress: (sent, total) {
+            if (total > 0) uploadProgress.value = sent / total;
           },
         ),
-        useBaseUrl: false,
-        isNake: true,
-      );
+        _uploadImageFileOnly(imageOss, canvalsImage!),
+      ]);
 
-      /// 上传成功
-      if (res.isSuccess || (res.code == 200)) {
-        fileMemorySize = (bytes.length / 1024).ceil(); // 向上取整
-        fileResourceId = ossModel.resourceId;
-        getImageRemotePath(model, zipPath);
+      // 3. 落库
+      if (isSaveTemplate.value) {
+        await createAndUpdateTemplate(zipPath, model);
       } else {
-        SmartDialog.dismiss(status: SmartStatus.loading);
-        FileManager.deleteFileByPath(zipPath);
+        await createAndUpdateDraft(zipPath, model);
       }
     } catch (e) {
-      AppLogger.error('图片上传失败-', e);
+      AppLogger.error('上传失败', e);
       SmartDialog.dismiss(status: SmartStatus.loading);
       FileManager.deleteFileByPath(zipPath);
+    } finally {
+      uploadProgress.value = 0;
     }
   }
 
-  /// 获取图片下载地址
-  Future<void> getImageRemotePath(CanvasModel model, String zipPath) async {
-    try {
-      // 获取图片的的上传路径
-      final result = await http.post<UploadOssModel>(
-        '/upload/generateUploadUrl',
-        data: {
-          "type": isSaveTemplate.value ? "design" : "design_draft",
-          "file_type": 'png',
-          "field_type": isSaveTemplate.value
-              ? "design_img"
-              : "design_draft_img",
-        },
-        converter: UploadOssModel.fromJson,
-      );
-      if (result.code == 0 && result.data != null) {
-        if (canvalsImage == null) {
-          showToast('画布截图失败');
-          return;
-        }
-        await uploadImageFile(result.data!, canvalsImage!, model, zipPath);
-      } else {
-        SmartDialog.dismiss(status: SmartStatus.loading);
-      }
-    } catch (e) {
-      AppLogger.error('获取图片信息报错-', e);
-      SmartDialog.dismiss(status: SmartStatus.loading);
-      FileManager.deleteFileByPath(zipPath);
+  /// 仅请求 zip 上传 URL
+  Future<UploadOssModel?> _requestZipUploadUrl() async {
+    final result = await http.post<UploadOssModel>(
+      '/upload/generateUploadUrl',
+      data: {
+        "type": isSaveTemplate.value ? "design" : 'design_draft',
+        "file_type": 'zip',
+        "field_type": isSaveTemplate.value ? "design_zip" : 'design_draft_zip',
+      },
+      converter: UploadOssModel.fromJson,
+    );
+    if (result.code == 0 && result.data != null) return result.data;
+    return null;
+  }
+
+  /// 仅请求图片上传 URL
+  Future<UploadOssModel?> _requestImageUploadUrl() async {
+    final result = await http.post<UploadOssModel>(
+      '/upload/generateUploadUrl',
+      data: {
+        "type": isSaveTemplate.value ? "design" : "design_draft",
+        "file_type": 'png',
+        "field_type": isSaveTemplate.value ? "design_img" : "design_draft_img",
+      },
+      converter: UploadOssModel.fromJson,
+    );
+    if (result.code == 0 && result.data != null) return result.data;
+    return null;
+  }
+
+  /// 流式上传 zip 到 OSS（低内存、支持进度与长超时）
+  Future<void> _uploadZipFileStream(
+    UploadOssModel ossModel,
+    String zipPath, {
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    final file = File(zipPath);
+    if (!await file.exists()) throw Exception('zip file not found');
+    final contentLength = await file.length();
+    final stream = file.openRead();
+
+    final mimeType = mimeTypeMap["zip"] ?? "";
+    final res = await http.put(
+      ossModel.signUrl,
+      data: stream,
+      options: Options(
+        contentType: mimeType,
+        sendTimeout: _uploadSendTimeout,
+        headers: {Headers.contentLengthHeader: contentLength},
+      ),
+      useBaseUrl: false,
+      isNake: true,
+      onSendProgress: onSendProgress,
+    );
+    if (res.isSuccess || (res.code == 200)) {
+      fileMemorySize = (contentLength / 1024).ceil();
+      fileResourceId = ossModel.resourceId;
+    } else {
+      throw Exception('zip upload failed: ${res.code}');
     }
   }
 
-  /// 上传图片到服务器
-  Future<void> uploadImageFile(
+  /// 仅上传图片到 OSS，并写入 imageResourceId / imageMemorySize
+  Future<void> _uploadImageFileOnly(
     UploadOssModel ossModel,
     Uint8List bytes,
-    CanvasModel model,
-    String zipPath,
   ) async {
     AppLogger.info('图片资源大小---${bytes.length}');
 
-    try {
-      String mimeType = mimeTypeMap["png"] ?? "";
-      final res = await http.put(
-        ossModel.signUrl,
-        data: bytes,
-        options: Options(
-          contentType: mimeType, // ✅ 正常 MIME
-          headers: {
-            Headers.contentLengthHeader: bytes.length, // 很多存储要求带上
-          },
-        ),
-        useBaseUrl: false,
-        isNake: true,
-      );
+    final mimeType = mimeTypeMap["png"] ?? "";
+    final res = await http.put(
+      ossModel.signUrl,
+      data: bytes,
+      options: Options(
+        contentType: mimeType,
+        sendTimeout: _uploadSendTimeout,
+        headers: {Headers.contentLengthHeader: bytes.length},
+      ),
+      useBaseUrl: false,
+      isNake: true,
+    );
 
-      /// 上传成功
-      if (res.isSuccess || (res.code == 200)) {
-        imageMemorySize = (bytes.length / 1024).ceil(); // 向上取整
-        imageResourceId = ossModel.resourceId;
-        if (isSaveTemplate.value) {
-          await createAndUpdateTemplate(zipPath, model);
-        } else {
-          await createAndUpdateDraft(zipPath, model);
-        }
-      } else {
-        SmartDialog.dismiss(status: SmartStatus.loading);
-      }
-    } catch (e) {
-      AppLogger.error('图片上传失败-', e);
-      SmartDialog.dismiss(status: SmartStatus.loading);
-      FileManager.deleteFileByPath(zipPath);
+    if (res.isSuccess || (res.code == 200)) {
+      imageMemorySize = (bytes.length / 1024).ceil();
+      imageResourceId = ossModel.resourceId;
+    } else {
+      throw Exception('image upload failed: ${res.code}');
     }
   }
 

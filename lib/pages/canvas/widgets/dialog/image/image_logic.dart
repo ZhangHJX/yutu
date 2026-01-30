@@ -374,7 +374,7 @@ class ImageLogic extends GetxController {
         sureTitle: "跳转我的素材",
         sureAction: () {
           SmartDialog.dismiss();
-          Get.toNamed(AppRoutes.design);
+          Get.toNamed(AppRoutes.stock);
         },
       ),
       alignment: Alignment.center,
