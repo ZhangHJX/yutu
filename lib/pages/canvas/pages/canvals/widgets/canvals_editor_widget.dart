@@ -155,11 +155,20 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
 
     if (type == ElementType.image) {
       if (canvalsW > canvalsH) {
-        finalHeight = canvalsH * 0.6;
-        finalWidth = finalHeight * (imgW / imgH);
+        if (imgW > imgH) {
+          finalWidth = canvalsW * 0.6;
+          finalHeight = finalWidth * (imgH / imgW);
+        } else {
+          finalHeight = canvalsH * 0.6;
+          finalWidth = finalHeight * (imgW / imgH);
+        }
       } else {
         finalWidth = canvalsW * 0.6;
         finalHeight = finalWidth * (imgH / imgW);
+        if (finalHeight > canvalsH) {
+          finalHeight = canvalsH * 0.6;
+          finalWidth = finalHeight * (imgW / imgH);
+        }
       }
     } else {
       // 文本类型，使用默认字体属性计算尺寸
