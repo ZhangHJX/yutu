@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../../utils/app_info/app_info_utils.dart';
+import '../../tools/app_info_utils.dart';
 import '../widgets/top_navigation_widget.dart';
 
 class AppInfoPage extends StatefulWidget {

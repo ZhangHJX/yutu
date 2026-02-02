@@ -4,7 +4,7 @@ import 'package:voicetemplate/core/index.dart';
 import '../../stores/global.dart';
 import '../model/common_model.dart';
 import 'dart:async';
-import '../utils/app_info/app_info_utils.dart';
+import 'tools/app_info_utils.dart';
 import '../widgets/index.dart';
 
 class MineLogic extends GetxController {

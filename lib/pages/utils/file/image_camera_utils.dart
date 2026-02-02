@@ -1,7 +1,7 @@
 import 'dart:typed_data' as typed_data;
 import 'dart:typed_data';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import 'package:voicetemplate/file/index.dart';
+import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 import 'package:path/path.dart' as p;
 import 'transform_tools.dart';
 import 'dart:io';

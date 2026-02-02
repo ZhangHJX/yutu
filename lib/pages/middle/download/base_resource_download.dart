@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
-import 'package:voicetemplate/file/index.dart';
+import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 
 /// 基础资源下载服务
 /// 包含草稿和模板共用的下载和文件操作方法

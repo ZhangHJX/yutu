@@ -7,7 +7,7 @@ import 'model/middle_model.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
 import 'package:voicetemplate/core/index.dart';
 import 'middle_loading.dart';
-import 'package:voicetemplate/file/index.dart';
+import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 import 'package:voicetemplate/pages/canvas/draft/index.dart';
 import '../../stores/global.dart';
 import 'download/index.dart';

@@ -2,7 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import 'package:voicetemplate/file/index.dart';
+import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 import 'image_camera_utils.dart';
 
 class PickerImageManager {

@@ -5,7 +5,7 @@ import 'package:common/common.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
 import 'package:voicetemplate/pages/utils/file/index.dart';
 import 'package:voicetemplate/pages/model/index.dart';
-import 'package:voicetemplate/file/index.dart';
+import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/stores/global.dart';
 import 'package:voicetemplate/core/index.dart';

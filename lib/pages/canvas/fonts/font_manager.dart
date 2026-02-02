@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
-import '../../../file/index.dart';
+import '../../../core/file_manager/directory_path/index.dart';
 import '../widgets/property/text_dialog/model/font_info_model.dart';
 import 'font_download_manager.dart';
 import 'font_meta_store.dart';

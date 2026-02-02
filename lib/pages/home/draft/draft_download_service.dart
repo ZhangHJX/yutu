@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
-import '../../../file/index.dart';
+import '../../../core/file_manager/directory_path/index.dart';
 import '../../canvas/fonts/font_manager.dart';
 import '../../canvas/widgets/property/text_dialog/model/font_info_model.dart';
 import 'draft_edit_model.dart';

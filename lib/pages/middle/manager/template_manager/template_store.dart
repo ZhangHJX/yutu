@@ -1,5 +1,5 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:voicetemplate/file/index.dart';
+import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 import 'package:path/path.dart' as p;
 import '../manager_model.dart';
 import 'package:common/common.dart' hide Database;

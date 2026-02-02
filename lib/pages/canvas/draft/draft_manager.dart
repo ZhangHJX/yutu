@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:screenshot/screenshot.dart';
 import '../model/index.dart';
 import '../pages/canvals/canvals_controller.dart';
-import '../../../file/index.dart';
+import '../../../core/file_manager/directory_path/index.dart';
 import 'package:common/common.dart';
 
 /// 草稿管理类

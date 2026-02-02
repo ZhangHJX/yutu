@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:common/common.dart';
 import 'package:path/path.dart' as p;
 import 'package:voicetemplate/pages/utils/file/picker_image_manager.dart';
-import 'package:voicetemplate/file/index.dart';
+import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 
 /// 画布图片管理器
 ///
