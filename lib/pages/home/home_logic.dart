@@ -4,11 +4,9 @@ import '../../stores/global.dart';
 import '../canvas/draft/index.dart';
 import '../canvas/fonts/font_manager.dart';
 import '../canvas/model/index.dart';
-import 'package:voicetemplate/pages/utils/file/index.dart';
+import 'package:voicetemplate/core/index.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
 import '../model/index.dart';
-
-import 'package:voicetemplate/core/index.dart';
 
 //最新的数据
 import 'model/home_model.dart';

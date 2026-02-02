@@ -6,7 +6,7 @@ import 'person_info_input.dart';
 import 'person_info_avatar.dart';
 import 'person_logic.dart';
 import '../widgets/top_navigation_widget.dart';
-import 'package:voicetemplate/pages/utils/file/index.dart';
+import 'package:voicetemplate/core/index.dart';
 
 class PersonInfoPage extends StatelessWidget {
   PersonInfoPage({super.key});

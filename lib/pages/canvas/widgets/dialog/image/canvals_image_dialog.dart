@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'image_logic.dart';
 import 'model/image_list_models.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
-import 'package:voicetemplate/pages/utils/file/picker_image_manager.dart';
-import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 import 'package:path/path.dart' as p;
 import 'dart:io';
 import 'manager/material_manager.dart';

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../pages/canvals/canvals_controller.dart';
 import '../../utils/gradient_border.dart';
 import '../../model/index.dart';
-import 'package:voicetemplate/pages/utils/file/index.dart';
+import 'package:voicetemplate/core/index.dart';
 
 class CanvalsLayerDialog extends StatefulWidget {
   final CanvasModel canvasModel;
