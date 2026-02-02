@@ -322,6 +322,25 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     );
   }
 
+  /// 复制文本组件：克隆当前选中的文本元素，生成新 id 并偏移位置后加入画布
+  void copyTextElement(CanvasElement source) {
+    final cloned = CanvasElementClone.clone(source);
+    cloned.id = _selectionController.generateId();
+    cloned.x = source.x + 10;
+    cloned.y = source.y + 10;
+
+    setState(() {
+      boxes.add(cloned);
+    });
+
+    if (historyManager != null) {
+      historyManager!.executeCommand(AddElementCommand(boxes, cloned));
+    }
+
+    _selectionController.select(cloned.id);
+    DraftManager().notifyElementsChanged();
+  }
+
   void deleteSelectedBox() {
     final selectedId = _selectionController.selectedId;
     if (selectedId.isNotEmpty) {
