@@ -6,6 +6,7 @@ import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 import 'image_handle_utils.dart';
 
 class PickerImageManager {
+  // 最大允许的图片大小（字节），当前为 10MB
   static const int maxSizeBites = 10 * 1024 * 1024;
 
   static late String cavalsPath;
@@ -41,19 +42,22 @@ class PickerImageManager {
           return;
         }
         int fileSize = await ImageHandleUtils.getAssetFileSize(asset);
+
         if (fileSize > maxSizeBites) {
+          final int kb = (fileSize / 1024).ceil();
           final imgInfo = await ImageHandleUtils.getCompressFilePath(
             filePath,
-            fileSize,
+            kb,
             asset,
           );
           onSuccess(imgInfo.$1, imgInfo.$2, imgInfo.$3, imgInfo.$4);
         } else {
+          final int kb = (fileSize / 1024).ceil();
           onSuccess(
             filePath,
             asset.width.toDouble(),
             asset.height.toDouble(),
-            fileSize,
+            kb,
           );
         }
       }

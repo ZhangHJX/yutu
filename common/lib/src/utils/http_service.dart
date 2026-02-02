@@ -152,10 +152,28 @@ class HttpService {
         showErrorToast,
       );
     } on DioException catch (e) {
-      AppLogger.error('http service 网络请求错误信息', e.error);
+      AppLogger.error('http service错误信息==$path===${dioException(e)}==', e);
       _handleError(e, showErrorToast: showErrorToast);
       rethrow;
     }
+  }
+
+  static String dioException(DioException e) {
+    final req = e.requestOptions;
+    final method = req.method;
+    final url = req.uri.toString();
+
+    final statusCode = e.response?.statusCode;
+    final status = statusCode == null ? '' : ' status=$statusCode';
+
+    final msg = e.message ?? '';
+
+    // e.error 可能是 SocketException、HandshakeException 等
+    final raw = e.error == null
+        ? ''
+        : ' raw=${e.error.runtimeType}: ${e.error}';
+
+    return '[DioException] type=${e.type}$status $method $url msg="$msg"$raw';
   }
 
   Future<BaseModel<T>> get<T>(

@@ -41,8 +41,11 @@ class ImageHandleUtils {
       final baseName = p.basenameWithoutExtension(originalFile.path);
       final ext = getFileExtensionFromPath(originalFile.path);
       final tempDir = await DirectoryManager.getTempSubDirectory("images");
-      // 使用 asset.id 避免同名文件覆盖
-      final uniqueName = '${baseName}_${asset.id}';
+      // 使用时间戳避免同名文件覆盖
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final uniqueName = '${baseName}_$timestamp';
+
+      AppLogger.info('==复制到指定目录下==${tempDir.path}==$baseName==$ext==');
 
       if (ext == 'gif') {
         Uint8List? origin = await asset.originBytes;
@@ -62,8 +65,10 @@ class ImageHandleUtils {
         await file.writeAsBytes(bytes, flush: true);
         return file.path;
       } else {
-        AppLogger.info('进入到图片类型的分支中');
         final fullPath = p.join(tempDir.path, '$uniqueName.$ext');
+
+        AppLogger.info('==选择后图片copy的地址==$fullPath==');
+
         await originalFile.copy(fullPath);
         return fullPath;
       }
@@ -86,11 +91,10 @@ class ImageHandleUtils {
         return 0;
       }
       final int length = await file.length(); // 单位：byte
-      final kbCeil = (length / 1024).ceil(); // 向上取整
-
-      AppLogger.info('getAssetFileSize: 文件为 null, asset id = ${asset.id}');
-
-      return kbCeil;
+      AppLogger.info(
+        'getAssetFileSize: 文件大小 = $length byte, asset id = ${asset.id}',
+      );
+      return length;
     } catch (e, s) {
       AppLogger.error('getAssetFileSize: 异常:', e, s);
       return 0;
@@ -104,26 +108,33 @@ class ImageHandleUtils {
       final fileName = p.basenameWithoutExtension(filePath);
       final ext = getFileExtensionFromPath(filePath);
       final tempDir = await DirectoryManager.getTempSubDirectory("images");
-      final compressedPath = p.join(tempDir.path, '${fileName}_compressed$ext');
+      // 统一使用带点的扩展名拼接，例如 xxx_compressed.png
+      final compressedPath = p.join(
+        tempDir.path,
+        '${fileName}_compressed.$ext',
+      );
 
-      // 根据文件扩展名选择压缩格式
+      AppLogger.info("==$ext==压缩图片文件==路径==$compressedPath==");
+
+      // 根据文件扩展名选择压缩格式（ext 为不带点的小写）
       CompressFormat format = CompressFormat.jpeg;
-      if (ext == '.png') {
+      if (ext == 'png') {
         format = CompressFormat.png;
-      } else if (ext == '.webp') {
+      } else if (ext == 'webp') {
         format = CompressFormat.webp;
-      } else if (ext == '.heic') {
+      } else if (ext == 'heic') {
         format = CompressFormat.heic;
       }
 
       int quality = 90; // 初始压缩质量
       int minQuality = 20; // 最低可接受质量
-      int imgeSize = fileSize;
+      // fileSize 现在是字节数
+      int imageSize = fileSize;
 
       Uint8List compressedBytes = Uint8List(0);
 
       // 压缩图片
-      while (imgeSize > maxSizeInMB && quality >= minQuality) {
+      while (imageSize > maxSizeInMB && quality >= minQuality) {
         compressedBytes = await compressFile(
           filePath,
           format,
@@ -131,10 +142,7 @@ class ImageHandleUtils {
           minQuality,
           minQuality,
         );
-        imgeSize = compressedBytes.length;
-        if (imgeSize > maxSizeInMB) {
-          compressedBytes.clear();
-        }
+        imageSize = compressedBytes.length;
         quality -= 10;
       }
 
@@ -143,7 +151,9 @@ class ImageHandleUtils {
         final compressedFile = File(compressedPath);
         await compressedFile.writeAsBytes(compressedBytes);
         final imgInfo = await getImageSizeFromBytes(compressedBytes, asset);
-        return (compressedPath, imgInfo.$1, imgInfo.$2, imgeSize.bitLength);
+        // 返回压缩后文件的真实字节数
+        final compressedSize = await compressedFile.length();
+        return (compressedPath, imgInfo.$1, imgInfo.$2, compressedSize);
       } else {
         // 压缩失败，返回原文件路径
         AppLogger.info('🤯🤯🤯图片压缩失败，使用原文件: $filePath');
@@ -151,7 +161,7 @@ class ImageHandleUtils {
           filePath,
           asset.width.toDouble(),
           asset.height.toDouble(),
-          imgeSize.bitLength,
+          imageSize,
         );
       }
     } catch (e) {
