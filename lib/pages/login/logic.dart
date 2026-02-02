@@ -304,6 +304,8 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
       final identityToken = credential.identityToken;
       final authorizationCode = credential.authorizationCode;
 
+      AppLogger.info('====苹果授权后的信息===${credential.toString()}=====');
+
       if (identityToken == null || identityToken.isEmpty) {
         throw const FormatException('未获取到 identityToken');
       }
