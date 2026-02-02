@@ -43,7 +43,7 @@ class MiddleLogic extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+    if (global.connectStatus.currentStatus == Status.none) {
       showToast("打开失败");
       return;
     }
@@ -102,7 +102,7 @@ class MiddleLogic extends GetxController {
 
   /// 收藏事件处理
   Future<void> clickFavoriteEvent(bool shouldFavorite) async {
-    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+    if (global.connectStatus.currentStatus == Status.none) {
       showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
       return;
     }

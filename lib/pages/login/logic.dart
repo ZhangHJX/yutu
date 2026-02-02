@@ -114,7 +114,7 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
       return;
     }
 
-    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+    if (global.connectStatus.currentStatus == Status.none) {
       showToast("登录失败");
       return;
     }

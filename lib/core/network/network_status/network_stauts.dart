@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 /// 网络连接状态枚举
-enum NetworkStatus {
+enum Status {
   /// 无网络连接
   none,
 
@@ -17,41 +17,41 @@ enum NetworkStatus {
 }
 
 /// 网络连接监听服务（单例）
-class ConnectivityService {
+class NetworkStauts {
   /// 私有构造函数
-  ConnectivityService._internal() {
+  NetworkStauts._internal() {
     _connectivity = Connectivity();
     _init();
   }
 
   /// 单例实例
-  static ConnectivityService? _instance;
+  static NetworkStauts? _instance;
 
   /// 获取单例实例
-  factory ConnectivityService() {
-    _instance ??= ConnectivityService._internal();
+  factory NetworkStauts() {
+    _instance ??= NetworkStauts._internal();
     return _instance!;
   }
 
   late Connectivity _connectivity;
-  final _controller = StreamController<NetworkStatus>.broadcast();
-  NetworkStatus _currentStatus = NetworkStatus.none;
+  final _controller = StreamController<Status>.broadcast();
+  Status _currentStatus = Status.none;
   StreamSubscription<List<ConnectivityResult>>? _subscription;
 
   /// 当前网络状态
-  NetworkStatus get currentStatus => _currentStatus;
+  Status get currentStatus => _currentStatus;
 
   /// 网络状态变化流
-  Stream<NetworkStatus> get onStatusChanged => _controller.stream;
+  Stream<Status> get onStatusChanged => _controller.stream;
 
   /// 是否有网络连接
-  bool get hasConnection => _currentStatus != NetworkStatus.none;
+  bool get hasConnection => _currentStatus != Status.none;
 
   /// 是否为 WiFi 连接
-  bool get isWifi => _currentStatus == NetworkStatus.wifi;
+  bool get isWifi => _currentStatus == Status.wifi;
 
   /// 是否为移动网络连接
-  bool get isMobile => _currentStatus == NetworkStatus.mobile;
+  bool get isMobile => _currentStatus == Status.mobile;
 
   /// 初始化
   Future<void> _init() async {
@@ -68,7 +68,7 @@ class ConnectivityService {
   }
 
   /// 检查当前网络连接状态
-  Future<NetworkStatus> _checkConnectivity() async {
+  Future<Status> _checkConnectivity() async {
     try {
       final List<ConnectivityResult> results = await _connectivity
           .checkConnectivity();
@@ -76,8 +76,8 @@ class ConnectivityService {
       _currentStatus = status;
       return status;
     } catch (e) {
-      _currentStatus = NetworkStatus.none;
-      return NetworkStatus.none;
+      _currentStatus = Status.none;
+      return Status.none;
     }
   }
 
@@ -91,25 +91,25 @@ class ConnectivityService {
   }
 
   /// 将 ConnectivityResult 转换为 NetworkStatus
-  NetworkStatus _convertToNetworkStatus(List<ConnectivityResult> results) {
+  Status _convertToNetworkStatus(List<ConnectivityResult> results) {
     if (results.isEmpty || results.contains(ConnectivityResult.none)) {
-      return NetworkStatus.none;
+      return Status.none;
     }
 
     if (results.contains(ConnectivityResult.wifi)) {
-      return NetworkStatus.wifi;
+      return Status.wifi;
     }
 
     if (results.contains(ConnectivityResult.mobile)) {
-      return NetworkStatus.mobile;
+      return Status.mobile;
     }
 
     // 其他连接方式（如以太网、蓝牙等）
-    return NetworkStatus.other;
+    return Status.other;
   }
 
   /// 手动检查网络状态（返回当前状态）
-  Future<NetworkStatus> checkConnectivity() async {
+  Future<Status> checkConnectivity() async {
     return await _checkConnectivity();
   }
 

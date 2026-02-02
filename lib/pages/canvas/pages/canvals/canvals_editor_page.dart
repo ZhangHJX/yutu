@@ -621,7 +621,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   void _handleBack() {
     if (DraftManager().isChange) {
       canvalsController.global.connectStatus.onStatusChanged.listen((status) {
-        if (status == NetworkStatus.none) {
+        if (status == Status.none) {
           showToast("保存失败");
           return;
         }

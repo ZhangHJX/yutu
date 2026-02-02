@@ -41,7 +41,7 @@ class DraftLogic extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+    if (global.connectStatus.currentStatus == Status.none) {
       showToast("打开失败");
       return;
     }
@@ -139,7 +139,7 @@ class DraftLogic extends GetxController {
 
   /// 删除选中的设计
   Future<void> deleteSelected() async {
-    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+    if (global.connectStatus.currentStatus == Status.none) {
       showToast("删除失败");
       return;
     }

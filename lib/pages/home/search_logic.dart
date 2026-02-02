@@ -49,7 +49,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
   @override
   void onReady() {
     super.onReady();
-    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+    if (global.connectStatus.currentStatus == Status.none) {
       showToast("打开失败");
       return;
     }
@@ -266,7 +266,7 @@ class SearchLogic extends GetxController with GetTickerProviderStateMixin {
 
   /// 收藏事件处理
   Future<void> clickFavorite(int itemId, bool shouldFavorite) async {
-    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+    if (global.connectStatus.currentStatus == Status.none) {
       showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
       return;
     }

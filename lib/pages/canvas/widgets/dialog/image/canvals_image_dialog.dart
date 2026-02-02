@@ -317,8 +317,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
             ),
             borderRadius: 22.5.w,
             onPressed: () async {
-              if (logic.global.connectStatus.currentStatus ==
-                  NetworkStatus.none) {
+              if (logic.global.connectStatus.currentStatus == Status.none) {
                 showToast("确认失败");
                 return;
               }

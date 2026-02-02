@@ -94,7 +94,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
     });
     // 监听网络状态变化
     global.connectStatus.onStatusChanged.listen((status) {
-      if (status != NetworkStatus.none) {
+      if (status != Status.none) {
         homeRefresh();
         showDraftDialog();
       }
@@ -291,7 +291,7 @@ class HomeLogic extends GetxController with GetTickerProviderStateMixin {
 
   /// 收藏事件处理
   Future<void> clickFavorite(int itemId, bool shouldFavorite) async {
-    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+    if (global.connectStatus.currentStatus == Status.none) {
       showToast(shouldFavorite ? "收藏失败" : "取消收藏失败");
       return;
     }

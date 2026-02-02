@@ -60,7 +60,7 @@ class GlobalLogic extends GetxController {
   final box = GetStorage();
 
   /// 网络状态监听
-  final connectStatus = ConnectivityService();
+  final connectStatus = NetworkStauts();
 
   @override
   void onInit() {

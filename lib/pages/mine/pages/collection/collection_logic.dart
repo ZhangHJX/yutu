@@ -37,7 +37,7 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
   @override
   void onReady() {
     super.onReady();
-    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+    if (global.connectStatus.currentStatus == Status.none) {
       showToast("打开失败");
       return;
     }
@@ -292,7 +292,7 @@ class CollectionLogic extends GetxController with GetTickerProviderStateMixin {
 
   /// 删除选中的设计
   Future<void> deleteSelected({bool isSingle = false}) async {
-    if (global.connectStatus.currentStatus == NetworkStatus.none) {
+    if (global.connectStatus.currentStatus == Status.none) {
       showToast(isSingle ? '取消收藏失败' : "删除收藏失败");
       return;
     }

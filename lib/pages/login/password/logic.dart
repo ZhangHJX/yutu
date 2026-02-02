@@ -58,7 +58,7 @@ class ForgetLogic extends GetxController {
         return;
       }
 
-      if (global.connectStatus.currentStatus == NetworkStatus.none) {
+      if (global.connectStatus.currentStatus == Status.none) {
         showToast("设置失败");
         return;
       }
