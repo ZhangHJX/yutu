@@ -1,4 +1,4 @@
-export 'connectivity_service.dart';
+export 'network_stauts.dart';
 
 /*
 import 'package:voicetemplate/core/index.dart';

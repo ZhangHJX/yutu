@@ -152,7 +152,7 @@ class HttpService {
         showErrorToast,
       );
     } on DioException catch (e) {
-      AppLogger.error('网络请求错误信息', e.error);
+      AppLogger.error('http service 网络请求错误信息', e.error);
       _handleError(e, showErrorToast: showErrorToast);
       rethrow;
     }

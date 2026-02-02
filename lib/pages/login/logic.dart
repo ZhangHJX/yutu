@@ -307,25 +307,35 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
         nonce: nonce,
       );
       final identityToken = credential.identityToken;
-      final authorizationCode = credential.authorizationCode;
-
-      AppLogger.info('====苹果授权后的信息===${credential.toString()}=====');
+      final userIdentifier = credential.userIdentifier;
 
       if (identityToken == null || identityToken.isEmpty) {
         throw const FormatException('未获取到 identityToken');
       }
+      if (userIdentifier == null || userIdentifier.isEmpty) {
+        throw const FormatException('未获取到 userIdentifier');
+      }
 
-      // final result = await loginToBackend(
-      //   identityToken: identityToken,
-      //   authorizationCode: authorizationCode,
-      //   rawNonce: rawNonce,
-      // );
+      final result = await http.post<LoginResponse>(
+        '/loginOneClick/login',
+        data: {
+          'user_identifier': userIdentifier,
+          'user_identifier_token': identityToken,
+        },
+        converter: LoginResponse.fromJson,
+        withToken: false,
+      );
+      if (result.code == 0) {
+        global.accessToken.value = result.data?.token ?? '';
+        await global.fetchUserInfo();
 
-      // await persistTokens(result);
-
-      // ScaffoldMessenger.of(
-      //   context,
-      // ).showSnackBar(const SnackBar(content: Text('登录成功')));
+        if (source != null && source!.isNotEmpty) {
+          EventBusManager.share.emit<String>(AppEventType.login, data: source);
+        }
+        Get.back();
+      } else {
+        showToast('登录失败');
+      }
     } on SignInWithAppleAuthorizationException catch (e) {
       // 用户取消、系统错误等
       final msg = switch (e.code) {
@@ -343,6 +353,7 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
       showToast(msg);
     } catch (e) {
       showToast('登录异常：${e.toString()}');
+      AppLogger.info('登录异常==${e.toString()}===');
     } finally {
       _isLoading = false;
     }
