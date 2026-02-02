@@ -33,10 +33,6 @@ class HttpService {
             AppLogger.info('baseURL：${options.baseUrl} 路径：${options.path}');
             AppLogger.info('请求方法${options.method} 请求头: ${options.headers}');
 
-            if (options.data != null) {
-              AppLogger.info('请求参数: ${options.data}');
-            }
-
             AppLogger.info('查询参数: ${options.queryParameters}');
             AppLogger.info('额外数据: ${options.extra}');
           }

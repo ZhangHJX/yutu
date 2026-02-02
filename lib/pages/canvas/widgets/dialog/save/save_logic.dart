@@ -210,12 +210,13 @@ class SaveLogic extends GetxController {
       Get.toNamed(AppRoutes.appLogin);
       return;
     }
-
     if (!isCanSave.value) {
       return;
     }
+    FocusManager.instance.primaryFocus?.unfocus();
     isSaveTemplate.value = true;
     showLoading("保存中...");
+
     await zipResourceInDocuments();
   }
 
@@ -234,6 +235,7 @@ class SaveLogic extends GetxController {
     if (!isCanvals) {
       showLoading("保存中...");
     }
+    FocusManager.instance.primaryFocus?.unfocus();
     isSaveTemplate.value = false;
     await DraftManager().saveCurrentCanvals();
     await zipResourceInDocuments();
