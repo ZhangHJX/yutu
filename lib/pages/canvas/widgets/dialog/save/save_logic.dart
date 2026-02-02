@@ -465,6 +465,8 @@ class SaveLogic extends GetxController {
         }
       }
 
+      final contentStr = model.elements.map((e) => e.text).toSet().join(',');
+
       var params = {};
       if (tempteIsNewCreate.value) {
         params = {
@@ -489,6 +491,7 @@ class SaveLogic extends GetxController {
           "design_draft_id": canvalsLogic.type == PageSource.draft
               ? model.id
               : 0,
+          "design_information": contentStr,
         };
       } else {
         params = {
@@ -505,6 +508,7 @@ class SaveLogic extends GetxController {
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
           "front_ids": idsStr,
+          "design_information": contentStr,
         };
       }
       final result = await http.post<SaveResponse>(
@@ -538,7 +542,6 @@ class SaveLogic extends GetxController {
         FileManager.deleteFileByPath(filePath);
       } else {
         SmartDialog.dismiss(status: SmartStatus.loading);
-        showToast("保存失败");
         FileManager.deleteFileByPath(filePath);
       }
       SmartDialog.dismiss(status: SmartStatus.loading);
@@ -559,6 +562,9 @@ class SaveLogic extends GetxController {
       if (canvalsLogic.type == PageSource.draft) {
         draftIsCreate.value = false;
       }
+
+      final contentStr = model.elements.map((e) => e.text).toSet().join(',');
+
       var params = {};
       if (draftIsCreate.value) {
         params = {
@@ -578,6 +584,7 @@ class SaveLogic extends GetxController {
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
           "front_ids": idsStr,
+          "design_draft_information": contentStr,
         };
       } else {
         params = {
@@ -588,6 +595,7 @@ class SaveLogic extends GetxController {
           "img_file_size": '$imageMemorySize',
           "zip_file_size": "$fileMemorySize",
           "front_ids": idsStr,
+          "design_draft_information": contentStr,
         };
       }
 
@@ -622,7 +630,6 @@ class SaveLogic extends GetxController {
         FileManager.deleteFileByPath(filePath);
       } else {
         FileManager.deleteFileByPath(filePath);
-
         AppLogger.info('草稿保存失败====${result.code}');
         SmartDialog.dismiss(status: SmartStatus.loading);
       }
