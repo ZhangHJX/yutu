@@ -57,7 +57,6 @@ class DirectoryManager {
 “用户的东西” → Documents
 “App 自己的东西” → ApplicationSupport
 
-
 1、getApplicationDocumentsDirectory()
 	•	需要和用户账号强绑定的业务数据：
 	      •	比如：画布工程 JSON、用户导入的文件、笔记等
@@ -66,12 +65,14 @@ class DirectoryManager {
       	•	导出/导入
 	      •	跨设备同步
 
+
 2、getApplicationSupportDirectory() 
   •	远程下载字体
 	•	远程配置文件（feature 开关、AB 配置缓存）
 	•	本地数据库 / 索引文件
 	•	模板资源、图片资源包、解压后的 assets
 	•	不需要给用户直接“看到和操作”的内部文件
+
 
 3、getTemporaryDirectory()
   临时目录，系统认为“我随时可以删”
