@@ -1,4 +1,3 @@
-import 'dart:typed_data' as typed_data;
 import 'dart:typed_data';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
@@ -8,7 +7,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:common/common.dart';
 
-class ImageCameraUtils {
+class ImageHandleUtils {
   static const int maxSizeInMB = 10 * 1024 * 1024;
 
   ///1、获取文件后缀名
@@ -31,37 +30,46 @@ class ImageCameraUtils {
 
   ///2、获取相册图片的路径
   static Future<String> getAssetImageFilePath(AssetEntity asset) async {
-    // 优先拿原图
-    File? originalFile = await asset.originFile;
-
-    /// 有些情况下 originFile 为 null，可以尝试 file
-    originalFile ??= await asset.file;
-    if (originalFile == null) {
-      return "";
-    }
-
-    final fileName = p.basenameWithoutExtension(originalFile.path);
-    final ext = getFileExtensionFromPath(originalFile.path);
-    final tempDir = await DirectoryManager.getTempSubDirectory("images");
-
-    if (ext == 'gif') {
-      final Uint8List? origin = await asset.originBytes; // 可能为 null
-      final fullPath = p.join(tempDir.path, '$fileName.png');
-      if (origin != null && origin.isNotEmpty) {
-        final bytes = await TransformTools.gifToPngFrame(origin);
-        final file = File(fullPath);
-        if (bytes != null && bytes.isNotEmpty) {
-          await file.writeAsBytes(bytes, flush: true);
-        }
-        return file.path;
+    try {
+      // 优先拿原图
+      File? originalFile = await asset.originFile;
+      originalFile ??= await asset.file;
+      if (originalFile == null) {
+        return "";
       }
+
+      final baseName = p.basenameWithoutExtension(originalFile.path);
+      final ext = getFileExtensionFromPath(originalFile.path);
+      final tempDir = await DirectoryManager.getTempSubDirectory("images");
+      // 使用 asset.id 避免同名文件覆盖
+      final uniqueName = '${baseName}_${asset.id}';
+
+      if (ext == 'gif') {
+        Uint8List? origin = await asset.originBytes;
+        // origin 为空时尝试从已取得的文件读取
+        if ((origin == null || origin.isEmpty) && await originalFile.exists()) {
+          origin = await originalFile.readAsBytes();
+        }
+        if (origin == null || origin.isEmpty) {
+          return '';
+        }
+        final bytes = await TransformTools.gifToPngFrame(origin);
+        if (bytes == null || bytes.isEmpty) {
+          return '';
+        }
+        final fullPath = p.join(tempDir.path, '$uniqueName.png');
+        final file = File(fullPath);
+        await file.writeAsBytes(bytes, flush: true);
+        return file.path;
+      } else {
+        AppLogger.info('进入到图片类型的分支中');
+        final fullPath = p.join(tempDir.path, '$uniqueName.$ext');
+        await originalFile.copy(fullPath);
+        return fullPath;
+      }
+    } catch (e, s) {
+      AppLogger.error('getAssetImageFilePath 异常:', e, s);
       return '';
-    } else {
-      AppLogger.info('进入到图片类型的分支中');
-      final fullPath = p.join(tempDir.path, '$fileName.$ext');
-      //copy到新的路径下
-      await originalFile.copy(fullPath);
-      return fullPath;
     }
   }
 
@@ -112,7 +120,7 @@ class ImageCameraUtils {
       int minQuality = 20; // 最低可接受质量
       int imgeSize = fileSize;
 
-      typed_data.Uint8List compressedBytes = typed_data.Uint8List(0);
+      Uint8List compressedBytes = Uint8List(0);
 
       // 压缩图片
       while (imgeSize > maxSizeInMB && quality >= minQuality) {
@@ -158,7 +166,7 @@ class ImageCameraUtils {
   }
 
   ///5、压缩方法递归计算
-  static Future<typed_data.Uint8List> compressFile(
+  static Future<Uint8List> compressFile(
     String filePath,
     CompressFormat format,
     int quality,
@@ -173,10 +181,10 @@ class ImageCameraUtils {
         minWidth: minWidth, // 最小宽度 1080
         format: format,
       );
-      return compressedBytes ?? typed_data.Uint8List(0);
+      return compressedBytes ?? Uint8List(0);
     } catch (e) {
       AppLogger.error('图片压缩出错', e);
-      return typed_data.Uint8List(0);
+      return Uint8List(0);
     }
   }
 

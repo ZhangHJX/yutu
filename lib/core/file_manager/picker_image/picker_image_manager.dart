@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
-import 'image_camera_utils.dart';
+import 'image_handle_utils.dart';
 
 class PickerImageManager {
   static const int maxSizeBites = 10 * 1024 * 1024;
@@ -35,14 +35,14 @@ class PickerImageManager {
 
       if (result != null) {
         AssetEntity asset = result.last;
-        String filePath = await ImageCameraUtils.getAssetImageFilePath(asset);
+        String filePath = await ImageHandleUtils.getAssetImageFilePath(asset);
         if (filePath.isEmpty) {
           showToast("未选到图片，请重试");
           return;
         }
-        int fileSize = await ImageCameraUtils.getAssetFileSize(asset);
+        int fileSize = await ImageHandleUtils.getAssetFileSize(asset);
         if (fileSize > maxSizeBites) {
-          final imgInfo = await ImageCameraUtils.getCompressFilePath(
+          final imgInfo = await ImageHandleUtils.getCompressFilePath(
             filePath,
             fileSize,
             asset,

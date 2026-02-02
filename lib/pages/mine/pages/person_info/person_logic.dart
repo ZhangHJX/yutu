@@ -148,7 +148,7 @@ class PersonLogic extends GetxController {
   void getUploadInfo(String filePath) async {
     try {
       showLoading("上传中");
-      final fileType = ImageCameraUtils.getFileExtensionFromPath(filePath);
+      final fileType = ImageHandleUtils.getFileExtensionFromPath(filePath);
       final result = await http.post<UploadOssModel>(
         '/upload/generateUploadUrl',
         data: {"type": "user", "file_type": fileType, "field_type": "avatar"},

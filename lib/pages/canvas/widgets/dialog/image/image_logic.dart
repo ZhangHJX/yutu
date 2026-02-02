@@ -163,7 +163,7 @@ class ImageLogic extends GetxController {
   ) async {
     try {
       showLoading("上传中");
-      final fileType = ImageCameraUtils.getFileExtensionFromPath(filePath);
+      final fileType = ImageHandleUtils.getFileExtensionFromPath(filePath);
       final result = await http.post<UploadOssModel>(
         '/upload/generateUploadUrl',
         data: {
