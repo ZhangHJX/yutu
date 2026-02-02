@@ -288,6 +288,11 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
 
   // 屏幕登录
   Future<void> handleAppleSignIn() async {
+    if (!isAgreement.value) {
+      showToast('请先同意用户协议和隐私政策');
+      return;
+    }
+
     if (_isLoading) return;
     _isLoading = true;
 
