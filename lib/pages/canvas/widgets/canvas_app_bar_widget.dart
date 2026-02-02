@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 /// 画布顶部应用栏
 class CanvasAppBar extends StatelessWidget {
   final VoidCallback onBack;
-  final VoidCallback copy;
   final VoidCallback onUndo;
   final VoidCallback onRedo;
   final bool canUndo;
@@ -12,7 +11,6 @@ class CanvasAppBar extends StatelessWidget {
 
   const CanvasAppBar(
     this.onBack,
-    this.copy,
     this.onUndo,
     this.onRedo, {
     super.key,
@@ -57,9 +55,6 @@ class CanvasAppBar extends StatelessWidget {
 
                 Row(
                   children: [
-                    CButton(text: '复制', onPressed: () => copy.call()),
-                    SizedBox(width: 19),
-
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () {

@@ -306,7 +306,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                 child: Obx(
                   () => CanvasAppBar(
                     _handleBack,
-                    _handleCopy,
+
                     handleUndo,
                     handleRedo,
                     canUndo: canUndo,
@@ -655,14 +655,5 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
     canvalsController.enableBack();
     DraftManager().deleteDraft();
     Get.back();
-  }
-
-  void _handleCopy() {
-    if (activeElement == null) {
-      showToast('请先选中要复制的文本');
-      return;
-    }
-    _canvasKey.currentState?.copyTextElement(activeElement!);
-    showToast('已复制');
   }
 }
