@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 
 /// 渐变边框绘制器
 class CGradientBorderPainter extends CustomPainter {
-  CGradientBorderPainter({required this.gradient, required this.borderRadius, double? strokeWidth})
-    : strokeWidth = strokeWidth ?? hairline;
+  CGradientBorderPainter({
+    required this.gradient,
+    required this.borderRadius,
+    double? strokeWidth,
+  }) : strokeWidth = strokeWidth ?? hairline;
 
   final Gradient gradient;
   final double borderRadius;
@@ -12,6 +15,8 @@ class CGradientBorderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (strokeWidth <= 0) return;
+
     final Rect rect = Rect.fromLTWH(
       strokeWidth / 2,
       strokeWidth / 2,
@@ -19,7 +24,10 @@ class CGradientBorderPainter extends CustomPainter {
       size.height - strokeWidth,
     );
 
-    final RRect rrect = RRect.fromRectAndRadius(rect, Radius.circular(borderRadius));
+    final RRect rrect = RRect.fromRectAndRadius(
+      rect,
+      Radius.circular(borderRadius),
+    );
 
     final Paint paint = Paint()
       ..style = PaintingStyle.stroke

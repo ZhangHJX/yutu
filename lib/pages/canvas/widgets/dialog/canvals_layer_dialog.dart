@@ -379,6 +379,8 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                   child: CGradientBorderWidget(
                     borderWidth: widget.canvasModel.isSelected ? 1.5 : 0,
                     gradientColors: [Color(0xFFC86CFF), Color(0xFF5B98FF)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                     borderRadius: BorderRadius.circular(12.w),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10.w),
@@ -527,6 +529,8 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
         borderWidth: isSelected ? 1.5 : 0,
         gradientColors: [Color(0xFFC86CFF), Color(0xFF5B98FF)],
         borderRadius: BorderRadius.circular(12.w),
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10.w),
           child: Container(

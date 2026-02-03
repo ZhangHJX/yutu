@@ -373,6 +373,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
                       ? [Color(0xFFC86CFF), Color(0xFF5B98FF)]
                       : [Color(0xFFE6E6E6), Color(0xFFE6E6E6)],
                   borderWidth: 1.0,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                   borderRadius: BorderRadius.circular(18.w),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -470,6 +472,8 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
             : [Color(0xFFD6D6D6), Color(0xFFD6D6D6)],
         borderWidth: 1.0,
         borderRadius: BorderRadius.circular(18.w),
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
         child: Container(
           width: 161.w,
           height: 95.w,
