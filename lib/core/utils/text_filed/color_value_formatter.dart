@@ -171,7 +171,6 @@ class ColorValueFormatter extends TextInputFormatter {
       );
     }
 
-
     // 情况8：如果超过7个字符，截取前7个，然后保存并显示 #
     if (formatted.length > 7) {
       final truncated7 = formatted.substring(0, 7);
@@ -213,14 +212,4 @@ class ColorValueFormatter extends TextInputFormatter {
       composing: TextRange.empty,
     );
   }
-}
-
-/// 简化的颜色输入格式化器（只支持 #RRGGBB 格式，6位）
-class HexColorFormatter extends ColorValueFormatter {
-  const HexColorFormatter()
-    : super(
-        maxLength: 8, // # + 6位
-        toUpperCase: true,
-        minLength: 1,
-      );
 }

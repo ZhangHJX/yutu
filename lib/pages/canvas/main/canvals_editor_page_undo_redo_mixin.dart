@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../history/index.dart';
 import '../model/index.dart';
-import 'widgets/canvals_editor_widget.dart';
+import 'body/canvals_editor_widget.dart';
 import 'canvals_controller.dart';
 
 /// 撤销/重做功能 Mixin

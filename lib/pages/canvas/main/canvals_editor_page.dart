@@ -2,20 +2,20 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/index.dart';
-import 'widgets/canvals_editor_widget.dart';
-import 'canvals_controller.dart';
-import '../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
+
+import 'body/canvals_editor_widget.dart';
+import 'body/canvas_body_widget.dart';
+import 'canvals_controller.dart';
+import 'utils/text_measure_util.dart';
 import '../history/index.dart';
 import '../gesture/index.dart';
 import '../model/index.dart';
-import 'widgets/transform_canvas.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
 import 'canvals_editor_page_dialog_mixin.dart';
 import '../draft/index.dart';
 import '../widgets/dialog/save/save_logic.dart';
 import 'package:voicetemplate/pages/canvas/fonts/font_manager.dart';
-import 'package:voicetemplate/pages/canvas/utils/index.dart';
 import 'package:voicetemplate/core/index.dart';
 
 class CanvasEditorPage extends StatefulWidget {
@@ -195,106 +195,19 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
               Positioned.fill(
                 top: topBarHeight,
                 bottom: bottomBarHeight,
-                child: CanvasPointerWrapper(
-                  canvalsController: _canvalsController,
+                child: CanvasBodyWidget(
                   canvasStatusManager: _canvasStatusManager,
                   canvasKey: _canvasKey,
                   canvasContainerKey: _canvasContainerKey,
                   onTap: () => toggleLayerDialog(false),
-                  child: Container(
-                    width: double.infinity,
-                    height: double.infinity,
-                    color: "#F6F2FB".color,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        // 使用 LayoutBuilder 提供的实际约束，确保在不同机型上都能正确适配
-                        _canvalsController.getCanvalsSize(
-                          constraints.maxWidth,
-                          constraints.maxHeight,
-                        );
-                        final canvasContent = Screenshot(
-                          controller: _screenshotController,
-                          child: ClipRect(
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                Container(
-                                  key: _canvasContainerKey,
-                                  width: _canvalsController.canvalsWidth,
-                                  height: _canvalsController.canvalsHeight,
-                                  color: _canvalsController
-                                      .canvasModel
-                                      .fillColor
-                                      .color
-                                      .withValues(
-                                        alpha: _canvalsController
-                                            .canvasModel
-                                            .fillAlpha,
-                                      ),
-                                ),
-                                Positioned.fill(
-                                  child: OverflowBox(
-                                    minWidth: 0,
-                                    minHeight: 0,
-                                    maxWidth: double.infinity,
-                                    maxHeight: double.infinity,
-                                    alignment: Alignment.topLeft,
-                                    child: Align(
-                                      alignment: Alignment.topLeft,
-                                      child: CanvasEditorWidget(
-                                        key: _canvasKey,
-                                        historyManager: historyManager,
-                                        onContentChanged: () {
-                                          if (mounted) {
-                                            setState(() {});
-                                            // 通知草稿管理器内容已变更
-                                            DraftManager()
-                                                .notifyElementsChanged();
-                                          }
-                                        },
-                                        canvasMatrix: _canvalsController
-                                            .canvasModel
-                                            .transform,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-
-                        final boxes = _canvalsController.elements;
-                        return Center(
-                          child: SizedBox(
-                            width: constraints.maxWidth,
-                            height: constraints.maxHeight,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                Transform(
-                                  transform:
-                                      _canvalsController.canvasModel.transform,
-                                  alignment: Alignment.topLeft,
-                                  child: canvasContent,
-                                ),
-
-                                Obx(
-                                  () => TransformCanvas(
-                                    elements: boxes,
-                                    selectedId: _canvalsController.selectedId,
-                                    canvasMatrix: _canvalsController
-                                        .canvasModel
-                                        .transform,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                  screenshotController: _screenshotController,
+                  historyManager: historyManager,
+                  onContentChanged: () {
+                    if (mounted) {
+                      setState(() {});
+                      DraftManager().notifyElementsChanged();
+                    }
+                  },
                 ),
               ),
 

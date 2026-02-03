@@ -1,6 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../widgets/slider_based_progress_bar.dart';
+import '../../components/slider_based_progress_bar.dart';
 
 /// 行距对齐组件
 class SpacingAlignmentWidget extends StatefulWidget {

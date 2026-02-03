@@ -1,7 +1,6 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../utils/gradient_border.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../model/index.dart';
 import 'package:uuid/uuid.dart';
@@ -369,7 +368,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
                     _selectedAspectRatio = index;
                   });
                 },
-                child: GradientBorder(
+                child: CGradientBorderWidget(
                   gradientColors: isSelected
                       ? [Color(0xFFC86CFF), Color(0xFF5B98FF)]
                       : [Color(0xFFE6E6E6), Color(0xFFE6E6E6)],
@@ -382,7 +381,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
                         child: Padding(
                           padding: EdgeInsets.only(top: 12.w),
                           child: Center(
-                            child: GradientBorder(
+                            child: CGradientBorderWidget(
                               gradientColors: [
                                 Color(0xFFC86CFF),
                                 Color(0xFF5B98FF),
@@ -465,7 +464,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
           _selectedClarity = index;
         });
       },
-      child: GradientBorder(
+      child: CGradientBorderWidget(
         gradientColors: isSelected
             ? [Color(0xFFC86CFF), Color(0xFF5B98FF)]
             : [Color(0xFFD6D6D6), Color(0xFFD6D6D6)],

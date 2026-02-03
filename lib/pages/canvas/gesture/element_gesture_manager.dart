@@ -2,7 +2,7 @@ import 'package:common/zmj/constants.dart';
 import 'package:common/common.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../utils/text_measure_util.dart';
+import '../main/utils/text_measure_util.dart';
 import '../history/index.dart';
 import 'element_extension/element_interaction_state.dart';
 import '../model/index.dart';

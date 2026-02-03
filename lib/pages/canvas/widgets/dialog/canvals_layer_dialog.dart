@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../main/canvals_controller.dart';
-import '../../utils/gradient_border.dart';
 import '../../model/index.dart';
 import 'package:voicetemplate/core/index.dart';
 
@@ -377,7 +376,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                   onTap: () {
                     widget.onCanvalsActivie();
                   },
-                  child: GradientBorder(
+                  child: CGradientBorderWidget(
                     borderWidth: widget.canvasModel.isSelected ? 1.5 : 0,
                     gradientColors: [Color(0xFFC86CFF), Color(0xFF5B98FF)],
                     borderRadius: BorderRadius.circular(12.w),
@@ -524,7 +523,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
         // 调用原有的图层点击回调
         widget.onLayerTap(layer.id);
       },
-      child: GradientBorder(
+      child: CGradientBorderWidget(
         borderWidth: isSelected ? 1.5 : 0,
         gradientColors: [Color(0xFFC86CFF), Color(0xFF5B98FF)],
         borderRadius: BorderRadius.circular(12.w),

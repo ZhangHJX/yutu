@@ -1,10 +1,10 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../widgets/color_picker_dialog.dart';
-import '../widgets/slider_input_field.dart';
-import '../widgets/border_width_formatter.dart';
-import '../widgets/color_value_formatter.dart';
+import '../../components/color_picker_dialog.dart';
+import '../../components/slider_input_field.dart';
+import '../../../../../core/utils/text_filed/border_width_formatter.dart';
 import '../../input_number_formatter.dart';
+import 'package:voicetemplate/core/index.dart';
 
 /// 颜色效果组件
 class ColorEffectWidget extends StatefulWidget {
