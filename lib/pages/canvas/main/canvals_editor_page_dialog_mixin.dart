@@ -2,13 +2,13 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:common/common.dart';
-import '../../widgets/index.dart';
-import '../../history/clone_tools/edit_box_data_clone.dart';
-import '../../model/index.dart';
-import '../../utils/index.dart';
+import '../widgets/index.dart';
+import '../history/clone_tools/edit_box_data_clone.dart';
+import '../model/index.dart';
+import '../utils/index.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
-import '../../draft/index.dart';
-import '../../widgets/dialog/image/canvals_image_dialog.dart';
+import '../draft/index.dart';
+import '../widgets/dialog/image/canvals_image_dialog.dart';
 import 'canvals_controller.dart';
 
 /// Dialog 管理功能 Mixin

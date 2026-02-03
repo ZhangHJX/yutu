@@ -1,19 +1,19 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
-import '../../widgets/index.dart';
+import '../widgets/index.dart';
 import 'widgets/canvals_editor_widget.dart';
 import 'canvals_controller.dart';
-import '../../utils/text_measure_util.dart';
+import '../utils/text_measure_util.dart';
 import 'package:screenshot/screenshot.dart';
-import '../../history/index.dart';
-import '../../gesture/index.dart';
-import '../../model/index.dart';
+import '../history/index.dart';
+import '../gesture/index.dart';
+import '../model/index.dart';
 import 'widgets/transform_canvas.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
 import 'canvals_editor_page_dialog_mixin.dart';
-import '../../draft/index.dart';
-import '../../widgets/dialog/save/save_logic.dart';
+import '../draft/index.dart';
+import '../widgets/dialog/save/save_logic.dart';
 import 'package:voicetemplate/pages/canvas/fonts/font_manager.dart';
 import 'package:voicetemplate/pages/canvas/utils/index.dart';
 import 'package:voicetemplate/core/index.dart';

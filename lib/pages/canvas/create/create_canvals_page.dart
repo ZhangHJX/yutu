@@ -1,9 +1,9 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../utils/gradient_border.dart';
+import '../utils/gradient_border.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-import '../../model/index.dart';
+import '../model/index.dart';
 import 'package:uuid/uuid.dart';
 import 'package:voicetemplate/core/index.dart';
 import 'max_value_formatter.dart';

@@ -6,7 +6,7 @@ import 'model/font_info_model.dart';
 import 'text_property_controller.dart';
 import '../../../fonts/font_manager.dart';
 import '../../../fonts/font_models.dart';
-import '../../../pages/create/max_value_formatter.dart';
+import '../../../create/max_value_formatter.dart';
 
 
 /// 字体属性组件

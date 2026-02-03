@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import '../../pages/canvals/canvals_controller.dart';
+import '../../main/canvals_controller.dart';
 import '../../utils/gradient_border.dart';
 import '../../model/index.dart';
 import 'package:voicetemplate/core/index.dart';

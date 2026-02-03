@@ -5,7 +5,7 @@ import 'package:voicetemplate/stores/global.dart';
 import '../pages/home/home_page.dart';
 import '../pages/mine/mine_main_page.dart';
 import '../pages/mine/mine_logic.dart';
-import 'package:voicetemplate/pages/canvas/pages/create/create_canvals_page.dart';
+import 'package:voicetemplate/pages/canvas/create/create_canvals_page.dart';
 import '../core/index.dart';
 
 class MainLogic extends GetxController {

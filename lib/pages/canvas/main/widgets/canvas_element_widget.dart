@@ -1,7 +1,7 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/core/index.dart';
-import '../../../model/index.dart';
+import '../../model/index.dart';
 import 'stroke_text.dart';
 import 'dart:io';
 

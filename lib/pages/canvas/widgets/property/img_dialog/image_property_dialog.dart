@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import '../widgets/slider_input_field.dart';
 import '../../../model/index.dart';
-import '../../../pages/canvals/canvals_controller.dart';
+import '../../../main/canvals_controller.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
 
 class ImagePropertyDialog extends StatefulWidget {

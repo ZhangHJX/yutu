@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../history/index.dart';
-import '../../model/index.dart';
+import '../history/index.dart';
+import '../model/index.dart';
 import 'widgets/canvals_editor_widget.dart';
 import 'canvals_controller.dart';
 

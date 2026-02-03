@@ -4,8 +4,8 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:voicetemplate/pages/canvas/draft/index.dart';
-import '../../model/index.dart';
-import '../../history/clone_tools/canvas_model_clone.dart';
+import '../model/index.dart';
+import '../history/clone_tools/canvas_model_clone.dart';
 import 'dart:math' as math;
 import 'package:voicetemplate/stores/global.dart';
 

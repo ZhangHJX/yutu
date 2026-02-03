@@ -4,7 +4,7 @@ import 'app_route_const.dart';
 import 'package:voicetemplate/pages/not_found_page.dart';
 import 'package:voicetemplate/pages/splash/page.dart';
 import 'package:voicetemplate/main/page.dart';
-import 'package:voicetemplate/pages/canvas/pages/canvals/canvals_editor_page.dart';
+import 'package:voicetemplate/pages/canvas/main/canvals_editor_page.dart';
 import 'package:voicetemplate/pages/login/login_page.dart';
 import 'package:voicetemplate/pages/login/password/password_page.dart';
 

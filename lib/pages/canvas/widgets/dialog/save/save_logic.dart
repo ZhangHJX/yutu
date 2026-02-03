@@ -3,7 +3,7 @@ import 'package:common/common.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
-import 'package:voicetemplate/pages/canvas/pages/canvals/canvals_controller.dart';
+import 'package:voicetemplate/pages/canvas/main/canvals_controller.dart';
 import 'package:voicetemplate/pages/model/index.dart';
 import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 import 'package:voicetemplate/pages/canvas/model/index.dart';
