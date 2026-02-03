@@ -66,12 +66,12 @@ class PersonLogic extends GetxController {
       }
       PickerImageManager.pickerPhotos(
         context: context,
-        onSuccess:
-            (String filePath, double width, double height, int fileSize) {
-              filemeMemorySize = fileSize;
-              AppLogger.info('从相册选择成功了: $filePath');
-              getUploadInfo(filePath);
-            },
+        onSuccess: (list) {
+          final model = list.first;
+          filemeMemorySize = model.fileSize;
+          AppLogger.info('从相册选择成功了: ${model.filePath}}');
+          getUploadInfo(model.filePath);
+        },
       );
     } catch (e, stackTrace) {
       showToast('读取照片路径报错，请重试');

@@ -1,9 +1,8 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
-import 'image_handle_utils.dart';
+import 'package:path/path.dart' as p;
+import 'package:voicetemplate/core/index.dart';
 
 class PickerImageManager {
   // 最大允许的图片大小（字节），当前为 10MB
@@ -21,45 +20,43 @@ class PickerImageManager {
   // 只从相册获取数据
   static void pickerPhotos({
     required BuildContext context,
-    required void Function(
-      String fiePath,
-      double width,
-      double height,
-      int fileSize,
-    )
-    onSuccess,
+    required void Function(List<PickerInfoModel> infoModel) onSuccess,
+    int maxCount = 1,
   }) async {
     try {
       final List<AssetEntity>? result = await PickerImageManager.common(
         context,
+        maxAssetsCount: maxCount,
       );
-
-      if (result != null) {
-        AssetEntity asset = result.last;
-        String filePath = await ImageHandleUtils.getAssetImageFilePath(asset);
-        if (filePath.isEmpty) {
-          showToast("未选到图片，请重试");
-          return;
-        }
-        int fileSize = await ImageHandleUtils.getAssetFileSize(asset);
-
-        if (fileSize > maxSizeBites) {
-          final int kb = (fileSize / 1024).ceil();
-          final imgInfo = await ImageHandleUtils.getCompressFilePath(
-            filePath,
-            kb,
-            asset,
+      if (result != null && result.isNotEmpty) {
+        final List<PickerInfoModel> imgArray = [];
+        for (var i = 0; i < result.length; i++) {
+          AssetEntity asset = result[i];
+          String filePath = await ImageHandleUtils.getAssetImageFilePath(asset);
+          if (filePath.isEmpty) continue;
+          int fileSize = await ImageHandleUtils.getAssetFileSize(asset);
+          final int fileSizeKb = (fileSize / 1024).ceil();
+          PickerInfoModel model = PickerInfoModel(
+            filePath: filePath,
+            width: asset.width.toDouble(),
+            height: asset.height.toDouble(),
+            fileSize: fileSizeKb,
           );
-          onSuccess(imgInfo.$1, imgInfo.$2, imgInfo.$3, imgInfo.$4);
-        } else {
-          final int kb = (fileSize / 1024).ceil();
-          onSuccess(
-            filePath,
-            asset.width.toDouble(),
-            asset.height.toDouble(),
-            kb,
-          );
+          if (fileSize > maxSizeBites) {
+            final imgInfo = await ImageHandleUtils.getCompressFilePath(
+              filePath,
+              fileSize,
+              asset,
+            );
+            final int compressKb = (imgInfo.$4 / 1024).ceil();
+            model.filePath = imgInfo.$1;
+            model.width = imgInfo.$2;
+            model.height = imgInfo.$3;
+            model.fileSize = compressKb;
+          }
+          imgArray.add(model);
         }
+        onSuccess(imgArray);
       }
     } catch (e, stackTrace) {
       showToast('读取照片路径报错，请重试');
@@ -70,7 +67,7 @@ class PickerImageManager {
   // 公共的选择方法
   static Future<List<AssetEntity>?> common(
     BuildContext context, {
-    int maxAssetsCount = 1,
+    int maxAssetsCount = 9,
   }) async {
     return AssetPicker.pickAssets(
       context,

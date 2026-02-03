@@ -36,6 +36,12 @@ class GlobalLogic extends GetxController {
 
   late final StreamSubscription _sub;
 
+  /// 素材大小及其限制
+  double get materialSize =>
+      double.tryParse(userInfo.value.userMaterialFileSize) ?? 0;
+  double get materialLimit =>
+      double.tryParse(userInfo.value.userMmaterialFileSizeLimit) ?? 0;
+
   /// 切换登录方式
   void toggleLoginMode() {
     loginMode.value = loginMode.value == LoginMode.sms
