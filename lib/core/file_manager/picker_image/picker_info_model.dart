@@ -4,6 +4,7 @@ class PickerInfoModel {
   double width;
   double height;
   int fileSize;
+  String hashValue;
 
   PickerInfoModel({
     this.fileName = '',
@@ -11,5 +12,6 @@ class PickerInfoModel {
     this.width = 0.0,
     this.height = 0.0,
     this.fileSize = 0,
+    this.hashValue = '',
   });
 }

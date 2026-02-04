@@ -9,8 +9,7 @@ import 'manager/material_manager.dart';
 import 'package:voicetemplate/core/index.dart';
 
 class CanvalsImageDialog extends StatefulWidget {
-  final Function(String imageUrl, double? width, double? height)?
-  onImageSelected;
+  final Function(List<PickerInfoModel> list)? onImageSelected;
   final BuildContext currentContext;
   const CanvalsImageDialog(
     this.currentContext, {
@@ -38,9 +37,9 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
   @override
   void initState() {
     super.initState();
-    logic.onUploadSuccess = (String imagePath, double width, double height) {
+    logic.onUploadSuccess = (List<PickerInfoModel> list) {
       if (widget.onImageSelected != null) {
-        widget.onImageSelected!(imagePath, width, height);
+        widget.onImageSelected!(list);
       }
       SmartDialog.dismiss();
     };
@@ -374,7 +373,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
 
                 // 5. 返回画布使用的相对路径（文件名），通过 onUploadSuccess 传递到画布数据中，dialog 弹框消失
                 if (logic.onUploadSuccess != null) {
-                  logic.onUploadSuccess!(fileName, result.$1, result.$2);
+                  // logic.onUploadSuccess!(fileName, result.$1, result.$2);
                 }
               } catch (e, stackTrace) {
                 AppLogger.error('添加图片到画布失败:', e, stackTrace);

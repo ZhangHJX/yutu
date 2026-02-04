@@ -189,7 +189,7 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
     SmartDialog.show(
       builder: (context) => CanvalsShapeDialog(
         onShapeSelected: (type) {
-          canvasKey.currentState?.addShape(type, getCanvasCenter());
+          canvasKey.currentState?.addShape(type);
           SmartDialog.dismiss();
         },
       ),
@@ -213,18 +213,14 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
     SmartDialog.show(
       builder: (context) => CanvalsImageDialog(
         canvalsContext,
-        onImageSelected: (String imagePath, double? width, double? height) {
+        onImageSelected: (list) {
           if (isFromReplace) {
-            replaceImage(context, imagePath);
+            // replaceImage(context, imagePath);
           } else {
-            // 将图片添加到画布
+            if (list.isEmpty) return;
             final canvalsController = Get.find<CanvalsController>();
-            canvalsController.addNewImage(
-              imagePath,
-              width ?? 200.0,
-              height ?? 200.0,
-              targetCenter: getCanvasCenter(),
-            );
+            AppLogger.info("==将图片添加到画布=的数量==${list.length}===");
+            canvalsController.addNewImages(list);
           }
         },
       ),
@@ -250,11 +246,7 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
           if (text.isEmpty) {
             return;
           }
-          canvasKey.currentState?.addBox(
-            type: ElementType.text,
-            text: text,
-            center: getCanvasCenter(),
-          );
+          canvasKey.currentState?.addTextElement(ElementType.text, text);
           Navigator.pop(context); // 关闭对话框
         },
       ),
@@ -338,9 +330,6 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
   /// 替换图片
   /// [context] BuildContext，用于显示图片选择器
   void replaceImage(BuildContext context, String filePath);
-
-  /// 获取画布中心
-  Offset getCanvasCenter();
 
   /// 刷新文本框，重新计算尺寸（当属性变化时）
   /// 注意：属性值已经在 TextPropertyDialog 中实时更新，这里只需要重新计算尺寸并刷新UI

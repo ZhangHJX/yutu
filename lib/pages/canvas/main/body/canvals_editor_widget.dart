@@ -9,14 +9,17 @@ import '../utils/text_measure_util.dart';
 import '../../history/index.dart';
 import '../../model/index.dart';
 import '../../draft/index.dart';
+import 'package:voicetemplate/core/index.dart';
 
 class CanvasEditorWidget extends StatefulWidget {
+  final CanvalsController canvalsController;
   final CanvasHistoryManager? historyManager;
   final VoidCallback? onContentChanged;
   final Matrix4 canvasMatrix;
 
   const CanvasEditorWidget({
     super.key,
+    required this.canvalsController,
     this.historyManager,
     this.onContentChanged,
     required this.canvasMatrix,
@@ -44,7 +47,7 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
   @override
   void initState() {
     super.initState();
-    _selectionController = Get.find<CanvalsController>();
+    _selectionController = widget.canvalsController;
     _gestureManager.historyManager = historyManager; // 设置历史管理器到手势管理器
   }
 
@@ -81,130 +84,6 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     }
 
     // 通知草稿管理器元素顺序已变更
-    DraftManager().notifyElementsChanged();
-  }
-
-  Future<void> addShape(ElementType type, Offset center) async {
-    String shapeName = '';
-    double boxWidth = 150;
-    double boxHeight = 150;
-
-    if (type == ElementType.rectangle) {
-      shapeName = '矩形';
-    }
-
-    if (type == ElementType.ellipse) {
-      shapeName = '椭圆';
-      boxWidth = 150;
-      boxHeight = 87;
-    }
-
-    if (type == ElementType.line) {
-      shapeName = '线条';
-      boxWidth = 216;
-      boxHeight = 20;
-    }
-
-    final newId = _selectionController.generateId();
-
-    final elementPos = Offset(
-      center.dx - boxWidth / 2,
-      center.dy - boxHeight / 2,
-    );
-
-    final newElement = CanvasElement(
-      id: newId,
-      text: shapeName,
-      x: elementPos.dx,
-      y: elementPos.dy,
-      type: type,
-      width: boxWidth,
-      height: boxHeight,
-    );
-
-    setState(() {
-      boxes.add(newElement);
-    });
-
-    if (historyManager != null) {
-      historyManager!.executeCommand(AddElementCommand(boxes, newElement));
-    }
-    _selectionController.select(newId);
-  }
-
-  Future<void> addBox({
-    required ElementType type,
-    required Offset center,
-    String text = '',
-    String filePath = '',
-  }) async {
-    final newId = _selectionController.generateId();
-
-    _selectionController.center = center;
-
-    // 根据类型确定宽高
-    double finalWidth = 200; // 默认宽度
-    double finalHeight = 200; // 默认高度
-
-    // 如果是图片类型，根据图片实际尺寸计算
-    final imgW = _selectionController.imageWidth;
-    final imgH = _selectionController.imageHeight;
-
-    final canvalsW = _selectionController.canvalsWidth;
-    final canvalsH = _selectionController.canvalsHeight;
-
-    if (type == ElementType.image) {
-      if (canvalsW > canvalsH) {
-        if (imgW > imgH) {
-          finalWidth = canvalsW * 0.6;
-          finalHeight = finalWidth * (imgH / imgW);
-        } else {
-          finalHeight = canvalsH * 0.6;
-          finalWidth = finalHeight * (imgW / imgH);
-        }
-      } else {
-        finalWidth = canvalsW * 0.6;
-        finalHeight = finalWidth * (imgH / imgW);
-        if (finalHeight > canvalsH) {
-          finalHeight = canvalsH * 0.6;
-          finalWidth = finalHeight * (imgW / imgH);
-        }
-      }
-    } else {
-      // 文本类型，使用默认字体属性计算尺寸
-      Size textSize = TextMeasureUtil.measureText(text: text);
-      finalWidth = textSize.width;
-      finalHeight = textSize.height;
-    }
-
-    // 获取屏幕中心在画布坐标中的位置（考虑平移和缩放）
-    final centerX = center.dx - finalWidth / 2;
-    final centerY = center.dy - finalHeight / 2;
-
-    final newElement = CanvasElement(
-      id: newId,
-      text: type == ElementType.text ? text : '',
-      x: centerX,
-      y: centerY,
-      type: type,
-      filePath: filePath,
-      width: finalWidth,
-      height: finalHeight,
-    );
-
-    setState(() {
-      boxes.add(newElement);
-    });
-
-    // 记录命令
-    if (historyManager != null) {
-      historyManager!.executeCommand(AddElementCommand(boxes, newElement));
-    }
-
-    // 自动选中新添加的元素
-    _selectionController.select(newId);
-
-    // 通知草稿管理器元素已添加
     DraftManager().notifyElementsChanged();
   }
 
@@ -399,22 +278,13 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         });
       }
 
-      // 监听添加标记
-      if (_selectionController.shouldAdd) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          addBox(type: ElementType.text, center: _selectionController.center);
-          _selectionController.clearAddFlag();
-        });
-      }
-
       // 监听添加图片标记
       if (_selectionController.shouldAddImage) {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
-          addBox(
-            type: ElementType.image,
-            center: _selectionController.center,
-            filePath: _selectionController.filePath,
-          );
+          final pendingList = _selectionController.pendingImageList;
+          for (var item in pendingList) {
+            addImageElement(type: ElementType.image, infoModel: item);
+          }
           _selectionController.clearAddImageFlag();
         });
       }
@@ -449,6 +319,129 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
         ],
       );
     });
+  }
+
+  /// 添加
+  Future<void> addShape(ElementType type) async {
+    String shapeName = '';
+    double boxWidth = 150;
+    double boxHeight = 150;
+
+    if (type == ElementType.rectangle) {
+      shapeName = '矩形';
+    }
+
+    if (type == ElementType.ellipse) {
+      shapeName = '椭圆';
+      boxWidth = 150;
+      boxHeight = 87;
+    }
+
+    if (type == ElementType.line) {
+      shapeName = '线条';
+      boxWidth = 216;
+      boxHeight = 20;
+    }
+
+    final origin = Offset(
+      _selectionController.canvalsCenter.dx - boxWidth / 2,
+      _selectionController.canvalsCenter.dy - boxHeight / 2,
+    );
+
+    executeAddElement(type, origin, Size(boxWidth, boxHeight), text: shapeName);
+  }
+
+  /// 添加图片
+  Future<void> addImageElement({
+    required ElementType type,
+    required PickerInfoModel infoModel,
+  }) async {
+    // 如果是图片类型，根据图片实际尺寸计算
+    double finalWidth = infoModel.width;
+    double finalHeight = infoModel.height;
+    final canvalsW = _selectionController.canvalsWidth;
+    final canvalsH = _selectionController.canvalsHeight;
+
+    if (canvalsW > canvalsH) {
+      if (infoModel.width > infoModel.height) {
+        finalWidth = canvalsW * 0.6;
+        finalHeight = finalWidth * (infoModel.height / infoModel.width);
+      } else {
+        finalHeight = canvalsH * 0.6;
+        finalWidth = finalHeight * (infoModel.width / infoModel.height);
+      }
+    } else {
+      finalWidth = canvalsW * 0.6;
+      finalHeight = finalWidth * (infoModel.height / infoModel.width);
+      if (finalHeight > canvalsH) {
+        finalHeight = canvalsH * 0.6;
+        finalWidth = finalHeight * (infoModel.width / infoModel.height);
+      }
+    }
+
+    // 获取屏幕中心在画布坐标中的位置（考虑平移和缩放）
+    final centerX = _selectionController.canvalsCenter.dx - finalWidth / 2;
+    final centerY = _selectionController.canvalsCenter.dy - finalHeight / 2;
+
+    executeAddElement(
+      type,
+      Offset(centerX, centerY),
+      Size(finalWidth, finalHeight),
+      filePath: infoModel.fileName,
+    );
+  }
+
+  /// 添加文本
+  Future<void> addTextElement(ElementType type, String text) async {
+    // 文本类型，使用默认字体属性计算尺寸
+    Size textSize = TextMeasureUtil.measureText(text: text);
+
+    // 获取屏幕中心在画布坐标中的位置（考虑平移和缩放）
+    final centerX = _selectionController.canvalsCenter.dx - textSize.width / 2;
+    final centerY = _selectionController.canvalsCenter.dy - textSize.height / 2;
+    executeAddElement(
+      type,
+      Offset(centerX, centerY),
+      Size(textSize.width, textSize.height),
+      text: text,
+    );
+  }
+
+  /// 画布编辑器添加元素
+  void executeAddElement(
+    ElementType type,
+    Offset origin,
+    Size size, {
+    String text = '',
+    String filePath = '',
+  }) {
+    final newId = _selectionController.generateId();
+
+    final newElement = CanvasElement(
+      id: newId,
+      text: type == ElementType.text ? text : '',
+      x: origin.dx,
+      y: origin.dy,
+      type: type,
+      filePath: filePath,
+      width: size.width,
+      height: size.height,
+    );
+
+    setState(() {
+      boxes.add(newElement);
+    });
+
+    // 记录命令
+    if (historyManager != null) {
+      historyManager!.executeCommand(AddElementCommand(boxes, newElement));
+    }
+
+    // 自动选中新添加的元素
+    _selectionController.select(newId);
+
+    // 通知草稿管理器元素已添加
+    DraftManager().notifyElementsChanged();
   }
 
   /// 撤销操作

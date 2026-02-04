@@ -8,6 +8,7 @@ import '../model/index.dart';
 import '../history/clone_tools/canvas_model_clone.dart';
 import 'dart:math' as math;
 import 'package:voicetemplate/stores/global.dart';
+import 'package:voicetemplate/core/index.dart';
 
 /// 全局选择状态管理控制器： 负责管理当前选中的文本框ID、画布模型以及元素列表
 class CanvalsController extends GetxController with WidgetsBindingObserver {
@@ -47,7 +48,6 @@ class CanvalsController extends GetxController with WidgetsBindingObserver {
   }
 
   final canPop = false.obs;
-
   PointerEvent? currentPoint; // 画布点击
   final RxList<CanvasElement> elements = <CanvasElement>[].obs;
 
@@ -121,9 +121,6 @@ class CanvalsController extends GetxController with WidgetsBindingObserver {
   // 删除标记
   final RxBool _shouldDelete = false.obs;
 
-  // 添加标记
-  final RxBool _shouldAdd = false.obs;
-
   // UUID生成器
   final Uuid _uuid = const Uuid();
 
@@ -133,23 +130,18 @@ class CanvalsController extends GetxController with WidgetsBindingObserver {
   /// 获取删除标记
   bool get shouldDelete => _shouldDelete.value;
 
-  /// 获取添加标记
-  bool get shouldAdd => _shouldAdd.value;
-
   // 图片相关操作
   final RxBool _shouldAddImage = false.obs;
   bool get shouldAddImage => _shouldAddImage.value;
-
-  final RxString _filePath = ''.obs;
-  String get filePath => _filePath.value;
-
-  double imageWidth = 0.0;
-  double imageHeight = 0.0;
-
-  Offset center = Offset.zero;
+  final RxList<PickerInfoModel> _pendingImageList = <PickerInfoModel>[].obs;
+  List<PickerInfoModel> get pendingImageList => _pendingImageList.toList();
 
   /// 检查指定ID是否被选中
   bool isSelected(String id) => _selectedId.value == id;
+
+  /// 获取画布的中心
+  ///
+  Offset get canvalsCenter => Offset(canvalsWidth / 2, canvalsHeight / 2);
 
   /// 选中指定ID的文本框
   void select(String id) {
@@ -182,22 +174,10 @@ class CanvalsController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  /// 标记需要添加新的文本框
-  void addNewBox() {
-    _shouldAdd.value = true;
-  }
-
-  /// 清除添加标记
-  void clearAddFlag() {
-    _shouldAdd.value = false;
-  }
-
   /// 清除添加图片标记
   void clearAddImageFlag() {
     _shouldAddImage.value = false;
-    _filePath.value = '';
-    imageWidth = 0.0;
-    imageHeight = 0.0;
+    _pendingImageList.clear();
   }
 
   /// 清除删除标记
@@ -205,19 +185,9 @@ class CanvalsController extends GetxController with WidgetsBindingObserver {
     _shouldDelete.value = false;
   }
 
-  /// 标记需要添加新的图片元素
-  void addNewImage(
-    String filePath,
-    double width,
-    double height, {
-    Offset? targetCenter,
-  }) {
-    if (targetCenter != null) {
-      center = targetCenter;
-    }
-    imageWidth = width;
-    imageHeight = height;
-    _filePath.value = filePath;
+  /// 标记需要添加多张图片（一次选择多张时使用，不会互相覆盖）
+  void addNewImages(List<PickerInfoModel> list) {
+    _pendingImageList.assignAll(list);
     _shouldAddImage.value = true;
   }
 

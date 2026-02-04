@@ -3,6 +3,7 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
+import 'package:crypto/crypto.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:io';
@@ -29,13 +30,15 @@ class ImageHandleUtils {
   }
 
   ///2、获取相册图片的路径
-  static Future<String> getAssetImageFilePath(AssetEntity asset) async {
+  static Future<(String, String)> getAssetImageFilePath(
+    AssetEntity asset,
+  ) async {
     try {
       // 优先拿原图
       File? originalFile = await asset.originFile;
       originalFile ??= await asset.file;
       if (originalFile == null) {
-        return "";
+        return ('', '');
       }
 
       final baseName = p.basenameWithoutExtension(originalFile.path);
@@ -54,27 +57,29 @@ class ImageHandleUtils {
           origin = await originalFile.readAsBytes();
         }
         if (origin == null || origin.isEmpty) {
-          return '';
+          return ('', '');
         }
         final bytes = await ImageHandleUtils.gifToPngFrame(origin);
         if (bytes == null || bytes.isEmpty) {
-          return '';
+          return ('', '');
         }
         final fullPath = p.join(tempDir.path, '$uniqueName.png');
         final file = File(fullPath);
         await file.writeAsBytes(bytes, flush: true);
-        return file.path;
+        final hashValue = sha256.convert(bytes).toString();
+        return (file.path, hashValue);
       } else {
         final fullPath = p.join(tempDir.path, '$uniqueName.$ext');
-
         AppLogger.info('==选择后图片copy的地址==$fullPath==');
 
+        final bytes = await originalFile.readAsBytes();
         await originalFile.copy(fullPath);
-        return fullPath;
+        final hashValue = sha256.convert(bytes).toString();
+        return (fullPath, hashValue);
       }
     } catch (e, s) {
       AppLogger.error('getAssetImageFilePath 异常:', e, s);
-      return '';
+      return ('', '');
     }
   }
 

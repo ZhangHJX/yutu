@@ -149,14 +149,15 @@ class StockLogic extends GetxController {
 
     try {
       showLoading("删除中");
+
       // 发送删除请求，将选中的uuid列表作为参数
-      final result = await http.post(
-        '/user/material/destroys',
-        data: {
-          'ids': selectedIds.toList().join(','),
-          'is_all': isAllSelected.value ? 1 : 0,
-        },
-      );
+      final params = {
+        'ids': selectedIds.toList().join(','),
+        'is_all': isAllSelected.value ? 1 : 0,
+      };
+      AppLogger.info('==选中要删除的ids有哪些==$params==');
+
+      final result = await http.post('/user/material/destroys', data: params);
       if (result.code == 0) {
         // 删除成功，从当前tab的数据列表中移除已删除的项
         stockList.removeWhere((e) => selectedIds.contains('${e.id}'));

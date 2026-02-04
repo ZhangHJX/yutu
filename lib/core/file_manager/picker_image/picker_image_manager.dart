@@ -7,7 +7,6 @@ import 'package:voicetemplate/core/index.dart';
 class PickerImageManager {
   // 最大允许的图片大小（字节），当前为 10MB
   static const int maxSizeBites = 10 * 1024 * 1024;
-
   static late String cavalsPath;
 
   static Future<void> init() async {
@@ -24,27 +23,30 @@ class PickerImageManager {
     int maxCount = 1,
   }) async {
     try {
-      final List<AssetEntity>? result = await PickerImageManager.common(
+      final List<AssetEntity>? assetArray = await PickerImageManager.common(
         context,
         maxAssetsCount: maxCount,
       );
-      if (result != null && result.isNotEmpty) {
+      if (assetArray != null && assetArray.isNotEmpty) {
         final List<PickerInfoModel> imgArray = [];
-        for (var i = 0; i < result.length; i++) {
-          AssetEntity asset = result[i];
-          String filePath = await ImageHandleUtils.getAssetImageFilePath(asset);
-          if (filePath.isEmpty) continue;
+        for (var i = 0; i < assetArray.length; i++) {
+          AssetEntity asset = assetArray[i];
+          final result = await ImageHandleUtils.getAssetImageFilePath(asset);
+          if (result.$1.isEmpty) continue;
           int fileSize = await ImageHandleUtils.getAssetFileSize(asset);
+
           final int fileSizeKb = (fileSize / 1024).ceil();
+
           PickerInfoModel model = PickerInfoModel(
-            filePath: filePath,
+            filePath: result.$1,
             width: asset.width.toDouble(),
             height: asset.height.toDouble(),
             fileSize: fileSizeKb,
+            hashValue: result.$2,
           );
           if (fileSize > maxSizeBites) {
             final imgInfo = await ImageHandleUtils.getCompressFilePath(
-              filePath,
+              result.$1,
               fileSize,
               asset,
             );
