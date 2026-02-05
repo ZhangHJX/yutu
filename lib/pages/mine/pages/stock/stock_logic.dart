@@ -158,9 +158,12 @@ class StockLogic extends GetxController {
       AppLogger.info('==选中要删除的ids有哪些==$params==');
 
       final result = await http.post('/user/material/destroys', data: params);
+
       if (result.code == 0) {
         // 删除成功，从当前tab的数据列表中移除已删除的项
         stockList.removeWhere((e) => selectedIds.contains('${e.id}'));
+
+
         // 清除选择并退出批量模式
         clearSelection();
         refreshUserInfo();

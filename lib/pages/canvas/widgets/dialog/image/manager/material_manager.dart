@@ -1,70 +1,19 @@
-import 'dart:io';
-
 import 'package:common/common.dart';
 import 'package:path/path.dart' as p;
 import 'package:voicetemplate/core/index.dart';
+import 'dart:io';
 
 /// 画布图片管理器
-///
-/// 负责：
-/// - 判断图片是否已下载到 Application Support/localAsset
-/// - 如未下载则使用 background_downloader 下载到 localAsset
-/// - 再将图片拷贝到 Documents/cavals/images 目录
-/// - 返回画布使用的相对路径（文件名）
 class MaterialManager {
   MaterialManager._();
   static final MaterialManager instance = MaterialManager._();
 
-  /// 确保图片已经拷贝到 cavals/images，并返回画布使用的文件名
-  ///
-  /// [imageUrl] 网络图片地址
-  /// 返回值：画布中使用的 filePath（仅文件名，配合 PickerImageManager.loadCanvalsImage 使用）
-  Future<String> ensureImageInCanvasImages(String imageUrl) async {
-    // 1. 先确保图片在 Application Support/localAsset 下存在（如无则下载）
-    final File localAssetFile = await ensureImageInLocalAsset(imageUrl);
-
-    // 2. 再将该文件拷贝到 Documents/cavals/images
-    final String fileName = p.basename(localAssetFile.path);
-
-    // cavals/images 目录（已经在 PickerImageManager.init 中初始化过）
-    final Directory cavalsDir = Directory(PickerImageManager.cavalsPath);
-    if (!await cavalsDir.exists()) {
-      await cavalsDir.create(recursive: true);
-    }
-
-    final String targetPath = p.join(cavalsDir.path, fileName);
-    final File targetFile = File(targetPath);
-
-    // 如果目标文件已存在，可以选择覆盖或直接复用
-    if (!await targetFile.exists()) {
-      await localAssetFile.copy(targetPath);
-    }
-
-    // 返回给画布使用的"相对路径"（仅文件名）
-    return fileName;
-  }
-
-  /// 确保图片已经在 Application Support/localAsset 中存在，返回该文件
-  ///
-  /// - 如果已存在，则直接返回
-  /// - 如果不存在，则通过 background_downloader 下载到本地后返回
-  ///
-  /// 注意：使用 imageUrl 中的文件名（从 URL 路径提取），应与上传时使用的 ossModel.file 保持一致
-  Future<File> ensureImageInLocalAsset(String imageUrl) async {
-    // 使用 ImageModel 中 image URL 的路径部分作为文件名
-    final fileName = Uri.parse(imageUrl).pathSegments.last;
-    // 获取 Application Support/localAsset 目录（不存在则创建）
-    final localAssetDir = await DirectoryManager.getSupportSubDirectory(
-      'localAsset',
-    );
-    final String targetPath = p.join(localAssetDir.path, fileName);
-    final File targetFile = File(targetPath);
-
-    // 如果已经存在，直接返回，认为已经下载过
-    if (await targetFile.exists()) {
-      return targetFile;
-    }
-
+  /// 进来就说明不存在，直接进行下载
+  Future<void> ensureImageInLocalAsset(
+    String imageUrl,
+    String fileName,
+    String targetPath,
+  ) async {
     // 使用 background_downloader 下载到 Application Support/localAsset
     final String taskId =
         'material_${DateTime.now().millisecondsSinceEpoch}_${fileName.hashCode}';
@@ -141,7 +90,26 @@ class MaterialManager {
         await tempDir.delete(recursive: false);
       } catch (_) {}
     } catch (_) {}
+  }
 
-    return targetFile;
+  /// 确保图片已经拷贝到 cavals/images，并返回画布使用的文件名
+  /// 返回值：画布中使用的 filePath（仅文件名，配合 PickerImageManager.loadCanvalsImage 使用）
+  Future<void> ensureImageInCanvasImages(
+    File localAssetFile,
+    String fileName,
+  ) async {
+    // cavals/images 目录（已经在 PickerImageManager.init 中初始化过）
+    final Directory cavalsDir = Directory(PickerImageManager.cavalsPath);
+    if (!await cavalsDir.exists()) {
+      await cavalsDir.create(recursive: true);
+    }
+
+    final String targetPath = p.join(cavalsDir.path, fileName);
+    final File targetFile = File(targetPath);
+
+    // 如果目标文件已存在，可以选择覆盖或直接复用
+    if (!await targetFile.exists()) {
+      await localAssetFile.copy(targetPath);
+    }
   }
 }

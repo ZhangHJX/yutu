@@ -6,7 +6,8 @@ import 'package:voicetemplate/core/index.dart';
 import 'package:voicetemplate/pages/model/index.dart';
 import 'package:flutter/material.dart';
 import 'package:voicetemplate/stores/global.dart';
-
+import 'manager/local_asset_store.dart';
+import 'manager/material_manager.dart';
 import 'dart:io';
 
 class ImageLogic extends GetxController {
@@ -27,6 +28,9 @@ class ImageLogic extends GetxController {
   RefreshController refreshController = RefreshController(
     initialRefresh: false,
   );
+
+  /// 当前选中的素材索引（单选）
+  int? selectedIndex;
 
   @override
   void onClose() {
@@ -131,21 +135,7 @@ class ImageLogic extends GetxController {
         context: context,
         maxCount: 9,
         onSuccess: (List<PickerInfoModel> list) {
-          double materialSize = global.materialSize;
-          double materialLimit = global.materialLimit;
-
-          double totalSize = list.fold<double>(
-            0,
-            (sum, item) => sum + item.fileSize,
-          );
-          materialSize += totalSize;
-
-          if (materialSize >= materialLimit) {
-            SmartDialog.dismiss();
-            showMaterialMemoryDialog();
-          } else {
-            getUploadInfo(list);
-          }
+          checkLocalHaveResource(list);
         },
       );
     } catch (e, stackTrace) {
@@ -156,6 +146,39 @@ class ImageLogic extends GetxController {
   }
 
   /// 本地检查是否有相同的文件
+  void checkLocalHaveResource(List<PickerInfoModel> list) async {
+    final hashValues = list
+        .map((e) => e.hashValue.trim())
+        .where((v) => v.isNotEmpty)
+        .toList();
+
+    final results = await LocalAssetStore.instance.getExistingHashValues(
+      hashValues,
+    );
+    AppLogger.info('本地检查是否有相同的文件==$results=');
+
+    if (results.isNotEmpty) {
+      showToast("选择的图片有重复，请重新选择");
+      // 提示重新选择，删除已保存的图片数据
+      await PickerImageManager.deleteDirectory();
+    } else {
+      double materialSize = global.materialSize;
+      double materialLimit = global.materialLimit;
+
+      double totalSize = list.fold<double>(
+        0,
+        (sum, item) => sum + item.fileSize,
+      );
+      materialSize += totalSize;
+
+      if (materialSize >= materialLimit) {
+        SmartDialog.dismiss();
+        showMaterialMemoryDialog();
+      } else {
+        getUploadInfo(list);
+      }
+    }
+  }
 
   /// 并发请求单个文件的上传 URL
   Future<UploadOssModel?> _requestOneUploadUrl(PickerInfoModel item) async {
@@ -319,6 +342,9 @@ class ImageLogic extends GetxController {
 
     model.fileName = fileFormat;
 
+    // 将数据保存到数据库
+    await LocalAssetStore.instance.save(model);
+
     /// copy到本地资源库
     final localAssetPath = p.join(localAssetDir.path, fileFormat);
     await copyImageFilePath(fromPath: model.filePath, toPath: localAssetPath);
@@ -346,24 +372,6 @@ class ImageLogic extends GetxController {
       useAnimation: true,
       usePenetrate: false,
     );
-  }
-
-  Future<File> copyImageFilePath({
-    required String fromPath,
-    required String toPath, // 目标“完整文件路径”（包含文件名）
-    bool overwrite = true,
-  }) async {
-    final src = File(fromPath);
-    if (!await src.exists()) {
-      throw FileSystemException('Source file not found', fromPath);
-    }
-    // 确保目标目录存在
-    await Directory(p.dirname(toPath)).create(recursive: true);
-    final dst = File(toPath);
-    if (overwrite && await dst.exists()) {
-      await dst.delete();
-    }
-    return src.copy(toPath);
   }
 
   /// 显示是否保存为素材
@@ -412,4 +420,96 @@ class ImageLogic extends GetxController {
       usePenetrate: false,
     );
   }
+
+  /// 点击素材列表进行处理
+  Future<void> selectedImageAction() async {
+    final index = selectedIndex;
+    if (index == null || index < 0 || index >= imageList.length) {
+      showToast('请选择一张图片');
+      return;
+    }
+    final model = imageList[index];
+    try {
+      showLoading('正在添加图片');
+
+      // 设置下载后 移动的位置
+      final fileName = Uri.parse(model.image).pathSegments.last;
+      final localAssetDir = await DirectoryManager.getSupportSubDirectory(
+        'localAsset',
+      );
+      final localPath = p.join(localAssetDir.path, fileName);
+      // 从数据库查询本地是否存在
+      PickerInfoModel? localModel = await LocalAssetStore.instance
+          .getByFileName(fileName);
+
+      if (localModel != null) {
+        final File targetFile = File(localPath);
+        await MaterialManager.instance.ensureImageInCanvasImages(
+          targetFile,
+          fileName,
+        );
+      } else {
+        // 使用 background_downloader 下载到 Support localAsset
+        await MaterialManager.instance.ensureImageInLocalAsset(
+          model.image,
+          fileName,
+          localPath,
+        );
+        final File targetFile = File(localPath);
+        await MaterialManager.instance.ensureImageInCanvasImages(
+          targetFile,
+          fileName,
+        );
+        final result = getCanvasSizeWH(model.canvasSize);
+        localModel = PickerInfoModel();
+        localModel.fileName = fileName;
+        localModel.width = result.$1;
+        localModel.height = result.$2;
+        final int targetSize = await targetFile.length();
+        final int fileSizeKb = (targetSize / 1024).ceil();
+        localModel.fileSize = fileSizeKb;
+        localModel.hashValue = await PickerImageManager.sha256OfFile(
+          targetFile,
+        );
+        await LocalAssetStore.instance.save(localModel);
+      }
+
+      // 先关闭 loading 对话框，再触发回调关闭图片选择对话框
+      SmartDialog.dismiss(status: SmartStatus.loading);
+
+      if (onUploadSuccess != null) {
+        onUploadSuccess!([localModel]);
+      }
+    } catch (e, stackTrace) {
+      AppLogger.error('添加图片到画布失败:', e, stackTrace);
+      SmartDialog.dismiss(status: SmartStatus.loading);
+      showToast('添加图片失败，请稍后重试');
+    }
+  }
+
+  Future<File> copyImageFilePath({
+    required String fromPath,
+    required String toPath, // 目标“完整文件路径”（包含文件名）
+    bool overwrite = true,
+  }) async {
+    final src = File(fromPath);
+    if (!await src.exists()) {
+      throw FileSystemException('Source file not found', fromPath);
+    }
+    // 确保目标目录存在
+    await Directory(p.dirname(toPath)).create(recursive: true);
+    final dst = File(toPath);
+    if (overwrite && await dst.exists()) {
+      await dst.delete();
+    }
+    return src.copy(toPath);
+  }
 }
+
+
+
+/*
+import 'package:path/path.dart' as p;
+import 'dart:io';
+import 'manager/material_manager.dart';
+*/ 

@@ -17,7 +17,7 @@ class TemplateStore {
   Database? _database;
   bool _isInitialized = false;
   static const String _tableName = 'templates';
-  static const int _version = 2; // 升级版本，删除 editTime 列
+  static const int _version = 1; // 升级版本，删除 editTime 列
 
   /// 初始化数据库
   Future<void> init() async {

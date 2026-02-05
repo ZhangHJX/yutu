@@ -310,10 +310,12 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
       final userIdentifier = credential.userIdentifier;
 
       if (identityToken == null || identityToken.isEmpty) {
-        throw const FormatException('未获取到 identityToken');
+        showToast('登录失败');
+        return;
       }
       if (userIdentifier == null || userIdentifier.isEmpty) {
-        throw const FormatException('未获取到 userIdentifier');
+        showToast('登录失败');
+        return;
       }
 
       final result = await http.post<LoginResponse>(
@@ -336,23 +338,8 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
       } else {
         showToast('登录失败');
       }
-    } on SignInWithAppleAuthorizationException catch (e) {
-      // 用户取消、系统错误等
-      final msg = switch (e.code) {
-        AuthorizationErrorCode.canceled => '用户已取消登录',
-        AuthorizationErrorCode.failed => '登录失败，请重试',
-        AuthorizationErrorCode.invalidResponse => '无效响应，请重试',
-        AuthorizationErrorCode.notHandled => '系统未处理该请求，请稍后重试',
-        AuthorizationErrorCode.notInteractive => '当前环境无法完成登录，请返回页面后重试',
-        AuthorizationErrorCode.credentialExport => '凭证导出失败，请稍后重试',
-        AuthorizationErrorCode.credentialImport => '凭证导入失败，请稍后重试',
-        AuthorizationErrorCode.matchedExcludedCredential =>
-          '该设备已添加过该通行密钥，无需重复添加',
-        AuthorizationErrorCode.unknown => '未知错误，请稍后再试',
-      };
-      showToast(msg);
     } catch (e) {
-      showToast('登录异常：${e.toString()}');
+      showToast('登录失败');
       AppLogger.info('登录异常==${e.toString()}===');
     } finally {
       _isLoading = false;

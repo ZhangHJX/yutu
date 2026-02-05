@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:voicetemplate/core/index.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:io';
 
 class PickerImageManager {
   // 最大允许的图片大小（字节），当前为 10MB
@@ -33,32 +35,37 @@ class PickerImageManager {
           AssetEntity asset = assetArray[i];
           final result = await ImageHandleUtils.getAssetImageFilePath(asset);
           if (result.$1.isEmpty) continue;
-          int fileSize = await ImageHandleUtils.getAssetFileSize(asset);
 
-          final int fileSizeKb = (fileSize / 1024).ceil();
+          if (result.$2 != null) {
+            AppLogger.info("=选择后的图片数据来了数据进来了===");
 
-          PickerInfoModel model = PickerInfoModel(
-            filePath: result.$1,
-            width: asset.width.toDouble(),
-            height: asset.height.toDouble(),
-            fileSize: fileSizeKb,
-            hashValue: result.$2,
-          );
-          if (fileSize > maxSizeBites) {
-            final imgInfo = await ImageHandleUtils.getCompressFilePath(
-              result.$1,
-              fileSize,
-              asset,
+            final int fileSize = await result.$2?.length() ?? 0;
+            final int fileSizeKb = (fileSize / 1024).ceil();
+            final hashValue = await PickerImageManager.sha256OfFile(result.$2!);
+
+            PickerInfoModel model = PickerInfoModel(
+              filePath: result.$1,
+              width: asset.width.toDouble(),
+              height: asset.height.toDouble(),
+              fileSize: fileSizeKb,
+              hashValue: hashValue,
             );
-            final int compressKb = (imgInfo.$4 / 1024).ceil();
-            model.filePath = imgInfo.$1;
-            model.width = imgInfo.$2;
-            model.height = imgInfo.$3;
-            model.fileSize = compressKb;
+            if (fileSize > maxSizeBites) {
+              final imgInfo = await ImageHandleUtils.getCompressFilePath(
+                result.$1,
+                fileSize,
+                asset,
+              );
+              final int compressKb = (imgInfo.$4 / 1024).ceil();
+              model.filePath = imgInfo.$1;
+              model.width = imgInfo.$2;
+              model.height = imgInfo.$3;
+              model.fileSize = compressKb;
+            }
+            imgArray.add(model);
           }
-          imgArray.add(model);
         }
-        onSuccess(imgArray);
+        if (imgArray.isNotEmpty) onSuccess(imgArray);
       }
     } catch (e, stackTrace) {
       showToast('读取照片路径报错，请重试');
@@ -90,5 +97,11 @@ class PickerImageManager {
   /// 加载画布中的图片
   static String loadCanvalsImage(String imagePath) {
     return p.join(cavalsPath, imagePath);
+  }
+
+  static Future<String> sha256OfFile(File file) async {
+    if (!await file.exists()) return '';
+    final digest = await sha256.bind(file.openRead()).first;
+    return digest.toString(); // hex
   }
 }
