@@ -3,6 +3,7 @@ import '../../model/stock_model.dart';
 import 'package:voicetemplate/stores/global.dart';
 import 'package:voicetemplate/stores/user_model.dart';
 import 'package:voicetemplate/core/index.dart';
+import 'package:voicetemplate/pages/canvas/widgets/index.dart';
 
 class StockLogic extends GetxController {
   /// 全局
@@ -155,14 +156,31 @@ class StockLogic extends GetxController {
         'ids': selectedIds.toList().join(','),
         'is_all': isAllSelected.value ? 1 : 0,
       };
-      AppLogger.info('==选中要删除的ids有哪些==$params==');
-
       final result = await http.post('/user/material/destroys', data: params);
 
       if (result.code == 0) {
         // 删除成功，从当前tab的数据列表中移除已删除的项
-        stockList.removeWhere((e) => selectedIds.contains('${e.id}'));
 
+        if (isAllSelected.value) {
+          await MaterialManager.instance.deleteAllMaterial();
+        } else {
+          final selectedAll = getSelectedByAllOrder(
+            selectedIdSet: selectedIds,
+            allItems: stockList,
+          );
+
+          AppLogger.info('==删除的数量是==${selectedAll.length}==');
+
+          for (var i = 0; i < selectedAll.length; i++) {
+            final model = selectedAll[i];
+            if (model.image.isNotEmpty) {
+              final fileName = Uri.parse(model.image).pathSegments.last;
+              await MaterialManager.instance.deletePartMaterial(fileName);
+            }
+          }
+        }
+
+        stockList.removeWhere((e) => selectedIds.contains('${e.id}'));
 
         // 清除选择并退出批量模式
         clearSelection();
@@ -181,5 +199,13 @@ class StockLogic extends GetxController {
       showToast('删除失败');
       AppLogger.error('删除设计失败: ', e);
     }
+  }
+
+  List<StockItemModel> getSelectedByAllOrder({
+    required Set<String> selectedIdSet,
+    required List<StockItemModel> allItems,
+  }) {
+    if (selectedIdSet.isEmpty || allItems.isEmpty) return const [];
+    return allItems.where((e) => selectedIdSet.contains('${e.id}')).toList();
   }
 }

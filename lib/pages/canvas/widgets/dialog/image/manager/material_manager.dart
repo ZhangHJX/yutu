@@ -2,6 +2,7 @@ import 'package:common/common.dart';
 import 'package:path/path.dart' as p;
 import 'package:voicetemplate/core/index.dart';
 import 'dart:io';
+import 'local_asset_store.dart';
 
 /// 画布图片管理器
 class MaterialManager {
@@ -110,6 +111,52 @@ class MaterialManager {
     // 如果目标文件已存在，可以选择覆盖或直接复用
     if (!await targetFile.exists()) {
       await localAssetFile.copy(targetPath);
+    }
+  }
+
+  /// 删除 localAsset 目录下除数据库外的全部或部分图片
+  Future<void> deleteAllMaterial() async {
+    final localAssetDir = await DirectoryManager.getSupportSubDirectory(
+      'localAsset',
+    );
+    const dbFileName = 'localAsset.db';
+    if (!await localAssetDir.exists()) return;
+    // 清空数据库
+    await LocalAssetStore.instance.clearAll();
+    final entities = localAssetDir.listSync();
+    for (final entity in entities) {
+      if (entity is File) {
+        final name = p.basename(entity.path);
+        if (name != dbFileName) {
+          try {
+            await entity.delete();
+          } catch (e) {
+            AppLogger.error(
+              'MaterialManager: 删除本地图片失败, path=${entity.path}',
+              e,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // 删除部分
+  Future<void> deletePartMaterial(String fileName) async {
+    if (fileName.isEmpty) return;
+    final localAssetDir = await DirectoryManager.getSupportSubDirectory(
+      'localAsset',
+    );
+    await LocalAssetStore.instance.deleteByFileName(fileName);
+
+    final filePath = p.join(localAssetDir.path, fileName);
+    final file = File(filePath);
+    if (await file.exists()) {
+      try {
+        await file.delete();
+      } catch (e) {
+        AppLogger.error('MaterialManager: 删除本地图片失败, path=$filePath', e);
+      }
     }
   }
 }

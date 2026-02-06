@@ -147,25 +147,39 @@ class ImageLogic extends GetxController {
 
   /// 本地检查是否有相同的文件
   void checkLocalHaveResource(List<PickerInfoModel> list) async {
+    //1、获取所有的hash值
     final hashValues = list
         .map((e) => e.hashValue.trim())
         .where((v) => v.isNotEmpty)
         .toList();
 
-    final results = await LocalAssetStore.instance.getExistingHashValues(
+    // 获取本地已有的图片记录（按 hashValue 匹配）
+    final repeatModels = await LocalAssetStore.instance.getExistingHashValues(
       hashValues,
     );
-    AppLogger.info('本地检查是否有相同的文件==$results=');
 
-    if (results.isNotEmpty) {
-      showToast("选择的图片有重复，请重新选择");
-      // 提示重新选择，删除已保存的图片数据
-      await PickerImageManager.deleteDirectory();
-    } else {
+    // 已存在的 hash 集合
+    final repeatHashSet = repeatModels
+        .map((e) => e.hashValue.trim())
+        .where((v) => v.isNotEmpty)
+        .toSet();
+
+    // 获取本地没有的图片数据
+    final localResults = list.where((item) {
+      final h = item.hashValue.trim();
+      return repeatHashSet.contains(h);
+    }).toList();
+
+    final localNoResults = list.where((item) {
+      final h = item.hashValue.trim();
+      return !repeatHashSet.contains(h);
+    }).toList();
+
+    /// 如果有本地没有的图片
+    if (localNoResults.isNotEmpty) {
       double materialSize = global.materialSize;
       double materialLimit = global.materialLimit;
-
-      double totalSize = list.fold<double>(
+      double totalSize = localNoResults.fold<double>(
         0,
         (sum, item) => sum + item.fileSize,
       );
@@ -175,7 +189,22 @@ class ImageLogic extends GetxController {
         SmartDialog.dismiss();
         showMaterialMemoryDialog();
       } else {
-        getUploadInfo(list);
+        AppLogger.info(
+          '上传个数${localNoResults.length}==本地个数${localResults.length}',
+        );
+        getUploadInfo(localNoResults, localResults);
+      }
+    } else {
+      showLoading("上传中");
+
+      /// 全部都在本地数据库
+      for (final model in localResults) {
+        await _copyImageToCanvalsPath(model);
+      }
+      SmartDialog.dismiss(status: SmartStatus.loading);
+      showToast('上传成功');
+      if (onUploadSuccess != null) {
+        onUploadSuccess!(localResults);
       }
     }
   }
@@ -228,14 +257,6 @@ class ImageLogic extends GetxController {
       if (!res.isSuccess && res.code != 200) {
         return null;
       }
-      // 上传成功后读文件计算 hash 用于 store
-
-      // final appStartTime = DateTime.now().millisecondsSinceEpoch;
-      // final bytes = await file.readAsBytes();
-      // final hashValue = sha256.convert(bytes).toString();
-
-      // final cost = DateTime.now().millisecondsSinceEpoch - appStartTime;
-      // AppLogger.info('上传成功后读文件计算 hash耗时: $cost ms');
       return (item, ossModel);
     } catch (e) {
       AppLogger.error('上传 OSS 失败:', e);
@@ -243,20 +264,23 @@ class ImageLogic extends GetxController {
     return null;
   }
 
-  void getUploadInfo(List<PickerInfoModel> list) async {
-    if (list.isEmpty) return;
+  void getUploadInfo(
+    List<PickerInfoModel> localNoResults,
+    List<PickerInfoModel> localResults,
+  ) async {
+    if (localNoResults.isEmpty) return;
     try {
       showLoading("上传中");
 
       // 1. 并发获取上传 URL 数组
       final urlResults = await Future.wait(
-        list.map((item) => _requestOneUploadUrl(item)),
+        localNoResults.map((item) => _requestOneUploadUrl(item)),
       );
 
       final pairs = <(PickerInfoModel, UploadOssModel)>[];
-      for (var i = 0; i < list.length; i++) {
+      for (var i = 0; i < localNoResults.length; i++) {
         if (urlResults[i] != null) {
-          pairs.add((list[i], urlResults[i]!));
+          pairs.add((localNoResults[i], urlResults[i]!));
         }
       }
       if (pairs.isEmpty) {
@@ -312,16 +336,21 @@ class ImageLogic extends GetxController {
         final ossModel = tuple.$2;
         await _savePickerImageAfterUpload(ossModel, item);
       }
+
+      // 5. 将本地有的
+      for (final model in localResults) {
+        await _copyImageToCanvalsPath(model);
+      }
+
+      SmartDialog.dismiss(status: SmartStatus.loading);
+      showToast(successes.length == localNoResults.length ? '上传成功' : '部分上传成功');
+      await PickerImageManager.deleteDirectory();
       if (onUploadSuccess != null) {
         final List<PickerInfoModel> pickerList = successes
             .map((t) => t.$1)
             .toList();
         onUploadSuccess!(pickerList);
       }
-
-      SmartDialog.dismiss(status: SmartStatus.loading);
-      await PickerImageManager.deleteDirectory();
-      showToast(successes.length == list.length ? '上传成功' : '部分上传成功');
     } catch (e) {
       AppLogger.error('批量上传失败:', e);
       await PickerImageManager.deleteDirectory();
@@ -504,12 +533,38 @@ class ImageLogic extends GetxController {
     }
     return src.copy(toPath);
   }
+
+  /// 从 localAsset 复制到画布图片库（仅当画布侧尚无该文件时复制）
+  Future<void> _copyImageToCanvalsPath(PickerInfoModel model) async {
+    if (model.fileName.trim().isEmpty) return;
+
+    final localAssetDir = await DirectoryManager.getSupportSubDirectory(
+      'localAsset',
+    );
+    final localAssetPath = p.join(localAssetDir.path, model.fileName);
+
+    final srcFile = File(localAssetPath);
+    if (!await srcFile.exists()) {
+      AppLogger.info(
+        '_copyImageToCanvalsPath: 本地资源不存在，跳过复制, fileName=${model.fileName}',
+      );
+      return;
+    }
+
+    final isHave = await isHaveLocalImage(model.fileName);
+    if (!isHave) {
+      final cavalsPath = p.join(PickerImageManager.cavalsPath, model.fileName);
+      await copyImageFilePath(fromPath: localAssetPath, toPath: cavalsPath);
+    }
+  }
+
+  /// 判断画
+  /// 布编辑器本地有没有图片
+  Future<bool> isHaveLocalImage(String fileName) async {
+    if (fileName.trim().isEmpty) return false;
+    final filePath = p.join(PickerImageManager.cavalsPath, fileName);
+
+    final file = File(filePath);
+    return file.exists(); // true 表示存在
+  }
 }
-
-
-
-/*
-import 'package:path/path.dart' as p;
-import 'dart:io';
-import 'manager/material_manager.dart';
-*/ 

@@ -37,8 +37,6 @@ class PickerImageManager {
           if (result.$1.isEmpty) continue;
 
           if (result.$2 != null) {
-            AppLogger.info("=选择后的图片数据来了数据进来了===");
-
             final int fileSize = await result.$2?.length() ?? 0;
             final int fileSizeKb = (fileSize / 1024).ceil();
             final hashValue = await PickerImageManager.sha256OfFile(result.$2!);

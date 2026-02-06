@@ -89,9 +89,11 @@ class LocalAssetStore {
     }
   }
 
-  /// 根据 hashValue 数组查询库中已存在的 hashValue
-  /// 返回在 [hashValues] 中且表中已有记录的 hashValue 列表
-  Future<List<String>> getExistingHashValues(List<String> hashValues) async {
+  /// 根据 hashValue 数组查询库中已存在的记录
+  /// 返回在 [hashValues] 中且表中已有记录的 PickerInfoModel 列表
+  Future<List<PickerInfoModel>> getExistingHashValues(
+    List<String> hashValues,
+  ) async {
     await _ensureInitialized();
     if (_database == null) {
       throw Exception('LocalAssetStore: 数据库未初始化');
@@ -102,16 +104,16 @@ class LocalAssetStore {
       final placeholders = List.filled(hashValues.length, '?').join(',');
       final List<Map<String, dynamic>> maps = await _database!.query(
         _tableName,
-        columns: ['hashValue'],
         where: 'hashValue IN ($placeholders)',
         whereArgs: hashValues,
       );
-      return maps
-          .map((m) => m['hashValue'] as String?)
-          .whereType<String>()
-          .toList();
-    } catch (e) {
-      AppLogger.error('LocalAssetStore: getExistingHashValues 失败:', e);
+      return maps.map((m) => PickerInfoModel.fromMap(m)).toList();
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'LocalAssetStore: getExistingHashValues 失败:',
+        e,
+        stackTrace,
+      );
       return [];
     }
   }
