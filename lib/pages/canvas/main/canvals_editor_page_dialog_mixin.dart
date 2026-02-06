@@ -214,10 +214,11 @@ mixin CanvasEditorDialogMixin<T extends StatefulWidget>
       builder: (context) => CanvalsImageDialog(
         canvalsContext,
         onImageSelected: (list) {
+          if (list.isEmpty) return;
           if (isFromReplace) {
-            // replaceImage(context, imagePath);
+            final model = list.first;
+            replaceImage(context, model.fileName);
           } else {
-            if (list.isEmpty) return;
             final canvalsController = Get.find<CanvalsController>();
             AppLogger.info("==将图片添加到画布=的数量==${list.length}===");
             canvalsController.addNewImages(list);
