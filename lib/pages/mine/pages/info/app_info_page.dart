@@ -122,7 +122,17 @@ class _AppInfoPageState extends State<AppInfoPage> {
             ),
 
             CButton(
-              text: Text("上传日志"),
+              backgroundColor: Colors.white,
+              width: double.infinity,
+              height: 80,
+              text: Text(
+                "上传日志",
+                style: TextStyle(
+                  fontSize: 14.w,
+                  color: "#121F33".color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               onPressed: () {
                 logic.uploadLogs();
               },
