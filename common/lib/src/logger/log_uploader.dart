@@ -40,31 +40,4 @@ class LogUploader {
       return null;
     }
   }
-
-  /// 上传日志文件（需要外部实现上传逻辑）
-  /// [uploadCallback] 接收 zip 文件路径，返回是否上传成功
-  Future<bool> uploadLogs({
-    required Future<bool> Function(String zipPath) uploadCallback,
-  }) async {
-    try {
-      final zipPath = await packLogsToZip();
-      if (zipPath == null) {
-        return false;
-      }
-      final success = await uploadCallback(zipPath);
-
-      // 上传成功后删除临时 zip 文件
-      if (success) {
-        try {
-          await File(zipPath).delete();
-        } catch (e) {
-          // 忽略删除失败
-        }
-      }
-
-      return success;
-    } catch (e) {
-      return false;
-    }
-  }
 }

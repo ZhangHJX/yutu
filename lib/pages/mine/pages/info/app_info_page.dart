@@ -2,6 +2,7 @@ import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../../tools/app_info_utils.dart';
 import '../widgets/top_navigation_widget.dart';
+import 'app_info.dart';
 
 class AppInfoPage extends StatefulWidget {
   const AppInfoPage({super.key});
@@ -11,10 +12,12 @@ class AppInfoPage extends StatefulWidget {
 
 class _AppInfoPageState extends State<AppInfoPage> {
   String _version = '';
+  late final AppInfoLogic logic;
 
   @override
   void initState() {
     super.initState();
+    logic = Get.put(AppInfoLogic());
     _loadVersion();
   }
 
@@ -116,6 +119,13 @@ class _AppInfoPageState extends State<AppInfoPage> {
                   SizedBox(width: 12.w),
                 ],
               ),
+            ),
+
+            CButton(
+              text: Text("上传日志"),
+              onPressed: () {
+                logic.uploadLogs();
+              },
             ),
 
             const Spacer(),
