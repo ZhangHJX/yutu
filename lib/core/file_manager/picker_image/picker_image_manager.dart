@@ -1,14 +1,14 @@
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
-import 'image_handle_utils.dart';
+import 'package:path/path.dart' as p;
+import 'package:voicetemplate/core/index.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:io';
 
 class PickerImageManager {
   // 最大允许的图片大小（字节），当前为 10MB
   static const int maxSizeBites = 10 * 1024 * 1024;
-
   static late String cavalsPath;
 
   static Future<void> init() async {
@@ -21,45 +21,49 @@ class PickerImageManager {
   // 只从相册获取数据
   static void pickerPhotos({
     required BuildContext context,
-    required void Function(
-      String fiePath,
-      double width,
-      double height,
-      int fileSize,
-    )
-    onSuccess,
+    required void Function(List<PickerInfoModel> infoModel) onSuccess,
+    int maxCount = 1,
   }) async {
     try {
-      final List<AssetEntity>? result = await PickerImageManager.common(
+      final List<AssetEntity>? assetArray = await PickerImageManager.common(
         context,
+        maxAssetsCount: maxCount,
       );
+      if (assetArray != null && assetArray.isNotEmpty) {
+        final List<PickerInfoModel> imgArray = [];
+        for (var i = 0; i < assetArray.length; i++) {
+          AssetEntity asset = assetArray[i];
+          final result = await ImageHandleUtils.getAssetImageFilePath(asset);
+          if (result.$1.isEmpty) continue;
 
-      if (result != null) {
-        AssetEntity asset = result.last;
-        String filePath = await ImageHandleUtils.getAssetImageFilePath(asset);
-        if (filePath.isEmpty) {
-          showToast("未选到图片，请重试");
-          return;
-        }
-        int fileSize = await ImageHandleUtils.getAssetFileSize(asset);
+          if (result.$2 != null) {
+            final int fileSize = await result.$2?.length() ?? 0;
+            final int fileSizeKb = (fileSize / 1024).ceil();
+            final hashValue = await PickerImageManager.sha256OfFile(result.$2!);
 
-        if (fileSize > maxSizeBites) {
-          final int kb = (fileSize / 1024).ceil();
-          final imgInfo = await ImageHandleUtils.getCompressFilePath(
-            filePath,
-            kb,
-            asset,
-          );
-          onSuccess(imgInfo.$1, imgInfo.$2, imgInfo.$3, imgInfo.$4);
-        } else {
-          final int kb = (fileSize / 1024).ceil();
-          onSuccess(
-            filePath,
-            asset.width.toDouble(),
-            asset.height.toDouble(),
-            kb,
-          );
+            PickerInfoModel model = PickerInfoModel(
+              filePath: result.$1,
+              width: asset.width.toDouble(),
+              height: asset.height.toDouble(),
+              fileSize: fileSizeKb,
+              hashValue: hashValue,
+            );
+            if (fileSize > maxSizeBites) {
+              final imgInfo = await ImageHandleUtils.getCompressFilePath(
+                result.$1,
+                fileSize,
+                asset,
+              );
+              final int compressKb = (imgInfo.$4 / 1024).ceil();
+              model.filePath = imgInfo.$1;
+              model.width = imgInfo.$2;
+              model.height = imgInfo.$3;
+              model.fileSize = compressKb;
+            }
+            imgArray.add(model);
+          }
         }
+        if (imgArray.isNotEmpty) onSuccess(imgArray);
       }
     } catch (e, stackTrace) {
       showToast('读取照片路径报错，请重试');
@@ -70,7 +74,7 @@ class PickerImageManager {
   // 公共的选择方法
   static Future<List<AssetEntity>?> common(
     BuildContext context, {
-    int maxAssetsCount = 1,
+    int maxAssetsCount = 9,
   }) async {
     return AssetPicker.pickAssets(
       context,
@@ -91,5 +95,11 @@ class PickerImageManager {
   /// 加载画布中的图片
   static String loadCanvalsImage(String imagePath) {
     return p.join(cavalsPath, imagePath);
+  }
+
+  static Future<String> sha256OfFile(File file) async {
+    if (!await file.exists()) return '';
+    final digest = await sha256.bind(file.openRead()).first;
+    return digest.toString(); // hex
   }
 }

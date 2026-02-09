@@ -196,6 +196,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                 top: topBarHeight,
                 bottom: bottomBarHeight,
                 child: CanvasBodyWidget(
+                  canvalsController: _canvalsController,
                   canvasStatusManager: _canvasStatusManager,
                   canvasKey: _canvasKey,
                   canvasContainerKey: _canvasContainerKey,
@@ -519,14 +520,6 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
           updateLastCanvasProperty('locked', newLocked);
         },
       ),
-    );
-  }
-
-  @override
-  Offset getCanvasCenter() {
-    return Offset(
-      _canvalsController.canvalsWidth / 2,
-      _canvalsController.canvalsHeight / 2,
     );
   }
 

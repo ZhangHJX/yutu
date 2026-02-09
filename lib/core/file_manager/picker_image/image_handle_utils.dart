@@ -1,11 +1,11 @@
-import 'dart:typed_data';
+import 'package:common/common.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
+import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
-import 'transform_tools.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'package:common/common.dart';
+import 'dart:io';
 
 class ImageHandleUtils {
   static const int maxSizeInMB = 10 * 1024 * 1024;
@@ -29,13 +29,15 @@ class ImageHandleUtils {
   }
 
   ///2、获取相册图片的路径
-  static Future<String> getAssetImageFilePath(AssetEntity asset) async {
+  static Future<(String, File?)> getAssetImageFilePath(
+    AssetEntity asset,
+  ) async {
     try {
       // 优先拿原图
       File? originalFile = await asset.originFile;
       originalFile ??= await asset.file;
       if (originalFile == null) {
-        return "";
+        return ('', null);
       }
 
       final baseName = p.basenameWithoutExtension(originalFile.path);
@@ -45,8 +47,6 @@ class ImageHandleUtils {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final uniqueName = '${baseName}_$timestamp';
 
-      AppLogger.info('==复制到指定目录下==${tempDir.path}==$baseName==$ext==');
-
       if (ext == 'gif') {
         Uint8List? origin = await asset.originBytes;
         // origin 为空时尝试从已取得的文件读取
@@ -54,50 +54,24 @@ class ImageHandleUtils {
           origin = await originalFile.readAsBytes();
         }
         if (origin == null || origin.isEmpty) {
-          return '';
+          return ('', null);
         }
-        final bytes = await TransformTools.gifToPngFrame(origin);
+        final bytes = await ImageHandleUtils.gifToPngFrame(origin);
         if (bytes == null || bytes.isEmpty) {
-          return '';
+          return ('', null);
         }
         final fullPath = p.join(tempDir.path, '$uniqueName.png');
         final file = File(fullPath);
         await file.writeAsBytes(bytes, flush: true);
-        return file.path;
+        return (file.path, file);
       } else {
         final fullPath = p.join(tempDir.path, '$uniqueName.$ext');
-
-        AppLogger.info('==选择后图片copy的地址==$fullPath==');
-
         await originalFile.copy(fullPath);
-        return fullPath;
+        return (fullPath, originalFile);
       }
     } catch (e, s) {
       AppLogger.error('getAssetImageFilePath 异常:', e, s);
-      return '';
-    }
-  }
-
-  ///3、获取 AssetEntity 对应文件的大小（单位：byte）
-  static Future<int> getAssetFileSize(AssetEntity asset) async {
-    try {
-      // 优先原图
-      File? file = await asset.originFile;
-      // 有些情况 originFile 为 null，可以尝试 file
-      file ??= await asset.file;
-
-      if (file == null) {
-        AppLogger.info('getAssetFileSize: 文件为 null, asset id = ${asset.id}');
-        return 0;
-      }
-      final int length = await file.length(); // 单位：byte
-      AppLogger.info(
-        'getAssetFileSize: 文件大小 = $length byte, asset id = ${asset.id}',
-      );
-      return length;
-    } catch (e, s) {
-      AppLogger.error('getAssetFileSize: 异常:', e, s);
-      return 0;
+      return ('', null);
     }
   }
 
@@ -213,5 +187,19 @@ class ImageHandleUtils {
       AppLogger.error('getImageSizeFromBytes', error, stackTrace);
       return (asset.width.toDouble(), asset.height.toDouble());
     }
+  }
+
+  ///7、 gif转图片
+  static Future<Uint8List?> gifToPngFrame(
+    Uint8List gifBytes, {
+    int frameIndex = 0,
+  }) async {
+    // 直接解码指定帧，而不是解码整个动画
+    final frameImage = img.decodeGif(gifBytes, frame: frameIndex);
+    if (frameImage == null) {
+      return null;
+    }
+
+    return Uint8List.fromList(img.encodePng(frameImage));
   }
 }

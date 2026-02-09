@@ -1,6 +1,7 @@
 import 'package:common/common.dart';
 import 'package:voicetemplate/pages/canvas/fonts/font_manager.dart';
 import 'package:voicetemplate/pages/middle/manager/index.dart';
+import '../../pages/canvas/widgets/dialog/image/manager/local_asset_store.dart';
 
 // Binding 只负责 new 对象 + Get.put
 class AppBinding extends Bindings {
@@ -11,6 +12,7 @@ class AppBinding extends Bindings {
     // 初始化 ObjectBox
     await DraftStore.instance.init();
     await TemplateStore.instance.init();
+    await LocalAssetStore.instance.init();
 
     // Get.put<GetStorageService>(
     //   GetStorageService(GetStorage('app_storage')),

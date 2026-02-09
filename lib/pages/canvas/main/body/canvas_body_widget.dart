@@ -9,7 +9,9 @@ import 'transform_canvas.dart';
 import '../canvals_controller.dart';
 
 /// 画布区域独立 Widget：包含手势包装、画布内容、截图、变换与控制框层
-class CanvasBodyWidget extends AutoGetView<CanvalsController> {
+
+class CanvasBodyWidget extends StatelessWidget {
+  final CanvalsController canvalsController;
   final CanvasStatusManager canvasStatusManager;
   final GlobalKey<CanvasEditorWidgetState> canvasKey;
   final GlobalKey canvasContainerKey;
@@ -20,6 +22,7 @@ class CanvasBodyWidget extends AutoGetView<CanvalsController> {
 
   const CanvasBodyWidget({
     super.key,
+    required this.canvalsController,
     required this.canvasStatusManager,
     required this.canvasKey,
     required this.canvasContainerKey,
@@ -32,7 +35,7 @@ class CanvasBodyWidget extends AutoGetView<CanvalsController> {
   @override
   Widget build(BuildContext context) {
     return CanvasPointerWrapper(
-      canvalsController: logic,
+      canvalsController: canvalsController,
       canvasStatusManager: canvasStatusManager,
       canvasKey: canvasKey,
       canvasContainerKey: canvasContainerKey,
@@ -43,7 +46,10 @@ class CanvasBodyWidget extends AutoGetView<CanvalsController> {
         color: "#F6F2FB".color,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            logic.getCanvalsSize(constraints.maxWidth, constraints.maxHeight);
+            canvalsController.getCanvalsSize(
+              constraints.maxWidth,
+              constraints.maxHeight,
+            );
             final canvasContent = Screenshot(
               controller: screenshotController,
               child: ClipRect(
@@ -52,11 +58,12 @@ class CanvasBodyWidget extends AutoGetView<CanvalsController> {
                   children: [
                     Container(
                       key: canvasContainerKey,
-                      width: logic.canvalsWidth,
-                      height: logic.canvalsHeight,
-                      color: logic.canvasModel.fillColor.color.withValues(
-                        alpha: logic.canvasModel.fillAlpha,
-                      ),
+                      width: canvalsController.canvalsWidth,
+                      height: canvalsController.canvalsHeight,
+                      color: canvalsController.canvasModel.fillColor.color
+                          .withValues(
+                            alpha: canvalsController.canvasModel.fillAlpha,
+                          ),
                     ),
                     Positioned.fill(
                       child: OverflowBox(
@@ -69,9 +76,11 @@ class CanvasBodyWidget extends AutoGetView<CanvalsController> {
                           alignment: Alignment.topLeft,
                           child: CanvasEditorWidget(
                             key: canvasKey,
+                            canvalsController: canvalsController,
                             historyManager: historyManager,
                             onContentChanged: onContentChanged,
-                            canvasMatrix: logic.canvasModel.transform,
+                            canvasMatrix:
+                                canvalsController.canvasModel.transform,
                           ),
                         ),
                       ),
@@ -81,7 +90,7 @@ class CanvasBodyWidget extends AutoGetView<CanvalsController> {
               ),
             );
 
-            final boxes = logic.elements;
+            final boxes = canvalsController.elements;
             return Center(
               child: SizedBox(
                 width: constraints.maxWidth,
@@ -90,15 +99,15 @@ class CanvasBodyWidget extends AutoGetView<CanvalsController> {
                   clipBehavior: Clip.none,
                   children: [
                     Transform(
-                      transform: logic.canvasModel.transform,
+                      transform: canvalsController.canvasModel.transform,
                       alignment: Alignment.topLeft,
                       child: canvasContent,
                     ),
                     Obx(
                       () => TransformCanvas(
                         elements: boxes,
-                        selectedId: logic.selectedId,
-                        canvasMatrix: logic.canvasModel.transform,
+                        selectedId: canvalsController.selectedId,
+                        canvasMatrix: canvalsController.canvasModel.transform,
                       ),
                     ),
                   ],

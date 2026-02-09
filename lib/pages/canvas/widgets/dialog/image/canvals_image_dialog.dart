@@ -3,14 +3,10 @@ import 'package:flutter/material.dart';
 import 'image_logic.dart';
 import 'model/image_list_models.dart';
 import 'package:voicetemplate/pages/widgets/index.dart';
-import 'package:path/path.dart' as p;
-import 'dart:io';
-import 'manager/material_manager.dart';
 import 'package:voicetemplate/core/index.dart';
 
 class CanvalsImageDialog extends StatefulWidget {
-  final Function(String imageUrl, double? width, double? height)?
-  onImageSelected;
+  final Function(List<PickerInfoModel> list)? onImageSelected;
   final BuildContext currentContext;
   const CanvalsImageDialog(
     this.currentContext, {
@@ -24,9 +20,6 @@ class CanvalsImageDialog extends StatefulWidget {
 class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
   final logic = Get.put(ImageLogic(), tag: imageDialog);
 
-  /// 当前选中的素材索引（单选）
-  int? _selectedIndex;
-
   @override
   void dispose() {
     if (Get.isRegistered<ImageLogic>(tag: imageDialog)) {
@@ -38,9 +31,9 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
   @override
   void initState() {
     super.initState();
-    logic.onUploadSuccess = (String imagePath, double width, double height) {
+    logic.onUploadSuccess = (List<PickerInfoModel> list) {
       if (widget.onImageSelected != null) {
-        widget.onImageSelected!(imagePath, width, height);
+        widget.onImageSelected!(list);
       }
       SmartDialog.dismiss();
     };
@@ -170,16 +163,16 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
 
   /// 构建单个图片 item
   Widget _buildImageItem(ImageModel model, int index) {
-    final bool isSelected = _selectedIndex == index;
+    final bool isSelected = logic.selectedIndex == index;
 
     return GestureDetector(
       onTap: () {
         setState(() {
           // 再次点击同一个 item 时，支持取消选中
-          if (_selectedIndex == index) {
-            _selectedIndex = null;
+          if (logic.selectedIndex == index) {
+            logic.selectedIndex = null;
           } else {
-            _selectedIndex = index;
+            logic.selectedIndex = index;
           }
         });
       },
@@ -324,63 +317,7 @@ class _CanvalsImageDialogState extends State<CanvalsImageDialog> {
                 Get.toNamed(AppRoutes.appLogin);
                 return;
               }
-
-              final index = _selectedIndex;
-              final list = logic.imageList;
-
-              if (index == null || index < 0 || index >= list.length) {
-                showToast('请选择一张图片');
-                return;
-              }
-              final model = list[index];
-              final result = getCanvasSizeWH(model.canvasSize);
-
-              try {
-                showLoading('正在添加图片');
-
-                // 1. 使用 ImageModel 中 image 的文件名，判断 Application Support/localAsset 文件夹下是否存在该图片
-                final localAssetDir =
-                    await DirectoryManager.getSupportSubDirectory('localAsset');
-
-                final fileName = Uri.parse(model.image).pathSegments.last;
-                final localAssetPath = p.join(localAssetDir.path, fileName);
-                final localAssetFile = File(localAssetPath);
-                File? finalFile;
-                if (await localAssetFile.exists()) {
-                  // 2. 如果存在则直接使用
-                  finalFile = localAssetFile;
-                } else {
-                  // 3. 如果没有，使用 background_downloader 下载到 localAsset
-                  // ensureImageInLocalAsset 也会从 URL 提取相同的文件名，确保一致性
-                  finalFile = await MaterialManager.instance
-                      .ensureImageInLocalAsset(model.image);
-                }
-
-                // 4. 再将图片拷贝到 Documents/cavals/images 目录
-                final Directory cavalsDir = Directory(
-                  PickerImageManager.cavalsPath,
-                );
-                if (!await cavalsDir.exists()) {
-                  await cavalsDir.create(recursive: true);
-                }
-                final String targetPath = p.join(cavalsDir.path, fileName);
-                final File targetFile = File(targetPath);
-                if (!await targetFile.exists()) {
-                  await finalFile.copy(targetPath);
-                }
-
-                // 先关闭 loading 对话框，再触发回调关闭图片选择对话框
-                SmartDialog.dismiss(status: SmartStatus.loading);
-
-                // 5. 返回画布使用的相对路径（文件名），通过 onUploadSuccess 传递到画布数据中，dialog 弹框消失
-                if (logic.onUploadSuccess != null) {
-                  logic.onUploadSuccess!(fileName, result.$1, result.$2);
-                }
-              } catch (e, stackTrace) {
-                AppLogger.error('添加图片到画布失败:', e, stackTrace);
-                showToast('添加图片失败，请稍后重试');
-                SmartDialog.dismiss(status: SmartStatus.loading);
-              }
+              logic.selectedImageAction();
             },
           ),
         ],

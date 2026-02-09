@@ -11,7 +11,7 @@ import './core/index.dart';
 void main() async {
   // 记录应用启动开始时间（从 Flutter 绑定初始化开始）
   final appStartTime = DateTime.now().millisecondsSinceEpoch;
-  
+
   WidgetsFlutterBinding.ensureInitialized();
 
   // 异步初始化日志系统（不阻塞启动流程）
@@ -67,9 +67,7 @@ void _initializeNonCritical() {
     // 显示状态栏 + 底部导航栏
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-      ),
+      const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
     );
 
     // 设置多语言（可以延迟，因为首次使用时会自动加载）
