@@ -119,6 +119,10 @@ class GlobalLogic extends GetxController {
 
   /// 获取更新Token值
   void updateUserToken() async {
+    if (!isLogin) {
+      debugPrint("object===获取更新Token值");
+      return;
+    }
     try {
       final result = await http.post<LoginResponse>(
         '/homePage/user/refreshUserToken',

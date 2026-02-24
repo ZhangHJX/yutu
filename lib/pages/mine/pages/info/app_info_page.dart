@@ -80,7 +80,7 @@ class _AppInfoPageState extends State<AppInfoPage> {
 
             SizedBox(height: 14.w),
 
-            /// 版本块
+            /// 版本号
             Container(
               height: 44.w,
               margin: EdgeInsets.symmetric(horizontal: 13.w),
@@ -121,21 +121,32 @@ class _AppInfoPageState extends State<AppInfoPage> {
               ),
             ),
 
-            CButton(
-              backgroundColor: Colors.white,
-              width: double.infinity,
-              height: 80,
-              text: Text(
-                "上传日志",
-                style: TextStyle(
-                  fontSize: 14.w,
-                  color: "#121F33".color,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              onPressed: () {
+            GestureDetector(
+              onTap: () {
                 logic.uploadLogs();
               },
+              child: Container(
+                height: 44.w,
+                margin: EdgeInsets.symmetric(horizontal: 13.w, vertical: 13.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.w),
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(width: 13.w),
+                    Text(
+                      "上传日志",
+                      style: TextStyle(
+                        fontSize: 14.w,
+                        color: "#121F33".color,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                  ],
+                ),
+              ),
             ),
 
             const Spacer(),

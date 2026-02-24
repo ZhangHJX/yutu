@@ -16,6 +16,7 @@ class AppInfoLogic extends GetxController {
   /// 上传日志文件（需要外部实现上传逻辑）
   /// [uploadCallback] 接收 zip 文件路径，返回是否上传成功
   Future<void> uploadLogs() async {
+    showLoading('上传中...');
     try {
       final result = await http.post<UploadOssModel>(
         '/upload/generateLogUploadUrl',
@@ -61,11 +62,13 @@ class AppInfoLogic extends GetxController {
     }
     try {
       await File(zipPath).delete();
-      AppLogger.info("打包路径删除成功");
+      AppLogger.info("日志打包路径删除成功");
       SmartDialog.dismiss(status: SmartStatus.loading);
+      showToast('日志上传成功');
+      Get.back();
     } catch (e) {
       // 忽略删除失败
-      AppLogger.error("打包路径删除失败", e);
+      AppLogger.error("日志打包路径删除失败", e);
       SmartDialog.dismiss(status: SmartStatus.loading);
     }
   }
