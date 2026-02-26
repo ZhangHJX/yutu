@@ -154,21 +154,25 @@ class ImageLogic extends GetxController {
         .toList();
 
     // 获取本地已有的图片记录（按 hashValue 匹配）
-    final repeatModels = await LocalAssetStore.instance.getExistingHashValues(
+    final localResults = await LocalAssetStore.instance.getExistingHashValues(
       hashValues,
     );
 
     // 已存在的 hash 集合
-    final repeatHashSet = repeatModels
+    final repeatHashSet = localResults
         .map((e) => e.hashValue.trim())
         .where((v) => v.isNotEmpty)
         .toSet();
 
     // 获取本地没有的图片数据
-    final localResults = list.where((item) {
-      final h = item.hashValue.trim();
-      return repeatHashSet.contains(h);
-    }).toList();
+    // final localResults = list.where((item) {
+    //   final h = item.hashValue.trim();
+    //   return repeatHashSet.contains(h);
+    // }).toList();
+
+    for (final model in localResults) {
+      AppLogger.info('=====本地查询的图片的文件名称===${model.fileName}');
+    }
 
     final localNoResults = list.where((item) {
       final h = item.hashValue.trim();
@@ -536,6 +540,7 @@ class ImageLogic extends GetxController {
 
   /// 从 localAsset 复制到画布图片库（仅当画布侧尚无该文件时复制）
   Future<void> _copyImageToCanvalsPath(PickerInfoModel model) async {
+    AppLogger.info('进入到copy目录的操作==${model.fileName}');
     if (model.fileName.trim().isEmpty) return;
 
     final localAssetDir = await DirectoryManager.getSupportSubDirectory(
@@ -551,7 +556,9 @@ class ImageLogic extends GetxController {
       return;
     }
 
+    AppLogger.info('查询画布中本地草稿中是否有此图片');
     final isHave = await isHaveLocalImage(model.fileName);
+
     if (!isHave) {
       final cavalsPath = p.join(PickerImageManager.cavalsPath, model.fileName);
       await copyImageFilePath(fromPath: localAssetPath, toPath: cavalsPath);
