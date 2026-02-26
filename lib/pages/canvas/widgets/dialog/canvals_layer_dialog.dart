@@ -95,11 +95,20 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
               slivers: [
                 SliverReorderableList(
                   onReorder: (oldIndex, newIndex) {
-                    // 处理边界情况：当拖动到最底部时，newIndex 可能等于 itemCount
-                    // 需要限制在有效范围内
-                    final adjustedNewIndex = newIndex > widget.layers.length - 1
-                        ? widget.layers.length - 1
-                        : newIndex;
+                    // SliverReorderableList 规范：
+                    // 向下拖动时，newIndex 会比实际插入位置多 1，需要手动减 1
+                    var targetIndex = newIndex;
+                    if (oldIndex < newIndex) {
+                      targetIndex -= 1;
+                    }
+
+                    // 处理边界情况：当拖动到最底部时，targetIndex 可能等于 itemCount
+                    // 需要限制在 [0, length-1] 范围内
+                    if (targetIndex < 0) {
+                      targetIndex = 0;
+                    } else if (targetIndex > widget.layers.length - 1) {
+                      targetIndex = widget.layers.length - 1;
+                    }
 
                     // 转换为实际数据中的索引（反转）
                     // 列表显示：顶部(index=0) -> 底部(index=layers.length-1)
@@ -108,7 +117,7 @@ class _CanvalsLayerDialogState extends State<CanvalsLayerDialog> {
                     final reversedOldIndex =
                         widget.layers.length - 1 - oldIndex;
                     final reversedNewIndex =
-                        widget.layers.length - 1 - adjustedNewIndex;
+                        widget.layers.length - 1 - targetIndex;
 
                     // 边界检查：确保索引有效
                     if (reversedOldIndex < 0 ||
