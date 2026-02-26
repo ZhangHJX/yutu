@@ -14,6 +14,7 @@ import '../model/index.dart';
 import 'canvals_editor_page_undo_redo_mixin.dart';
 import 'canvals_editor_page_dialog_mixin.dart';
 import '../draft/index.dart';
+import './utils/index.dart';
 import '../widgets/dialog/save/save_logic.dart';
 import 'package:voicetemplate/pages/canvas/fonts/font_manager.dart';
 import 'package:voicetemplate/core/index.dart';
@@ -330,7 +331,18 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
   @override
   void deleteImage() {
     if (activeElement != null) {
-      _canvasKey.currentState?.deleteBox(activeElement!.id);
+      final activeteId = activeElement!.id;
+      final fileName = activeElement!.filePath;
+      _canvasKey.currentState?.deleteBox(activeteId);
+
+      ///是否有同名文件
+      final haveIndex = _canvasKey.currentState?.boxes.indexWhere(
+        (b) => b.filePath == fileName,
+      );
+      if (haveIndex == -1) {
+        AppLogger.info('已经没有相同文件名的图片了，文件名是：$fileName');
+        FileHandleUtil.deleteCanvalsImage(fileName);
+      }
       SmartDialog.dismiss();
     }
   }

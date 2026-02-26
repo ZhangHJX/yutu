@@ -556,8 +556,8 @@ class ImageLogic extends GetxController {
       return;
     }
 
-    AppLogger.info('查询画布中本地草稿中是否有此图片');
     final isHave = await isHaveLocalImage(model.fileName);
+    AppLogger.info('查询画布中本地草稿中是否有此图片=$isHave');
 
     if (!isHave) {
       final cavalsPath = p.join(PickerImageManager.cavalsPath, model.fileName);
