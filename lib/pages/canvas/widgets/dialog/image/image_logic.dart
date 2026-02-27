@@ -164,16 +164,6 @@ class ImageLogic extends GetxController {
         .where((v) => v.isNotEmpty)
         .toSet();
 
-    // 获取本地没有的图片数据
-    // final localResults = list.where((item) {
-    //   final h = item.hashValue.trim();
-    //   return repeatHashSet.contains(h);
-    // }).toList();
-
-    for (final model in localResults) {
-      AppLogger.info('=====本地查询的图片的文件名称===${model.fileName}');
-    }
-
     final localNoResults = list.where((item) {
       final h = item.hashValue.trim();
       return !repeatHashSet.contains(h);
@@ -353,6 +343,7 @@ class ImageLogic extends GetxController {
         final List<PickerInfoModel> pickerList = successes
             .map((t) => t.$1)
             .toList();
+        pickerList.addAll(localResults);
         onUploadSuccess!(pickerList);
       }
     } catch (e) {
