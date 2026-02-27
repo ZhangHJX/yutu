@@ -275,11 +275,23 @@ class LoginLogic extends GetxController with WidgetsBindingObserver {
   }
 
   void onUserAgreementTap() {
-    Get.toNamed(AppRoutes.web, arguments: {'url': "https://www.baidu.com"});
+    Get.toNamed(
+      AppRoutes.web,
+      arguments: {
+        'url':
+            "https://ui-api-cn.shuangyuxingqiu.com/protocol/user_protocol.html",
+      },
+    );
   }
 
   void onPrivacyPolicyTap() {
-    Get.toNamed(AppRoutes.web, arguments: {'url': "https://www.baidu.com"});
+    Get.toNamed(
+      AppRoutes.web,
+      arguments: {
+        'url':
+            "https://ui-api-cn.shuangyuxingqiu.com/protocol/secret_protocol.html",
+      },
+    );
   }
 
   void onToggleAgreement() {
