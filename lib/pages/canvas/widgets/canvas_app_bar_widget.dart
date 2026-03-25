@@ -57,7 +57,11 @@ class CanvasAppBar extends StatelessWidget {
 
                 Row(
                   children: [
-                    CButton(text: '复制', onPressed: () => copy.call()),
+                    CButton(
+                      padding: EdgeInsetsGeometry.fromLTRB(8.w, 2.w, 8.w, 2.w),
+                      text: '复制',
+                      onPressed: () => copy.call(),
+                    ),
                     SizedBox(width: 19),
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
