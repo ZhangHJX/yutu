@@ -1,6 +1,5 @@
 import 'package:common/zmj/constants.dart';
 import 'package:common/common.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../main/utils/text_measure_util.dart';
 import '../history/index.dart';
@@ -543,7 +542,17 @@ class ElementGestureManager {
     if (_session.pointers.isEmpty) {
       return _handleAllPointersUp(event, boxes, selectedId);
     } else if (_session.pointers.length == 1) {
-      // 从双指切换到单指时，完全重置所有状态，防止单指误触发拖动
+      // 从双指切换到单指时，如果当前处于缩放 mode：
+      // 之前直接 reset 为 idle，会导致缩放命令丢失，从而 undo/redo 不生效。
+      if (_session.mode == _InteractionMode.scale &&
+          selectedId.isNotEmpty &&
+          _session.hasMoved &&
+          historyManager != null) {
+        _cleanupInteraction(boxes, selectedId);
+        return false;
+      }
+
+      // 非缩放场景：完全重置所有状态，防止单指误触发拖动
       _resetDragState();
       _session.lastScaleDistance = 1.0;
       _session.beginMode(_InteractionMode.idle);
