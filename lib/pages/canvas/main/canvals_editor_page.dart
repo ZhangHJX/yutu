@@ -222,6 +222,7 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
                   () => CanvasAppBar(
                     _handleBack,
                     _handleCopy,
+                    _cancelActiveElement,
                     handleUndo,
                     handleRedo,
                     canUndo: canUndo,
@@ -577,10 +578,15 @@ class _CanvasEditorPagePageState extends State<CanvasEditorPage>
 
   void _handleCopy() {
     if (activeElement == null) {
-      showToast('请先选中要复制的文本');
+      showToast('请先选中要复制的组件');
       return;
     }
     _canvasKey.currentState?.copyTextElement(activeElement!);
     showToast('已复制');
+  }
+
+  // 点击顶部空白取消选中
+  void _cancelActiveElement() {
+    _canvalsController.deselect();
   }
 }

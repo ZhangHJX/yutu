@@ -7,12 +7,14 @@ class CanvasAppBar extends StatelessWidget {
   final VoidCallback copy;
   final VoidCallback onUndo;
   final VoidCallback onRedo;
+  final VoidCallback onBlankTap;
   final bool canUndo;
   final bool canRedo;
 
   const CanvasAppBar(
     this.onBack,
     this.copy,
+    this.onBlankTap,
     this.onUndo,
     this.onRedo, {
     super.key,
@@ -34,81 +36,90 @@ class CanvasAppBar extends StatelessWidget {
           Container(
             height: 51.w,
             color: Color(0xfff6f2fb),
-            child: Row(
-              children: [
-                SizedBox(width: 19),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    onBack.call();
-                  },
-                  child: SizedBox(
-                    width: 30.w,
-                    height: 30.w,
-                    child: Image.asset(
-                      'assets/images/canvals/edit_back_icon.png',
-                      width: 26.w,
-                      height: 26.w,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onBlankTap,
+              child: Row(
+                children: [
+                  SizedBox(width: 19),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      onBack.call();
+                    },
+                    child: SizedBox(
+                      width: 30.w,
+                      height: 30.w,
+                      child: Image.asset(
+                        'assets/images/canvals/edit_back_icon.png',
+                        width: 26.w,
+                        height: 26.w,
+                      ),
                     ),
                   ),
-                ),
 
-                Spacer(),
+                  Spacer(),
 
-                Row(
-                  children: [
-                    CButton(
-                      padding: EdgeInsetsGeometry.fromLTRB(8.w, 2.w, 8.w, 2.w),
-                      text: '复制',
-                      onPressed: () => copy.call(),
-                    ),
-                    SizedBox(width: 19),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        if (canUndo) {
-                          onUndo.call();
-                        }
-                      },
-                      child: SizedBox(
-                        width: 30.w,
-                        height: 30.w,
-                        child: Image.asset(
-                          canUndo
-                              ? 'assets/images/canvals/edit_up_icon_have.png'
-                              : 'assets/images/canvals/edit_up_icon_no.png',
-                          width: 26.w,
-                          height: 26.w,
+                  Row(
+                    children: [
+                      CButton(
+                        padding: EdgeInsetsGeometry.fromLTRB(
+                          8.w,
+                          2.w,
+                          8.w,
+                          2.w,
+                        ),
+                        text: '复制',
+                        onPressed: () => copy.call(),
+                      ),
+                      SizedBox(width: 19),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          if (canUndo) {
+                            onUndo.call();
+                          }
+                        },
+                        child: SizedBox(
+                          width: 30.w,
+                          height: 30.w,
+                          child: Image.asset(
+                            canUndo
+                                ? 'assets/images/canvals/edit_up_icon_have.png'
+                                : 'assets/images/canvals/edit_up_icon_no.png',
+                            width: 26.w,
+                            height: 26.w,
+                          ),
                         ),
                       ),
-                    ),
 
-                    SizedBox(width: 19),
+                      SizedBox(width: 19),
 
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        if (canRedo) {
-                          onRedo.call();
-                        }
-                      },
-                      child: SizedBox(
-                        width: 30.w,
-                        height: 30.w,
-                        child: Image.asset(
-                          canRedo
-                              ? 'assets/images/canvals/edit_next_icon_have.png'
-                              : 'assets/images/canvals/edit_next_icon_no.png',
-                          width: 26.w,
-                          height: 26.w,
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          if (canRedo) {
+                            onRedo.call();
+                          }
+                        },
+                        child: SizedBox(
+                          width: 30.w,
+                          height: 30.w,
+                          child: Image.asset(
+                            canRedo
+                                ? 'assets/images/canvals/edit_next_icon_have.png'
+                                : 'assets/images/canvals/edit_next_icon_no.png',
+                            width: 26.w,
+                            height: 26.w,
+                          ),
                         ),
                       ),
-                    ),
 
-                    SizedBox(width: 23),
-                  ],
-                ),
-              ],
+                      SizedBox(width: 23),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
