@@ -1,4 +1,3 @@
-import 'package:common/zmj/constants.dart';
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../main/utils/text_measure_util.dart';
@@ -542,17 +541,36 @@ class ElementGestureManager {
     if (_session.pointers.isEmpty) {
       return _handleAllPointersUp(event, boxes, selectedId);
     } else if (_session.pointers.length == 1) {
-      // 从双指切换到单指时，如果当前处于缩放 mode：
-      // 之前直接 reset 为 idle，会导致缩放命令丢失，从而 undo/redo 不生效。
-      if (_session.mode == _InteractionMode.scale &&
-          selectedId.isNotEmpty &&
-          _session.hasMoved &&
-          historyManager != null) {
-        _cleanupInteraction(boxes, selectedId);
+      // 从双指切换到单指时：
+      // - 若当前在 scale：需要先提交缩放历史，但不能 resetPointers（因为还有一根手指按着）
+      //   然后把这根手指切到 pendingDragOrTap，允许继续拖动。
+      // - 其他模式：直接 reset 到 idle，避免残留状态导致误触发。
+      if (_session.mode == _InteractionMode.scale && selectedId.isNotEmpty) {
+        _commitHistoryForMode(_InteractionMode.scale, boxes, selectedId);
+
+        // 将剩余单指转换为“待拖动”状态，避免必须重新按下才能拖动
+        try {
+          final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+          final remainingPointerPos = _session.pointers.values.first;
+
+          _resetDragState();
+          _session.lastScaleDistance = 1.0;
+
+          _session.dragStartPointer = remainingPointerPos;
+          _session.dragStartElementPosition = selectedBox.position;
+          _captureSnapshot(selectedBox, position: true);
+          _session.beginMode(_InteractionMode.pendingDragOrTap);
+
+          AppLogger.info('双指缩放结束，切换为单指待拖动');
+        } catch (e) {
+          // 选中元素可能在缩放结束瞬间被删除/变更，兜底重置
+          reset();
+          AppLogger.error('双指切单指过渡失败，已重置:', e);
+        }
         return false;
       }
 
-      // 非缩放场景：完全重置所有状态，防止单指误触发拖动
+      // 非缩放场景：完全重置所有状态，防止单指误触发拖动/缩放
       _resetDragState();
       _session.lastScaleDistance = 1.0;
       _session.beginMode(_InteractionMode.idle);
@@ -586,95 +604,7 @@ class ElementGestureManager {
   /// 清理交互状态
   void _cleanupInteraction(List<CanvasElement> boxes, String selectedId) {
     final completedMode = _session.mode;
-    if (selectedId.isNotEmpty && _session.hasMoved && historyManager != null) {
-      try {
-        final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-        final currentPosition = Offset(selectedBox.x, selectedBox.y);
-
-        switch (completedMode) {
-          case _InteractionMode.drag:
-            if (_snapshot.position != null && _positionChanged(selectedBox)) {
-              historyManager!.executeCommand(
-                MoveElementCommand(
-                  boxes,
-                  selectedId,
-                  _snapshot.position!,
-                  currentPosition,
-                ),
-              );
-            }
-            break;
-
-          case _InteractionMode.rotate:
-            if (_snapshot.rotation != null && _rotationChanged(selectedBox)) {
-              historyManager!.executeCommand(
-                RotateElementCommand(
-                  boxes,
-                  selectedId,
-                  _snapshot.rotation!,
-                  selectedBox.rotation,
-                ),
-              );
-            }
-            break;
-
-          case _InteractionMode.resize:
-            if (_snapshot.width != null &&
-                _snapshot.height != null &&
-                (_sizeChanged(selectedBox) || _positionChanged(selectedBox))) {
-              historyManager!.executeCommand(
-                ResizeElementCommand(
-                  boxes: boxes,
-                  elementId: selectedId,
-                  oldWidth: _snapshot.width!,
-                  oldHeight: _snapshot.height!,
-                  oldPosition: _snapshot.position ?? currentPosition,
-                  newWidth: selectedBox.width,
-                  newHeight: selectedBox.height,
-                  newPosition: currentPosition,
-                  oldFontSize: _snapshot.fontSize,
-                  newFontSize: selectedBox.type == ElementType.text
-                      ? selectedBox.fontSize
-                      : null,
-                  oldFontSpace: _snapshot.fontSpace,
-                  newFontSpace: selectedBox.type == ElementType.text
-                      ? selectedBox.fontSpace
-                      : null,
-                ),
-              );
-            }
-            break;
-
-          case _InteractionMode.scale:
-            if (_snapshot.cumulativeScale != null &&
-                _scaleChanged(selectedBox)) {
-              historyManager!.executeCommand(
-                ScaleElementCommand(
-                  boxes: boxes,
-                  elementId: selectedId,
-                  oldCumulativeScale: _snapshot.cumulativeScale!,
-                  newCumulativeScale: selectedBox.scale,
-                  oldWidth: _snapshot.width ?? selectedBox.width,
-                  oldHeight: _snapshot.height ?? selectedBox.height,
-                  oldPosition: _snapshot.position ?? currentPosition,
-                  newWidth: selectedBox.width,
-                  newHeight: selectedBox.height,
-                  newPosition: currentPosition,
-                  oldFontSize: _snapshot.fontSize,
-                  newFontSize: selectedBox.type == ElementType.text
-                      ? selectedBox.fontSize
-                      : null,
-                ),
-              );
-            }
-            break;
-          default:
-            break;
-        }
-      } catch (e) {
-        AppLogger.error('记录命令时出错:', e);
-      }
-    }
+    _commitHistoryForMode(completedMode, boxes, selectedId);
 
     if (completedMode == _InteractionMode.resize && selectedId.isNotEmpty) {
       final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
@@ -696,6 +626,103 @@ class ElementGestureManager {
 
     reset();
     AppLogger.info('指针抬起，重置状态');
+  }
+
+  void _commitHistoryForMode(
+    _InteractionMode completedMode,
+    List<CanvasElement> boxes,
+    String selectedId,
+  ) {
+    if (selectedId.isEmpty || !_session.hasMoved || historyManager == null) {
+      return;
+    }
+
+    try {
+      final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+      final currentPosition = Offset(selectedBox.x, selectedBox.y);
+
+      switch (completedMode) {
+        case _InteractionMode.drag:
+          if (_snapshot.position != null && _positionChanged(selectedBox)) {
+            historyManager!.executeCommand(
+              MoveElementCommand(
+                boxes,
+                selectedId,
+                _snapshot.position!,
+                currentPosition,
+              ),
+            );
+          }
+          break;
+
+        case _InteractionMode.rotate:
+          if (_snapshot.rotation != null && _rotationChanged(selectedBox)) {
+            historyManager!.executeCommand(
+              RotateElementCommand(
+                boxes,
+                selectedId,
+                _snapshot.rotation!,
+                selectedBox.rotation,
+              ),
+            );
+          }
+          break;
+
+        case _InteractionMode.resize:
+          if (_snapshot.width != null &&
+              _snapshot.height != null &&
+              (_sizeChanged(selectedBox) || _positionChanged(selectedBox))) {
+            historyManager!.executeCommand(
+              ResizeElementCommand(
+                boxes: boxes,
+                elementId: selectedId,
+                oldWidth: _snapshot.width!,
+                oldHeight: _snapshot.height!,
+                oldPosition: _snapshot.position ?? currentPosition,
+                newWidth: selectedBox.width,
+                newHeight: selectedBox.height,
+                newPosition: currentPosition,
+                oldFontSize: _snapshot.fontSize,
+                newFontSize: selectedBox.type == ElementType.text
+                    ? selectedBox.fontSize
+                    : null,
+                oldFontSpace: _snapshot.fontSpace,
+                newFontSpace: selectedBox.type == ElementType.text
+                    ? selectedBox.fontSpace
+                    : null,
+              ),
+            );
+          }
+          break;
+
+        case _InteractionMode.scale:
+          if (_snapshot.cumulativeScale != null && _scaleChanged(selectedBox)) {
+            historyManager!.executeCommand(
+              ScaleElementCommand(
+                boxes: boxes,
+                elementId: selectedId,
+                oldCumulativeScale: _snapshot.cumulativeScale!,
+                newCumulativeScale: selectedBox.scale,
+                oldWidth: _snapshot.width ?? selectedBox.width,
+                oldHeight: _snapshot.height ?? selectedBox.height,
+                oldPosition: _snapshot.position ?? currentPosition,
+                newWidth: selectedBox.width,
+                newHeight: selectedBox.height,
+                newPosition: currentPosition,
+                oldFontSize: _snapshot.fontSize,
+                newFontSize: selectedBox.type == ElementType.text
+                    ? selectedBox.fontSize
+                    : null,
+              ),
+            );
+          }
+          break;
+        default:
+          break;
+      }
+    } catch (e) {
+      AppLogger.error('记录命令时出错:', e);
+    }
   }
 
   /// 重置拖动相关状态（用于从双指切换到单指等场景）
