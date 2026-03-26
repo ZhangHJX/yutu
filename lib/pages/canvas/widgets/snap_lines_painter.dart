@@ -1,7 +1,12 @@
+import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 import '../gesture/element_snap_helper.dart';
 
 /// 吸附参考线绘制器
+///
+/// [SnapLine] 中的数值与 [CanvasElement] 模型一致（设计稿坐标系）。
+/// 元素实际通过 [CanvasElement.updateMatrix4] 使用 [.w] 映射到布局坐标，
+/// 故绘制参考线时也必须做相同缩放，否则会与元素边缘错位（常见为整体偏上）。
 class SnapLinesPainter extends CustomPainter {
   final List<SnapLine> snapLines;
 
@@ -17,19 +22,13 @@ class SnapLinesPainter extends CustomPainter {
 
     for (final line in snapLines) {
       if (line.isVertical) {
+        final x = line.position.w;
         // 绘制垂直线
-        canvas.drawLine(
-          Offset(line.position, line.start),
-          Offset(line.position, line.end),
-          paint,
-        );
+        canvas.drawLine(Offset(x, line.start.w), Offset(x, line.end.w), paint);
       } else {
         // 绘制水平线
-        canvas.drawLine(
-          Offset(line.start, line.position),
-          Offset(line.end, line.position),
-          paint,
-        );
+        final y = line.position.w;
+        canvas.drawLine(Offset(line.start.w, y), Offset(line.end.w, y), paint);
       }
     }
   }
