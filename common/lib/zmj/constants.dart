@@ -27,6 +27,9 @@ Map<String, String> mimeTypeMap = {
 /// 字体相关配置
 const String defaultConfigFamliy = "AlibabaPuHuiTi";
 const double defaultConfigFontSize = 16;
+
+/// 画布新建文本默认行高（em）。`height: 1.0` 时行盒过紧，常见中文字体下沿会被固定高度裁切。
+const double kCanvasDefaultTextLineHeight = 1.15;
 const String defaultConfigStyleName = '系统默认';
 const String fontDialog = 'TextPropertyDialogController';
 

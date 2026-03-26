@@ -89,8 +89,8 @@ class CanvasElement {
     this.familyKey = defaultConfigFamliy,
     this.styleName = defaultConfigStyleName,
 
-    this.fontSize = 16,
-    this.lineHeight = 1.0,
+    this.fontSize = defaultConfigFontSize,
+    this.lineHeight = kCanvasDefaultTextLineHeight,
     this.fontSpace = 0,
     this.align = TextAlign.left,
     this.textColor = "#000000",

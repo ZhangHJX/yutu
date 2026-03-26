@@ -1,4 +1,11 @@
+import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+
+/// 与画布内 [Text] 一致：避免 `TextStyle.height` 挤压首尾行导致字形在固定高度内被裁切。
+const TextHeightBehavior kCanvasTextHeightBehavior = TextHeightBehavior(
+  applyHeightToFirstAscent: false,
+  applyHeightToLastDescent: false,
+);
 
 class TextMeasureUtil {
   /// 智能计算文本尺寸：自动判断单行/多行并返回实际的宽高
@@ -9,10 +16,10 @@ class TextMeasureUtil {
   /// [lineHeight] 行高（相对于字体大小的倍数，如 1.5 表示 1.5 倍行高）
   static Size measureText({
     required String text,
-    double? fontSize = 16,
-    String? fontFamily = 'AlibabaPuHuiTi',
+    double? fontSize = defaultConfigFontSize,
+    String? fontFamily = defaultConfigFamliy,
     double? letterSpacing = 0,
-    double? lineHeight = 1.0,
+    double? lineHeight = kCanvasDefaultTextLineHeight,
   }) {
     final textStyle = TextStyle(
       fontSize: fontSize,
@@ -50,6 +57,7 @@ class TextMeasureUtil {
       text: TextSpan(text: text, style: textStyle),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
+      textHeightBehavior: kCanvasTextHeightBehavior,
     );
 
     // 减去padding后的可用宽度
@@ -65,6 +73,7 @@ class TextMeasureUtil {
         text: TextSpan(text: trimmedText, style: textStyle),
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
+        textHeightBehavior: kCanvasTextHeightBehavior,
       );
       trimmedPainter.layout(maxWidth: availableWidth);
       return Size(trimmedPainter.width, textPainter.height);
@@ -87,6 +96,7 @@ class TextMeasureUtil {
     final textPainter = TextPainter(
       text: TextSpan(text: trimmedText, style: textStyle),
       textDirection: TextDirection.ltr,
+      textHeightBehavior: kCanvasTextHeightBehavior,
     );
 
     if (hasLineBreaks) {

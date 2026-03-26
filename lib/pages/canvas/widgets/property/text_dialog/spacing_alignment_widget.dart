@@ -21,7 +21,7 @@ class SpacingAlignmentWidget extends StatefulWidget {
 
 class _SpacingAlignmentWidgetState extends State<SpacingAlignmentWidget> {
   // 行距和字距
-  double _lineHeight = 1.0;
+  double _lineHeight = kCanvasDefaultTextLineHeight;
   double _letterSpacing = 0;
 
   // 对齐
@@ -40,7 +40,7 @@ class _SpacingAlignmentWidgetState extends State<SpacingAlignmentWidget> {
     final data = widget.element;
 
     // 初始化行距和字距
-    _lineHeight = data.lineHeight ?? 1.0;
+    _lineHeight = data.lineHeight ?? kCanvasDefaultTextLineHeight;
     _letterSpacing = data.fontSpace ?? 0;
 
     // 初始化对齐方式

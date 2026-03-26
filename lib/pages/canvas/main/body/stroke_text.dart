@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:voicetemplate/pages/canvas/main/utils/text_measure_util.dart';
 
 class StrokeText extends StatelessWidget {
   final String text;
@@ -26,6 +27,7 @@ class StrokeText extends StatelessWidget {
         maxLines: maxLines,
         textAlign: textAlign,
         softWrap: true,
+        textHeightBehavior: kCanvasTextHeightBehavior,
         style: foreground != null
             ? textStyle.copyWith(foreground: foreground, color: null)
             : textStyle,

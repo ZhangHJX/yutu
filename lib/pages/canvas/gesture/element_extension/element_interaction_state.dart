@@ -1,3 +1,4 @@
+import 'package:common/common.dart';
 import 'package:flutter/material.dart';
 
 class ElementInteractionState {
@@ -10,7 +11,7 @@ class ElementInteractionState {
   double resizeStartWidth = 0;
   double resizeStartHeight = 0;
   double resizeStartFontSize = 0;
-  double resizeStartLineHeight = 1.0;
+  double resizeStartLineHeight = kCanvasDefaultTextLineHeight;
   double resizeStartFontSpace = 0.0;
   double resizeAspectRatio = 1.0;
   Offset? resizeStartPosition;
