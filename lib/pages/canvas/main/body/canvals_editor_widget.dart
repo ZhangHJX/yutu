@@ -49,6 +49,9 @@ class CanvasEditorWidgetState extends State<CanvasEditorWidget> {
     super.initState();
     _selectionController = widget.canvalsController;
     _gestureManager.historyManager = historyManager; // 设置历史管理器到手势管理器
+    _gestureManager.onStaleSelection = () {
+      _selectionController.deselect();
+    };
   }
 
   /// 重新排序图层

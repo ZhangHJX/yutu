@@ -16,7 +16,30 @@ part 'element_extension/element_gesture_manager_text.dart';
 class ElementGestureManager {
   final _GestureSession _session = _GestureSession();
   CanvasHistoryManager? historyManager;
+
+  /// 当 `selectedId` 在 [boxes] 中已不存在时回调（例如撤销/重做、草稿同步删除了元素）。
+  /// 用于清除无效的选中态，避免 `firstWhere` 抛异常导致后续手势全部失效。
+  void Function()? onStaleSelection;
+
   static const double dragStartThreshold = 5.0; // 开始拖动的距离阈值
+
+  CanvasElement? _findElement(List<CanvasElement> boxes, String selectedId) {
+    if (selectedId.isEmpty) return null;
+    for (final box in boxes) {
+      if (box.id == selectedId) return box;
+    }
+    return null;
+  }
+
+  void _handleStaleSelection(String selectedId) {
+    AppLogger.info(
+      '选中元素已不在列表中，重置手势并清除选中: $selectedId',
+    );
+    reset();
+    if (selectedId.isNotEmpty) {
+      onStaleSelection?.call();
+    }
+  }
 
   // 吸附相关状态
   List<SnapLine> _currentSnapLines = [];
@@ -154,7 +177,12 @@ class ElementGestureManager {
     } else if (_session.pointers.length == 2) {
       // 双指按下：清除拖动相关状态，准备进入缩放模式
       _resetDragState();
-      final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+      if (selectedId.isEmpty) return;
+      final selectedBox = _findElement(boxes, selectedId);
+      if (selectedBox == null) {
+        _handleStaleSelection(selectedId);
+        return;
+      }
       if (selectedBox.locked) {
         return;
       }
@@ -168,6 +196,8 @@ class ElementGestureManager {
     List<CanvasElement> boxes,
     String selectedId,
   ) {
+    if (selectedId.isEmpty) return;
+
     // 如果之前是缩放状态，确保完全重置所有状态
     if (_session.isScaling) {
       _resetDragState();
@@ -180,11 +210,11 @@ class ElementGestureManager {
 
     AppLogger.info('_handleSinglePointerDown $selectedId');
 
-    CanvasElement selectedBox = boxes.firstWhere((box) {
-      AppLogger.info('selectedBox ${box.id}-');
-
-      return box.id == selectedId;
-    });
+    final selectedBox = _findElement(boxes, selectedId);
+    if (selectedBox == null) {
+      _handleStaleSelection(selectedId);
+      return;
+    }
 
     final state = _stateForBox(selectedBox);
     final hitTarget = MatrixUtilsXGesture.detectHitTarget(
@@ -231,7 +261,11 @@ class ElementGestureManager {
   /// 处理双指按下
   void _handleDoublePointerDown(List<CanvasElement> boxes, String selectedId) {
     if (selectedId.isEmpty) return;
-    final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+    final selectedBox = _findElement(boxes, selectedId);
+    if (selectedBox == null) {
+      _handleStaleSelection(selectedId);
+      return;
+    }
     final state = _stateForBox(selectedBox);
 
     _session.beginMode(_InteractionMode.scale);
@@ -331,7 +365,11 @@ class ElementGestureManager {
     }
 
     if (selectedId.isEmpty) return false;
-    final targetBox = boxes.firstWhere((box) => box.id == selectedId);
+    final targetBox = _findElement(boxes, selectedId);
+    if (targetBox == null) {
+      _handleStaleSelection(selectedId);
+      return false;
+    }
     if (targetBox.locked) {
       return false;
     }
@@ -494,7 +532,11 @@ class ElementGestureManager {
 
     final adjustedScale = 1.0 + (scale - 1.0) * elementSensitivity;
 
-    final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
+    final selectedBox = _findElement(boxes, selectedId);
+    if (selectedBox == null) {
+      _handleStaleSelection(selectedId);
+      return false;
+    }
     final state = _stateForBox(selectedBox);
     if (selectedBox.locked) {
       return false;
@@ -549,24 +591,22 @@ class ElementGestureManager {
         _commitHistoryForMode(_InteractionMode.scale, boxes, selectedId);
 
         // 将剩余单指转换为“待拖动”状态，避免必须重新按下才能拖动
-        try {
-          final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-          final remainingPointerPos = _session.pointers.values.first;
-
-          _resetDragState();
-          _session.lastScaleDistance = 1.0;
-
-          _session.dragStartPointer = remainingPointerPos;
-          _session.dragStartElementPosition = selectedBox.position;
-          _captureSnapshot(selectedBox, position: true);
-          _session.beginMode(_InteractionMode.pendingDragOrTap);
-
-          AppLogger.info('双指缩放结束，切换为单指待拖动');
-        } catch (e) {
-          // 选中元素可能在缩放结束瞬间被删除/变更，兜底重置
-          reset();
-          AppLogger.error('双指切单指过渡失败，已重置:', e);
+        final selectedBox = _findElement(boxes, selectedId);
+        if (selectedBox == null) {
+          _handleStaleSelection(selectedId);
+          return false;
         }
+        final remainingPointerPos = _session.pointers.values.first;
+
+        _resetDragState();
+        _session.lastScaleDistance = 1.0;
+
+        _session.dragStartPointer = remainingPointerPos;
+        _session.dragStartElementPosition = selectedBox.position;
+        _captureSnapshot(selectedBox, position: true);
+        _session.beginMode(_InteractionMode.pendingDragOrTap);
+
+        AppLogger.info('双指缩放结束，切换为单指待拖动');
         return false;
       }
 
@@ -607,21 +647,23 @@ class ElementGestureManager {
     _commitHistoryForMode(completedMode, boxes, selectedId);
 
     if (completedMode == _InteractionMode.resize && selectedId.isNotEmpty) {
-      final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-      final state = _stateForBox(selectedBox);
-      state.resizingHandle = null;
-      state.resizeStartPosition = null;
-      state.resizeAnchorPoint = null;
-
-      AppLogger.info('调整大小结束');
+      final selectedBox = _findElement(boxes, selectedId);
+      if (selectedBox != null) {
+        final state = _stateForBox(selectedBox);
+        state.resizingHandle = null;
+        state.resizeStartPosition = null;
+        state.resizeAnchorPoint = null;
+        AppLogger.info('调整大小结束');
+      }
     }
 
     if (completedMode == _InteractionMode.rotate && selectedId.isNotEmpty) {
-      final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
-      final state = _stateForBox(selectedBox);
-      state.rotateLastPosition = null;
-
-      AppLogger.info('旋转结束');
+      final selectedBox = _findElement(boxes, selectedId);
+      if (selectedBox != null) {
+        final state = _stateForBox(selectedBox);
+        state.rotateLastPosition = null;
+        AppLogger.info('旋转结束');
+      }
     }
 
     reset();
@@ -637,8 +679,11 @@ class ElementGestureManager {
       return;
     }
 
+    final selectedBox = _findElement(boxes, selectedId);
+    if (selectedBox == null) {
+      return;
+    }
     try {
-      final selectedBox = boxes.firstWhere((box) => box.id == selectedId);
       final currentPosition = Offset(selectedBox.x, selectedBox.y);
 
       switch (completedMode) {
