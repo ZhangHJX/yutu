@@ -25,8 +25,10 @@ CanvasElement _$CanvasElementFromJson(Map<String, dynamic> json) =>
       fontId: (json['fontId'] as num?)?.toInt() ?? 0,
       familyKey: json['familyKey'] as String? ?? defaultConfigFamliy,
       styleName: json['styleName'] as String? ?? defaultConfigStyleName,
-      fontSize: (json['fontSize'] as num?)?.toDouble() ?? 16,
-      lineHeight: (json['lineHeight'] as num?)?.toDouble() ?? 1.0,
+      fontSize: (json['fontSize'] as num?)?.toDouble() ?? defaultConfigFontSize,
+      lineHeight:
+          (json['lineHeight'] as num?)?.toDouble() ??
+          kCanvasDefaultTextLineHeight,
       fontSpace: (json['fontSpace'] as num?)?.toDouble() ?? 0,
       align: json['align'] == null
           ? TextAlign.left

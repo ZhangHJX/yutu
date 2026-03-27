@@ -11,6 +11,7 @@ part 'canvas_model.g.dart';
 @JsonSerializable(explicitToJson: true)
 class CanvasModel {
   int id;
+  int userId;
   String uuid;
   String ratio;
   String clarity;
@@ -44,6 +45,7 @@ class CanvasModel {
 
   CanvasModel({
     this.id = 0,
+    this.userId = 0,
     this.uuid = '',
     this.ratio = '',
     this.clarity = '0',
@@ -108,6 +110,7 @@ class CanvasModel {
   /// 可以通过命名参数覆盖任意字段
   CanvasModel copyWith({
     int? id,
+    int? userId,
     String? uuid,
     String? ratio,
     String? clarity,
@@ -131,6 +134,7 @@ class CanvasModel {
   }) {
     return CanvasModel(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       uuid: uuid ?? this.uuid,
       ratio: ratio ?? this.ratio,
       clarity: clarity ?? this.clarity,

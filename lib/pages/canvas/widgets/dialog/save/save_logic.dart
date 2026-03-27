@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/foundation.dart';
@@ -5,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:voicetemplate/pages/canvas/main/canvals_controller.dart';
 import 'package:voicetemplate/pages/model/index.dart';
-import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 import 'package:voicetemplate/pages/canvas/model/index.dart';
 import 'package:voicetemplate/pages/canvas/draft/index.dart';
 import 'model/save_response.dart';
@@ -461,13 +461,20 @@ class SaveLogic extends GetxController {
       );
       final idsStr = model.elements.map((e) => e.fontId).toSet().join(',');
 
-      if (canvalsLogic.type != PageSource.create) {
-        if (canvalsLogic.isOwn == 1) {
+      // 来源草稿：  保存模版： 新建
+      tempteIsNewCreate.value = true;
+
+      if (canvalsLogic.type != PageSource.draft &&
+          canvalsLogic.type != PageSource.create) {
+        if (model.userId == global.userInfo.value.id) {
           tempteIsNewCreate.value = false;
         }
       }
-
       final contentStr = model.elements.map((e) => e.text).toSet().join(',');
+
+      debugPrint(
+        "=我的UserId==${model.userId}==我的UserId===${global.userInfo.value.id}====",
+      );
 
       var params = {};
       if (tempteIsNewCreate.value) {
@@ -511,8 +518,12 @@ class SaveLogic extends GetxController {
           "zip_file_size": "$fileMemorySize",
           "front_ids": idsStr,
           "design_information": contentStr,
+          "is_clear": model.clarity,
         };
       }
+
+      debugPrint("=哈哈哈哈==${jsonEncode(params)}====");
+
       final result = await http.post<SaveResponse>(
         tempteIsNewCreate.value ? '/design/store' : '/design/update',
         data: params,
@@ -561,6 +572,9 @@ class SaveLogic extends GetxController {
         'cavals',
       );
       final idsStr = model.elements.map((e) => e.fontId).toSet().join(',');
+      tempteIsNewCreate.value = true;
+
+      // 来源草稿： 保存草稿： 更新
       if (canvalsLogic.type == PageSource.draft) {
         draftIsCreate.value = false;
       }

@@ -8,6 +8,7 @@ part of 'canvas_model.dart';
 
 CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
   id: (json['id'] as num?)?.toInt() ?? 0,
+  userId: (json['userId'] as num?)?.toInt() ?? 0,
   uuid: json['uuid'] as String? ?? '',
   ratio: json['ratio'] as String? ?? '',
   clarity: json['clarity'] as String? ?? '0',
@@ -40,6 +41,7 @@ CanvasModel _$CanvasModelFromJson(Map<String, dynamic> json) => CanvasModel(
 Map<String, dynamic> _$CanvasModelToJson(CanvasModel instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'userId': instance.userId,
       'uuid': instance.uuid,
       'ratio': instance.ratio,
       'clarity': instance.clarity,

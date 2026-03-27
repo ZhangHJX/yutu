@@ -141,6 +141,7 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
           : result["hdH"].toDouble();
       CanvasModel canvalsModel = CanvasModel(
         uuid: uuid.v4(),
+        userId: global.userInfo.value.id,
         ratio: ratio,
         clarity: _selectedClarity == 0 ? '0' : '1',
         width: width,
@@ -149,6 +150,9 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
 
       canvalsModel.getMatrix4();
       _onCancel();
+
+      debugPrint("===我的UserId===${global.userInfo.value.id}====");
+
       Get.toNamed(
         AppRoutes.canvalsPage,
         arguments: {"model": canvalsModel, "type": PageSource.create},
@@ -174,12 +178,16 @@ class _CreateCanvalsPageState extends State<CreateCanvalsPage>
       double height = double.parse(_heightController.text);
       CanvasModel canvalsModel = CanvasModel(
         uuid: uuid.v4(),
+        userId: global.userInfo.value.id,
         ratio: '$width:$height',
         width: width,
         height: height,
       );
       canvalsModel.getMatrix4();
       _onCancel();
+
+      debugPrint("===我的UserId===${global.userInfo.value.id}====");
+
       Get.toNamed(
         AppRoutes.canvalsPage,
         arguments: {"model": canvalsModel, "type": PageSource.create},

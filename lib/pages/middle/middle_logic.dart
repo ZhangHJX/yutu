@@ -316,6 +316,10 @@ class MiddleLogic extends GetxController {
     canvalsModel.sceneId = middleInfo.value?.sceneId ?? 0;
     canvalsModel.tagData = middleInfo.value?.tagData ?? [];
 
+    if (type == PageSource.design) {
+      canvalsModel.userId = global.userInfo.value.id;
+    }
+
     await DraftManager().initSaveDraft(canvalsModel);
     SmartDialog.dismiss();
 

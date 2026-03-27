@@ -57,6 +57,7 @@ class MineLogic extends GetxController {
         if (designList.isNotEmpty) {
           designList.clear();
         }
+        debugPrint("===我的页面图片更改==${result.data}====");
         final listModel = CommonModel.fromJson(result.data);
         if (listModel.items.isNotEmpty) {
           designList.addAll(listModel.items);
