@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:common/common.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 import 'package:path/path.dart' as p;
 import 'package:voicetemplate/core/file_manager/directory_path/index.dart';
 
@@ -161,6 +162,11 @@ abstract class BaseResourceDownload {
       // 将 sourceDir 目录的内容直接复制到 Documents/cavals
       // 因为 zip 解压后的内容就是 cavals 的内容，不需要查找子文件夹
       await copyDirectoryRecursive(sourceDir, targetCavalsDir);
+
+      // 资源文件被整目录覆盖后，清理图片缓存，避免相同路径命中旧图。
+      final imageCache = PaintingBinding.instance.imageCache;
+      imageCache.clear();
+      imageCache.clearLiveImages();
 
       AppLogger.info(
         'BaseResourceDownloadService: 资源文件已复制到 Documents/cavals: ${targetCavalsDir.path}',
