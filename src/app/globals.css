@@ -1,26 +1,253 @@
-@import "tailwindcss";
+/* 语图 App — 移动端全局样式 */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary: #6C5CE7;
+  --primary-light: #A29BFE;
+  --bg: #F5F5FA;
+  --bg-card: #FFFFFF;
+  --text: #2D3436;
+  --text-secondary: #636E72;
+  --border: #DFE6E9;
+  --tab-height: 56px;
+  --nav-height: 44px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* 页面内容（留出底部标签栏空间） */
+.page-content {
+  padding-bottom: calc(var(--tab-height) + var(--safe-bottom));
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* 底部标签栏 */
+.bottom-tabs {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--tab-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 100;
+}
+
+.tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  padding: 4px 12px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tab-btn.active {
+  color: var(--primary);
+}
+
+.tab-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* 顶部导航栏 */
+.top-nav {
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+/* 页面容器 */
+.screen {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.screen-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: calc(var(--tab-height) + var(--safe-bottom));
+}
+
+/* 搜索栏 */
+.search-bar {
+  margin: 12px 16px;
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 分类标签滚动 */
+.tag-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tag-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.tag {
+  white-space: nowrap;
+  padding: 6px 16px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.tag.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* 卡片 */
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 8px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.card-image {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.card-body {
+  padding: 12px 16px;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* 浮动操作按钮 */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: calc(var(--tab-height) + var(--safe-bottom) + 16px);
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, var(--primary), #8B7CF0);
+  color: white;
+  border: none;
+  font-size: 28px;
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+  cursor: pointer;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 编辑器页面全屏 */
+.editor-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-canvas {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.editor-toolbar {
+  height: 48px;
+  background: #2d2d2d;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  color: white;
+}
+
+.editor-bottom-sheet {
+  height: 200px;
+  background: #2d2d2d;
+  border-radius: 16px 16px 0 0;
+  padding: 16px;
+  color: white;
+}
+
+/* Fabric 画布包装器 — 居中容器，不做 transform，由 stage 统一缩放平移 */
+.fabric-canvas-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.fabric-stage {
+  position: relative;
+  flex-shrink: 0;
 }
