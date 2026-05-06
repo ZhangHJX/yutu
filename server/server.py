@@ -93,6 +93,16 @@ def get_ocr():
         print("[OCR] 模型加载完成")
     return _ocr_instance
 
+# ── .env 加载 ──────────────────────────────────────────
+_env_path = Path(__file__).resolve().parent / ".env"
+if _env_path.is_file():
+    with open(_env_path) as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith("#") and "=" in _line:
+                _k, _v = _line.split("=", 1)
+                os.environ.setdefault(_k.strip(), _v.strip())
+
 # ── Provider 配置 ──────────────────────────────────────
 # 优先级：腾讯混元 > Hugging Face
 
