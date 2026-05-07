@@ -111,7 +111,7 @@ GPT_IMAGE_API_KEY = os.environ.get("GPT_IMAGE_API_KEY", "")
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://co.yes.vg/v1")
 GPT_MAIN_MODEL = os.environ.get("GPT_MAIN_MODEL", "gpt-5.3-codex")  # 能调 image_generation tool 的主模型
 GPT_IMAGE_EDIT_MAX_SIDE = int(os.environ.get("GPT_IMAGE_EDIT_MAX_SIDE", "768"))
-ENABLE_MODEL_BACKGROUND_FILL = os.environ.get("ENABLE_MODEL_BACKGROUND_FILL") == "1"
+ENABLE_MODEL_BACKGROUND_FILL = os.environ.get("ENABLE_MODEL_BACKGROUND_FILL", "1") != "0"
 
 
 async def try_gpt_image_generate(prompt: str, w: int, h: int) -> Optional[bytes]:
@@ -1159,18 +1159,67 @@ def _mask_diff_report(source_img, filled_img, fill_mask):
     }
 
 
+async def _responses_image_stream(url, payload, headers):
+    final_image = None
+    partial_image = None
+    event_types = []
+    first_event_ms = None
+    buffer = ""
+    started = time.time()
+    timeout = httpx.Timeout(connect=30.0, read=None, write=60.0, pool=30.0)
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        async with client.stream("POST", url, json=payload, headers=headers) as resp:
+            if resp.status_code != 200:
+                body = await resp.aread()
+                raise RuntimeError(f"HTTP {resp.status_code}: {body.decode('utf-8', errors='replace')[:300]}")
+
+            async for chunk in resp.aiter_text():
+                buffer += chunk
+                while "\n\n" in buffer:
+                    raw_event, buffer = buffer.split("\n\n", 1)
+                    data_lines = [line[5:].strip() for line in raw_event.splitlines() if line.startswith("data:")]
+                    if not data_lines:
+                        continue
+                    data = "\n".join(data_lines)
+                    if data == "[DONE]":
+                        continue
+
+                    event = json.loads(data)
+                    event_type = event.get("type", "unknown")
+                    event_types.append(event_type)
+                    if first_event_ms is None:
+                        first_event_ms = int((time.time() - started) * 1000)
+
+                    if event_type == "response.output_item.done":
+                        item = event.get("item", {})
+                        if item.get("type") == "image_generation_call" and item.get("result"):
+                            final_image = item["result"]
+                    elif event_type == "response.image_generation_call.partial_image" and event.get("partial_image_b64"):
+                        partial_image = event["partial_image_b64"]
+                    elif event_type == "response.failed":
+                        error = event.get("response", {}).get("error") or event.get("error")
+                        raise RuntimeError(str(error)[:300])
+
+    return final_image or partial_image, {
+        "firstEventMs": first_event_ms,
+        "eventCount": len(event_types),
+        "events": event_types[-8:],
+    }
+
+
 async def _generate_filled_background(source_img, responses_mask):
     from PIL import Image
 
     if not ENABLE_MODEL_BACKGROUND_FILL:
         return None, {
             "status": "model_skipped",
-            "provider": "responses-mask-data-url",
+            "provider": "responses-mask-data-url-stream",
             "errorType": "Disabled",
-            "error": "Set ENABLE_MODEL_BACKGROUND_FILL=1 to run realtime background fill",
+            "error": "ENABLE_MODEL_BACKGROUND_FILL=0 disabled realtime background fill",
         }
     if not GPT_IMAGE_API_KEY:
-        return None, {"status": "model_failed", "provider": "responses-mask-data-url", "errorType": "MissingKey", "error": "GPT_IMAGE_API_KEY is not set"}
+        return None, {"status": "model_failed", "provider": "responses-mask-data-url-stream", "errorType": "MissingKey", "error": "GPT_IMAGE_API_KEY is not set"}
 
     url = f"{OPENAI_BASE_URL.rstrip('/')}/responses"
     attempts = []
@@ -1202,55 +1251,45 @@ async def _generate_filled_background(source_img, responses_mask):
                 "input_image_mask": {"image_url": _image_data_url(edit_mask)},
             }],
             "tool_choice": {"type": "image_generation"},
+            "stream": True,
         }
         start = time.time()
         attempt = {
             "editSize": {"width": edit_size[0], "height": edit_size[1]},
             "maxEditSide": max_edit_side,
+            "stream": True,
         }
         try:
-            async with httpx.AsyncClient(timeout=240.0) as client:
-                resp = await client.post(
-                    url,
-                    json=payload,
-                    headers={
-                        "Authorization": f"Bearer {GPT_IMAGE_API_KEY}",
-                        "Content-Type": "application/json",
-                    },
-                )
+            result, stream_report = await _responses_image_stream(
+                url,
+                payload,
+                {
+                    "Authorization": f"Bearer {GPT_IMAGE_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+            )
             attempt["elapsedMs"] = int((time.time() - start) * 1000)
-            if resp.status_code != 200:
-                attempt["errorType"] = "HTTPError"
-                attempt["error"] = f"HTTP {resp.status_code}: {resp.text[:300]}"
+            attempt.update(stream_report)
+            if not result:
+                attempt["errorType"] = "MissingImageResult"
+                attempt["error"] = "missing image_generation_call result"
                 attempts.append(attempt)
                 continue
 
-            data = resp.json()
-            if data.get("status") != "completed":
-                attempt["errorType"] = "IncompleteResponse"
-                attempt["error"] = str(data.get("error", "response was not completed"))[:300]
-                attempts.append(attempt)
-                continue
-
-            for item in data.get("output", []):
-                if item.get("type") == "image_generation_call" and item.get("result"):
-                    import io
-                    img = Image.open(io.BytesIO(base64.b64decode(item["result"]))).convert("RGBA")
-                    if img.size != source_img.size:
-                        img = img.resize(source_img.size, Image.Resampling.LANCZOS)
-                    report = {
-                        "status": "model_succeeded",
-                        "provider": "responses-mask-data-url",
-                        "elapsedMs": attempt["elapsedMs"],
-                        "sourceSize": {"width": source_img.width, "height": source_img.height},
-                        "editSize": attempt["editSize"],
-                        "attempts": attempts + [{**attempt, "status": "succeeded"}],
-                        **_mask_diff_report(source_img, img, responses_mask),
-                    }
-                    return img, report
-
-            attempt["errorType"] = "MissingImageResult"
-            attempt["error"] = "missing image_generation_call result"
+            import io
+            img = Image.open(io.BytesIO(base64.b64decode(result))).convert("RGBA")
+            if img.size != source_img.size:
+                img = img.resize(source_img.size, Image.Resampling.LANCZOS)
+            report = {
+                "status": "model_succeeded",
+                "provider": "responses-mask-data-url-stream",
+                "elapsedMs": attempt["elapsedMs"],
+                "sourceSize": {"width": source_img.width, "height": source_img.height},
+                "editSize": attempt["editSize"],
+                "attempts": attempts + [{**attempt, "status": "succeeded"}],
+                **_mask_diff_report(source_img, img, responses_mask),
+            }
+            return img, report
         except Exception as e:
             attempt["elapsedMs"] = int((time.time() - start) * 1000)
             attempt["errorType"] = type(e).__name__
@@ -1259,7 +1298,7 @@ async def _generate_filled_background(source_img, responses_mask):
 
     return None, {
         "status": "model_failed",
-        "provider": "responses-mask-data-url",
+        "provider": "responses-mask-data-url-stream",
         "elapsedMs": sum(a.get("elapsedMs", 0) for a in attempts),
         "sourceSize": {"width": source_img.width, "height": source_img.height},
         "attempts": attempts,
