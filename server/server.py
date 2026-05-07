@@ -1161,7 +1161,6 @@ def _mask_diff_report(source_img, filled_img, fill_mask):
 
 async def _responses_image_stream(url, payload, headers):
     final_image = None
-    partial_image = None
     event_types = []
     first_event_ms = None
     buffer = ""
@@ -1195,13 +1194,11 @@ async def _responses_image_stream(url, payload, headers):
                         item = event.get("item", {})
                         if item.get("type") == "image_generation_call" and item.get("result"):
                             final_image = item["result"]
-                    elif event_type == "response.image_generation_call.partial_image" and event.get("partial_image_b64"):
-                        partial_image = event["partial_image_b64"]
                     elif event_type == "response.failed":
                         error = event.get("response", {}).get("error") or event.get("error")
                         raise RuntimeError(str(error)[:300])
 
-    return final_image or partial_image, {
+    return final_image, {
         "firstEventMs": first_event_ms,
         "eventCount": len(event_types),
         "events": event_types[-8:],
