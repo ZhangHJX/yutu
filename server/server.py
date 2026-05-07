@@ -123,6 +123,7 @@ async def try_gpt_image_generate(prompt: str, w: int, h: int) -> Optional[bytes]
         "model": GPT_MAIN_MODEL,
         "input": prompt,
         "tools": [{"type": "image_generation"}],
+        "tool_choice": {"type": "image_generation"},
     }
     print(f"[GPT-Image] 请求: prompt={prompt[:40]}, url={url}, model={GPT_MAIN_MODEL}")
 
