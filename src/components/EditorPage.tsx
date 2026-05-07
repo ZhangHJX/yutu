@@ -83,6 +83,8 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     if (draftId) { const s = loadDraft(draftId); if (s) return s; }
     return createBlankDoc(canvasConfig);
   });
+  const [undoStack, setUndoStack] = useState<DesignDocument[]>([]);
+  const [redoStack, setRedoStack] = useState<DesignDocument[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState(doc.meta.name);
   const [saved, setSaved] = useState(false);
@@ -236,7 +238,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         }
 
         setAssetInfoMap(infoMap);
-        setDoc((prev) => {
+        updateDoc((prev) => {
           // 移除原全画幅图片组件（已由 assets 中的 background 替代）
           const filtered = prev.components.filter((c) => !(
             c.type === "image" &&
@@ -277,8 +279,38 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     onBack();
   };
 
-  const updateDoc = (updater: (prev: DesignDocument) => DesignDocument) => {
-    setDoc(updater);
+  const updateDoc = (updater: (prev: DesignDocument) => DesignDocument, recordHistory = true) => {
+    setDoc((prev) => {
+      const next = updater(prev);
+      if (next === prev) return prev;
+      if (recordHistory) {
+        setUndoStack((stack) => [...stack, prev].slice(-50));
+        setRedoStack([]);
+      }
+      return next;
+    });
+  };
+
+  const handleUndo = () => {
+    setUndoStack((stack) => {
+      if (stack.length === 0) return stack;
+      const previous = stack[stack.length - 1];
+      setRedoStack((redo) => [doc, ...redo].slice(0, 50));
+      setDoc(previous);
+      setSelectedId(null);
+      return stack.slice(0, -1);
+    });
+  };
+
+  const handleRedo = () => {
+    setRedoStack((stack) => {
+      if (stack.length === 0) return stack;
+      const next = stack[0];
+      setUndoStack((undo) => [...undo, doc].slice(-50));
+      setDoc(next);
+      setSelectedId(null);
+      return stack.slice(1);
+    });
   };
 
   const handleComponentModify = (id: string, changes: Record<string, unknown>) => {
@@ -507,6 +539,8 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
 
       {/* 顶部缩放条（水平） */}
       <div className="zoom-bar-h">
+        <button className="zoom-btn zoom-btn-h" onClick={handleUndo} disabled={undoStack.length === 0} title="Undo">U</button>
+        <button className="zoom-btn zoom-btn-h" onClick={handleRedo} disabled={redoStack.length === 0} title="Redo">R</button>
         <button className="zoom-btn zoom-btn-h" onClick={() => {
           canvasRef.current?.zoomOut();
         }}>−</button>
@@ -567,6 +601,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
             editable
             zoom={zoom}
             hiddenIds={hiddenLayers}
+            selectedId={selectedId}
             selectedHitBounds={selectedId ? assetInfoMap.get(selectedId)?.hitBounds ?? null : null}
             onComponentSelect={(id) => setSelectedId(id)}
             onComponentModify={handleComponentModify}

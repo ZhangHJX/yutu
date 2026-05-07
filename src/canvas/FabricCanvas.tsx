@@ -9,6 +9,7 @@ interface FabricCanvasProps {
   editable?: boolean;
   zoom?: number;
   hiddenIds?: Set<string>;
+  selectedId?: string | null;
   selectedHitBounds?: { x: number; y: number; width: number; height: number } | null;
   onComponentSelect?: (id: string | null) => void;
   onComponentModify?: (id: string, changes: Partial<DesignComponent>) => void;
@@ -28,7 +29,7 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 10;
 
 const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function FabricCanvas(
-  { document, editable = false, zoom: controlledZoom, hiddenIds, selectedHitBounds, onComponentSelect, onComponentModify, onZoomChange },
+  { document, editable = false, zoom: controlledZoom, hiddenIds, selectedId, selectedHitBounds, onComponentSelect, onComponentModify, onZoomChange },
   ref
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -152,6 +153,27 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
   useEffect(() => {
     applyVisibility(hiddenIds);
   }, [hiddenIds, applyVisibility]);
+
+  useEffect(() => {
+    const canvas = fabricRef.current;
+    if (!canvas || !editable || !ready) return;
+
+    for (const [id, obj] of idMapRef.current) {
+      const component = document.components.find((c) => c.id === id);
+      const isBackgroundAsset = component?.style?.assetType === "background";
+      if (isBackgroundAsset) continue;
+      const enabled = !(hiddenIds?.has(id) ?? false) && (selectedId ? id === selectedId : true);
+      obj.set({ selectable: enabled, evented: enabled });
+    }
+
+    if (selectedId && !(hiddenIds?.has(selectedId) ?? false)) {
+      const obj = idMapRef.current.get(selectedId);
+      if (obj) canvas.setActiveObject(obj);
+    } else {
+      canvas.discardActiveObject();
+    }
+    canvas.requestRenderAll();
+  }, [document.components, editable, hiddenIds, ready, selectedId]);
 
   /** 鼠标滚轮缩放（CSS transform 模式 — 只调 onZoomChange，不碰 Fabric zoom） */
   useEffect(() => {

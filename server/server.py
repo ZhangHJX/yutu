@@ -1106,6 +1106,19 @@ def _quality_report(source_img, composite_img):
     }
 
 
+def _alpha_bounds(alpha_img):
+    import numpy as np
+
+    alpha = np.asarray(alpha_img, dtype=np.uint8)
+    rows = np.where(np.any(alpha > 16, axis=1))[0]
+    cols = np.where(np.any(alpha > 16, axis=0))[0]
+    if len(rows) == 0 or len(cols) == 0:
+        return {"x": 0, "y": 0, "width": 0, "height": 0}
+    x1, x2 = int(cols[0]), int(cols[-1])
+    y1, y2 = int(rows[0]), int(rows[-1])
+    return {"x": x1, "y": y1, "width": x2 - x1 + 1, "height": y2 - y1 + 1}
+
+
 def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, source_hash):
     import numpy as np
     from PIL import Image
@@ -1141,14 +1154,15 @@ def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, 
 
         layer = _source_pixels_layer(src_np, layer_alpha)
         layer.save(layers_dir / plan["out"], "PNG")
+        source_bounds = _alpha_bounds(layer_alpha)
         composite.alpha_composite(layer)
         assets.append({
             "file": f"layers/{run_id}/{plan['out']}",
             "type": plan["type"],
             "label": plan["label"],
             "bounds": {"x": 0, "y": 0, "width": canvas_w, "height": canvas_h},
-            "sourceBounds": plan["bounds"],
-            "hitBounds": _canvas_bounds(plan["bounds"], scale, offset_x, offset_y),
+            "sourceBounds": source_bounds,
+            "hitBounds": _canvas_bounds(source_bounds, scale, offset_x, offset_y),
             "zIndex": plan["zIndex"],
             "completion": plan["completion"],
             "uncertainty": plan["uncertainty"],
