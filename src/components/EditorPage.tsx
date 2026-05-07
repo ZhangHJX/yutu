@@ -118,6 +118,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
   const splitTriggeredRef = useRef<string | null>(null);
   const [hiddenLayers, setHiddenLayers] = useState<Set<string>>(new Set());
   const [assetInfoMap, setAssetInfoMap] = useState<Map<string, AssetInfo>>(new Map());
+  const [dragLayerId, setDragLayerId] = useState<string | null>(null);
 
   /* ---- 调试信息 ────────────────────── */
   const BUILD_VER = "2026-05-06-15:03";
@@ -311,7 +312,6 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
       setRedoStack((redo) => [snapshot(), ...redo].slice(0, 50));
       setDoc(previous.doc);
       setHiddenLayers(new Set(previous.hiddenLayers));
-      setSelectedId(null);
       return stack.slice(0, -1);
     });
   };
@@ -323,7 +323,6 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
       setUndoStack((undo) => [...undo, snapshot()].slice(-50));
       setDoc(next.doc);
       setHiddenLayers(new Set(next.hiddenLayers));
-      setSelectedId(null);
       return stack.slice(1);
     });
   };
@@ -409,6 +408,20 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
 
   /* ---- 图层操作 ---- */
   const handleLayerSelect = (id: string) => setSelectedId(id);
+  const handleLayerDrop = (targetId: string) => {
+    if (!dragLayerId || dragLayerId === targetId) return;
+    updateDoc((prev) => {
+      const comps = [...prev.components];
+      const from = comps.findIndex((c) => c.id === dragLayerId);
+      const to = comps.findIndex((c) => c.id === targetId);
+      if (from < 0 || to < 0) return prev;
+      const [moved] = comps.splice(from, 1);
+      comps.splice(to, 0, moved);
+      return { ...prev, components: comps };
+    });
+    setSelectedId(dragLayerId);
+    setDragLayerId(null);
+  };
   const handleLayerDelete = (id: string) => {
     updateDoc((prev) => ({
       ...prev, components: prev.components.filter((c) => c.id !== id),
@@ -647,8 +660,13 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
                 return (
                   <div
                     key={comp.id}
-                    className={`layer-item ${selectedId === comp.id ? "active" : ""} ${isHidden ? "layer-hidden" : ""}`}
+                    className={`layer-item ${selectedId === comp.id ? "active" : ""} ${isHidden ? "layer-hidden" : ""} ${dragLayerId === comp.id ? "dragging" : ""}`}
+                    draggable
                     onClick={() => handleLayerSelect(comp.id)}
+                    onDragStart={() => { setDragLayerId(comp.id); setSelectedId(comp.id); }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => { e.preventDefault(); handleLayerDrop(comp.id); }}
+                    onDragEnd={() => setDragLayerId(null)}
                   >
                     <button
                       className="layer-vis-btn"
@@ -1016,6 +1034,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         .layer-item { display: flex; align-items: center; gap: 6px; padding: 8px 10px; cursor: pointer; color: #aaa; font-size: 12px; border-left: 3px solid transparent; }
         .layer-item.active { background: rgba(108,92,231,0.15); color: #A29BFE; border-left-color: #6C5CE7; }
         .layer-item.layer-hidden { opacity: 0.4; }
+        .layer-item.dragging { opacity: 0.55; outline: 1px dashed #A29BFE; }
         .layer-icon { width: 18px; text-align: center; font-size: 12px; flex-shrink: 0; }
         .layer-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; flex-direction: column; gap: 1px; }
         .layer-btn { background: none; border: none; color: #666; font-size: 10px; cursor: pointer; padding: 2px 4px; }
