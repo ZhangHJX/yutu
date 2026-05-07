@@ -351,9 +351,6 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     });
   };
   const handleToggleVisibility = (id: string) => {
-    // 禁止隐藏全画幅背景图
-    const comp = doc.components.find(c => c.id === id);
-    if (comp && isBackgroundComp(comp)) return;
     setHiddenLayers(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -578,15 +575,12 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
                     className={`layer-item ${selectedId === comp.id ? "active" : ""} ${isHidden ? "layer-hidden" : ""}`}
                     onClick={() => handleLayerSelect(comp.id)}
                   >
-                    {!isBg && (
-                      <button
-                        className="layer-vis-btn"
-                        onClick={(e) => { e.stopPropagation(); handleToggleVisibility(comp.id); }}
-                      >
-                        {isHidden ? "◯" : "●"}
-                      </button>
-                    )}
-                    {isBg && <span className="layer-vis-spacer" />}
+                    <button
+                      className="layer-vis-btn"
+                      onClick={(e) => { e.stopPropagation(); handleToggleVisibility(comp.id); }}
+                    >
+                      {isHidden ? "◯" : "●"}
+                    </button>
                     <span className="layer-icon">
                       {assetInfo ? (
                         <span className={`layer-type-dot type-${assetInfo.type}`} />
