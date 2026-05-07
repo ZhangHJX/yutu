@@ -53,7 +53,7 @@ class GenerateResponse(BaseModel):
     document: Optional[dict] = None
     image_url: Optional[str] = None
     error: Optional[str] = None
-    provider: Optional[str] = None  # "hunyuan" | "huggingface" | "huggingface_anonymous"
+    provider: Optional[str] = None  # "responses-api" | "huggingface"
 
 # ── OCR 拆分 ──────────────────────────────────────────
 class SplitTextRequest(BaseModel):
@@ -104,14 +104,63 @@ if _env_path.is_file():
                 os.environ.setdefault(_k.strip(), _v.strip())
 
 # ── Provider 配置 ──────────────────────────────────────
-# 优先级：腾讯混元 > Hugging Face
+# 优先级：Responses API (gpt-image-2 / image_generation tool) > Hugging Face
 
-# 腾讯混元（TokenHub）
-HUNYUAN_API_KEY = os.environ.get("HUNYUAN_API_KEY", "")
-HUNYUAN_SUBMIT_URL = "https://tokenhub.tencentmaas.com/v1/api/image/submit"
-HUNYUAN_QUERY_URL = "https://tokenhub.tencentmaas.com/v1/api/image/query"
-HUNYUAN_MODEL = "hy-image-v3.0"
-_hunyuan_last_error = ""  # 最新一次 Hunyuan 错误的明文
+# Responses API（通过中转站 co.yes.vg / 自定义 base_url）
+GPT_IMAGE_API_KEY = os.environ.get("GPT_IMAGE_API_KEY", "")
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://co.yes.vg/v1")
+GPT_MAIN_MODEL = os.environ.get("GPT_MAIN_MODEL", "gpt-5.3-codex")  # 能调 image_generation tool 的主模型
+
+
+async def try_gpt_image_generate(prompt: str, w: int, h: int) -> Optional[bytes]:
+    """通过 Responses API + image_generation tool 生图（支持 gpt-image-2 等模型）"""
+    if not GPT_IMAGE_API_KEY:
+        print("[GPT-Image] 未配置 GPT_IMAGE_API_KEY")
+        return None
+
+    url = f"{OPENAI_BASE_URL.rstrip('/')}/responses"
+    payload = {
+        "model": GPT_MAIN_MODEL,
+        "input": prompt,
+        "tools": [{"type": "image_generation"}],
+    }
+    print(f"[GPT-Image] 请求: prompt={prompt[:40]}, url={url}, model={GPT_MAIN_MODEL}")
+
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        try:
+            resp = await client.post(
+                url,
+                json=payload,
+                headers={
+                    "Authorization": f"Bearer {GPT_IMAGE_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+            )
+
+            if resp.status_code != 200:
+                print(f"[GPT-Image] 错误 HTTP {resp.status_code}: {resp.text[:300]}")
+                return None
+
+            data = resp.json()
+            if data.get("status") != "completed":
+                err = data.get("error", "状态未完成")
+                print(f"[GPT-Image] 生成失败: {err}")
+                return None
+
+            output = data.get("output", [])
+            for item in output:
+                if item.get("type") == "image_generation_call":
+                    b64 = item.get("result", "")
+                    if b64:
+                        print(f"[GPT-Image] 成功 ({len(b64)} chars base64)")
+                        return base64.b64decode(b64)
+
+            print(f"[GPT-Image] 输出中未找到 image_generation_call: {str(output)[:200]}")
+            return None
+
+        except Exception as e:
+            print(f"[GPT-Image] 异常: {e}")
+            return None
 
 # Hugging Face（备选）
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
@@ -120,94 +169,6 @@ HF_MODELS = [
     "black-forest-labs/FLUX.1-schnell",
     "runwayml/stable-diffusion-v1-5",
 ]
-
-
-async def try_hunyuan_generate(prompt: str) -> Optional[bytes]:
-    """调用腾讯混元 3.0（TokenHub 异步任务）"""
-    global _hunyuan_last_error
-
-    if not HUNYUAN_API_KEY:
-        _hunyuan_last_error = "未配置 HUNYUAN_API_KEY"
-        return None
-
-    headers = {
-        "Authorization": f"Bearer {HUNYUAN_API_KEY}",
-        "Content-Type": "application/json",
-    }
-
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        try:
-            # Step 1: Submit
-            submit_payload = {"model": HUNYUAN_MODEL, "prompt": prompt}
-            submit_resp = await client.post(HUNYUAN_SUBMIT_URL, json=submit_payload, headers=headers)
-
-            if submit_resp.status_code != 200:
-                _hunyuan_last_error = f"提交失败 HTTP {submit_resp.status_code}"
-                print(f"[Hunyuan] 提交失败: {submit_resp.status_code} {submit_resp.text[:200]}")
-                return None
-
-            submit_data = submit_resp.json()
-            task_id = submit_data.get("id")
-            if not task_id:
-                # 提取具体错误信息
-                err = submit_data.get("error", {})
-                if isinstance(err, dict):
-                    msg = err.get("message", str(submit_data))
-                else:
-                    msg = str(submit_data)
-                _hunyuan_last_error = msg
-                print(f"[Hunyuan] 提交失败: {msg}")
-                return None
-
-            print(f"[Hunyuan] 任务已提交: {task_id}")
-
-            # Step 2: 轮询查询结果（最多 60s，每 2s 一次）
-            for attempt in range(30):
-                await asyncio.sleep(2)
-                query_resp = await client.post(
-                    HUNYUAN_QUERY_URL,
-                    json={"model": HUNYUAN_MODEL, "id": task_id},
-                    headers=headers,
-                )
-
-                if query_resp.status_code != 200:
-                    print(f"[Hunyuan] 查询失败 ({attempt+1}/30): {query_resp.status_code}")
-                    continue
-
-                query_data = query_resp.json()
-                status = query_data.get("status", "")
-
-                if status == "completed":
-                    print(f"[Hunyuan] 任务完成: {task_id}")
-                    data_list = query_data.get("data", [])
-                    if data_list and len(data_list) > 0:
-                        img_url = data_list[0].get("url", "")
-                        if img_url:
-                            img_resp = await client.get(img_url)
-                            if img_resp.status_code == 200:
-                                return img_resp.content
-                            print(f"[Hunyuan] 图片下载失败: {img_resp.status_code}")
-                    return None
-
-                elif status == "failed":
-                    err_msg = query_data.get("error", {}).get("message", "任务失败")
-                    _hunyuan_last_error = err_msg
-                    print(f"[Hunyuan] 任务失败: {task_id} - {err_msg}")
-                    return None
-
-                else:
-                    # running / queued
-                    if attempt % 5 == 0:
-                        print(f"[Hunyuan] 任务 {task_id} 状态: {status} ({attempt+1}/30)")
-
-            _hunyuan_last_error = "生成超时（60s）"
-            print(f"[Hunyuan] 任务 {task_id} 超时（60s）")
-            return None
-
-        except Exception as e:
-            _hunyuan_last_error = str(e)
-            print(f"[Hunyuan] 异常: {e}")
-            return None
 
 async def try_hf_generate(prompt: str, w: int, h: int) -> Optional[bytes]:
     """调用 HF Inference API 生图，依次尝试多个模型"""
@@ -359,15 +320,15 @@ async def generate(req: GenerateRequest):
     image_bytes: Optional[bytes] = None
     provider: Optional[str] = None
 
-    # 1) 腾讯混元（首选）
-    if HUNYUAN_API_KEY:
-        print("[Hunyuan] 开始生成...")
-        image_bytes = await try_hunyuan_generate(prompt)
+    # 1) gpt-image-2（首选）
+    if GPT_IMAGE_API_KEY:
+        print("[GPT-Image] 开始生成...")
+        image_bytes = await try_gpt_image_generate(prompt, w, h)
         if image_bytes:
-            provider = "hunyuan"
-            print(f"[OK] 混元生图成功 ({len(image_bytes)} bytes)")
+            provider = "responses-api"
+            print(f"[OK] gpt-image-2 生图成功 ({len(image_bytes)} bytes)")
         else:
-            print("[Hunyuan] 混元生成失败")
+            print("[GPT-Image] 生成失败")
 
     # 2) Hugging Face（备选）
     if image_bytes is None and HF_TOKEN:
@@ -382,13 +343,11 @@ async def generate(req: GenerateRequest):
     # 3) 全部失败
     if image_bytes is None:
         parts = []
-        if not HUNYUAN_API_KEY and not HF_TOKEN:
-            parts.append("未配置任何 API Key（需设置 HUNYUAN_API_KEY 或 HF_TOKEN）")
+        if not GPT_IMAGE_API_KEY and not HF_TOKEN:
+            parts.append("未配置任何 API Key（需设置 GPT_IMAGE_API_KEY 或 HF_TOKEN）")
         else:
-            if HUNYUAN_API_KEY:
-                specific = _hunyuan_last_error.strip()
-                msg = f"腾讯混元：{specific}" if specific else "腾讯混元不可用"
-                parts.append(msg)
+            if GPT_IMAGE_API_KEY:
+                parts.append("gpt-image-2 生成失败")
             if HF_TOKEN:
                 parts.append("Hugging Face 生成失败")
             else:
@@ -1038,9 +997,10 @@ async def serve_static(path: str):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "3001"))
     print(f"🚀 语图 AI 生图服务 http://0.0.0.0:{port}", flush=True)
-    print(f"   腾讯混元 API Key={'已设置 ✅' if HUNYUAN_API_KEY else '未设置 ❌'}", flush=True)
-    if HUNYUAN_API_KEY:
-        print(f"   模型: {HUNYUAN_MODEL}", flush=True)
+    print(f"   Responses API Key={'已设置 ✅' if GPT_IMAGE_API_KEY else '未设置 ❌'}", flush=True)
+    if GPT_IMAGE_API_KEY:
+        print(f"   主模型: {GPT_MAIN_MODEL}", flush=True)
+        print(f"   API 地址: {OPENAI_BASE_URL}/responses", flush=True)
     print(f"   HF_TOKEN={'已设置（备选）' if HF_TOKEN else '未设置'}", flush=True)
     print(f"   请求示例:", flush=True)
     print(f"     curl -X POST http://localhost:{port}/api/ai/generate \\", flush=True)
