@@ -188,6 +188,17 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         const assets = result.assets || [];
         // 按 zIndex 排序保证渲染顺序
         const sorted = [...assets].sort((a: any, b: any) => a.zIndex - b.zIndex);
+
+        // ── 调试打印：每个资产的坐标闭环 ──
+        console.log("[BuildAssets] 资产坐标调试:");
+        sorted.forEach((a: any, i: number) => {
+          console.log(
+            `  [${i}] ${a.type} "${a.label?.slice?.(0, 20)}"` +
+            `  bounds_canvas=(x=${a.bounds.x} y=${a.bounds.y} w=${a.bounds.width} h=${a.bounds.height})` +
+            `  file=${a.file} zIndex=${a.zIndex}`
+          );
+        });
+
         const assetComponents: DesignComponent[] = [];
         const infoMap = new Map<string, AssetInfo>();
 

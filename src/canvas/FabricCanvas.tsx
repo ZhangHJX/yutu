@@ -96,6 +96,22 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
     });
     canvas.add(bgRect);
 
+    // 调试边框：画布外框（白色 2px + 蓝色 1px 内侧）
+    const cx = document.canvas.width;
+    const cy = document.canvas.height;
+    const outerBorder = new Rect({
+      left: 0, top: 0, width: cx, height: cy,
+      fill: "transparent", stroke: "#FFFFFF", strokeWidth: 2,
+      selectable: false, evented: false, excludeFromExport: true,
+    });
+    canvas.add(outerBorder);
+    const innerBorder = new Rect({
+      left: 1, top: 1, width: cx - 2, height: cy - 2,
+      fill: "transparent", stroke: "#3498DB", strokeWidth: 1,
+      selectable: false, evented: false, excludeFromExport: true,
+    });
+    canvas.add(innerBorder);
+
     // 所有组件均渲染为 Fabric 对象（不再跳过全画幅图片）
     document.components.forEach((comp) => {
       const obj = componentToFabric(comp, canvas, idMapRef.current);
@@ -332,8 +348,11 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
           onComponentModify?.(id, {
             x: obj.left ?? 0,
             y: obj.top ?? 0,
-            width: obj.width ?? obj.getScaledWidth(),
-            height: obj.height ?? obj.getScaledHeight(),
+            // ⚠️ 必须用 getScaledWidth() 而非 obj.width
+            // FabricImage.width = PNG 自然宽（如 1024），不是组件逻辑宽（如 390）
+            // 写 obj.width 会使下次渲染 scale≈1 → 图片全尺寸 → 只露右下角
+            width: obj.getScaledWidth(),
+            height: obj.getScaledHeight(),
             rotation: obj.angle,
             opacity: obj.opacity,
           });
@@ -449,10 +468,15 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
 
         const imgEl = new window.Image();
         imgEl.onload = () => {
-          console.log(`[FabricCanvas] 图片加载成功: ${absoluteUrl}`, {
-            naturalWidth: imgEl.naturalWidth,
-            naturalHeight: imgEl.naturalHeight,
-            placeholderOnCanvas: !!imgPlaceholder.canvas,
+          const scaleX = comp.width / (imgEl.naturalWidth || 1);
+          const scaleY = comp.height / (imgEl.naturalHeight || 1);
+          console.log(`[FabricCanvas] 图片加载:`, {
+            comp: { id: comp.id, x: comp.x, y: comp.y, w: comp.width, h: comp.height },
+            pngNatural: { w: imgEl.naturalWidth, h: imgEl.naturalHeight },
+            scale: { x: scaleX, y: scaleY, uniform: scaleX === scaleY ? scaleX : 'NON-UNIFORM' },
+            isFullCanvas: comp.x === 0 && comp.y === 0 &&
+              comp.width === canvas.getWidth() && comp.height === canvas.getHeight(),
+            url: absoluteUrl.slice(-40),
           });
 
           if (!imgPlaceholder.canvas) {
@@ -463,10 +487,6 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
           const fabricImg = new FabricImage(imgEl);
           fabricImg.width = imgEl.naturalWidth;
           fabricImg.height = imgEl.naturalHeight;
-
-          const scaleX = comp.width / (fabricImg.width || 1);
-          const scaleY = comp.height / (fabricImg.height || 1);
-          console.log(`[FabricCanvas] 缩放: scaleX=${scaleX} scaleY=${scaleY}`);
 
           // 如果 placeholder 已被 canvas.clear() 移除，跳过（跨渲染周期）
           if (imgPlaceholder.canvas !== canvas) {
@@ -488,6 +508,7 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
             lockScalingX: isFullCanvas,
             lockScalingY: isFullCanvas,
             lockRotation: isFullCanvas,
+            lockUniScaling: !isFullCanvas, // 拖动控制点不改变宽高比
             hoverCursor: isFullCanvas ? "default" : "move",
           });
           canvas.add(fabricImg);
