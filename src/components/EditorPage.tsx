@@ -67,6 +67,11 @@ const MATERIAL_IMAGES = [
   { id: "m6", name: "图案2", color: "#FF7675" },
 ];
 
+interface EditorSnapshot {
+  doc: DesignDocument;
+  hiddenLayers: string[];
+}
+
 function createBlankDoc(c: { width: number; height: number; background: string }): DesignDocument {
   return {
     version: 1,
@@ -83,8 +88,8 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     if (draftId) { const s = loadDraft(draftId); if (s) return s; }
     return createBlankDoc(canvasConfig);
   });
-  const [undoStack, setUndoStack] = useState<DesignDocument[]>([]);
-  const [redoStack, setRedoStack] = useState<DesignDocument[]>([]);
+  const [undoStack, setUndoStack] = useState<EditorSnapshot[]>([]);
+  const [redoStack, setRedoStack] = useState<EditorSnapshot[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState(doc.meta.name);
   const [saved, setSaved] = useState(false);
@@ -247,7 +252,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
             c.height === prev.canvas.height
           ));
           return { ...prev, components: [...filtered, ...assetComponents] };
-        });
+        }, false);
         setSplitCount(assetComponents.length);
         setSplitStatus("done");
       })
@@ -279,12 +284,20 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     onBack();
   };
 
+  const snapshot = (): EditorSnapshot => ({ doc, hiddenLayers: [...hiddenLayers] });
+
+  const pushHistory = () => {
+    const current = snapshot();
+    setUndoStack((stack) => [...stack, current].slice(-50));
+    setRedoStack([]);
+  };
+
   const updateDoc = (updater: (prev: DesignDocument) => DesignDocument, recordHistory = true) => {
     setDoc((prev) => {
       const next = updater(prev);
       if (next === prev) return prev;
       if (recordHistory) {
-        setUndoStack((stack) => [...stack, prev].slice(-50));
+        setUndoStack((stack) => [...stack, { doc: prev, hiddenLayers: [...hiddenLayers] }].slice(-50));
         setRedoStack([]);
       }
       return next;
@@ -295,8 +308,9 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     setUndoStack((stack) => {
       if (stack.length === 0) return stack;
       const previous = stack[stack.length - 1];
-      setRedoStack((redo) => [doc, ...redo].slice(0, 50));
-      setDoc(previous);
+      setRedoStack((redo) => [snapshot(), ...redo].slice(0, 50));
+      setDoc(previous.doc);
+      setHiddenLayers(new Set(previous.hiddenLayers));
       setSelectedId(null);
       return stack.slice(0, -1);
     });
@@ -306,8 +320,9 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     setRedoStack((stack) => {
       if (stack.length === 0) return stack;
       const next = stack[0];
-      setUndoStack((undo) => [...undo, doc].slice(-50));
-      setDoc(next);
+      setUndoStack((undo) => [...undo, snapshot()].slice(-50));
+      setDoc(next.doc);
+      setHiddenLayers(new Set(next.hiddenLayers));
       setSelectedId(null);
       return stack.slice(1);
     });
@@ -412,6 +427,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     });
   };
   const handleToggleVisibility = (id: string) => {
+    pushHistory();
     setHiddenLayers(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
