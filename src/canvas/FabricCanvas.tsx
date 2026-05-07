@@ -98,7 +98,7 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
 
     // 所有组件均渲染为 Fabric 对象（不再跳过全画幅图片）
     document.components.forEach((comp) => {
-      const obj = componentToFabric(comp, canvas);
+      const obj = componentToFabric(comp, canvas, idMapRef.current);
       if (obj) {
         idMapRef.current.set(comp.id, obj);
         canvas.add(obj);
@@ -407,7 +407,7 @@ export default FabricCanvas;
 
 /* ===== DesignComponent → Fabric Object ===== */
 
-function componentToFabric(comp: DesignComponent, canvas: Canvas): FabricObject | null {
+function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<string, FabricObject>): FabricObject | null {
   const base = {
     left: comp.x,
     top: comp.y,
@@ -485,8 +485,14 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas): FabricObject 
             hoverCursor: isFullCanvas ? "default" : "move",
           });
           imgPlaceholder.canvas.add(fabricImg);
+
+          // 更新 idMap：把 comp.id 指向真实的 FabricImage，而非已移除的 placeholder
+          if (idMap) {
+            idMap.set(comp.id, fabricImg);
+          }
+
           imgPlaceholder.canvas.requestRenderAll();
-          console.log("[FabricCanvas] 图片已添加到画布");
+          console.log("[FabricCanvas] 图片已添加到画布，idMap 已更新");
         };
 
         imgEl.onerror = (err) => {
