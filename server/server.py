@@ -1168,9 +1168,13 @@ def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, 
             "uncertainty": plan["uncertainty"],
         })
 
-    bg = src_np.copy()
-    bg[:, :, 3] = np.where(np.asarray(component_alpha) > 16, 0, bg[:, :, 3])
-    bg_img = Image.fromarray(bg)
+    filled_background_path = SOURCE_POSTER_TEMPLATES / "background-filled.png"
+    if filled_background_path.exists():
+        bg_img = Image.open(filled_background_path).convert("RGBA")
+    else:
+        bg = src_np.copy()
+        bg[:, :, 3] = np.where(np.asarray(component_alpha) > 16, 0, bg[:, :, 3])
+        bg_img = Image.fromarray(bg)
     bg_img.save(layers_dir / "background.png", "PNG")
 
     background_plan = SOURCE_POSTER_LAYER_PLAN[0]
