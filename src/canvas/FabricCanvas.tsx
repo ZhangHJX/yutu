@@ -77,8 +77,8 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
 
     // 背景色矩形（始终在最底层）
     const bgRect = new Rect({
-      left: 0,
-      top: 0,
+      left: 0, top: 0,
+      originX: 'left', originY: 'top',
       width: document.canvas.width,
       height: document.canvas.height,
       fill: document.canvas.background,
@@ -100,13 +100,13 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
     const cx = document.canvas.width;
     const cy = document.canvas.height;
     const outerBorder = new Rect({
-      left: 0, top: 0, width: cx, height: cy,
+      left: 0, top: 0, originX: 'left', originY: 'top', width: cx, height: cy,
       fill: "transparent", stroke: "#FFFFFF", strokeWidth: 2,
       selectable: false, evented: false, excludeFromExport: true,
     });
     canvas.add(outerBorder);
     const innerBorder = new Rect({
-      left: 1, top: 1, width: cx - 2, height: cy - 2,
+      left: 1, top: 1, originX: 'left', originY: 'top', width: cx - 2, height: cy - 2,
       fill: "transparent", stroke: "#3498DB", strokeWidth: 1,
       selectable: false, evented: false, excludeFromExport: true,
     });
@@ -430,6 +430,8 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
   const base = {
     left: comp.x,
     top: comp.y,
+    originX: 'left' as const,
+    originY: 'top' as const,
     width: comp.width,
     height: comp.height,
     angle: comp.rotation ?? 0,
@@ -498,6 +500,8 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
           fabricImg.set({
             left: comp.x,
             top: comp.y,
+            originX: 'left',
+            originY: 'top',
             scaleX,
             scaleY,
             selectable: !isFullCanvas,

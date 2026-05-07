@@ -1148,20 +1148,11 @@ async def build_assets(req: BuildAssetsRequest):
         # 背景层（直接复制全图）
         bg_path = layers_dir / "background.png"
         pil_src.save(str(bg_path))
-        # 背景使用与文本层相同的 scale/offset，确保对齐
-        bg_bounds = {
-            "x": round(offset_x, 1),
-            "y": round(offset_y, 1),
-            "width": round(orig_w * scale, 1),
-            "height": round(orig_h * scale, 1),
-        }
-        print(f"[BuildAssets] 背景 bounds={bg_bounds} (scale={scale:.4f}, offset=({offset_x}, {offset_y}), " +
-              f"orig={orig_w}x{orig_h}, canvas={canvas_w}x{canvas_h})")
         assets.append({
             "file": "background.png",
             "type": "background",
             "label": "背景",
-            "bounds": bg_bounds,
+            "bounds": {"x": 0, "y": 0, "width": canvas_w or orig_w, "height": canvas_h or orig_h},
             "zIndex": 0,
             "completion": 1.0,
             "uncertainty": "none",
