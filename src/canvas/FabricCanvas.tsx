@@ -449,8 +449,8 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas): FabricObject 
     case "image": {
       const imgPlaceholder = new Rect({ ...base, fill: "#DFE6E9", rx: 4, ry: 4 });
       if (comp.content) {
-        // 手动加载 HTMLImageElement + new FabricImage(el) 方式，
-        // 绕过 Fabric v7 FabricImage.fromURL() 内部用 element.width（CSS 宽度 = 0）的 bug
+        // 非全画幅资产层/用户图片 → 加载为可选择、可拖动的 Fabric 对象
+        // （全画幅图片已在主渲染循环中跳过，走 DOM <img> 背景）
         const absoluteUrl = new URL(comp.content, window.location.origin).toString();
         console.log(`[FabricCanvas] 手动加载图片: ${absoluteUrl}`);
 
@@ -467,8 +467,6 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas): FabricObject 
             return;
           }
 
-          // 构造 FabricImage，但 Fabric v7 的 _configureImage 会用 element.width（=0）覆盖 width，
-          // 所以构造后立即用 naturalWidth 修正
           const fabricImg = new FabricImage(imgEl);
           fabricImg.width = imgEl.naturalWidth;
           fabricImg.height = imgEl.naturalHeight;
@@ -483,15 +481,15 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas): FabricObject 
             top: comp.y,
             scaleX,
             scaleY,
-            selectable: false,
-            evented: false,
-            hasControls: false,
-            lockMovementX: true,
-            lockMovementY: true,
-            lockScalingX: true,
-            lockScalingY: true,
-            lockRotation: true,
-            hoverCursor: "default",
+            selectable: true,
+            evented: true,
+            hasControls: true,
+            lockMovementX: false,
+            lockMovementY: false,
+            lockScalingX: false,
+            lockScalingY: false,
+            lockRotation: false,
+            hoverCursor: "move",
           });
           imgPlaceholder.canvas.add(fabricImg);
           imgPlaceholder.canvas.requestRenderAll();

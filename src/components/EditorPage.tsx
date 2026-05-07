@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import FabricCanvas from "@/canvas/FabricCanvas";
 import type { FabricCanvasHandle } from "@/canvas/FabricCanvas";
 import type { DesignDocument, DesignComponent } from "@/core/DesignDocument";
@@ -24,18 +24,18 @@ async function callAIGenerate(
   return { document: data.document as DesignDocument, imageUrl: data.image_url as string };
 }
 
-/** 调用视觉平面拆分接口 */
-async function callDecomposeAssets(
+/** 调用 V2 透明 PNG 资产拆分接口 */
+async function callBuildAssets(
   imageUrl: string, canvasW: number, canvasH: number
 ): Promise<any> {
   const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${window.location.origin}${imageUrl}`;
-  const res = await fetch(`${AI_API_BASE}/api/ai/decompose-assets`, {
+  const res = await fetch(`${AI_API_BASE}/api/ai/build-assets`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ image_url: fullUrl, canvas_width: canvasW, canvas_height: canvasH }),
   });
   const data = await res.json();
-  if (!data.ok) throw new Error(data.error || "视觉平面拆分失败");
+  if (!data.ok) throw new Error(data.error || "图层拆分失败");
   return data;
 }
 
@@ -97,10 +97,19 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  /* ---- OCR 自动拆文字层 ---- */
-  const [ocrStatus, setOcrStatus] = useState<"idle" | "running" | "done" | "error">("idle");
-  const [ocrCount, setOcrCount] = useState(0);
-  const ocrTriggeredRef = useRef<string | null>(null);
+  /* ---- 资产拆分状态 ---- */
+  interface AssetInfo {
+    type: string;
+    label: string;
+    zIndex: number;
+    completion: number;
+    uncertainty: string;
+  }
+  const [splitStatus, setSplitStatus] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [splitCount, setSplitCount] = useState(0);
+  const splitTriggeredRef = useRef<string | null>(null);
+  const [hiddenLayers, setHiddenLayers] = useState<Set<string>>(new Set());
+  const [assetInfoMap, setAssetInfoMap] = useState<Map<string, AssetInfo>>(new Map());
 
   /* ---- 调试信息 ────────────────────── */
   const BUILD_VER = "2026-05-06-15:03";
@@ -150,7 +159,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     };
   }, []);
 
-  /** 视觉平面拆分：进入编辑器时自动拆图 → 追加少量可编辑文字组件 */
+  /** 进入编辑器时自动调用 build-assets 拆分透明 PNG 资产层 */
   useEffect(() => {
     const imgComp = doc.components.find(
       (c) => c.type === "image" && c.x === 0 && c.y === 0 &&
@@ -158,55 +167,62 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     );
     if (!imgComp?.content) return;
 
-    // 已有拆分层 → 跳过
-    if (doc.components.some((c) => c.id.startsWith("decompose-"))) return;
+    // 已有资产层 → 跳过
+    if (doc.components.some((c) => c.id.startsWith("asset-"))) return;
     // 正在处理同一张图 → 跳过
-    if (ocrTriggeredRef.current === imgComp.content) return;
+    if (splitTriggeredRef.current === imgComp.content) return;
 
-    ocrTriggeredRef.current = imgComp.content;
-    setOcrStatus("running");
+    splitTriggeredRef.current = imgComp.content;
+    setSplitStatus("running");
 
-    callDecomposeAssets(imgComp.content, doc.canvas.width, doc.canvas.height)
+    callBuildAssets(imgComp.content, doc.canvas.width, doc.canvas.height)
       .then((result: any) => {
-        // 只将高置信可读文字组件（3-5 个）转为 Textbox
-        const textComps: DesignComponent[] = (result.text_candidates || []).map((tc: any, i: number) => ({
-          id: `decompose-text-${Date.now()}-${i}`,
-          type: "text" as const,
-          x: tc.bounds.x,
-          y: tc.bounds.y,
-          width: tc.bounds.width,
-          height: tc.bounds.height,
-          content: tc.content,
-          style: {
-            fontSize: tc.style.fontSize,
-            color: tc.style.color,
-            textAlign: tc.style.textAlign || "left",
-          },
-          editable: true,
-          editableProperties: [],
-          slot: null,
-        }));
+        const assets = result.assets || [];
+        const newComponents: DesignComponent[] = [];
+        const infoMap = new Map<string, AssetInfo>();
 
-        if (textComps.length === 0) {
-          setOcrCount(0);
-          setOcrStatus("done");
+        assets.forEach((a: any, i: number) => {
+          if (a.type === "background") return; // 跳过背景（已有 DOM 背景图）
+          const id = `asset-${Date.now()}-${i}`;
+          newComponents.push({
+            id,
+            type: "image",
+            x: a.bounds.x,
+            y: a.bounds.y,
+            width: a.bounds.width,
+            height: a.bounds.height,
+            content: `/generated/layers/${a.file}`,
+            editable: true,
+            editableProperties: [],
+            slot: null,
+            style: {},
+          });
+          infoMap.set(id, {
+            type: a.type,
+            label: a.label,
+            zIndex: a.zIndex,
+            completion: a.completion,
+            uncertainty: a.uncertainty,
+          });
+        });
+
+        if (newComponents.length === 0) {
+          setSplitCount(0);
+          setSplitStatus("done");
           return;
         }
 
+        setAssetInfoMap(infoMap);
         setDoc((prev) => ({
           ...prev,
-          components: [
-            ...prev.components,
-            // + 可编辑文字组件（不替换原图）
-            ...textComps,
-          ],
+          components: [...prev.components, ...newComponents],
         }));
-        setOcrCount(textComps.length);
-        setOcrStatus("done");
+        setSplitCount(newComponents.length);
+        setSplitStatus("done");
       })
       .catch((e) => {
-        console.error("[Decompose] 拆分失败:", e);
-        setOcrStatus("error");
+        console.error("[BuildAssets] 拆分失败:", e);
+        setSplitStatus("error");
       });
   }, [doc]);
 
@@ -334,6 +350,14 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
       return { ...prev, components: comps };
     });
   };
+  const handleToggleVisibility = (id: string) => {
+    setHiddenLayers(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   /* ---- 选中组件渲染 ---- */
   const renderTextProps = () => {
@@ -401,6 +425,12 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
   };
 
   const triggerZoomDrag = useRef(false);
+
+  /* ---- 可见组件（隐藏层不传给 FabricCanvas） ---- */
+  const visibleDoc = useMemo(() => ({
+    ...doc,
+    components: doc.components.filter(c => !hiddenLayers.has(c.id)),
+  }), [doc, hiddenLayers]);
 
   const handleZoomDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const el = e.currentTarget as HTMLElement;
@@ -510,7 +540,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         <div className="editor-canvas">
           <FabricCanvas
             ref={canvasRef}
-            document={doc}
+            document={visibleDoc}
             editable
             zoom={zoom}
             onComponentSelect={(id) => setSelectedId(id)}
@@ -535,19 +565,41 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
               {doc.components.length === 0 && (
                 <div className="layer-empty">暂无图层</div>
               )}
-              {[...doc.components].reverse().map((comp, i) => (
-                <div
-                  key={comp.id}
-                  className={`layer-item ${selectedId === comp.id ? "active" : ""}`}
-                  onClick={() => handleLayerSelect(comp.id)}
-                >
-                  <span className="layer-icon">
-                    {comp.type === "text" ? "T" : comp.type === "image" ? "🖼" : "▣"}
-                  </span>
-                  <span className="layer-name">{comp.type} {doc.components.length - i}</span>
-                  <button className="layer-btn" onClick={(e) => { e.stopPropagation(); handleLayerDelete(comp.id); }}>✕</button>
-                </div>
-              ))}
+              {[...doc.components].reverse().map((comp, i) => {
+                const assetInfo = comp.id.startsWith("asset-") ? assetInfoMap.get(comp.id) : null;
+                const isHidden = hiddenLayers.has(comp.id);
+                return (
+                  <div
+                    key={comp.id}
+                    className={`layer-item ${selectedId === comp.id ? "active" : ""} ${isHidden ? "layer-hidden" : ""}`}
+                    onClick={() => handleLayerSelect(comp.id)}
+                  >
+                    <button
+                      className="layer-vis-btn"
+                      onClick={(e) => { e.stopPropagation(); handleToggleVisibility(comp.id); }}
+                    >
+                      {isHidden ? "◯" : "●"}
+                    </button>
+                    <span className="layer-icon">
+                      {assetInfo ? (
+                        <span className={`layer-type-dot type-${assetInfo.type}`} />
+                      ) : comp.type === "text" ? (
+                        "T"
+                      ) : comp.type === "image" ? (
+                        "🖼"
+                      ) : "▣"}
+                    </span>
+                    {assetInfo ? (
+                      <span className="layer-name">
+                        <span className="layer-type-label">{assetInfo.type}</span>
+                        <span className="layer-asset-label">{assetInfo.label}</span>
+                      </span>
+                    ) : (
+                      <span className="layer-name">{comp.type} {doc.components.length - i}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -579,14 +631,14 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         />
       )}
 
-      {/* ── OCR 状态提示 ── */}
-      {ocrStatus === "running" && (
+      {/* ── 拆分状态提示 ── */}
+      {splitStatus === "running" && (
         <div className="ocr-toast">🔍 正在拆分图层...</div>
       )}
-      {ocrStatus === "done" && ocrCount > 0 && (
-        <div className="ocr-toast ocr-toast-done">✅ 已拆分 {ocrCount} 个图层</div>
+      {splitStatus === "done" && splitCount > 0 && (
+        <div className="ocr-toast ocr-toast-done">✅ 已拆分 {splitCount} 个资产层</div>
       )}
-      {ocrStatus === "error" && (
+      {splitStatus === "error" && (
         <div className="ocr-toast ocr-toast-error">⚠️ 图层拆分失败</div>
       )}
 
@@ -887,10 +939,20 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         .layer-empty { padding: 20px; text-align: center; color: #666; font-size: 12px; }
         .layer-item { display: flex; align-items: center; gap: 6px; padding: 8px 10px; cursor: pointer; color: #aaa; font-size: 12px; border-left: 3px solid transparent; }
         .layer-item.active { background: rgba(108,92,231,0.15); color: #A29BFE; border-left-color: #6C5CE7; }
-        .layer-icon { width: 18px; text-align: center; font-size: 12px; }
-        .layer-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .layer-item.layer-hidden { opacity: 0.4; }
+        .layer-icon { width: 18px; text-align: center; font-size: 12px; flex-shrink: 0; }
+        .layer-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; flex-direction: column; gap: 1px; }
         .layer-btn { background: none; border: none; color: #666; font-size: 10px; cursor: pointer; padding: 2px 4px; }
         .layer-btn:hover { color: #e74c3c; }
+        .layer-vis-btn { background: none; border: none; color: #888; font-size: 10px; cursor: pointer; padding: 2px; flex-shrink: 0; width: 16px; text-align: center; }
+        .layer-vis-btn:active { color: #A29BFE; }
+        .layer-type-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+        .layer-type-dot.type-playlist-panel { background: #6C5CE7; }
+        .layer-type-dot.type-title { background: #00CEC9; }
+        .layer-type-dot.type-label { background: #FDCB6E; }
+        .layer-type-dot.type-background { background: #636e72; }
+        .layer-type-label { font-size: 9px; color: #888; text-transform: uppercase; }
+        .layer-asset-label { font-size: 10px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* 画布容器 */
         .editor-canvas { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #1a1a1a; }
