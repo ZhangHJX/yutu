@@ -26,13 +26,13 @@ async function callAIGenerate(
 
 /** 调用 V2 透明 PNG 资产拆分接口 */
 async function callBuildAssets(
-  imageUrl: string, canvasW: number, canvasH: number
+  imageUrl: string, canvasW: number, canvasH: number, runId: string
 ): Promise<any> {
   const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${window.location.origin}${imageUrl}`;
   const res = await fetch(`${AI_API_BASE}/api/ai/build-assets`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ image_url: fullUrl, canvas_width: canvasW, canvas_height: canvasH }),
+    body: JSON.stringify({ image_url: fullUrl, canvas_width: canvasW, canvas_height: canvasH, run_id: runId }),
   });
   const data = await res.json();
   if (!data.ok) throw new Error(data.error || "图层拆分失败");
@@ -183,7 +183,8 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     splitTriggeredRef.current = imgComp.content;
     setSplitStatus("running");
 
-    callBuildAssets(imgComp.content, doc.canvas.width, doc.canvas.height)
+    const runId = imgComp.id.replace(/[^a-zA-Z0-9_-]/g, "-");
+    callBuildAssets(imgComp.content, doc.canvas.width, doc.canvas.height, runId)
       .then((result: any) => {
         const assets = result.assets || [];
         // 按 zIndex 排序保证渲染顺序
@@ -203,7 +204,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         const infoMap = new Map<string, AssetInfo>();
 
         sorted.forEach((a: any, i: number) => {
-          const id = `asset-${Date.now()}-${i}`;
+          const id = `asset-${runId}-${i}`;
           assetComponents.push({
             id,
             type: "image",
@@ -211,7 +212,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
             y: a.bounds.y,
             width: a.bounds.width,
             height: a.bounds.height,
-            content: `/generated/layers/${a.file}`,
+            content: `/generated/${a.file}`,
             editable: true,
             editableProperties: [],
             slot: null,

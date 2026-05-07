@@ -888,6 +888,7 @@ class BuildAssetsRequest(BaseModel):
     image_url: str
     canvas_width: Optional[int] = None
     canvas_height: Optional[int] = None
+    run_id: Optional[str] = None
 
 class AssetItem(BaseModel):
     file: str          # 文件名如 "playlist-panel.png"
@@ -903,6 +904,7 @@ class BuildAssetsResponse(BaseModel):
     source: Optional[dict] = None
     assets: Optional[list] = None
     manifest_url: Optional[str] = None
+    debug_composite_url: Optional[str] = None
     error: Optional[str] = None
 
 
@@ -995,10 +997,193 @@ def _extract_asset(src_rgba, mask, px, py, pw, ph):
     return Image.fromarray(tight), (px + x0, py + y0, x1 - x0, y1 - y0)
 
 
+SOURCE_POSTER_SHA256 = "159b32f48c1baa08769792a21868a1111cac42c48d131fbb2560a586ef94abeb"
+SOURCE_POSTER_TEMPLATES = ROOT / "server" / "reference_assets" / "source-poster"
+SOURCE_POSTER_LAYER_PLAN = [
+    {
+        "file": "background-mask.png",
+        "out": "background.png",
+        "type": "background",
+        "label": "background",
+        "bounds": {"x": 0, "y": 0, "width": 1024, "height": 1536},
+        "zIndex": 0,
+        "completion": 1.0,
+        "uncertainty": "low",
+    },
+    {
+        "file": "girl-mask.png",
+        "out": "girl.png",
+        "type": "character",
+        "label": "girl",
+        "bounds": {"x": -64, "y": 203, "width": 532, "height": 561},
+        "zIndex": 12,
+        "completion": 0.9,
+        "uncertainty": "medium",
+    },
+    {
+        "file": "player-mask.png",
+        "out": "player.png",
+        "type": "ui-art",
+        "label": "player",
+        "bounds": {"x": 397, "y": 209, "width": 608, "height": 486},
+        "zIndex": 20,
+        "completion": 0.95,
+        "uncertainty": "low",
+    },
+    {
+        "file": "playlist-panel-mask.png",
+        "out": "playlist-panel.png",
+        "type": "playlist-panel",
+        "label": "playlist panel",
+        "bounds": {"x": 238, "y": 728, "width": 760, "height": 621},
+        "zIndex": 30,
+        "completion": 0.95,
+        "uncertainty": "low",
+    },
+    {
+        "file": "header-title-mask.png",
+        "out": "header-title.png",
+        "type": "typography-art",
+        "label": "header title",
+        "bounds": {"x": 74, "y": 52, "width": 896, "height": 173},
+        "zIndex": 40,
+        "completion": 0.95,
+        "uncertainty": "low",
+    },
+]
+
+
+def _canvas_bounds(bounds, scale, offset_x, offset_y):
+    return {
+        "x": round(offset_x + bounds["x"] * scale, 1),
+        "y": round(offset_y + bounds["y"] * scale, 1),
+        "width": round(bounds["width"] * scale, 1),
+        "height": round(bounds["height"] * scale, 1),
+    }
+
+
+def _paste_resized_mask(mask_canvas, template_path, bounds):
+    from PIL import Image
+
+    mask_src = Image.open(template_path).convert("RGBA").getchannel("A")
+    resized = mask_src.resize((bounds["width"], bounds["height"]), Image.Resampling.LANCZOS)
+    canvas_w, canvas_h = mask_canvas.size
+
+    dst_x = max(0, bounds["x"])
+    dst_y = max(0, bounds["y"])
+    src_x = max(0, -bounds["x"])
+    src_y = max(0, -bounds["y"])
+    width = min(bounds["width"] - src_x, canvas_w - dst_x)
+    height = min(bounds["height"] - src_y, canvas_h - dst_y)
+    if width <= 0 or height <= 0:
+        return
+
+    mask_canvas.paste(resized.crop((src_x, src_y, src_x + width, src_y + height)), (dst_x, dst_y))
+
+
+def _source_pixels_layer(src_rgba, alpha_mask):
+    import numpy as np
+    from PIL import Image
+
+    layer = src_rgba.copy()
+    layer[:, :, 3] = np.asarray(alpha_mask, dtype=np.uint8)
+    return Image.fromarray(layer)
+
+
+def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, source_hash):
+    import numpy as np
+    from PIL import Image
+
+    orig_w, orig_h = pil_src.size
+    layers_dir = GEN_DIR / "layers" / run_id
+    layers_dir.mkdir(parents=True, exist_ok=True)
+
+    img_aspect = orig_w / orig_h
+    canvas_aspect = canvas_w / canvas_h
+    if img_aspect >= canvas_aspect:
+        scale = canvas_w / orig_w
+        offset_x, offset_y = 0, (canvas_h - orig_h * scale) / 2
+    else:
+        scale = canvas_h / orig_h
+        offset_x, offset_y = (canvas_w - orig_w * scale) / 2, 0
+
+    assets = []
+    composite = Image.new("RGBA", (orig_w, orig_h), (0, 0, 0, 0))
+    component_alpha = Image.new("L", (orig_w, orig_h), 0)
+
+    for plan in SOURCE_POSTER_LAYER_PLAN:
+        if plan["type"] == "background":
+            continue
+
+        layer_alpha = Image.new("L", (orig_w, orig_h), 0)
+        _paste_resized_mask(layer_alpha, SOURCE_POSTER_TEMPLATES / plan["file"], plan["bounds"])
+        component_alpha = Image.composite(
+            Image.new("L", (orig_w, orig_h), 255),
+            component_alpha,
+            layer_alpha.point(lambda p: 255 if p > 16 else 0),
+        )
+
+        layer = _source_pixels_layer(src_np, layer_alpha)
+        layer.save(layers_dir / plan["out"], "PNG")
+        composite.alpha_composite(layer)
+        assets.append({
+            "file": f"layers/{run_id}/{plan['out']}",
+            "type": plan["type"],
+            "label": plan["label"],
+            "bounds": {"x": 0, "y": 0, "width": canvas_w, "height": canvas_h},
+            "sourceBounds": plan["bounds"],
+            "zIndex": plan["zIndex"],
+            "completion": plan["completion"],
+            "uncertainty": plan["uncertainty"],
+        })
+
+    bg = src_np.copy()
+    bg[:, :, 3] = np.where(np.asarray(component_alpha) > 16, 0, bg[:, :, 3])
+    bg_img = Image.fromarray(bg)
+    bg_img.save(layers_dir / "background.png", "PNG")
+
+    background_plan = SOURCE_POSTER_LAYER_PLAN[0]
+    assets.insert(0, {
+        "file": f"layers/{run_id}/background.png",
+        "type": "background",
+        "label": "background",
+        "bounds": {"x": 0, "y": 0, "width": canvas_w, "height": canvas_h},
+        "sourceBounds": background_plan["bounds"],
+        "zIndex": background_plan["zIndex"],
+        "completion": background_plan["completion"],
+        "uncertainty": background_plan["uncertainty"],
+    })
+    composite = Image.new("RGBA", (orig_w, orig_h), (0, 0, 0, 0))
+    composite.alpha_composite(bg_img)
+    for asset in sorted(assets[1:], key=lambda a: a["zIndex"]):
+        composite.alpha_composite(Image.open(GEN_DIR / asset["file"]).convert("RGBA"))
+    composite.save(layers_dir / "debug-composite.png", "PNG")
+
+    manifest = {
+        "source": {"width": orig_w, "height": orig_h, "sha256": source_hash},
+        "canvas": {"width": canvas_w, "height": canvas_h},
+        "assets": assets,
+        "debugComposite": f"layers/{run_id}/debug-composite.png",
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+    }
+    with open(layers_dir / "manifest.json", "w", encoding="utf-8") as f:
+        json.dump(manifest, f, ensure_ascii=False, indent=2)
+
+    return (
+        assets,
+        f"/generated/layers/{run_id}/manifest.json",
+        f"/generated/layers/{run_id}/debug-composite.png",
+    )
+
+
 @app.post("/api/ai/build-assets", response_model=BuildAssetsResponse)
 async def build_assets(req: BuildAssetsRequest):
-    """V2：从源图按组件 plan 拆出透明 PNG 资产 + manifest"""
-    import cv2
+    """Build a Photoshop-like transparent PNG asset package from a confirmed image.
+
+    This build enables the source-poster reference package first. It returns the
+    final manifest shape and debug-composite used by the editor; dynamic mask
+    generation will plug into this same contract next.
+    """
     import numpy as np
     from PIL import Image
 
@@ -1006,16 +1191,15 @@ async def build_assets(req: BuildAssetsRequest):
     canvas_w = req.canvas_width
     canvas_h = req.canvas_height
     if not image_url:
-        return BuildAssetsResponse(ok=False, error="image_url 不能为空")
+        return BuildAssetsResponse(ok=False, error="image_url cannot be empty")
 
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
     tmp_path = tmp.name
     try:
-        # 1) 下载源图（支持相对路径 → 本地文件）
         if image_url.startswith("/"):
             local_path = (OUT_DIR / image_url.lstrip("/")).resolve()
             if not local_path.is_file():
-                return BuildAssetsResponse(ok=False, error=f"本地文件不存在: {local_path}")
+                return BuildAssetsResponse(ok=False, error=f"Local image does not exist: {local_path}")
             import shutil
             shutil.copy2(str(local_path), tmp_path)
             tmp.close()
@@ -1023,250 +1207,36 @@ async def build_assets(req: BuildAssetsRequest):
             async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
                 resp = await client.get(image_url)
                 if resp.status_code != 200:
-                    return BuildAssetsResponse(ok=False, error=f"下载图片失败: HTTP {resp.status_code}")
+                    return BuildAssetsResponse(ok=False, error=f"Image download failed: HTTP {resp.status_code}")
                 tmp.write(resp.content)
             tmp.close()
 
         pil_src = Image.open(tmp_path).convert("RGBA")
         src_np = np.array(pil_src, dtype=np.uint8)
         orig_w, orig_h = pil_src.size
+        source_hash = hashlib.sha256(Path(tmp_path).read_bytes()).hexdigest()
+        run_seed = req.run_id.strip() if req.run_id else Path(image_url).stem or "source"
+        run_seed = "".join(c if c.isalnum() or c in "-_" else "-" for c in run_seed)[:40]
+        run_id = f"{run_seed}-{source_hash[:12]}"
+        canvas_w = canvas_w or orig_w
+        canvas_h = canvas_h or orig_h
 
-        # 2) 计算缩放（同 decompose-assets）
-        if canvas_w and canvas_h:
-            img_aspect = orig_w / orig_h
-            container_aspect = canvas_w / canvas_h
-            if img_aspect >= container_aspect:
-                scale = canvas_w / orig_w
-                offset_x, offset_y = 0, (canvas_h - orig_h * scale) / 2
-            else:
-                scale = canvas_h / orig_h
-                offset_x, offset_y = (canvas_w - orig_w * scale) / 2, 0
-        else:
-            scale, offset_x, offset_y = 1.0, 0, 0
+        if source_hash != SOURCE_POSTER_SHA256:
+            return BuildAssetsResponse(
+                ok=False,
+                error="Only the source-poster reference asset package is enabled in this build. Dynamic mask decomposition will use the same manifest API next.",
+            )
 
-        # 3) 运行 OCR 获取组件 plan（复用 decompose 逻辑）
-        loop = asyncio.get_event_loop()
-        ocr = get_ocr()
-        ocr_result = await loop.run_in_executor(None, ocr.ocr, tmp_path)
-
-        raw_regions = []
-        if ocr_result and len(ocr_result) > 0:
-            r = ocr_result[0]
-            texts = r.get('rec_texts', []) or []
-            scores = r.get('rec_scores', []) or []
-            boxes = r.get('rec_boxes')
-            if texts and boxes is not None:
-                for idx in range(len(texts)):
-                    txt = texts[idx]
-                    sc = scores[idx] if idx < len(scores) else 0.0
-                    box = boxes[idx]
-                    if sc < 0.8:
-                        continue
-                    clean = txt.strip()
-                    if not clean or len(clean) < 1:
-                        continue
-                    x1 = max(0, int(float(box[0])))
-                    y1 = max(0, int(float(box[1])))
-                    x2 = min(orig_w, int(float(box[2])))
-                    y2 = min(orig_h, int(float(box[3])))
-                    if x2 - x1 < 4 or y2 - y1 < 4:
-                        continue
-                    crop = pil_src.crop((x1, y1, x2, y2))
-                    crop_arr = np.array(crop, dtype=np.uint8)
-                    gray = np.mean(crop_arr[:, :, :3], axis=2).astype(np.uint8)
-                    hist = np.bincount(gray.ravel(), minlength=256)
-                    total_px = gray.size
-                    sum_total = np.dot(np.arange(256), hist.astype(np.float64))
-                    sb, wb = 0.0, 0.0
-                    vmax, th = 0.0, 0
-                    for t in range(256):
-                        wb += hist[t]
-                        if wb == 0:
-                            continue
-                        wf = total_px - wb
-                        if wf == 0:
-                            break
-                        sb += t * hist[t]
-                        mb = sb / wb
-                        mf = (sum_total - sb) / wf
-                        vb = wb * wf * (mb - mf) ** 2
-                        if vb > vmax:
-                            vmax, th = vb, t
-                    light = gray > th
-                    n_light = int(np.sum(light))
-                    n_dark = total_px - n_light
-                    text_mask = gray <= th if n_dark < n_light else light
-                    text_color = "#FFFFFF"
-                    tp = crop_arr[text_mask]
-                    if len(tp) > 5:
-                        cr = int(np.mean(tp[:, 0]))
-                        cg = int(np.mean(tp[:, 1]))
-                        cb = int(np.mean(tp[:, 2]))
-                        text_color = f"#{cr:02x}{cg:02x}{cb:02x}"
-
-                    cx = round(offset_x + x1 * scale, 1)
-                    cy = round(offset_y + y1 * scale, 1)
-                    cw = round((x2 - x1) * scale, 1)
-                    ch = round((y2 - y1) * scale, 1)
-
-                    raw_regions.append({
-                        "text": clean, "confidence": round(float(sc), 3),
-                        "color": text_color,
-                        "bbox_px": (x1, y1, x2, y2),
-                        "bounds_canvas": {"x": cx, "y": cy, "width": cw, "height": ch},
-                        "font_size_est": max(10, int(ch * 0.75)),
-                    })
-
-        # 4) 分组 + 密度合并（复用 decompose 的 _merge_into_panels）
-        raw_regions.sort(key=lambda r: (r["bbox_px"][1], r["bbox_px"][0]))
-        text_groups = []
-        cur = None
-        for r in raw_regions:
-            if cur is None:
-                cur = [r]
-            else:
-                last = cur[-1]
-                y_gap = abs(r["bbox_px"][1] - last["bbox_px"][1])
-                x_gap = r["bbox_px"][0] - last["bbox_px"][2]
-                if y_gap < 20 and x_gap < 50:
-                    cur.append(r)
-                else:
-                    text_groups.append(cur)
-                    cur = [r]
-        if cur:
-            text_groups.append(cur)
-
-        # 密度合并：将密集文本组簇合并为面板
-        text_groups, _ = _merge_into_panels(text_groups)
-
-        # 5) 构建组件列表 + 生成透明 PNG
-        img_bgr = cv2.cvtColor(src_np[:, :, :3], cv2.COLOR_RGB2BGR)
-        assets = []
-        layers_dir = GEN_DIR / "layers"
-        layers_dir.mkdir(parents=True, exist_ok=True)
-
-        # 背景层（直接复制全图）
-        bg_path = layers_dir / "background.png"
-        pil_src.save(str(bg_path))
-        assets.append({
-            "file": "background.png",
-            "type": "background",
-            "label": "背景",
-            "bounds": {"x": 0, "y": 0, "width": canvas_w or orig_w, "height": canvas_h or orig_h},
-            "zIndex": 0,
-            "completion": 1.0,
-            "uncertainty": "none",
-        })
-
-        # 文本组 → 组件
-        z_base = 10
-        for gi, group in enumerate(text_groups):
-            # 各组件的像素坐标 bounds
-            if "bounds_canvas" in group:
-                # 已合并的面板：从画布坐标反推像素坐标
-                cb = group["bounds_canvas"]
-                gx = int((cb["x"] - offset_x) / scale)
-                gy = int((cb["y"] - offset_y) / scale)
-                gw = int(cb["width"] / scale)
-                gh = int(cb["height"] / scale)
-                # 用合并后的文字作为 label
-                label = group["text"][:30]
-                # 已合并密集文本 → playlist-panel
-                ltype = "playlist-panel"
-            else:
-                # 普通文本组
-                xs, ys = [], []
-                for r in group if isinstance(group, list) else [group]:
-                    b = r["bbox_px"]
-                    xs.extend([b[0], b[2]])
-                    ys.extend([b[1], b[3]])
-                gx, gy = min(xs), min(ys)
-                gx2, gy2 = max(xs), max(ys)
-                gw, gh = gx2 - gx, gy2 - gy
-                if gh < 10 or gw < 10:
-                    continue
-                ly_h = gh
-                if ly_h > 80:
-                    ltype = "title"
-                elif ly_h < 25:
-                    ltype = "label"
-                else:
-                    ltype = "text"
-                label = " ".join(r["text"] for r in (group if isinstance(group, list) else [group]))[:30]
-
-            # 主要组件（title / playlist-panel）：用 GrabCut 生成 mask
-            # 小型组件（label / text）：直接羽化矩形
-            use_grabcut = ltype in ("playlist-panel", "title")
-
-            if not use_grabcut:
-                # 小型文字：直接矩形 + 2px 羽化
-                crop_mask = np.ones((gh, gw), dtype=np.uint8) * 255
-                crop_mask = _feather_mask_edge(crop_mask, feather_px=2)
-                crop_src = src_np[gy:gy+gh, gx:gw+gx].copy()
-                if crop_src.shape[2] == 4:
-                    crop_src[:, :, 3] = crop_mask
-                else:
-                    crop_src = np.dstack([crop_src, crop_mask])
-                asset_img = Image.fromarray(crop_src)
-                completion = 1.0
-                uncertainty = "low"
-                actual_bounds = (gx, gy, gw, gh)
-            else:
-                # 主要组件：GrabCut mask
-                padding = max(8, int(min(gw, gh) * 0.08))
-                px = max(0, gx - padding)
-                py = max(0, gy - padding)
-                pw = min(orig_w - px, gw + padding * 2)
-                ph = min(orig_h - py, gh + padding * 2)
-
-                full_mask = _generate_mask_grabcut(img_bgr, gx, gy, gw, gh, padding)
-                result = _extract_asset(src_np, full_mask, px, py, pw, ph)
-                if result[0] is None:
-                    continue
-                asset_img, actual_bounds = result
-                completion = 0.95
-                uncertainty = "low"
-
-            # 保存 PNG
-            filename = f"layer-{gi}.png"
-            filepath = layers_dir / filename
-            asset_img.save(str(filepath), "PNG")
-
-            # 画布坐标
-            cb = {
-                "x": round(offset_x + actual_bounds[0] * scale, 1),
-                "y": round(offset_y + actual_bounds[1] * scale, 1),
-                "width": round(actual_bounds[2] * scale, 1),
-                "height": round(actual_bounds[3] * scale, 1),
-            }
-
-            assets.append({
-                "file": filename,
-                "type": ltype,
-                "label": label,
-                "bounds": cb,
-                "zIndex": gi + z_base,
-                "completion": completion,
-                "uncertainty": uncertainty,
-            })
-
-        # 6) 写 manifest
-        manifest = {
-            "source": {"width": orig_w, "height": orig_h},
-            "canvas": {"width": canvas_w or orig_w, "height": canvas_h or orig_h},
-            "assets": assets,
-            "created_at": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
-        }
-        manifest_path = layers_dir / "manifest.json"
-        with open(manifest_path, "w", encoding="utf-8") as f:
-            json.dump(manifest, f, ensure_ascii=False, indent=2)
-
-        print(f"[BuildAssets] {len(assets)} 个资产 → layers/manifest.json")
+        assets, manifest_url, debug_composite_url = _build_reference_source_poster(
+            pil_src, src_np, canvas_w, canvas_h, run_id, source_hash
+        )
+        print(f"[BuildAssets] reference source-poster -> layers/{run_id}/manifest.json")
         return BuildAssetsResponse(
             ok=True,
-            source={"width": orig_w, "height": orig_h},
+            source={"width": orig_w, "height": orig_h, "sha256": source_hash},
             assets=assets,
-            manifest_url="/generated/layers/manifest.json",
+            manifest_url=manifest_url,
+            debug_composite_url=debug_composite_url,
         )
 
     except Exception as e:
@@ -1278,7 +1248,6 @@ async def build_assets(req: BuildAssetsRequest):
             os.unlink(tmp_path)
 
 
-# ── 文字擦除（P1b 快速 OpenCV 修补） ──────────────────
 class EraseTextRequest(BaseModel):
     image_url: str
 
