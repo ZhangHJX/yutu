@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState, useMemo, forwardRef, useImperativeHandle } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Canvas, Rect, Textbox, Ellipse, Triangle, FabricImage, FabricObject } from "fabric";
 import type { DesignDocument, DesignComponent } from "@/core/DesignDocument";
 
@@ -8,6 +8,7 @@ interface FabricCanvasProps {
   document: DesignDocument;
   editable?: boolean;
   zoom?: number;
+  hiddenIds?: Set<string>;
   onComponentSelect?: (id: string | null) => void;
   onComponentModify?: (id: string, changes: Partial<DesignComponent>) => void;
   onZoomChange?: (zoom: number) => void;
@@ -26,7 +27,7 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 10;
 
 const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function FabricCanvas(
-  { document, editable = false, zoom: controlledZoom, onComponentSelect, onComponentModify, onZoomChange },
+  { document, editable = false, zoom: controlledZoom, hiddenIds, onComponentSelect, onComponentModify, onZoomChange },
   ref
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -129,7 +130,45 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
     });
 
     canvas.requestRenderAll();
+
+    // 首次渲染后应用可见性
+    applyVisibility(hiddenIds);
   }, [document, ready]);
+
+  /** 可见性切换：不重建 canvas，直接修改现有对象的 visible 属性 */
+  const applyVisibility = useCallback((ids?: Set<string>) => {
+    const canvas = fabricRef.current;
+    if (!canvas || !ready) return;
+
+    for (const [id, obj] of idMapRef.current) {
+      const shouldHide = ids?.has(id) ?? false;
+      const targetVisible = !shouldHide;
+      if (obj.visible !== targetVisible) {
+        obj.set({
+          visible: targetVisible,
+          selectable: targetVisible,
+          evented: targetVisible,
+        });
+      }
+    }
+
+    // DOM 背景图可见性
+    if (bgImgRef.current) {
+      const bgComp = document.components.find(
+        (c) => c.type === "image" && c.x === 0 && c.y === 0 &&
+        c.width === document.canvas.width && c.height === document.canvas.height
+      );
+      const bgHidden = bgComp ? ids?.has(bgComp.id) : false;
+      bgImgRef.current.style.display = bgHidden ? "none" : "";
+    }
+
+    canvas.requestRenderAll();
+  }, [ready, document]);
+
+  /** 可见性变更时直接切换，不触发主渲染循环 */
+  useEffect(() => {
+    applyVisibility(hiddenIds);
+  }, [hiddenIds, applyVisibility]);
 
   /** 鼠标滚轮缩放（CSS transform 模式 — 只调 onZoomChange，不碰 Fabric zoom） */
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import FabricCanvas from "@/canvas/FabricCanvas";
 import type { FabricCanvasHandle } from "@/canvas/FabricCanvas";
 import type { DesignDocument, DesignComponent } from "@/core/DesignDocument";
@@ -351,6 +351,9 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     });
   };
   const handleToggleVisibility = (id: string) => {
+    // 禁止隐藏全画幅背景图
+    const comp = doc.components.find(c => c.id === id);
+    if (comp && isBackgroundComp(comp)) return;
     setHiddenLayers(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -426,11 +429,10 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
 
   const triggerZoomDrag = useRef(false);
 
-  /* ---- 可见组件（隐藏层不传给 FabricCanvas） ---- */
-  const visibleDoc = useMemo(() => ({
-    ...doc,
-    components: doc.components.filter(c => !hiddenLayers.has(c.id)),
-  }), [doc, hiddenLayers]);
+  /** 检查某组件是否为全画幅背景图 */
+  const isBackgroundComp = (comp: DesignComponent) =>
+    comp.type === "image" && comp.x === 0 && comp.y === 0 &&
+    comp.width === doc.canvas.width && comp.height === doc.canvas.height;
 
   const handleZoomDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const el = e.currentTarget as HTMLElement;
@@ -540,9 +542,10 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         <div className="editor-canvas">
           <FabricCanvas
             ref={canvasRef}
-            document={visibleDoc}
+            document={doc}
             editable
             zoom={zoom}
+            hiddenIds={hiddenLayers}
             onComponentSelect={(id) => setSelectedId(id)}
             onComponentModify={handleComponentModify}
             onZoomChange={(z) => setZoom(z)}
@@ -568,18 +571,22 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
               {[...doc.components].reverse().map((comp, i) => {
                 const assetInfo = comp.id.startsWith("asset-") ? assetInfoMap.get(comp.id) : null;
                 const isHidden = hiddenLayers.has(comp.id);
+                const isBg = isBackgroundComp(comp);
                 return (
                   <div
                     key={comp.id}
                     className={`layer-item ${selectedId === comp.id ? "active" : ""} ${isHidden ? "layer-hidden" : ""}`}
                     onClick={() => handleLayerSelect(comp.id)}
                   >
-                    <button
-                      className="layer-vis-btn"
-                      onClick={(e) => { e.stopPropagation(); handleToggleVisibility(comp.id); }}
-                    >
-                      {isHidden ? "◯" : "●"}
-                    </button>
+                    {!isBg && (
+                      <button
+                        className="layer-vis-btn"
+                        onClick={(e) => { e.stopPropagation(); handleToggleVisibility(comp.id); }}
+                      >
+                        {isHidden ? "◯" : "●"}
+                      </button>
+                    )}
+                    {isBg && <span className="layer-vis-spacer" />}
                     <span className="layer-icon">
                       {assetInfo ? (
                         <span className={`layer-type-dot type-${assetInfo.type}`} />
@@ -593,6 +600,11 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
                       <span className="layer-name">
                         <span className="layer-type-label">{assetInfo.type}</span>
                         <span className="layer-asset-label">{assetInfo.label}</span>
+                      </span>
+                    ) : isBg ? (
+                      <span className="layer-name">
+                        <span className="layer-type-label">background</span>
+                        <span className="layer-asset-label">底图 (锁定)</span>
                       </span>
                     ) : (
                       <span className="layer-name">{comp.type} {doc.components.length - i}</span>
@@ -946,6 +958,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         .layer-btn:hover { color: #e74c3c; }
         .layer-vis-btn { background: none; border: none; color: #888; font-size: 10px; cursor: pointer; padding: 2px; flex-shrink: 0; width: 16px; text-align: center; }
         .layer-vis-btn:active { color: #A29BFE; }
+        .layer-vis-spacer { width: 16px; flex-shrink: 0; }
         .layer-type-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
         .layer-type-dot.type-playlist-panel { background: #6C5CE7; }
         .layer-type-dot.type-title { background: #00CEC9; }
