@@ -905,6 +905,7 @@ class BuildAssetsResponse(BaseModel):
     assets: Optional[list] = None
     manifest_url: Optional[str] = None
     debug_composite_url: Optional[str] = None
+    quality: Optional[dict] = None
     error: Optional[str] = None
 
 
@@ -1090,6 +1091,21 @@ def _source_pixels_layer(src_rgba, alpha_mask):
     return Image.fromarray(layer)
 
 
+def _quality_report(source_img, composite_img):
+    import numpy as np
+
+    src = np.asarray(source_img.convert("RGBA"), dtype=np.int16)
+    comp = np.asarray(composite_img.convert("RGBA"), dtype=np.int16)
+    diff = np.abs(src - comp)
+    return {
+        "rgbMeanDiff": round(float(diff[:, :, :3].mean()), 3),
+        "alphaMeanDiff": round(float(diff[:, :, 3].mean()), 3),
+        "rgbMaxDiff": int(diff[:, :, :3].max()),
+        "alphaMaxDiff": int(diff[:, :, 3].max()),
+        "source": "debug-composite",
+    }
+
+
 def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, source_hash):
     import numpy as np
     from PIL import Image
@@ -1132,6 +1148,7 @@ def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, 
             "label": plan["label"],
             "bounds": {"x": 0, "y": 0, "width": canvas_w, "height": canvas_h},
             "sourceBounds": plan["bounds"],
+            "hitBounds": _canvas_bounds(plan["bounds"], scale, offset_x, offset_y),
             "zIndex": plan["zIndex"],
             "completion": plan["completion"],
             "uncertainty": plan["uncertainty"],
@@ -1149,6 +1166,7 @@ def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, 
         "label": "background",
         "bounds": {"x": 0, "y": 0, "width": canvas_w, "height": canvas_h},
         "sourceBounds": background_plan["bounds"],
+        "hitBounds": {"x": 0, "y": 0, "width": canvas_w, "height": canvas_h},
         "zIndex": background_plan["zIndex"],
         "completion": background_plan["completion"],
         "uncertainty": background_plan["uncertainty"],
@@ -1158,12 +1176,14 @@ def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, 
     for asset in sorted(assets[1:], key=lambda a: a["zIndex"]):
         composite.alpha_composite(Image.open(GEN_DIR / asset["file"]).convert("RGBA"))
     composite.save(layers_dir / "debug-composite.png", "PNG")
+    quality = _quality_report(pil_src, composite)
 
     manifest = {
         "source": {"width": orig_w, "height": orig_h, "sha256": source_hash},
         "canvas": {"width": canvas_w, "height": canvas_h},
         "assets": assets,
         "debugComposite": f"layers/{run_id}/debug-composite.png",
+        "quality": quality,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
     }
     with open(layers_dir / "manifest.json", "w", encoding="utf-8") as f:
@@ -1173,6 +1193,7 @@ def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, 
         assets,
         f"/generated/layers/{run_id}/manifest.json",
         f"/generated/layers/{run_id}/debug-composite.png",
+        quality,
     )
 
 
@@ -1227,7 +1248,7 @@ async def build_assets(req: BuildAssetsRequest):
                 error="Only the source-poster reference asset package is enabled in this build. Dynamic mask decomposition will use the same manifest API next.",
             )
 
-        assets, manifest_url, debug_composite_url = _build_reference_source_poster(
+        assets, manifest_url, debug_composite_url, quality = _build_reference_source_poster(
             pil_src, src_np, canvas_w, canvas_h, run_id, source_hash
         )
         print(f"[BuildAssets] reference source-poster -> layers/{run_id}/manifest.json")
@@ -1237,6 +1258,7 @@ async def build_assets(req: BuildAssetsRequest):
             assets=assets,
             manifest_url=manifest_url,
             debug_composite_url=debug_composite_url,
+            quality=quality,
         )
 
     except Exception as e:

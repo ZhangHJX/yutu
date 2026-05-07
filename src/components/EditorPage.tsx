@@ -104,6 +104,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     zIndex: number;
     completion: number;
     uncertainty: string;
+    hitBounds?: { x: number; y: number; width: number; height: number };
   }
   const [splitStatus, setSplitStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [splitCount, setSplitCount] = useState(0);
@@ -224,6 +225,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
             zIndex: a.zIndex,
             completion: a.completion,
             uncertainty: a.uncertainty,
+            hitBounds: a.hitBounds,
           });
         });
 
@@ -665,6 +667,18 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
       )}
 
       {/* 选中组件信息浮条 */}
+      {selectedId && assetInfoMap.get(selectedId)?.hitBounds && (
+        <div
+          className="asset-hitbox"
+          style={{
+            left: `${assetInfoMap.get(selectedId)!.hitBounds!.x}px`,
+            top: `${assetInfoMap.get(selectedId)!.hitBounds!.y}px`,
+            width: `${assetInfoMap.get(selectedId)!.hitBounds!.width}px`,
+            height: `${assetInfoMap.get(selectedId)!.hitBounds!.height}px`,
+          }}
+        />
+      )}
+
       {selectedId && selectedComp && (
         <div className="editor-selected-info">
           <span>{selectedComp.type === "text" ? "📝" : selectedComp.type === "image" ? "🖼️" : "▣"} {selectedComp.type}</span>
@@ -1071,6 +1085,14 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         }
         .ocr-toast-done { background: rgba(39, 174, 96, 0.9); }
         .ocr-toast-error { background: rgba(231, 76, 60, 0.9); }
+        .asset-hitbox {
+          position: absolute;
+          border: 2px dashed #00CEC9;
+          background: rgba(0, 206, 201, 0.12);
+          pointer-events: none;
+          z-index: 45;
+          box-shadow: 0 0 0 1px rgba(0,0,0,0.35);
+        }
         @keyframes ocrFadeIn {
           from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
           to { opacity: 1; transform: translateX(-50%) translateY(0); }
