@@ -110,6 +110,8 @@ if _env_path.is_file():
 GPT_IMAGE_API_KEY = os.environ.get("GPT_IMAGE_API_KEY", "")
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://co.yes.vg/v1")
 GPT_MAIN_MODEL = os.environ.get("GPT_MAIN_MODEL", "gpt-5.3-codex")  # 能调 image_generation tool 的主模型
+GPT_IMAGE_EDIT_MAX_SIDE = int(os.environ.get("GPT_IMAGE_EDIT_MAX_SIDE", "768"))
+ENABLE_MODEL_BACKGROUND_FILL = os.environ.get("ENABLE_MODEL_BACKGROUND_FILL") == "1"
 
 
 async def try_gpt_image_generate(prompt: str, w: int, h: int) -> Optional[bytes]:
@@ -907,6 +909,7 @@ class BuildAssetsResponse(BaseModel):
     manifest_url: Optional[str] = None
     debug_composite_url: Optional[str] = None
     quality: Optional[dict] = None
+    background_fill: Optional[dict] = None
     error: Optional[str] = None
 
 
@@ -1120,7 +1123,152 @@ def _alpha_bounds(alpha_img):
     return {"x": x1, "y": y1, "width": x2 - x1 + 1, "height": y2 - y1 + 1}
 
 
-def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, source_hash):
+def _image_data_url(img):
+    import io
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+def _prepare_responses_mask(component_alpha, expand=8, blur=3):
+    from PIL import Image
+    from PIL import ImageFilter
+
+    edit_region = component_alpha.point(lambda p: 255 if p > 16 else 0)
+    if expand > 0:
+        edit_region = edit_region.filter(ImageFilter.MaxFilter(expand * 2 + 1))
+    if blur > 0:
+        edit_region = edit_region.filter(ImageFilter.GaussianBlur(blur))
+    keep_alpha = edit_region.point(lambda p: 255 - p)
+    return Image.merge("RGBA", (Image.new("L", edit_region.size, 0), Image.new("L", edit_region.size, 0), Image.new("L", edit_region.size, 0), keep_alpha))
+
+
+def _mask_diff_report(source_img, filled_img, fill_mask):
+    import numpy as np
+
+    src = np.asarray(source_img.convert("RGB"), dtype=np.int16)
+    filled = np.asarray(filled_img.convert("RGB"), dtype=np.int16)
+    edit_alpha = np.asarray(fill_mask.getchannel("A"), dtype=np.uint8)
+    outside = edit_alpha > 240
+    inside = edit_alpha < 16
+    diff = np.abs(src - filled)
+    return {
+        "outsideMeanDiff": round(float(diff[outside].mean()), 3) if outside.any() else 0.0,
+        "insideMeanDiff": round(float(diff[inside].mean()), 3) if inside.any() else 0.0,
+    }
+
+
+async def _generate_filled_background(source_img, responses_mask):
+    from PIL import Image
+
+    if not ENABLE_MODEL_BACKGROUND_FILL:
+        return None, {
+            "status": "model_skipped",
+            "provider": "responses-mask-data-url",
+            "errorType": "Disabled",
+            "error": "Set ENABLE_MODEL_BACKGROUND_FILL=1 to run realtime background fill",
+        }
+    if not GPT_IMAGE_API_KEY:
+        return None, {"status": "model_failed", "provider": "responses-mask-data-url", "errorType": "MissingKey", "error": "GPT_IMAGE_API_KEY is not set"}
+
+    url = f"{OPENAI_BASE_URL.rstrip('/')}/responses"
+    attempts = []
+    for max_edit_side in dict.fromkeys([GPT_IMAGE_EDIT_MAX_SIDE, 512]):
+        edit_size = source_img.size
+        max_side = max(source_img.size)
+        if max_side > max_edit_side:
+            scale = max_edit_side / max_side
+            edit_size = (max(1, round(source_img.width * scale)), max(1, round(source_img.height * scale)))
+        edit_source = source_img.resize(edit_size, Image.Resampling.LANCZOS) if edit_size != source_img.size else source_img
+        edit_mask = responses_mask.resize(edit_size, Image.Resampling.LANCZOS) if edit_size != responses_mask.size else responses_mask
+        payload = {
+            "model": GPT_MAIN_MODEL,
+            "input": [{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "Edit the provided image. Fill only the transparent mask area by reconstructing the hidden background. "
+                            "Keep all unmasked pixels unchanged. DO NOT add text, people, subjects, icons, or decorations."
+                        ),
+                    },
+                    {"type": "input_image", "image_url": _image_data_url(edit_source)},
+                ],
+            }],
+            "tools": [{
+                "type": "image_generation",
+                "input_image_mask": {"image_url": _image_data_url(edit_mask)},
+            }],
+            "tool_choice": {"type": "image_generation"},
+        }
+        start = time.time()
+        attempt = {
+            "editSize": {"width": edit_size[0], "height": edit_size[1]},
+            "maxEditSide": max_edit_side,
+        }
+        try:
+            async with httpx.AsyncClient(timeout=240.0) as client:
+                resp = await client.post(
+                    url,
+                    json=payload,
+                    headers={
+                        "Authorization": f"Bearer {GPT_IMAGE_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                )
+            attempt["elapsedMs"] = int((time.time() - start) * 1000)
+            if resp.status_code != 200:
+                attempt["errorType"] = "HTTPError"
+                attempt["error"] = f"HTTP {resp.status_code}: {resp.text[:300]}"
+                attempts.append(attempt)
+                continue
+
+            data = resp.json()
+            if data.get("status") != "completed":
+                attempt["errorType"] = "IncompleteResponse"
+                attempt["error"] = str(data.get("error", "response was not completed"))[:300]
+                attempts.append(attempt)
+                continue
+
+            for item in data.get("output", []):
+                if item.get("type") == "image_generation_call" and item.get("result"):
+                    import io
+                    img = Image.open(io.BytesIO(base64.b64decode(item["result"]))).convert("RGBA")
+                    if img.size != source_img.size:
+                        img = img.resize(source_img.size, Image.Resampling.LANCZOS)
+                    report = {
+                        "status": "model_succeeded",
+                        "provider": "responses-mask-data-url",
+                        "elapsedMs": attempt["elapsedMs"],
+                        "sourceSize": {"width": source_img.width, "height": source_img.height},
+                        "editSize": attempt["editSize"],
+                        "attempts": attempts + [{**attempt, "status": "succeeded"}],
+                        **_mask_diff_report(source_img, img, responses_mask),
+                    }
+                    return img, report
+
+            attempt["errorType"] = "MissingImageResult"
+            attempt["error"] = "missing image_generation_call result"
+        except Exception as e:
+            attempt["elapsedMs"] = int((time.time() - start) * 1000)
+            attempt["errorType"] = type(e).__name__
+            attempt["error"] = f"{type(e).__name__}: {repr(e)}"
+        attempts.append(attempt)
+
+    return None, {
+        "status": "model_failed",
+        "provider": "responses-mask-data-url",
+        "elapsedMs": sum(a.get("elapsedMs", 0) for a in attempts),
+        "sourceSize": {"width": source_img.width, "height": source_img.height},
+        "attempts": attempts,
+        "errorType": attempts[-1].get("errorType", "Unknown") if attempts else "Unknown",
+        "error": attempts[-1].get("error", "all attempts failed") if attempts else "all attempts failed",
+    }
+
+
+async def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, source_hash):
     import numpy as np
     from PIL import Image
 
@@ -1169,13 +1317,35 @@ def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, 
             "uncertainty": plan["uncertainty"],
         })
 
-    filled_background_path = SOURCE_POSTER_TEMPLATES / "background-filled.png"
-    if filled_background_path.exists():
-        bg_img = Image.open(filled_background_path).convert("RGBA")
-    else:
-        bg = src_np.copy()
-        bg[:, :, 3] = np.where(np.asarray(component_alpha) > 16, 0, bg[:, :, 3])
-        bg_img = Image.fromarray(bg)
+    responses_mask = _prepare_responses_mask(component_alpha)
+    mask_hash = hashlib.sha256(responses_mask.tobytes()).hexdigest()
+    bg_img, background_fill = await _generate_filled_background(pil_src, responses_mask)
+    if bg_img is None:
+        filled_background_path = SOURCE_POSTER_TEMPLATES / "background-filled.png"
+        if filled_background_path.exists():
+            bg_img = Image.open(filled_background_path).convert("RGBA")
+            background_fill = {
+                **background_fill,
+                "status": "reference_fallback",
+                "provider": "reference-asset",
+            }
+        else:
+            bg_img = pil_src.copy()
+            background_fill = {
+                **background_fill,
+                "status": "model_failed",
+                "provider": "original-source-fallback",
+            }
+    if bg_img.mode != "RGBA":
+        bg_img = bg_img.convert("RGBA")
+    if bg_img.size != pil_src.size:
+        bg_img = bg_img.resize(pil_src.size, Image.Resampling.LANCZOS)
+    bg_alpha = bg_img.getchannel("A").point(lambda p: 255)
+    bg_img.putalpha(bg_alpha)
+    if "outsideMeanDiff" not in background_fill:
+        background_fill.update(_mask_diff_report(pil_src, bg_img, responses_mask))
+    background_fill["maskHash"] = mask_hash[:16]
+    background_fill["alphaOpaque"] = True
     bg_img.save(layers_dir / "background.png", "PNG")
 
     background_plan = SOURCE_POSTER_LAYER_PLAN[0]
@@ -1203,6 +1373,7 @@ def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, 
         "assets": assets,
         "debugComposite": f"layers/{run_id}/debug-composite.png",
         "quality": quality,
+        "backgroundFill": background_fill,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
     }
     with open(layers_dir / "manifest.json", "w", encoding="utf-8") as f:
@@ -1213,6 +1384,7 @@ def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, 
         f"/generated/layers/{run_id}/manifest.json",
         f"/generated/layers/{run_id}/debug-composite.png",
         quality,
+        background_fill,
     )
 
 
@@ -1267,7 +1439,7 @@ async def build_assets(req: BuildAssetsRequest):
                 error="Only the source-poster reference asset package is enabled in this build. Dynamic mask decomposition will use the same manifest API next.",
             )
 
-        assets, manifest_url, debug_composite_url, quality = _build_reference_source_poster(
+        assets, manifest_url, debug_composite_url, quality, background_fill = await _build_reference_source_poster(
             pil_src, src_np, canvas_w, canvas_h, run_id, source_hash
         )
         print(f"[BuildAssets] reference source-poster -> layers/{run_id}/manifest.json")
@@ -1278,6 +1450,7 @@ async def build_assets(req: BuildAssetsRequest):
             manifest_url=manifest_url,
             debug_composite_url=debug_composite_url,
             quality=quality,
+            background_fill=background_fill,
         )
 
     except Exception as e:
