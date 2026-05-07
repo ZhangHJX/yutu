@@ -883,6 +883,401 @@ async def decompose_assets(req: DecomposeAssetsRequest):
             os.unlink(tmp_path)
 
 
+# ── V2 透明 PNG 资产拆分 ──────────────────────────────
+class BuildAssetsRequest(BaseModel):
+    image_url: str
+    canvas_width: Optional[int] = None
+    canvas_height: Optional[int] = None
+
+class AssetItem(BaseModel):
+    file: str          # 文件名如 "playlist-panel.png"
+    type: str          # "background", "playlist-panel", "title" 等
+    label: str
+    bounds: dict       # {x, y, width, height} 画布坐标
+    zIndex: int
+    completion: float  # 0.0-1.0，补全度
+    uncertainty: str   # "none" | "low" | "medium" | "high"
+
+class BuildAssetsResponse(BaseModel):
+    ok: bool
+    source: Optional[dict] = None
+    assets: Optional[list] = None
+    manifest_url: Optional[str] = None
+    error: Optional[str] = None
+
+
+def _pixel_bounds_from_canvas(b, scale, offset_x, offset_y):
+    """画布坐标 → 原图像素坐标（反推 letterbox 变换）"""
+    return (
+        int((b["x"] - offset_x) / scale),
+        int((b["y"] - offset_y) / scale),
+        int(b["width"] / scale),
+        int(b["height"] / scale),
+    )
+
+
+def _generate_mask_grabcut(img_bgr, x, y, w, h, padding=8):
+    """用 GrabCut 从组件边界生成 alpha mask"""
+    import cv2
+    import numpy as np
+    h_img, w_img = img_bgr.shape[:2]
+
+    x1 = max(0, x - padding)
+    y1 = max(0, y - padding)
+    x2 = min(w_img, x + w + padding)
+    y2 = min(h_img, y + h + padding)
+
+    mask = np.zeros((h_img, w_img), dtype=np.uint8)
+
+    # 组件内部 → 可能前景
+    fg_x1, fg_y1 = max(0, x), max(0, y)
+    fg_x2, fg_y2 = min(w_img, x + w), min(h_img, y + h)
+    mask[fg_y1:fg_y2, fg_x1:fg_x2] = cv2.GC_PR_FGD
+
+    # 组件外部 padding 区 → 背景
+    mask[y1:fg_y1, x1:x2] = cv2.GC_PR_BGD      # 上
+    mask[fg_y2:y2, x1:x2] = cv2.GC_PR_BGD       # 下
+    mask[fg_y1:fg_y2, x1:fg_x1] = cv2.GC_PR_BGD  # 左
+    mask[fg_y1:fg_y2, fg_x2:x2] = cv2.GC_PR_BGD  # 右
+
+    bgd = np.zeros((1, 65), np.float64)
+    fgd = np.zeros((1, 65), np.float64)
+    cv2.grabCut(img_bgr, mask, None, bgd, fgd, 3, cv2.GC_INIT_WITH_MASK)
+
+    result = np.where((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
+
+    # 边缘平滑
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    result = cv2.morphologyEx(result, cv2.MORPH_CLOSE, kernel)
+    result = cv2.medianBlur(result, 5)
+
+    return result
+
+
+def _feather_mask_edge(mask, feather_px=3):
+    """对 mask 边缘做羽化（alpha 渐变过渡）"""
+    import cv2
+    import numpy as np
+    dist = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
+    dist = np.clip(dist / feather_px, 0, 1) * 255
+    return dist.astype(np.uint8)
+
+
+def _extract_asset(src_rgba, mask, px, py, pw, ph):
+    """用 mask 从原图抠出带 alpha 的透明 PNG 图块"""
+    import numpy as np
+    from PIL import Image
+
+    # 裁切 mask 到组件区域（带 padding）
+    crop_mask = mask[py:py+ph, px:px+pw].copy()
+
+    # 羽化边缘
+    crop_mask = _feather_mask_edge(crop_mask, feather_px=3)
+
+    # 裁切原图
+    crop_src = src_rgba[py:py+ph, px:px+pw].copy()
+
+    # 应用 mask 作为 alpha 通道
+    if crop_src.shape[2] == 4:
+        crop_src[:, :, 3] = crop_mask
+    else:
+        crop_src = np.dstack([crop_src, crop_mask])
+
+    # 去掉全透明行/列（tight crop）
+    non_zero = np.where(crop_mask > 0)
+    if len(non_zero[0]) == 0:
+        return None, (0, 0, 0, 0)  # 全透明
+
+    y0, y1 = non_zero[0].min(), non_zero[0].max() + 1
+    x0, x1 = non_zero[1].min(), non_zero[1].max() + 1
+    tight = crop_src[y0:y1, x0:x1]
+
+    return Image.fromarray(tight), (px + x0, py + y0, x1 - x0, y1 - y0)
+
+
+@app.post("/api/ai/build-assets", response_model=BuildAssetsResponse)
+async def build_assets(req: BuildAssetsRequest):
+    """V2：从源图按组件 plan 拆出透明 PNG 资产 + manifest"""
+    import cv2
+    import numpy as np
+    from PIL import Image
+
+    image_url = req.image_url.strip()
+    canvas_w = req.canvas_width
+    canvas_h = req.canvas_height
+    if not image_url:
+        return BuildAssetsResponse(ok=False, error="image_url 不能为空")
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+    tmp_path = tmp.name
+    try:
+        # 1) 下载源图（支持相对路径 → 本地文件）
+        if image_url.startswith("/"):
+            local_path = (OUT_DIR / image_url.lstrip("/")).resolve()
+            if not local_path.is_file():
+                return BuildAssetsResponse(ok=False, error=f"本地文件不存在: {local_path}")
+            import shutil
+            shutil.copy2(str(local_path), tmp_path)
+            tmp.close()
+        else:
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+                resp = await client.get(image_url)
+                if resp.status_code != 200:
+                    return BuildAssetsResponse(ok=False, error=f"下载图片失败: HTTP {resp.status_code}")
+                tmp.write(resp.content)
+            tmp.close()
+
+        pil_src = Image.open(tmp_path).convert("RGBA")
+        src_np = np.array(pil_src, dtype=np.uint8)
+        orig_w, orig_h = pil_src.size
+
+        # 2) 计算缩放（同 decompose-assets）
+        if canvas_w and canvas_h:
+            img_aspect = orig_w / orig_h
+            container_aspect = canvas_w / canvas_h
+            if img_aspect >= container_aspect:
+                scale = canvas_w / orig_w
+                offset_x, offset_y = 0, (canvas_h - orig_h * scale) / 2
+            else:
+                scale = canvas_h / orig_h
+                offset_x, offset_y = (canvas_w - orig_w * scale) / 2, 0
+        else:
+            scale, offset_x, offset_y = 1.0, 0, 0
+
+        # 3) 运行 OCR 获取组件 plan（复用 decompose 逻辑）
+        loop = asyncio.get_event_loop()
+        ocr = get_ocr()
+        ocr_result = await loop.run_in_executor(None, ocr.ocr, tmp_path)
+
+        raw_regions = []
+        if ocr_result and len(ocr_result) > 0:
+            r = ocr_result[0]
+            texts = r.get('rec_texts', []) or []
+            scores = r.get('rec_scores', []) or []
+            boxes = r.get('rec_boxes')
+            if texts and boxes is not None:
+                for idx in range(len(texts)):
+                    txt = texts[idx]
+                    sc = scores[idx] if idx < len(scores) else 0.0
+                    box = boxes[idx]
+                    if sc < 0.8:
+                        continue
+                    clean = txt.strip()
+                    if not clean or len(clean) < 1:
+                        continue
+                    x1 = max(0, int(float(box[0])))
+                    y1 = max(0, int(float(box[1])))
+                    x2 = min(orig_w, int(float(box[2])))
+                    y2 = min(orig_h, int(float(box[3])))
+                    if x2 - x1 < 4 or y2 - y1 < 4:
+                        continue
+                    crop = pil_src.crop((x1, y1, x2, y2))
+                    crop_arr = np.array(crop, dtype=np.uint8)
+                    gray = np.mean(crop_arr[:, :, :3], axis=2).astype(np.uint8)
+                    hist = np.bincount(gray.ravel(), minlength=256)
+                    total_px = gray.size
+                    sum_total = np.dot(np.arange(256), hist.astype(np.float64))
+                    sb, wb = 0.0, 0.0
+                    vmax, th = 0.0, 0
+                    for t in range(256):
+                        wb += hist[t]
+                        if wb == 0:
+                            continue
+                        wf = total_px - wb
+                        if wf == 0:
+                            break
+                        sb += t * hist[t]
+                        mb = sb / wb
+                        mf = (sum_total - sb) / wf
+                        vb = wb * wf * (mb - mf) ** 2
+                        if vb > vmax:
+                            vmax, th = vb, t
+                    light = gray > th
+                    n_light = int(np.sum(light))
+                    n_dark = total_px - n_light
+                    text_mask = gray <= th if n_dark < n_light else light
+                    text_color = "#FFFFFF"
+                    tp = crop_arr[text_mask]
+                    if len(tp) > 5:
+                        cr = int(np.mean(tp[:, 0]))
+                        cg = int(np.mean(tp[:, 1]))
+                        cb = int(np.mean(tp[:, 2]))
+                        text_color = f"#{cr:02x}{cg:02x}{cb:02x}"
+
+                    cx = round(offset_x + x1 * scale, 1)
+                    cy = round(offset_y + y1 * scale, 1)
+                    cw = round((x2 - x1) * scale, 1)
+                    ch = round((y2 - y1) * scale, 1)
+
+                    raw_regions.append({
+                        "text": clean, "confidence": round(float(sc), 3),
+                        "color": text_color,
+                        "bbox_px": (x1, y1, x2, y2),
+                        "bounds_canvas": {"x": cx, "y": cy, "width": cw, "height": ch},
+                        "font_size_est": max(10, int(ch * 0.75)),
+                    })
+
+        # 4) 分组 + 密度合并（复用 decompose 的 _merge_into_panels）
+        raw_regions.sort(key=lambda r: (r["bbox_px"][1], r["bbox_px"][0]))
+        text_groups = []
+        cur = None
+        for r in raw_regions:
+            if cur is None:
+                cur = [r]
+            else:
+                last = cur[-1]
+                y_gap = abs(r["bbox_px"][1] - last["bbox_px"][1])
+                x_gap = r["bbox_px"][0] - last["bbox_px"][2]
+                if y_gap < 20 and x_gap < 50:
+                    cur.append(r)
+                else:
+                    text_groups.append(cur)
+                    cur = [r]
+        if cur:
+            text_groups.append(cur)
+
+        # 密度合并：将密集文本组簇合并为面板
+        text_groups, _ = _merge_into_panels(text_groups)
+
+        # 5) 构建组件列表 + 生成透明 PNG
+        img_bgr = cv2.cvtColor(src_np[:, :, :3], cv2.COLOR_RGB2BGR)
+        assets = []
+        layers_dir = GEN_DIR / "layers"
+        layers_dir.mkdir(parents=True, exist_ok=True)
+
+        # 背景层（直接复制全图）
+        bg_path = layers_dir / "background.png"
+        pil_src.save(str(bg_path))
+        assets.append({
+            "file": "background.png",
+            "type": "background",
+            "label": "背景",
+            "bounds": {"x": 0, "y": 0, "width": canvas_w or orig_w, "height": canvas_h or orig_h},
+            "zIndex": 0,
+            "completion": 1.0,
+            "uncertainty": "none",
+        })
+
+        # 文本组 → 组件
+        z_base = 10
+        for gi, group in enumerate(text_groups):
+            # 各组件的像素坐标 bounds
+            if "bounds_canvas" in group:
+                # 已合并的面板：从画布坐标反推像素坐标
+                cb = group["bounds_canvas"]
+                gx = int((cb["x"] - offset_x) / scale)
+                gy = int((cb["y"] - offset_y) / scale)
+                gw = int(cb["width"] / scale)
+                gh = int(cb["height"] / scale)
+                # 用合并后的文字作为 label
+                label = group["text"][:30]
+                # 已合并密集文本 → playlist-panel
+                ltype = "playlist-panel"
+            else:
+                # 普通文本组
+                xs, ys = [], []
+                for r in group if isinstance(group, list) else [group]:
+                    b = r["bbox_px"]
+                    xs.extend([b[0], b[2]])
+                    ys.extend([b[1], b[3]])
+                gx, gy = min(xs), min(ys)
+                gx2, gy2 = max(xs), max(ys)
+                gw, gh = gx2 - gx, gy2 - gy
+                if gh < 10 or gw < 10:
+                    continue
+                ly_h = gh
+                if ly_h > 80:
+                    ltype = "title"
+                elif ly_h < 25:
+                    ltype = "label"
+                else:
+                    ltype = "text"
+                label = " ".join(r["text"] for r in (group if isinstance(group, list) else [group]))[:30]
+
+            # 主要组件（title / playlist-panel）：用 GrabCut 生成 mask
+            # 小型组件（label / text）：直接羽化矩形
+            use_grabcut = ltype in ("playlist-panel", "title")
+
+            if not use_grabcut:
+                # 小型文字：直接矩形 + 2px 羽化
+                crop_mask = np.ones((gh, gw), dtype=np.uint8) * 255
+                crop_mask = _feather_mask_edge(crop_mask, feather_px=2)
+                crop_src = src_np[gy:gy+gh, gx:gw+gx].copy()
+                if crop_src.shape[2] == 4:
+                    crop_src[:, :, 3] = crop_mask
+                else:
+                    crop_src = np.dstack([crop_src, crop_mask])
+                asset_img = Image.fromarray(crop_src)
+                completion = 1.0
+                uncertainty = "low"
+                actual_bounds = (gx, gy, gw, gh)
+            else:
+                # 主要组件：GrabCut mask
+                padding = max(8, int(min(gw, gh) * 0.08))
+                px = max(0, gx - padding)
+                py = max(0, gy - padding)
+                pw = min(orig_w - px, gw + padding * 2)
+                ph = min(orig_h - py, gh + padding * 2)
+
+                full_mask = _generate_mask_grabcut(img_bgr, gx, gy, gw, gh, padding)
+                result = _extract_asset(src_np, full_mask, px, py, pw, ph)
+                if result[0] is None:
+                    continue
+                asset_img, actual_bounds = result
+                completion = 0.95
+                uncertainty = "low"
+
+            # 保存 PNG
+            filename = f"layer-{gi}.png"
+            filepath = layers_dir / filename
+            asset_img.save(str(filepath), "PNG")
+
+            # 画布坐标
+            cb = {
+                "x": round(offset_x + actual_bounds[0] * scale, 1),
+                "y": round(offset_y + actual_bounds[1] * scale, 1),
+                "width": round(actual_bounds[2] * scale, 1),
+                "height": round(actual_bounds[3] * scale, 1),
+            }
+
+            assets.append({
+                "file": filename,
+                "type": ltype,
+                "label": label,
+                "bounds": cb,
+                "zIndex": gi + z_base,
+                "completion": completion,
+                "uncertainty": uncertainty,
+            })
+
+        # 6) 写 manifest
+        manifest = {
+            "source": {"width": orig_w, "height": orig_h},
+            "canvas": {"width": canvas_w or orig_w, "height": canvas_h or orig_h},
+            "assets": assets,
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+        }
+        manifest_path = layers_dir / "manifest.json"
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(manifest, f, ensure_ascii=False, indent=2)
+
+        print(f"[BuildAssets] {len(assets)} 个资产 → layers/manifest.json")
+        return BuildAssetsResponse(
+            ok=True,
+            source={"width": orig_w, "height": orig_h},
+            assets=assets,
+            manifest_url="/generated/layers/manifest.json",
+        )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return BuildAssetsResponse(ok=False, error=str(e))
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+
 # ── 文字擦除（P1b 快速 OpenCV 修补） ──────────────────
 class EraseTextRequest(BaseModel):
     image_url: str
