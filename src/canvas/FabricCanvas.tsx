@@ -468,7 +468,13 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
           const scaleY = comp.height / (fabricImg.height || 1);
           console.log(`[FabricCanvas] 缩放: scaleX=${scaleX} scaleY=${scaleY}`);
 
-          imgPlaceholder.canvas.remove(imgPlaceholder);
+          // 如果 placeholder 已被 canvas.clear() 移除，跳过（跨渲染周期）
+          if (imgPlaceholder.canvas !== canvas) {
+            console.warn("[FabricCanvas] 占位 Rect 已不在画布上，跳过");
+            return;
+          }
+          // 用 canvas 参数操作（不用 imgPlaceholder.canvas，因为 remove 后会置 null）
+          canvas.remove(imgPlaceholder);
           fabricImg.set({
             left: comp.x,
             top: comp.y,
@@ -484,14 +490,14 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
             lockRotation: isFullCanvas,
             hoverCursor: isFullCanvas ? "default" : "move",
           });
-          imgPlaceholder.canvas.add(fabricImg);
+          canvas.add(fabricImg);
 
-          // 更新 idMap：把 comp.id 指向真实的 FabricImage，而非已移除的 placeholder
+          // 更新 idMap：把 comp.id 指向真实的 FabricImage
           if (idMap) {
             idMap.set(comp.id, fabricImg);
           }
 
-          imgPlaceholder.canvas.requestRenderAll();
+          canvas.requestRenderAll();
           console.log("[FabricCanvas] 图片已添加到画布，idMap 已更新");
         };
 

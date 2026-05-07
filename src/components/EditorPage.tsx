@@ -159,6 +159,14 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     };
   }, []);
 
+  /** 拆分成功/失败后 3 秒清除状态 */
+  useEffect(() => {
+    if (splitStatus === "done" || splitStatus === "error") {
+      const t = setTimeout(() => setSplitStatus("idle"), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [splitStatus]);
+
   /** 进入编辑器时自动调用 build-assets 拆分透明 PNG 资产层 */
   useEffect(() => {
     const imgComp = doc.components.find(
@@ -633,7 +641,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         />
       )}
 
-      {/* ── 拆分状态提示 ── */}
+      {/* ── 拆分状态提示（3 秒自动消失） ── */}
       {splitStatus === "running" && (
         <div className="ocr-toast">🔍 正在拆分图层...</div>
       )}
