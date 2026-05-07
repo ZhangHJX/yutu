@@ -463,8 +463,7 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
         // 非全画幅图片（资产层）→ 可选/可拖/可缩放
         const canvasW = canvas.getWidth();
         const canvasH = canvas.getHeight();
-        const isFullCanvas = comp.x === 0 && comp.y === 0 &&
-          comp.width === canvasW && comp.height === canvasH;
+        const isBackgroundAsset = comp.style?.assetType === "background";
         const absoluteUrl = new URL(comp.content, window.location.origin).toString();
         console.log(`[FabricCanvas] 手动加载图片: ${absoluteUrl}`);
 
@@ -476,8 +475,7 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
             comp: { id: comp.id, x: comp.x, y: comp.y, w: comp.width, h: comp.height },
             pngNatural: { w: imgEl.naturalWidth, h: imgEl.naturalHeight },
             scale: { x: scaleX, y: scaleY, uniform: scaleX === scaleY ? scaleX : 'NON-UNIFORM' },
-            isFullCanvas: comp.x === 0 && comp.y === 0 &&
-              comp.width === canvas.getWidth() && comp.height === canvas.getHeight(),
+            isBackgroundAsset,
             url: absoluteUrl.slice(-40),
           });
 
@@ -504,16 +502,16 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
             originY: 'top',
             scaleX,
             scaleY,
-            selectable: !isFullCanvas,
-            evented: !isFullCanvas,
-            hasControls: !isFullCanvas,
-            lockMovementX: isFullCanvas,
-            lockMovementY: isFullCanvas,
-            lockScalingX: isFullCanvas,
-            lockScalingY: isFullCanvas,
-            lockRotation: isFullCanvas,
-            lockUniScaling: !isFullCanvas, // 拖动控制点不改变宽高比
-            hoverCursor: isFullCanvas ? "default" : "move",
+            selectable: !isBackgroundAsset,
+            evented: !isBackgroundAsset,
+            hasControls: !isBackgroundAsset,
+            lockMovementX: isBackgroundAsset,
+            lockMovementY: isBackgroundAsset,
+            lockScalingX: isBackgroundAsset,
+            lockScalingY: isBackgroundAsset,
+            lockRotation: isBackgroundAsset,
+            lockUniScaling: !isBackgroundAsset, // 拖动控制点不改变宽高比
+            hoverCursor: isBackgroundAsset ? "default" : "move",
           });
           canvas.add(fabricImg);
 

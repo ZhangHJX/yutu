@@ -217,7 +217,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
             editable: true,
             editableProperties: [],
             slot: null,
-            style: {},
+            style: { assetType: a.type },
           });
           infoMap.set(id, {
             type: a.type,
