@@ -178,13 +178,14 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     callBuildAssets(imgComp.content, doc.canvas.width, doc.canvas.height)
       .then((result: any) => {
         const assets = result.assets || [];
-        const newComponents: DesignComponent[] = [];
+        // 按 zIndex 排序保证渲染顺序
+        const sorted = [...assets].sort((a: any, b: any) => a.zIndex - b.zIndex);
+        const assetComponents: DesignComponent[] = [];
         const infoMap = new Map<string, AssetInfo>();
 
-        assets.forEach((a: any, i: number) => {
-          if (a.type === "background") return; // 跳过背景（已有 DOM 背景图）
+        sorted.forEach((a: any, i: number) => {
           const id = `asset-${Date.now()}-${i}`;
-          newComponents.push({
+          assetComponents.push({
             id,
             type: "image",
             x: a.bounds.x,
@@ -206,18 +207,24 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
           });
         });
 
-        if (newComponents.length === 0) {
+        if (assetComponents.length === 0) {
           setSplitCount(0);
           setSplitStatus("done");
           return;
         }
 
         setAssetInfoMap(infoMap);
-        setDoc((prev) => ({
-          ...prev,
-          components: [...prev.components, ...newComponents],
-        }));
-        setSplitCount(newComponents.length);
+        setDoc((prev) => {
+          // 移除原全画幅图片组件（已由 assets 中的 background 替代）
+          const filtered = prev.components.filter((c) => !(
+            c.type === "image" &&
+            c.x === 0 && c.y === 0 &&
+            c.width === prev.canvas.width &&
+            c.height === prev.canvas.height
+          ));
+          return { ...prev, components: [...filtered, ...assetComponents] };
+        });
+        setSplitCount(assetComponents.length);
         setSplitStatus("done");
       })
       .catch((e) => {
@@ -426,11 +433,6 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
 
   const triggerZoomDrag = useRef(false);
 
-  /** 检查某组件是否为全画幅背景图 */
-  const isBackgroundComp = (comp: DesignComponent) =>
-    comp.type === "image" && comp.x === 0 && comp.y === 0 &&
-    comp.width === doc.canvas.width && comp.height === doc.canvas.height;
-
   const handleZoomDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const el = e.currentTarget as HTMLElement;
     const track = el.closest(".zoom-track-h") as HTMLElement;
@@ -568,7 +570,6 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
               {[...doc.components].reverse().map((comp, i) => {
                 const assetInfo = comp.id.startsWith("asset-") ? assetInfoMap.get(comp.id) : null;
                 const isHidden = hiddenLayers.has(comp.id);
-                const isBg = isBackgroundComp(comp);
                 return (
                   <div
                     key={comp.id}
@@ -594,11 +595,6 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
                       <span className="layer-name">
                         <span className="layer-type-label">{assetInfo.type}</span>
                         <span className="layer-asset-label">{assetInfo.label}</span>
-                      </span>
-                    ) : isBg ? (
-                      <span className="layer-name">
-                        <span className="layer-type-label">background</span>
-                        <span className="layer-asset-label">底图 (锁定)</span>
                       </span>
                     ) : (
                       <span className="layer-name">{comp.type} {doc.components.length - i}</span>
@@ -952,7 +948,6 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         .layer-btn:hover { color: #e74c3c; }
         .layer-vis-btn { background: none; border: none; color: #888; font-size: 10px; cursor: pointer; padding: 2px; flex-shrink: 0; width: 16px; text-align: center; }
         .layer-vis-btn:active { color: #A29BFE; }
-        .layer-vis-spacer { width: 16px; flex-shrink: 0; }
         .layer-type-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
         .layer-type-dot.type-playlist-panel { background: #6C5CE7; }
         .layer-type-dot.type-title { background: #00CEC9; }

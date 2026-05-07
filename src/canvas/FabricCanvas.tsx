@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState, useMemo, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Canvas, Rect, Textbox, Ellipse, Triangle, FabricImage, FabricObject } from "fabric";
 import type { DesignDocument, DesignComponent } from "@/core/DesignDocument";
 
@@ -34,22 +34,9 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const fabricRef = useRef<Canvas | null>(null);
   const idMapRef = useRef<Map<string, FabricObject>>(new Map());
-  const bgImgRef = useRef<HTMLImageElement>(null);
   const [ready, setReady] = useState(false);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const lastPos = useRef({ x: 0, y: 0 });
-
-  /** 自动检测全画幅图片组件 → 用作 DOM 背景图（绕过 Fabric 图片加载 bug） */
-  const backgroundImageUrl = useMemo(() => {
-    const comp = document.components.find(
-      (c) =>
-        c.type === "image" &&
-        c.x === 0 && c.y === 0 &&
-        c.width === document.canvas.width &&
-        c.height === document.canvas.height
-    );
-    return comp?.content;
-  }, [document]);
 
   /** 初始化 Canvas */
   useEffect(() => {
@@ -88,40 +75,29 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
     canvas.clear();
     idMapRef.current.clear();
 
-    // 有 DOM 背景图时不添加 Fabric 背景矩形（否则会盖住 DOM <img>）
-    if (!backgroundImageUrl) {
-      const bgRect = new Rect({
-        left: 0,
-        top: 0,
-        width: document.canvas.width,
-        height: document.canvas.height,
-        fill: document.canvas.background,
-        selectable: false,
-        evented: false,
-        excludeFromExport: true,
-        hasControls: false,
-        lockMovementX: true,
-        lockMovementY: true,
-        lockScalingX: true,
-        lockScalingY: true,
-        lockRotation: true,
-        hoverCursor: 'default',
-        moveCursor: 'default',
-      });
-      canvas.add(bgRect);
-    }
+    // 背景色矩形（始终在最底层）
+    const bgRect = new Rect({
+      left: 0,
+      top: 0,
+      width: document.canvas.width,
+      height: document.canvas.height,
+      fill: document.canvas.background,
+      selectable: false,
+      evented: false,
+      excludeFromExport: true,
+      hasControls: false,
+      lockMovementX: true,
+      lockMovementY: true,
+      lockScalingX: true,
+      lockScalingY: true,
+      lockRotation: true,
+      hoverCursor: 'default',
+      moveCursor: 'default',
+    });
+    canvas.add(bgRect);
 
+    // 所有组件均渲染为 Fabric 对象（不再跳过全画幅图片）
     document.components.forEach((comp) => {
-      // 全画幅图片 → 已由 DOM <img> 渲染，跳过 Fabric（方案3）
-      if (
-        comp.type === "image" &&
-        comp.x === 0 && comp.y === 0 &&
-        comp.width === document.canvas.width &&
-        comp.height === document.canvas.height
-      ) {
-        console.log("[FabricCanvas] 跳过全画幅图片（DOM 背景图）:", comp.content);
-        return;
-      }
       const obj = componentToFabric(comp, canvas);
       if (obj) {
         idMapRef.current.set(comp.id, obj);
@@ -150,16 +126,6 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
           evented: targetVisible,
         });
       }
-    }
-
-    // DOM 背景图可见性
-    if (bgImgRef.current) {
-      const bgComp = document.components.find(
-        (c) => c.type === "image" && c.x === 0 && c.y === 0 &&
-        c.width === document.canvas.width && c.height === document.canvas.height
-      );
-      const bgHidden = bgComp ? ids?.has(bgComp.id) : false;
-      bgImgRef.current.style.display = bgHidden ? "none" : "";
     }
 
     canvas.requestRenderAll();
@@ -430,23 +396,6 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
   return (
     <div className="fabric-canvas-wrapper" ref={wrapperRef}>
       <div className="fabric-stage" style={{ position: 'relative', width: document.canvas.width, height: document.canvas.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${controlledZoom ?? 1})`, transformOrigin: 'center center' }}>
-        {backgroundImageUrl && (
-          <img
-            ref={bgImgRef}
-            src={backgroundImageUrl}
-            alt="background"
-            style={{
-              position: 'absolute', left: 0, top: 0,
-              width: document.canvas.width,
-              height: document.canvas.height,
-              pointerEvents: 'none',
-              objectFit: 'contain',
-              background: document.canvas.background,
-            }}
-            onLoad={() => console.log('[FabricCanvas] 背景图加载成功:', backgroundImageUrl)}
-            onError={(e) => console.error('[FabricCanvas] 背景图加载失败:', backgroundImageUrl, e)}
-          />
-        )}
         <canvas ref={canvasRef} style={{ display: 'block' }} />
       </div>
       {!ready && <div className="fabric-loading">加载画布...</div>}
@@ -488,8 +437,13 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas): FabricObject 
     case "image": {
       const imgPlaceholder = new Rect({ ...base, fill: "#DFE6E9", rx: 4, ry: 4 });
       if (comp.content) {
-        // 非全画幅资产层/用户图片 → 加载为可选择、可拖动的 Fabric 对象
-        // （全画幅图片已在主渲染循环中跳过，走 DOM <img> 背景）
+        // 所有图片组件都走 FabricImage 渲染
+        // 全画幅图片（background 组件）→ 锁定不可编辑
+        // 非全画幅图片（资产层）→ 可选/可拖/可缩放
+        const canvasW = canvas.getWidth();
+        const canvasH = canvas.getHeight();
+        const isFullCanvas = comp.x === 0 && comp.y === 0 &&
+          comp.width === canvasW && comp.height === canvasH;
         const absoluteUrl = new URL(comp.content, window.location.origin).toString();
         console.log(`[FabricCanvas] 手动加载图片: ${absoluteUrl}`);
 
@@ -520,15 +474,15 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas): FabricObject 
             top: comp.y,
             scaleX,
             scaleY,
-            selectable: true,
-            evented: true,
-            hasControls: true,
-            lockMovementX: false,
-            lockMovementY: false,
-            lockScalingX: false,
-            lockScalingY: false,
-            lockRotation: false,
-            hoverCursor: "move",
+            selectable: !isFullCanvas,
+            evented: !isFullCanvas,
+            hasControls: !isFullCanvas,
+            lockMovementX: isFullCanvas,
+            lockMovementY: isFullCanvas,
+            lockScalingX: isFullCanvas,
+            lockScalingY: isFullCanvas,
+            lockRotation: isFullCanvas,
+            hoverCursor: isFullCanvas ? "default" : "move",
           });
           imgPlaceholder.canvas.add(fabricImg);
           imgPlaceholder.canvas.requestRenderAll();
