@@ -9,6 +9,7 @@ interface FabricCanvasProps {
   editable?: boolean;
   zoom?: number;
   hiddenIds?: Set<string>;
+  selectedHitBounds?: { x: number; y: number; width: number; height: number } | null;
   onComponentSelect?: (id: string | null) => void;
   onComponentModify?: (id: string, changes: Partial<DesignComponent>) => void;
   onZoomChange?: (zoom: number) => void;
@@ -27,7 +28,7 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 10;
 
 const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function FabricCanvas(
-  { document, editable = false, zoom: controlledZoom, hiddenIds, onComponentSelect, onComponentModify, onZoomChange },
+  { document, editable = false, zoom: controlledZoom, hiddenIds, selectedHitBounds, onComponentSelect, onComponentModify, onZoomChange },
   ref
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -416,6 +417,23 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
     <div className="fabric-canvas-wrapper" ref={wrapperRef}>
       <div className="fabric-stage" style={{ position: 'relative', width: document.canvas.width, height: document.canvas.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${controlledZoom ?? 1})`, transformOrigin: 'center center' }}>
         <canvas ref={canvasRef} style={{ display: 'block' }} />
+        {selectedHitBounds && (
+          <div
+            className="fabric-hitbox"
+            style={{
+              position: "absolute",
+              left: selectedHitBounds.x,
+              top: selectedHitBounds.y,
+              width: selectedHitBounds.width,
+              height: selectedHitBounds.height,
+              border: "2px dashed #00CEC9",
+              background: "rgba(0, 206, 201, 0.12)",
+              pointerEvents: "none",
+              zIndex: 10,
+              boxShadow: "0 0 0 1px rgba(0,0,0,0.35)",
+            }}
+          />
+        )}
       </div>
       {!ready && <div className="fabric-loading">加载画布...</div>}
     </div>
