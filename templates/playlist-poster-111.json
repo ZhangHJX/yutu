@@ -1,0 +1,56 @@
+{
+  "id": "playlist-poster-111",
+  "name": "111 playlist poster",
+  "canvas": {
+    "width": 390,
+    "height": 600,
+    "background": "#fff0f6"
+  },
+  "slots": [
+    {
+      "id": "background",
+      "type": "image",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 600,
+      "zIndex": 0
+    },
+    {
+      "id": "girl",
+      "type": "image",
+      "x": 5,
+      "y": 48,
+      "w": 190,
+      "h": 450,
+      "zIndex": 20
+    },
+    {
+      "id": "player",
+      "type": "image",
+      "x": 200,
+      "y": 58,
+      "w": 180,
+      "h": 128,
+      "zIndex": 30
+    },
+    {
+      "id": "playlist",
+      "type": "image",
+      "x": 200,
+      "y": 198,
+      "w": 180,
+      "h": 330,
+      "zIndex": 30
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "x": 24,
+      "y": 12,
+      "w": 342,
+      "h": 38,
+      "zIndex": 50
+    }
+  ]
+}

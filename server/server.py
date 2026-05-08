@@ -55,6 +55,15 @@ class GenerateResponse(BaseModel):
     error: Optional[str] = None
     provider: Optional[str] = None  # "responses-api" | "huggingface"
 
+
+class TemplateGenerateRequest(BaseModel):
+    title: str = "支持点歌 // 学歌 // 歌单未完待续"
+    songs: list[str] = []
+    style: str = "dreamy pastel pink aesthetic, hyper-cute girly style"
+    template_id: str = "playlist-poster-111"
+    assets: Optional[dict[str, str]] = None
+    regenerate_slot: Optional[str] = None
+
 # ── OCR 拆分 ──────────────────────────────────────────
 class SplitTextRequest(BaseModel):
     image_url: str
@@ -147,6 +156,178 @@ async def try_gpt_image_generate(prompt: str, w: int, h: int) -> Optional[bytes]
     except Exception as e:
         print(f"[GPT-Image] Exception: {e}")
         return None
+
+
+async def _generate_template_image(slot: str, prompt: str, fallback_color: str, w: int, h: int) -> str:
+    image_bytes = await try_gpt_image_generate(prompt, w, h)
+    if image_bytes is None:
+        from PIL import Image, ImageDraw
+
+        img = Image.new("RGB", (w, h), fallback_color)
+        draw = ImageDraw.Draw(img)
+        draw.rounded_rectangle((4, 4, w - 5, h - 5), radius=18, outline="#ffffff", width=3)
+        image_bytes = _pil_to_png_bytes(img)
+
+    file_id = f"tpl-{slot}-{uuid.uuid4().hex[:8]}"
+    path = GEN_DIR / f"{file_id}.png"
+    path.write_bytes(image_bytes)
+    return f"/generated/{path.name}"
+
+
+def _pil_to_png_bytes(img) -> bytes:
+    import io
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+TEMPLATE_DIR = ROOT / "templates"
+DEFAULT_SONGS = [
+    "公主病", "半情歌", "他的猫", "不将就", "月牙湾", "记事本", "小美满", "眉间雪",
+    "闹够了没有", "勇气大爆发", "回忆的沙漏", "别找我麻烦", "彩虹的微笑", "但愿人长久",
+    "离别开出花", "可惜没如果", "词不达意", "明天你好", "玫瑰窃贼", "天命风流",
+    "漠河舞厅", "我好想你", "专属味道", "依然爱你",
+]
+
+
+def _load_template(template_id: str) -> dict:
+    path = TEMPLATE_DIR / f"{template_id}.json"
+    if not path.is_file():
+        raise HTTPException(404, "template not found")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _slot(template: dict, slot_id: str) -> dict:
+    return next(slot for slot in template["slots"] if slot["id"] == slot_id)
+
+
+def _image_component(run_id: str, slot: dict, content: str, editable: bool = True) -> dict:
+    return {
+        "id": f"tpl-{slot['id']}-{run_id}",
+        "type": "image",
+        "x": slot["x"],
+        "y": slot["y"],
+        "width": slot["w"],
+        "height": slot["h"],
+        "content": content,
+        "editable": editable,
+        "editableProperties": [],
+        "slot": slot["id"],
+        "style": {"assetType": "background" if slot["id"] == "background" else slot["id"], "zIndex": slot["zIndex"]},
+    }
+
+
+def _text_component(run_id: str, slot_id: str, x: int, y: int, w: int, h: int, content: str, style: dict) -> dict:
+    return {
+        "id": f"tpl-{slot_id}-{run_id}-{uuid.uuid4().hex[:4]}",
+        "type": "text",
+        "x": x,
+        "y": y,
+        "width": w,
+        "height": h,
+        "content": content,
+        "editable": True,
+        "editableProperties": ["content", "style"],
+        "slot": slot_id,
+        "style": style,
+    }
+
+
+def _shape_component(run_id: str, slot_id: str, x: int, y: int, w: int, h: int, style: dict) -> dict:
+    return {
+        "id": f"tpl-{slot_id}-{run_id}-{uuid.uuid4().hex[:4]}",
+        "type": "shape",
+        "x": x,
+        "y": y,
+        "width": w,
+        "height": h,
+        "content": "",
+        "editable": True,
+        "editableProperties": ["style"],
+        "slot": slot_id,
+        "style": style,
+    }
+
+
+def _song_columns(songs: list[str]) -> list[str]:
+    items = (songs or DEFAULT_SONGS)[:32]
+    while len(items) < 24:
+        items.extend(DEFAULT_SONGS[: 24 - len(items)])
+    columns = [items[i::3] for i in range(3)]
+    return [
+        "\n".join(f"♡{i * 3 + idx + 1:02d} {song}" for idx, song in enumerate(column))
+        for i, column in enumerate(columns)
+    ]
+
+
+def _template_prompts(style: str) -> dict[str, str]:
+    style_brief = (
+        f"{style}. Dreamy pastel pink, warm cozy light, soft-focus creamy texture, "
+        "high saturation cute AI illustration style. "
+        "Do not generate readable text, labels, logos, letters, numbers, or a complete poster. "
+        "The asset must fit inside its slot."
+    )
+    return {
+        "background": (
+            f"{style_brief} Generate only the full poster background: warm pink bedroom, "
+            "soft glowing light, sparkling stars and heart-shaped bokeh, pink balloons and ribbons. "
+            "Include cute bottom decorations: plush rabbit, heart pillow, heart-shaped mug, vintage heart radio, "
+            "fresh strawberries and pink petals on a checkered tablecloth. Leave clean space for text and cards."
+        ),
+        "girl": (
+            f"{style_brief} Generate a rectangular left-side character illustration: beautiful young East Asian girl, "
+            "long wavy dark brown hair, pink bow headband, pink heart headphones, pink blush, pink off-shoulder knit top, "
+            "resting chin on hand, sweet gentle smile. No text. Simple pastel background."
+        ),
+        "player": (
+            f"{style_brief} Generate only a cute rounded-corner pink music player UI skin/backplate. "
+            "Include blank cover art area, pink progress bar track, heart slider, blank button circles, soft highlights. "
+            "No readable text, no song title, no time numbers."
+        ),
+        "playlist": (
+            f"{style_brief} Generate only a white rounded-corner playlist panel skin/backplate with pink border. "
+            "Include subtle three-column guides and small pink heart bullet decorations. "
+            "No readable text, no song names, no numbers."
+        ),
+    }
+
+
+def _compose_template_preview(template: dict, components: list[dict], run_id: str) -> str:
+    from PIL import Image, ImageDraw, ImageFont
+
+    canvas = template["canvas"]
+    img = Image.new("RGB", (canvas["width"], canvas["height"]), canvas["background"])
+    draw = ImageDraw.Draw(img)
+
+    for comp in sorted(components, key=lambda c: int(c.get("style", {}).get("zIndex", 0))):
+        if comp["type"] == "image" and comp["content"].startswith("/generated/"):
+            src_path = GEN_DIR / Path(comp["content"]).name
+            if src_path.is_file():
+                src = Image.open(src_path).convert("RGBA").resize((int(comp["width"]), int(comp["height"])))
+                img.paste(src, (int(comp["x"]), int(comp["y"])), src)
+        elif comp["type"] == "shape":
+            style = comp["style"]
+            fill = style.get("fill", "#ff8dbd")
+            radius = int(style.get("borderRadius", 10))
+            draw.rounded_rectangle(
+                (comp["x"], comp["y"], comp["x"] + comp["width"], comp["y"] + comp["height"]),
+                radius=radius,
+                fill=fill,
+            )
+        elif comp["type"] == "text":
+            font_size = int(comp["style"].get("fontSize", 12))
+            color = comp["style"].get("color", "#d95b9f")
+            try:
+                font = ImageFont.truetype("arial.ttf", font_size)
+            except Exception:
+                font = ImageFont.load_default()
+            draw.multiline_text((comp["x"], comp["y"]), comp["content"], fill=color, font=font, spacing=2)
+
+    filename = f"tpl-preview-{run_id}.png"
+    path = GEN_DIR / filename
+    img.save(path)
+    return f"/generated/{filename}"
 
 # Hugging Face（备选）
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
@@ -358,6 +539,106 @@ async def generate(req: GenerateRequest):
         image_url=img_url,
         provider=provider,
     )
+
+
+@app.post("/api/ai/generate-template", response_model=GenerateResponse)
+async def generate_template(req: TemplateGenerateRequest):
+    template = _load_template(req.template_id)
+    run_id = uuid.uuid4().hex[:10]
+    title = req.title.strip() or "支持点歌 // 学歌 // 歌单未完待续"
+    songs = [song.strip() for song in req.songs if song.strip()]
+    prompts = _template_prompts(req.style.strip() or "dreamy pastel pink aesthetic")
+    existing_assets = req.assets or {}
+
+    slots = {slot["id"]: slot for slot in template["slots"]}
+    image_specs = {
+        "background": "#ffd6e8",
+        "girl": "#ffe1ed",
+        "player": "#ffc3dc",
+        "playlist": "#fff5fb",
+    }
+    image_urls = {}
+    for slot_id, fallback_color in image_specs.items():
+        if existing_assets.get(slot_id) and req.regenerate_slot != slot_id:
+            image_urls[slot_id] = existing_assets[slot_id]
+            continue
+        image_urls[slot_id] = await _generate_template_image(
+            slot_id, prompts[slot_id], fallback_color, slots[slot_id]["w"], slots[slot_id]["h"]
+        )
+    background_url = image_urls["background"]
+    girl_url = image_urls["girl"]
+    player_url = image_urls["player"]
+    playlist_url = image_urls["playlist"]
+
+    components = [
+        _image_component(run_id, slots["background"], background_url, editable=False),
+        _image_component(run_id, slots["girl"], girl_url),
+        _image_component(run_id, slots["player"], player_url),
+        _image_component(run_id, slots["playlist"], playlist_url),
+    ]
+
+    title_slot = slots["title"]
+    components.append(_text_component(run_id, "title", title_slot["x"], title_slot["y"], title_slot["w"], title_slot["h"], title, {
+        "fontSize": 20,
+        "color": "#ff63a8",
+        "fontWeight": "bold",
+        "textAlign": "center",
+        "lineHeight": 1.05,
+        "zIndex": title_slot["zIndex"],
+    }))
+
+    components.extend([
+        _shape_component(run_id, "player-cover", 212, 74, 44, 44, {
+            "shapeType": "rounded-rect", "fill": "#ffe2ef", "borderRadius": 12, "zIndex": 35,
+        }),
+        _text_component(run_id, "player-cover-heart", 222, 83, 24, 20, "♡", {
+            "fontSize": 21, "color": "#ff77b5", "textAlign": "center", "zIndex": 36,
+        }),
+        _text_component(run_id, "player-title", 266, 82, 86, 28, songs[0] if songs else "公主病", {
+            "fontSize": 18, "color": "#ff5fa6", "fontWeight": "bold", "textAlign": "left", "zIndex": 36,
+        }),
+        _shape_component(run_id, "player-progress", 216, 130, 132, 5, {
+            "shapeType": "rounded-rect", "fill": "#ffd1e4", "borderRadius": 3, "zIndex": 35,
+        }),
+        _shape_component(run_id, "player-progress-active", 216, 130, 52, 5, {
+            "shapeType": "rounded-rect", "fill": "#ff7bb9", "borderRadius": 3, "zIndex": 36,
+        }),
+        _text_component(run_id, "player-times", 214, 139, 138, 12, "01:28                         04:18", {
+            "fontSize": 8, "color": "#ff76b2", "textAlign": "left", "zIndex": 36,
+        }),
+        _text_component(run_id, "player-buttons", 232, 156, 106, 20, "♡   ◀   ▶   ▶   ♡", {
+            "fontSize": 13, "color": "#ff68ab", "textAlign": "center", "zIndex": 36,
+        }),
+    ])
+
+    for index, column in enumerate(_song_columns(songs)):
+        components.append(_text_component(run_id, f"playlist-col-{index + 1}", 208 + index * 58, 216, 54, 280, column, {
+            "fontSize": 7,
+            "color": "#e35f9f",
+            "fontWeight": "bold",
+            "lineHeight": 1.28,
+            "textAlign": "left",
+            "zIndex": 36,
+        }))
+
+    components.sort(key=lambda comp: int(comp.get("style", {}).get("zIndex", 0)))
+    preview_url = _compose_template_preview(template, components, run_id)
+    doc = {
+        "version": 1,
+        "canvas": template["canvas"],
+        "components": components,
+        "meta": {
+            "name": f"Template: {title[:18]}",
+            "scene": "poster",
+            "tags": ["ai", "template", req.template_id],
+            "createdAt": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+            "thumbnail": preview_url,
+            "templateRunId": run_id,
+            "templateAssets": image_urls,
+        },
+    }
+
+    return GenerateResponse(ok=True, document=doc, image_url=preview_url, provider="template-composition")
 
 
 # ── OCR 文字拆分 ──────────────────────────────────────
