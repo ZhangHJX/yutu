@@ -94,6 +94,22 @@ class GenerateComponentsResponse(BaseModel):
     error: Optional[str] = None
     provider: Optional[str] = None
 
+
+class AssembleLayoutRequest(BaseModel):
+    layout_map: dict
+    assets: dict[str, str]
+    title: str = ""
+    songs: list[str] = []
+    description: str = ""
+
+
+class AssembleLayoutResponse(BaseModel):
+    ok: bool
+    document: Optional[dict] = None
+    preview_url: Optional[str] = None
+    error: Optional[str] = None
+    provider: Optional[str] = None
+
 # ── OCR 拆分 ──────────────────────────────────────────
 class SplitTextRequest(BaseModel):
     image_url: str
@@ -284,6 +300,15 @@ def _song_columns(songs: list[str]) -> list[str]:
     items = (songs or DEFAULT_SONGS)[:32]
     while len(items) < 24:
         items.extend(DEFAULT_SONGS[: 24 - len(items)])
+    columns = [items[i::3] for i in range(3)]
+    return [
+        "\n".join(f"♡{i * 3 + idx + 1:02d} {song}" for idx, song in enumerate(column))
+        for i, column in enumerate(columns)
+    ]
+
+
+def _user_song_columns(songs: list[str]) -> list[str]:
+    items = [song.strip() for song in songs if song.strip()][:32]
     columns = [items[i::3] for i in range(3)]
     return [
         "\n".join(f"♡{i * 3 + idx + 1:02d} {song}" for idx, song in enumerate(column))
@@ -574,6 +599,173 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "") -
         if index < len(image_components):
             await asyncio.sleep(2)
     return assets
+
+
+def _text_style_with_z(layer: dict) -> dict:
+    style = dict(layer["style"])
+    style["zIndex"] = layer["zIndex"]
+    return style
+
+
+def _layout_image_component(run_id: str, item: dict, content: str) -> dict:
+    style = {"assetType": "background" if item["id"] == "background" else item["id"], "zIndex": item["zIndex"]}
+    return {
+        "id": f"layout-{item['id']}-{run_id}",
+        "type": "image",
+        "x": item["x"],
+        "y": item["y"],
+        "width": item["width"],
+        "height": item["height"],
+        "content": content,
+        "editable": True,
+        "editableProperties": [],
+        "slot": item["id"],
+        "style": style,
+    }
+
+
+def _layout_text_component(run_id: str, item: dict, content: str, suffix: str = "") -> dict:
+    style = _text_style_with_z(item)
+    component = {
+        "id": f"layout-{item['id']}{suffix}-{run_id}",
+        "type": "text",
+        "x": item["x"],
+        "y": item["y"],
+        "width": item["width"],
+        "height": item["height"],
+        "content": content,
+        "editable": True,
+        "editableProperties": ["content", "style"],
+        "slot": item["id"],
+        "rotation": style["rotation"],
+        "opacity": style["opacity"],
+        "style": style,
+    }
+    return component
+
+
+def _text_components_from_layer(run_id: str, layer: dict, user_inputs: dict) -> list[dict]:
+    source = layer["contentSource"]
+    if source == "user.title":
+        return [_layout_text_component(run_id, layer, user_inputs.get("title", ""))]
+    if source == "user.description":
+        return [_layout_text_component(run_id, layer, user_inputs.get("description", ""))]
+    if source == "user.songs":
+        columns = _user_song_columns(user_inputs.get("songs", []))
+        if not columns:
+            return [_layout_text_component(run_id, layer, "")]
+        gap = 6
+        col_w = (layer["width"] - gap * 2) / 3
+        components = []
+        for index, content in enumerate(columns):
+            col_layer = dict(layer)
+            col_layer["id"] = f"{layer['id']}-col-{index + 1}"
+            col_layer["x"] = layer["x"] + index * (col_w + gap)
+            col_layer["width"] = col_w
+            components.append(_layout_text_component(run_id, col_layer, content))
+        return components
+    return [_layout_text_component(run_id, layer, "")]
+
+
+def _assemble_design_document(layout_map: dict, assets: dict[str, str], user_inputs: dict) -> dict:
+    errors = _validate_layout_map(layout_map)
+    if errors:
+        raise RuntimeError("Invalid layout map: " + "; ".join(errors))
+
+    run_id = uuid.uuid4().hex[:10]
+    components = []
+    for item in layout_map["components"]:
+        if item.get("type") != "image":
+            continue
+        component_id = str(item["id"])
+        if not assets.get(component_id):
+            raise RuntimeError(f"Missing generated asset for component: {component_id}")
+        components.append(_layout_image_component(run_id, item, assets[component_id]))
+
+    for layer in layout_map["textLayers"]:
+        components.extend(_text_components_from_layer(run_id, layer, user_inputs))
+
+    components.sort(key=lambda comp: int(comp.get("style", {}).get("zIndex", 0)))
+    return {
+        "version": 1,
+        "canvas": layout_map["canvas"],
+        "components": components,
+        "meta": {
+            "name": f"Layout: {layout_map.get('category', 'custom')}",
+            "scene": "custom",
+            "tags": ["ai", "layout-map", str(layout_map.get("category", "custom"))],
+            "createdAt": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+        },
+    }
+
+
+def _find_cjk_font(size: int):
+    from PIL import ImageFont
+
+    candidates = [
+        r"C:\Windows\Fonts\msyh.ttc",
+        r"C:\Windows\Fonts\simhei.ttf",
+        "/System/Library/Fonts/PingFang.ttc",
+        "/System/Library/Fonts/STHeiti Light.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+    ]
+    for path in candidates:
+        if Path(path).is_file():
+            return ImageFont.truetype(path, size)
+    return ImageFont.load_default()
+
+
+def _draw_preview_text(base, comp: dict):
+    from PIL import Image, ImageDraw
+
+    style = comp["style"]
+    font_size = int(style.get("fontSize", 12))
+    line_height = float(style.get("lineHeight", 1.2))
+    opacity = float(style.get("opacity", 1))
+    font = _find_cjk_font(font_size)
+    text_layer = Image.new("RGBA", (int(comp["width"]), int(comp["height"])), (255, 255, 255, 0))
+    draw = ImageDraw.Draw(text_layer)
+    align = style.get("textAlign", "left")
+    y = 0
+    for line in comp["content"].splitlines() or [""]:
+        bbox = draw.textbbox((0, 0), line, font=font)
+        line_w = bbox[2] - bbox[0]
+        if align == "center":
+            x = max(0, (int(comp["width"]) - line_w) / 2)
+        elif align == "right":
+            x = max(0, int(comp["width"]) - line_w)
+        else:
+            x = 0
+        draw.text((x, y), line, fill=style.get("color", "#000000"), font=font)
+        y += max(font_size, int(font_size * line_height))
+    if opacity < 1:
+        alpha = text_layer.getchannel("A").point(lambda p: int(p * opacity))
+        text_layer.putalpha(alpha)
+    rotation = float(comp.get("rotation") or 0)
+    if rotation:
+        text_layer = text_layer.rotate(-rotation, expand=True, resample=Image.Resampling.BICUBIC)
+    base.paste(text_layer, (int(comp["x"]), int(comp["y"])), text_layer)
+
+
+def _compose_layout_preview(document: dict) -> str:
+    from PIL import Image
+
+    canvas = document["canvas"]
+    img = Image.new("RGB", (int(canvas["width"]), int(canvas["height"])), canvas.get("background", "#ffffff"))
+    for comp in sorted(document["components"], key=lambda c: int(c.get("style", {}).get("zIndex", 0))):
+        if comp["type"] == "image" and comp["content"].startswith("/generated/"):
+            src_path = GEN_DIR / Path(comp["content"]).name
+            if src_path.is_file():
+                src = Image.open(src_path).convert("RGBA").resize((int(comp["width"]), int(comp["height"])))
+                img.paste(src, (int(comp["x"]), int(comp["y"])), src)
+        elif comp["type"] == "text":
+            _draw_preview_text(img, comp)
+
+    filename = f"layout-preview-{uuid.uuid4().hex[:10]}.png"
+    path = GEN_DIR / filename
+    img.save(path)
+    return f"/generated/{filename}"
 
 # Hugging Face（备选）
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
@@ -928,6 +1120,18 @@ async def generate_components(req: GenerateComponentsRequest):
         return GenerateComponentsResponse(ok=True, assets=assets, provider="responses-image-generation")
     except Exception as e:
         return GenerateComponentsResponse(ok=False, error=str(e), provider="responses-image-generation")
+
+
+@app.post("/api/ai/assemble-layout", response_model=AssembleLayoutResponse)
+async def assemble_layout(req: AssembleLayoutRequest):
+    try:
+        user_inputs = {"title": req.title, "songs": req.songs, "description": req.description}
+        document = _assemble_design_document(req.layout_map, req.assets, user_inputs)
+        preview_url = _compose_layout_preview(document)
+        document["meta"]["thumbnail"] = preview_url
+        return AssembleLayoutResponse(ok=True, document=document, preview_url=preview_url, provider="layout-assembler")
+    except Exception as e:
+        return AssembleLayoutResponse(ok=False, error=str(e), provider="layout-assembler")
 
 
 # ── OCR 文字拆分 ──────────────────────────────────────
