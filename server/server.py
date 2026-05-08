@@ -82,6 +82,18 @@ class LayoutMapResponse(BaseModel):
     error: Optional[str] = None
     provider: Optional[str] = None
 
+
+class GenerateComponentsRequest(BaseModel):
+    layout_map: dict
+    style_brief: str = ""
+
+
+class GenerateComponentsResponse(BaseModel):
+    ok: bool
+    assets: Optional[dict[str, str]] = None
+    error: Optional[str] = None
+    provider: Optional[str] = None
+
 # ── OCR 拆分 ──────────────────────────────────────────
 class SplitTextRequest(BaseModel):
     image_url: str
@@ -522,6 +534,47 @@ def _validate_layout_map(layout_map: dict) -> list[str]:
                     errors.append(f"{prefix}.contentSource_missing")
     return errors
 
+
+def _layout_component_prompt(component: dict, style_brief: str) -> str:
+    base_prompt = str(component["prompt"]).strip()
+    style = style_brief.strip() or "Use the visual style implied by the component prompt."
+    return (
+        f"{style}\n"
+        f"Generate only one image asset for component `{component['id']}`.\n"
+        f"Slot size: {int(component['width'])}x{int(component['height'])} pixels.\n"
+        f"Component prompt: {base_prompt}\n"
+        "Hard constraints: do not generate a complete poster, do not add readable text, "
+        "letters, numbers, labels, logos, watermarks, captions, or user-provided words. "
+        "Leave clean blank areas for later editable text layers when the prompt mentions text space. "
+        "The asset must fit inside its slot and should not include extra borders outside the requested design."
+    )
+
+
+async def _generate_layout_components(layout_map: dict, style_brief: str = "") -> dict[str, str]:
+    errors = _validate_layout_map(layout_map)
+    if errors:
+        raise RuntimeError("Invalid layout map: " + "; ".join(errors))
+
+    image_components = [item for item in layout_map["components"] if item.get("type") == "image"]
+    assets = {}
+    for index, component in enumerate(image_components, start=1):
+        component_id = str(component["id"])
+        w = int(component["width"])
+        h = int(component["height"])
+        print(f"[LayoutComponents] generating component {index}/{len(image_components)}: {component_id}", flush=True)
+        image_bytes = await try_gpt_image_generate(_layout_component_prompt(component, style_brief), w, h)
+        if image_bytes is None:
+            raise RuntimeError(f"Component generation failed: {component_id}")
+
+        safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in component_id).strip("-") or "component"
+        path = GEN_DIR / f"layout-{safe_id}-{uuid.uuid4().hex[:8]}.png"
+        path.write_bytes(image_bytes)
+        assets[component_id] = f"/generated/{path.name}"
+
+        if index < len(image_components):
+            await asyncio.sleep(2)
+    return assets
+
 # Hugging Face（备选）
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
 HF_MODELS = [
@@ -866,6 +919,15 @@ async def generate_layout_map(req: LayoutMapRequest):
         return LayoutMapResponse(ok=True, layout_map=layout_map, provider="responses-api")
     except Exception as e:
         return LayoutMapResponse(ok=False, error=str(e), provider="responses-api")
+
+
+@app.post("/api/ai/generate-components", response_model=GenerateComponentsResponse)
+async def generate_components(req: GenerateComponentsRequest):
+    try:
+        assets = await _generate_layout_components(req.layout_map, req.style_brief)
+        return GenerateComponentsResponse(ok=True, assets=assets, provider="responses-image-generation")
+    except Exception as e:
+        return GenerateComponentsResponse(ok=False, error=str(e), provider="responses-image-generation")
 
 
 # ── OCR 文字拆分 ──────────────────────────────────────
