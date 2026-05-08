@@ -64,6 +64,24 @@ class TemplateGenerateRequest(BaseModel):
     assets: Optional[dict[str, str]] = None
     regenerate_slot: Optional[str] = None
 
+
+class LayoutMapRequest(BaseModel):
+    category: str = "playlist"
+    style: str = ""
+    title: str = ""
+    songs: list[str] = []
+    description: str = ""
+    followup_round: int = 0
+    use_default_layout: bool = True
+
+
+class LayoutMapResponse(BaseModel):
+    ok: bool
+    layout_map: Optional[dict] = None
+    questions: Optional[list[str]] = None
+    error: Optional[str] = None
+    provider: Optional[str] = None
+
 # ── OCR 拆分 ──────────────────────────────────────────
 class SplitTextRequest(BaseModel):
     image_url: str
@@ -328,6 +346,181 @@ def _compose_template_preview(template: dict, components: list[dict], run_id: st
     path = GEN_DIR / filename
     img.save(path)
     return f"/generated/{filename}"
+
+
+PLAYLIST_CONTEXT_PATH = ROOT / "docs" / "prd-workspace" / "template-composition" / "playlist-category-context.md"
+
+
+def _read_playlist_context() -> str:
+    return PLAYLIST_CONTEXT_PATH.read_text(encoding="utf-8")
+
+
+def _extract_json_object(text: str) -> dict:
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        stripped = stripped.strip("`")
+        if stripped.startswith("json"):
+            stripped = stripped[4:].strip()
+    start = stripped.find("{")
+    end = stripped.rfind("}")
+    if start < 0 or end < start:
+        raise ValueError("layout map response did not contain a JSON object")
+    return json.loads(stripped[start:end + 1])
+
+
+def _response_text(data: dict) -> str:
+    if data.get("output_text"):
+        return str(data["output_text"])
+    parts = []
+    for item in data.get("output", []):
+        for content in item.get("content", []):
+            if isinstance(content, dict):
+                text = content.get("text")
+                if text:
+                    parts.append(text)
+    return "\n".join(parts)
+
+
+async def _responses_text(prompt: str) -> str:
+    if not GPT_IMAGE_API_KEY:
+        raise RuntimeError("GPT_IMAGE_API_KEY is not set")
+
+    url = f"{OPENAI_BASE_URL.rstrip('/')}/responses"
+    payload = {
+        "model": GPT_MAIN_MODEL,
+        "input": prompt,
+    }
+    headers = {
+        "Authorization": f"Bearer {GPT_IMAGE_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    async with httpx.AsyncClient(timeout=90.0) as client:
+        resp = await client.post(url, json=payload, headers=headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:300]}")
+    text = _response_text(resp.json())
+    if not text.strip():
+        raise RuntimeError("Responses API returned empty text")
+    return text
+
+
+def _layout_prompt(req: LayoutMapRequest, context: str) -> str:
+    title_len = len(req.title.strip())
+    song_count = len([song for song in req.songs if song.strip()])
+    description = req.description.strip() or "No extra description."
+    style = req.style.strip() or "model decides a suitable visual style from the playlist category."
+    return f"""
+You are designing an editable image-material layout map for a design software.
+
+Category knowledge base:
+{context}
+
+User request summary:
+- category: {req.category}
+- style: {style}
+- title_length: {title_len}
+- song_count: {song_count}
+- has_description: {bool(req.description.strip())}
+- description: {description}
+- use_default_layout: {req.use_default_layout}
+
+Return only valid JSON. Do not include markdown.
+
+Rules:
+1. Demo category is playlist only.
+2. Generate a dynamic layout map, not a fixed template.
+3. Use a 390x600 canvas unless the category strongly requires another size.
+4. User text must not be placed in image prompts. Text layers use contentSource such as user.title, user.songs, user.description.
+5. Image component prompts must ask for clean blank/readable areas where text layers will be placed.
+6. Text layers must include full editable style: fontFamily, fontSize, fontWeight, color, textAlign, lineHeight, letterSpacing, rotation, opacity.
+7. Use no Fabric fallback; image components are real generated assets.
+8. If the input is underspecified and use_default_layout is true, choose a conservative playlist layout yourself.
+
+Required JSON shape:
+{{
+  "category": "playlist",
+  "canvas": {{"width": 390, "height": 600, "background": "#hex"}},
+  "layoutPattern": "title-visual-list | split | floating-card | collage",
+  "components": [
+    {{
+      "id": "background",
+      "type": "image",
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 600,
+      "zIndex": 0,
+      "prompt": "component visual prompt without user text"
+    }}
+  ],
+  "textLayers": [
+    {{
+      "id": "playlist-title",
+      "role": "title",
+      "contentSource": "user.title",
+      "x": 24,
+      "y": 32,
+      "width": 342,
+      "height": 48,
+      "zIndex": 50,
+      "style": {{
+        "fontFamily": "system",
+        "fontSize": 30,
+        "fontWeight": "bold",
+        "color": "#ffffff",
+        "textAlign": "center",
+        "lineHeight": 1.1,
+        "letterSpacing": 0,
+        "rotation": 0,
+        "opacity": 1
+      }}
+    }}
+  ]
+}}
+""".strip()
+
+
+def _validate_layout_map(layout_map: dict) -> list[str]:
+    errors = []
+    canvas = layout_map.get("canvas")
+    if not isinstance(canvas, dict):
+        errors.append("canvas_missing")
+        return errors
+    canvas_w = canvas.get("width")
+    canvas_h = canvas.get("height")
+    if not isinstance(canvas_w, int) or not isinstance(canvas_h, int) or canvas_w <= 0 or canvas_h <= 0:
+        errors.append("canvas_size_invalid")
+        return errors
+
+    for collection_name in ("components", "textLayers"):
+        items = layout_map.get(collection_name)
+        if not isinstance(items, list) or not items:
+            errors.append(f"{collection_name}_missing")
+            continue
+        for index, item in enumerate(items):
+            prefix = f"{collection_name}[{index}]"
+            for field in ("id", "x", "y", "width", "height", "zIndex"):
+                if field not in item:
+                    errors.append(f"{prefix}.{field}_missing")
+            if all(field in item for field in ("x", "y", "width", "height")):
+                x, y, w, h = item["x"], item["y"], item["width"], item["height"]
+                if not all(isinstance(v, (int, float)) for v in (x, y, w, h)) or w <= 0 or h <= 0:
+                    errors.append(f"{prefix}.bounds_invalid")
+                elif x < 0 or y < 0 or x + w > canvas_w or y + h > canvas_h:
+                    errors.append(f"{prefix}.bounds_out_of_canvas")
+            if collection_name == "components" and not item.get("prompt"):
+                errors.append(f"{prefix}.prompt_missing")
+            if collection_name == "textLayers":
+                style = item.get("style")
+                if not isinstance(style, dict):
+                    errors.append(f"{prefix}.style_missing")
+                    continue
+                for field in ("fontFamily", "fontSize", "fontWeight", "color", "textAlign", "lineHeight", "letterSpacing", "rotation", "opacity"):
+                    if field not in style:
+                        errors.append(f"{prefix}.style.{field}_missing")
+                if not item.get("contentSource"):
+                    errors.append(f"{prefix}.contentSource_missing")
+    return errors
 
 # Hugging Face（备选）
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
@@ -639,6 +832,40 @@ async def generate_template(req: TemplateGenerateRequest):
     }
 
     return GenerateResponse(ok=True, document=doc, image_url=preview_url, provider="template-composition")
+
+
+def _playlist_followup_questions(req: LayoutMapRequest) -> list[str]:
+    questions = []
+    if not req.style.strip():
+        questions.append("希望歌单整体是什么风格或情绪？")
+    if not req.title.strip():
+        questions.append("歌单标题是什么？")
+    if not [song for song in req.songs if song.strip()]:
+        questions.append("歌单里至少包含哪些歌曲？")
+    return questions[:3]
+
+
+@app.post("/api/ai/generate-layout-map", response_model=LayoutMapResponse)
+async def generate_layout_map(req: LayoutMapRequest):
+    category = req.category.strip().lower()
+    if category != "playlist":
+        return LayoutMapResponse(ok=False, error="Only playlist category is enabled in this demo.")
+
+    questions = _playlist_followup_questions(req)
+    if questions and not req.use_default_layout and req.followup_round < 3:
+        return LayoutMapResponse(ok=True, questions=questions, provider="layout-followup")
+
+    try:
+        context = _read_playlist_context()
+        prompt = _layout_prompt(req, context)
+        text = await _responses_text(prompt)
+        layout_map = _extract_json_object(text)
+        errors = _validate_layout_map(layout_map)
+        if errors:
+            return LayoutMapResponse(ok=False, error="Invalid layout map: " + "; ".join(errors), provider="responses-api")
+        return LayoutMapResponse(ok=True, layout_map=layout_map, provider="responses-api")
+    except Exception as e:
+        return LayoutMapResponse(ok=False, error=str(e), provider="responses-api")
 
 
 # ── OCR 文字拆分 ──────────────────────────────────────
