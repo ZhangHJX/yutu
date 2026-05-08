@@ -53,6 +53,7 @@ class GenerateResponse(BaseModel):
     document: Optional[dict] = None
     image_url: Optional[str] = None
     error: Optional[str] = None
+    questions: Optional[list[str]] = None
     provider: Optional[str] = None  # "responses-api" | "huggingface"
 
 
@@ -109,6 +110,16 @@ class AssembleLayoutResponse(BaseModel):
     preview_url: Optional[str] = None
     error: Optional[str] = None
     provider: Optional[str] = None
+
+
+class CategoryGenerateRequest(BaseModel):
+    category: str = "playlist"
+    style: str = ""
+    title: str = ""
+    songs: list[str] = []
+    description: str = ""
+    use_default_layout: bool = True
+    followup_round: int = 0
 
 # ── OCR 拆分 ──────────────────────────────────────────
 class SplitTextRequest(BaseModel):
@@ -1132,6 +1143,43 @@ async def assemble_layout(req: AssembleLayoutRequest):
         return AssembleLayoutResponse(ok=True, document=document, preview_url=preview_url, provider="layout-assembler")
     except Exception as e:
         return AssembleLayoutResponse(ok=False, error=str(e), provider="layout-assembler")
+
+
+@app.post("/api/ai/generate-category", response_model=GenerateResponse)
+async def generate_category(req: CategoryGenerateRequest):
+    map_req = LayoutMapRequest(
+        category=req.category,
+        style=req.style,
+        title=req.title,
+        songs=req.songs,
+        description=req.description,
+        use_default_layout=req.use_default_layout,
+        followup_round=req.followup_round,
+    )
+    try:
+        category = map_req.category.strip().lower()
+        if category != "playlist":
+            return GenerateResponse(ok=False, error="当前 demo 只支持歌单分类")
+
+        questions = _playlist_followup_questions(map_req)
+        if questions and not map_req.use_default_layout and map_req.followup_round < 3:
+            return GenerateResponse(ok=True, questions=questions, provider="layout-followup")
+
+        context = _read_playlist_context()
+        layout_text = await _responses_text(_layout_prompt(map_req, context))
+        layout_map = _extract_json_object(layout_text)
+        errors = _validate_layout_map(layout_map)
+        if errors:
+            return GenerateResponse(ok=False, error="Layout map invalid: " + "; ".join(errors))
+
+        assets = await _generate_layout_components(layout_map, req.style)
+        user_inputs = {"title": req.title, "songs": req.songs, "description": req.description}
+        document = _assemble_design_document(layout_map, assets, user_inputs)
+        preview_url = _compose_layout_preview(document)
+        document["meta"]["thumbnail"] = preview_url
+        return GenerateResponse(ok=True, document=document, image_url=preview_url, provider="category-composition")
+    except Exception as e:
+        return GenerateResponse(ok=False, error=str(e), provider="category-composition")
 
 
 # ── OCR 文字拆分 ──────────────────────────────────────

@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import type { DesignDocument } from "@/core/DesignDocument";
-import playlistTemplate from "../../templates/playlist-poster-111.json";
 
 interface AIPageProps {
   onGenerate: (doc: DesignDocument) => void;
@@ -14,67 +13,87 @@ interface GenerateResult {
   imageUrl: string;
 }
 
-type TemplateSlot = (typeof playlistTemplate.slots)[number];
-
-const API_BASE = process.env.NEXT_PUBLIC_AI_API_BASE || "";
-const THUMBNAIL_SCALE_X = 78 / playlistTemplate.canvas.width;
-const THUMBNAIL_SCALE_Y = 120 / playlistTemplate.canvas.height;
-
-function slotThumbStyle(slot: TemplateSlot) {
-  return {
-    left: slot.x * THUMBNAIL_SCALE_X,
-    top: slot.y * THUMBNAIL_SCALE_Y,
-    width: ("w" in slot ? slot.w : 0) * THUMBNAIL_SCALE_X,
-    height: ("h" in slot ? slot.h : 0) * THUMBNAIL_SCALE_Y,
-  };
+interface GenerateResponse {
+  ok: boolean;
+  document?: DesignDocument;
+  image_url?: string;
+  questions?: string[];
+  error?: string;
 }
 
-async function generateTemplate(title: string, songsText: string, style: string): Promise<GenerateResult> {
-  const songs = songsText
+const API_BASE = process.env.NEXT_PUBLIC_AI_API_BASE || "";
+const DEFAULT_SONGS = "公主病\n半情歌\n他的猫\n不将就\n月牙湾\n记事本\n小美满\n眉间雪\n闹够了没有\n勇气大爆发\n回忆的沙漏\n别找我麻烦";
+
+function parseSongs(text: string): string[] {
+  return text
     .split(/\r?\n|,|，/)
     .map((song) => song.trim())
     .filter(Boolean);
-  const res = await fetch(`${API_BASE}/api/ai/generate-template`, {
+}
+
+async function generateCategory(params: {
+  title: string;
+  songsText: string;
+  style: string;
+  description: string;
+  useDefaultLayout: boolean;
+  followupRound: number;
+}): Promise<GenerateResponse> {
+  const res = await fetch(`${API_BASE}/api/ai/generate-category`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, songs, style, template_id: "playlist-poster-111" }),
+    body: JSON.stringify({
+      category: "playlist",
+      title: params.title,
+      songs: parseSongs(params.songsText),
+      style: params.style,
+      description: params.description,
+      use_default_layout: params.useDefaultLayout,
+      followup_round: params.followupRound,
+    }),
   });
-  const data = await res.json();
-  if (!data.ok) {
-    throw new Error(data.error || "模板生成失败");
-  }
-  return { document: data.document as DesignDocument, imageUrl: data.image_url as string };
+  return res.json();
 }
 
 export default function AIPage({ onGenerate, onBack }: AIPageProps) {
   const [title, setTitle] = useState("支持点歌 // 学歌 // 歌单未完待续");
   const [style, setStyle] = useState("dreamy pastel pink aesthetic, hyper-cute girly style");
-  const [songsText, setSongsText] = useState(
-    "公主病\n半情歌\n他的猫\n不将就\n月牙湾\n记事本\n小美满\n眉间雪\n闹够了没有\n勇气大爆发\n回忆的沙漏\n别找我麻烦\n彩虹的微笑\n但愿人长久\n离别开出花\n可惜没如果\n词不达意\n明天你好\n玫瑰窃贼\n天命风流\n漠河舞厅\n我好想你\n专属味道\n依然爱你"
-  );
+  const [songsText, setSongsText] = useState(DEFAULT_SONGS);
+  const [description, setDescription] = useState("");
+  const [useDefaultLayout, setUseDefaultLayout] = useState(true);
+  const [followupRound, setFollowupRound] = useState(0);
+  const [questions, setQuestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<GenerateResult | null>(null);
 
   const handleGenerate = useCallback(async () => {
-    if (!style.trim() || loading) return;
+    if (loading) return;
     setError(null);
     setResult(null);
     setLoading(true);
 
     try {
-      const genResult = await generateTemplate(title.trim(), songsText, style.trim());
-      setResult(genResult);
+      const data = await generateCategory({ title, songsText, style, description, useDefaultLayout, followupRound });
+      if (data.questions?.length) {
+        setQuestions(data.questions);
+        setFollowupRound((round) => Math.min(round + 1, 3));
+        return;
+      }
+      if (!data.ok || !data.document || !data.image_url) {
+        throw new Error(data.error || "生成失败");
+      }
+      setQuestions([]);
+      setResult({ document: data.document, imageUrl: data.image_url });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "模板生成失败，请重试");
+      setError(e instanceof Error ? e.message : "生成失败，请重试");
     } finally {
       setLoading(false);
     }
-  }, [title, songsText, style, loading]);
+  }, [title, songsText, style, description, useDefaultLayout, followupRound, loading]);
 
   const handleConfirm = useCallback(() => {
-    if (!result) return;
-    onGenerate(result.document);
+    if (result) onGenerate(result.document);
   }, [result, onGenerate]);
 
   const handleRegenerate = useCallback(() => {
@@ -85,27 +104,47 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
     <div className="ai-screen">
       <div className="ai-header">
         <button className="ai-back" onClick={onBack}>返回</button>
-        <span className="ai-title">模板创作</span>
+        <span className="ai-title">AI 素材创作</span>
         <div style={{ width: 48 }} />
       </div>
 
       <div className="ai-body">
         {!result && (
           <>
-            <label className="ai-label">选择模板</label>
-            <button className="template-card active" type="button">
-              <span className="template-thumb">
-                {playlistTemplate.slots
-                  .filter((slot) => slot.id !== "background")
-                  .map((slot) => (
-                    <span key={slot.id} className={`thumb-slot thumb-${slot.id}`} style={slotThumbStyle(slot)} />
-                  ))}
+            <label className="ai-label">素材分类</label>
+            <button className="category-card active" type="button">
+              <span className="category-thumb">
+                <span className="category-block title" />
+                <span className="category-block visual" />
+                <span className="category-block list" />
               </span>
-              <span className="template-info">
-                <strong>111 歌单海报</strong>
-                <small>女孩 / 标题 / 播放器 / 歌单 / 背景</small>
+              <span className="category-info">
+                <strong>歌单</strong>
+                <small>AI 先生成布局 map，再按组件生成素材，文字最后渲染为可编辑文本层</small>
               </span>
             </button>
+
+            <label className="ai-check-row">
+              <input
+                type="checkbox"
+                checked={useDefaultLayout}
+                onChange={(e) => {
+                  setUseDefaultLayout(e.target.checked);
+                  setQuestions([]);
+                  setFollowupRound(0);
+                }}
+              />
+              <span>使用默认布局判断</span>
+            </label>
+
+            {questions.length > 0 && (
+              <div className="ai-questions">
+                <strong>需要补充信息</strong>
+                {questions.map((question) => (
+                  <span key={question}>{question}</span>
+                ))}
+              </div>
+            )}
 
             <label className="ai-label">标题</label>
             <input
@@ -124,7 +163,7 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
               rows={7}
             />
 
-            <label className="ai-label">图片风格</label>
+            <label className="ai-label">风格</label>
             <textarea
               className="ai-input"
               value={style}
@@ -133,14 +172,25 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
               rows={3}
             />
 
-            <button className="ai-generate-btn" onClick={handleGenerate} disabled={loading || !style.trim()}>
+            <label className="ai-label">补充说明</label>
+            <textarea
+              className="ai-input"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="可填写画面情绪、目标人群、特殊元素等"
+              rows={3}
+            />
+
+            <button className="ai-generate-btn" onClick={handleGenerate} disabled={loading}>
               {loading ? (
                 <span className="ai-loading">
                   <span className="ai-spinner" />
-                  正在按模板生成组件...
+                  正在生成布局和组件...
                 </span>
+              ) : questions.length ? (
+                "提交补充并继续生成"
               ) : (
-                "生成模板海报"
+                "生成歌单素材"
               )}
             </button>
           </>
@@ -167,7 +217,7 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
         {loading && (
           <div className="ai-loading-full">
             <span className="ai-spinner-lg" />
-            <span className="ai-loading-text">组件生成通常需要 1-2 分钟</span>
+            <span className="ai-loading-text">完整生成通常需要 1-2 分钟</span>
           </div>
         )}
 
@@ -200,22 +250,30 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
         }
         input.ai-input { resize: initial; }
         .ai-input:focus { border-color: var(--primary); }
-        .template-card {
+        .category-card {
           display: flex; align-items: center; gap: 14px; padding: 12px;
           background: var(--bg-card); border: 1px solid var(--primary); border-radius: 12px;
           color: var(--text); text-align: left; cursor: pointer;
         }
-        .template-thumb {
+        .category-thumb {
           position: relative; flex: 0 0 auto; width: 78px; height: 120px; border-radius: 8px;
           background: linear-gradient(160deg, #ffe2ee, #ffc1dc); overflow: hidden;
           box-shadow: inset 0 0 0 1px rgba(255,255,255,0.65);
         }
-        .template-thumb .thumb-slot { position: absolute; border-radius: 6px; background: rgba(255,255,255,0.75); border: 1px solid rgba(255,105,180,0.55); }
-        .template-thumb .thumb-title { background: rgba(255,99,168,0.8); }
-        .template-thumb .thumb-girl { background: rgba(255,255,255,0.58); }
-        .template-info { display: flex; flex-direction: column; gap: 4px; }
-        .template-info strong { font-size: 15px; }
-        .template-info small { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+        .category-block { position: absolute; border-radius: 6px; background: rgba(255,255,255,0.8); border: 1px solid rgba(255,105,180,0.55); }
+        .category-block.title { left: 10px; top: 10px; width: 58px; height: 14px; background: rgba(255,99,168,0.8); }
+        .category-block.visual { left: 8px; top: 34px; width: 28px; height: 66px; }
+        .category-block.list { left: 42px; top: 34px; width: 28px; height: 74px; }
+        .category-info { display: flex; flex-direction: column; gap: 4px; }
+        .category-info strong { font-size: 15px; }
+        .category-info small { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+        .ai-check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+        .ai-questions {
+          display: flex; flex-direction: column; gap: 6px; padding: 12px;
+          background: rgba(108,92,231,0.08); border: 1px solid rgba(108,92,231,0.2);
+          border-radius: 10px; font-size: 13px; color: var(--text);
+        }
+        .ai-questions strong { color: var(--primary); }
         .ai-generate-btn {
           width: 100%; padding: 14px; background: var(--primary); color: white;
           border: none; border-radius: 12px; font-size: 16px; font-weight: 600;
