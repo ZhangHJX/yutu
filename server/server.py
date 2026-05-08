@@ -115,9 +115,9 @@ ENABLE_MODEL_BACKGROUND_FILL = os.environ.get("ENABLE_MODEL_BACKGROUND_FILL", "1
 
 
 async def try_gpt_image_generate(prompt: str, w: int, h: int) -> Optional[bytes]:
-    """通过 Responses API + image_generation tool 生图（支持 gpt-image-2 等模型）"""
+    """Generate image through Responses API image_generation tool."""
     if not GPT_IMAGE_API_KEY:
-        print("[GPT-Image] 未配置 GPT_IMAGE_API_KEY")
+        print("[GPT-Image] Missing GPT_IMAGE_API_KEY")
         return None
 
     url = f"{OPENAI_BASE_URL.rstrip('/')}/responses"
@@ -126,44 +126,27 @@ async def try_gpt_image_generate(prompt: str, w: int, h: int) -> Optional[bytes]
         "input": prompt,
         "tools": [{"type": "image_generation"}],
         "tool_choice": {"type": "image_generation"},
+        "stream": True,
     }
-    print(f"[GPT-Image] 请求: prompt={prompt[:40]}, url={url}, model={GPT_MAIN_MODEL}")
+    print(f"[GPT-Image] Request: prompt={prompt[:40]}, url={url}, model={GPT_MAIN_MODEL}")
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        try:
-            resp = await client.post(
-                url,
-                json=payload,
-                headers={
-                    "Authorization": f"Bearer {GPT_IMAGE_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-            )
-
-            if resp.status_code != 200:
-                print(f"[GPT-Image] 错误 HTTP {resp.status_code}: {resp.text[:300]}")
-                return None
-
-            data = resp.json()
-            if data.get("status") != "completed":
-                err = data.get("error", "状态未完成")
-                print(f"[GPT-Image] 生成失败: {err}")
-                return None
-
-            output = data.get("output", [])
-            for item in output:
-                if item.get("type") == "image_generation_call":
-                    b64 = item.get("result", "")
-                    if b64:
-                        print(f"[GPT-Image] 成功 ({len(b64)} chars base64)")
-                        return base64.b64decode(b64)
-
-            print(f"[GPT-Image] 输出中未找到 image_generation_call: {str(output)[:200]}")
+    try:
+        b64, stream_report = await _responses_image_stream(
+            url,
+            payload,
+            {
+                "Authorization": f"Bearer {GPT_IMAGE_API_KEY}",
+                "Content-Type": "application/json",
+            },
+        )
+        if not b64:
+            print(f"[GPT-Image] Missing final image_generation_call: {stream_report}")
             return None
-
-        except Exception as e:
-            print(f"[GPT-Image] 异常: {e}")
-            return None
+        print(f"[GPT-Image] Success ({len(b64)} chars base64, events={stream_report.get('eventCount')})")
+        return base64.b64decode(b64)
+    except Exception as e:
+        print(f"[GPT-Image] Exception: {e}")
+        return None
 
 # Hugging Face（备选）
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
@@ -910,6 +893,7 @@ class BuildAssetsResponse(BaseModel):
     debug_composite_url: Optional[str] = None
     quality: Optional[dict] = None
     background_fill: Optional[dict] = None
+    mask_generation: Optional[dict] = None
     error: Optional[str] = None
 
 
@@ -1304,6 +1288,382 @@ async def _generate_filled_background(source_img, responses_mask):
     }
 
 
+async def _generate_patch_filled_background(source_img, component_masks):
+    from PIL import Image
+
+    bg_img = source_img.copy()
+    patches = []
+    for layer_type, label, _z_index, layer_alpha, _mask_report in component_masks:
+        source_bounds = _alpha_bounds(layer_alpha)
+        if not source_bounds["width"] or not source_bounds["height"]:
+            continue
+        patch_bounds = _expanded_bounds(source_bounds, source_img.size, 96)
+        patch_box = (
+            patch_bounds["x"],
+            patch_bounds["y"],
+            patch_bounds["x"] + patch_bounds["width"],
+            patch_bounds["y"] + patch_bounds["height"],
+        )
+        full_mask = _prepare_responses_mask(layer_alpha)
+        patch_mask = full_mask.crop(patch_box)
+        patch_source = bg_img.crop(patch_box)
+        filled_patch, patch_report = await _generate_filled_background(patch_source, patch_mask)
+        patch = {
+            "type": layer_type,
+            "label": label,
+            "bounds": patch_bounds,
+            "status": patch_report.get("status"),
+            "elapsedMs": patch_report.get("elapsedMs"),
+            "outsideMeanDiff": patch_report.get("outsideMeanDiff"),
+            "insideMeanDiff": patch_report.get("insideMeanDiff"),
+            "errorType": patch_report.get("errorType"),
+        }
+        if filled_patch is not None:
+            if filled_patch.size != patch_source.size:
+                filled_patch = filled_patch.resize(patch_source.size, Image.Resampling.LANCZOS)
+            edit_alpha = patch_mask.getchannel("A").point(lambda p: 255 - p)
+            merged_patch = Image.composite(filled_patch.convert("RGBA"), patch_source.convert("RGBA"), edit_alpha)
+            bg_img.paste(merged_patch, patch_box)
+            patch["status"] = "succeeded"
+        patches.append(patch)
+
+    successes = sum(1 for patch in patches if patch.get("status") == "succeeded")
+    if not successes:
+        return None, {
+            "status": "model_failed",
+            "provider": "responses-mask-data-url-stream-patch",
+            "patches": patches,
+            "errorType": "NoPatchSucceeded",
+            "error": "no patch fill succeeded",
+        }
+    return bg_img, {
+        "status": "model_succeeded" if successes == len(patches) else "partial_fallback",
+        "provider": "responses-mask-data-url-stream-patch",
+        "patches": patches,
+        "succeededPatches": successes,
+        "totalPatches": len(patches),
+    }
+
+
+def _expanded_bounds(bounds, image_size, padding):
+    x = max(0, bounds["x"] - padding)
+    y = max(0, bounds["y"] - padding)
+    x2 = min(image_size[0], bounds["x"] + bounds["width"] + padding)
+    y2 = min(image_size[1], bounds["y"] + bounds["height"] + padding)
+    return {"x": x, "y": y, "width": x2 - x, "height": y2 - y}
+
+
+async def _generate_component_mask(source_img, spec, crop_bounds=None):
+    from PIL import Image
+
+    if not GPT_IMAGE_API_KEY:
+        raise RuntimeError("GPT_IMAGE_API_KEY is not set")
+
+    url = f"{OPENAI_BASE_URL.rstrip('/')}/responses"
+    model_img = source_img
+    if crop_bounds:
+        model_img = source_img.crop((
+            crop_bounds["x"],
+            crop_bounds["y"],
+            crop_bounds["x"] + crop_bounds["width"],
+            crop_bounds["y"] + crop_bounds["height"],
+        ))
+    max_side = 768
+    mask_size = model_img.size
+    if max(model_img.size) > max_side:
+        scale = max_side / max(model_img.size)
+        mask_size = (max(1, round(model_img.width * scale)), max(1, round(model_img.height * scale)))
+    mask_source = model_img.resize(mask_size, Image.Resampling.LANCZOS) if mask_size != model_img.size else model_img
+    payload = {
+        "model": GPT_MAIN_MODEL,
+        "input": [{
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": (
+                        f"Create a binary segmentation mask for only this target: {spec['target']}. "
+                        "Output ONLY one black and white mask image. White #ffffff means the exact visible pixels of the target. "
+                        "Black #000000 means everything else. Keep the mask tight to the target edge. "
+                        f"{spec.get('guidance', '')} "
+                        "Do not include background, glow, shadow, empty area, adjacent objects, or text labels."
+                    ),
+                },
+                {"type": "input_image", "image_url": _image_data_url(mask_source)},
+            ],
+        }],
+        "tools": [{"type": "image_generation"}],
+        "tool_choice": {"type": "image_generation"},
+        "stream": True,
+    }
+    start = time.time()
+    result, stream_report = await _responses_image_stream(
+        url,
+        payload,
+        {
+            "Authorization": f"Bearer {GPT_IMAGE_API_KEY}",
+            "Content-Type": "application/json",
+        },
+    )
+    if not result:
+        raise RuntimeError(f"{spec['label']} mask generation returned no final image")
+
+    import io
+    import numpy as np
+    mask_img = Image.open(io.BytesIO(base64.b64decode(result))).convert("RGB")
+    if mask_img.size != model_img.size:
+        mask_img = mask_img.resize(model_img.size, Image.Resampling.NEAREST)
+    rgb = np.asarray(mask_img, dtype=np.uint8)
+    alpha = ((rgb[:, :, 0] > 190) & (rgb[:, :, 1] > 190) & (rgb[:, :, 2] > 190)).astype(np.uint8) * 255
+    alpha_img = Image.fromarray(alpha, mode="L")
+    if crop_bounds:
+        full_alpha = Image.new("L", source_img.size, 0)
+        full_alpha.paste(alpha_img, (crop_bounds["x"], crop_bounds["y"]))
+        alpha_img = full_alpha
+    report = {
+        "label": spec["label"],
+        "elapsedMs": int((time.time() - start) * 1000),
+        **stream_report,
+    }
+    if crop_bounds:
+        report["cropBounds"] = crop_bounds
+    return alpha_img, report
+
+
+async def _generate_component_masks(source_img):
+    specs = [
+        {"type": "subject", "label": "subject", "zIndex": 12, "target": "the main person, product, or foreground subject", "guidance": "Include the complete visible subject silhouette only.", "maxAreaRatio": 0.20, "minFillRatio": 0.08},
+        {"type": "panel", "label": "panel", "zIndex": 20, "target": "large card, panel, UI block, media player, or information box", "guidance": "Include the complete filled rectangular or rounded panel surface as one solid white region, including content inside that panel.", "maxAreaRatio": 0.25, "minFillRatio": 0.12},
+        {"type": "typography-art", "label": "typography", "zIndex": 30, "target": "large title typography or artistic headline text", "guidance": "Include only the visible letter shapes and decorative title strokes.", "maxAreaRatio": 0.20, "minFillRatio": 0.06},
+    ]
+    total_area = source_img.width * source_img.height
+    masks = []
+    attempts = []
+
+    def evaluate(spec, layer_alpha, attempt):
+        source_bounds = _alpha_bounds(layer_alpha)
+        area = sum(layer_alpha.histogram()[17:])
+        bounds_area = source_bounds["width"] * source_bounds["height"]
+        mask_area_ratio = area / total_area
+        bbox_fill_ratio = area / bounds_area if bounds_area else 0.0
+        edge_touch = (
+            source_bounds["x"] == 0
+            or source_bounds["y"] == 0
+            or source_bounds["x"] + source_bounds["width"] >= source_img.width
+            or source_bounds["y"] + source_bounds["height"] >= source_img.height
+        )
+        attempt.update({
+            "type": spec["type"],
+            "sourceBounds": source_bounds,
+            "maskAreaRatio": round(mask_area_ratio, 4),
+            "bboxFillRatio": round(bbox_fill_ratio, 4),
+            "edgeTouch": edge_touch,
+        })
+        if area < max(256, int(total_area * 0.001)):
+            return "too_small"
+        if mask_area_ratio > spec["maxAreaRatio"]:
+            return "too_large"
+        if bbox_fill_ratio < spec["minFillRatio"]:
+            return "bbox_too_loose"
+        if source_bounds["width"] > source_img.width * 0.95 and source_bounds["height"] > source_img.height * 0.95:
+            return "full_canvas_bounds"
+        if bbox_fill_ratio > 0.92 and source_bounds["width"] > source_img.width * 0.85 and source_bounds["height"] > source_img.height * 0.85:
+            return "near_full_canvas_solid"
+        return None
+
+    for spec in specs:
+        accepted = None
+        rejected_for_crop = None
+        for generation_index in range(2):
+            try:
+                layer_alpha, attempt = await _generate_component_mask(source_img, spec)
+                if generation_index:
+                    attempt["retryOf"] = spec["label"]
+            except Exception as e:
+                attempts.append({
+                    "type": spec["type"],
+                    "label": spec["label"],
+                    "accepted": False,
+                    "selected": False,
+                    "rejectReason": "generation_failed" if generation_index == 0 else "generation_retry_failed",
+                    "errorType": type(e).__name__,
+                    "error": f"{type(e).__name__}: {repr(e)}",
+                })
+                continue
+
+            reject_reason = evaluate(spec, layer_alpha, attempt)
+            attempts.append(attempt)
+            if not reject_reason:
+                attempt["accepted"] = True
+                attempt["selected"] = True
+                accepted = (spec["type"], spec["label"], spec["zIndex"], layer_alpha, attempt)
+                break
+            attempt["accepted"] = False
+            attempt["selected"] = False
+            attempt["rejectReason"] = reject_reason
+            if spec["type"] == "panel" and reject_reason == "bbox_too_loose":
+                rejected_for_crop = attempt
+
+        if accepted:
+            masks.append(accepted)
+            continue
+
+        if rejected_for_crop:
+            crop_bounds = _expanded_bounds(rejected_for_crop["sourceBounds"], source_img.size, 96)
+            try:
+                layer_alpha, crop_attempt = await _generate_component_mask(source_img, spec, crop_bounds)
+                crop_attempt["retryOf"] = spec["label"]
+                reject_reason = evaluate(spec, layer_alpha, crop_attempt)
+                attempts.append(crop_attempt)
+                if not reject_reason:
+                    crop_attempt["accepted"] = True
+                    crop_attempt["selected"] = True
+                    masks.append((spec["type"], spec["label"], spec["zIndex"], layer_alpha, crop_attempt))
+                else:
+                    crop_attempt["accepted"] = False
+                    crop_attempt["selected"] = False
+                    crop_attempt["rejectReason"] = f"crop_{reject_reason}"
+            except Exception as e:
+                attempts.append({
+                    "type": spec["type"],
+                    "label": spec["label"],
+                    "accepted": False,
+                    "selected": False,
+                    "rejectReason": "crop_generation_failed",
+                    "errorType": type(e).__name__,
+                    "error": f"{type(e).__name__}: {repr(e)}",
+                })
+
+    return masks, {
+        "status": "model_succeeded" if masks else "model_failed",
+        "provider": "responses-component-mask-stream",
+        "sourceSize": {"width": source_img.width, "height": source_img.height},
+        "attempts": attempts,
+        "acceptedCount": len(masks),
+        "rejectedCount": sum(1 for attempt in attempts if not attempt.get("accepted")),
+        "elapsedMs": sum(attempt.get("elapsedMs", 0) for attempt in attempts),
+    }
+
+
+async def _build_dynamic_mask_assets(pil_src, src_np, canvas_w, canvas_h, run_id, source_hash):
+    from PIL import Image
+
+    orig_w, orig_h = pil_src.size
+    layers_dir = GEN_DIR / "layers" / run_id
+    layers_dir.mkdir(parents=True, exist_ok=True)
+
+    img_aspect = orig_w / orig_h
+    canvas_aspect = canvas_w / canvas_h
+    if img_aspect >= canvas_aspect:
+        scale = canvas_w / orig_w
+        offset_x, offset_y = 0, (canvas_h - orig_h * scale) / 2
+    else:
+        scale = canvas_h / orig_h
+        offset_x, offset_y = (canvas_w - orig_w * scale) / 2, 0
+
+    masks, mask_generation = await _generate_component_masks(pil_src)
+    if not masks:
+        raise RuntimeError("dynamic mask generation produced no usable component masks")
+
+    assets = []
+    component_alpha = Image.new("L", (orig_w, orig_h), 0)
+    for index, (layer_type, label, z_index, layer_alpha, mask_report) in enumerate(masks):
+        component_alpha = Image.composite(
+            Image.new("L", (orig_w, orig_h), 255),
+            component_alpha,
+            layer_alpha.point(lambda p: 255 if p > 16 else 0),
+        )
+        layer = _source_pixels_layer(src_np, layer_alpha)
+        out_name = f"dynamic-{index}-{layer_type}.png"
+        layer.save(layers_dir / out_name, "PNG")
+        source_bounds = _alpha_bounds(layer_alpha)
+        assets.append({
+            "file": f"layers/{run_id}/{out_name}",
+            "type": layer_type,
+            "label": label,
+            "bounds": {"x": 0, "y": 0, "width": canvas_w, "height": canvas_h},
+            "sourceBounds": source_bounds,
+            "hitBounds": _canvas_bounds(source_bounds, scale, offset_x, offset_y),
+            "zIndex": z_index,
+            "completion": 0.65,
+            "uncertainty": "high",
+            "maskAreaRatio": mask_report["maskAreaRatio"],
+            "bboxFillRatio": mask_report["bboxFillRatio"],
+        })
+
+    responses_mask = _prepare_responses_mask(component_alpha)
+    mask_hash = hashlib.sha256(responses_mask.tobytes()).hexdigest()
+    if len(masks) > 2:
+        bg_img, background_fill = await _generate_patch_filled_background(pil_src, masks)
+    else:
+        bg_img, background_fill = await _generate_filled_background(pil_src, responses_mask)
+    if bg_img is None and len(masks) <= 2:
+        full_fill = background_fill
+        bg_img, background_fill = await _generate_patch_filled_background(pil_src, masks)
+        background_fill = {
+            **background_fill,
+            "fullAttempt": full_fill,
+        }
+    if bg_img is None:
+        bg_img = pil_src.copy()
+        background_fill = {
+            **background_fill,
+            "status": "original-source-fallback",
+            "provider": "original-source-fallback",
+        }
+    if bg_img.mode != "RGBA":
+        bg_img = bg_img.convert("RGBA")
+    if bg_img.size != pil_src.size:
+        bg_img = bg_img.resize(pil_src.size, Image.Resampling.LANCZOS)
+    bg_img.putalpha(bg_img.getchannel("A").point(lambda p: 255))
+    if "outsideMeanDiff" not in background_fill:
+        background_fill.update(_mask_diff_report(pil_src, bg_img, responses_mask))
+    background_fill["maskHash"] = mask_hash[:16]
+    background_fill["alphaOpaque"] = True
+    bg_img.save(layers_dir / "background.png", "PNG")
+
+    assets.insert(0, {
+        "file": f"layers/{run_id}/background.png",
+        "type": "background",
+        "label": "background",
+        "bounds": {"x": 0, "y": 0, "width": canvas_w, "height": canvas_h},
+        "sourceBounds": {"x": 0, "y": 0, "width": orig_w, "height": orig_h},
+        "hitBounds": {"x": 0, "y": 0, "width": canvas_w, "height": canvas_h},
+        "zIndex": 0,
+        "completion": 1.0,
+        "uncertainty": "medium",
+    })
+
+    composite = Image.new("RGBA", (orig_w, orig_h), (0, 0, 0, 0))
+    composite.alpha_composite(bg_img)
+    for asset in sorted(assets[1:], key=lambda a: a["zIndex"]):
+        composite.alpha_composite(Image.open(GEN_DIR / asset["file"]).convert("RGBA"))
+    composite.save(layers_dir / "debug-composite.png", "PNG")
+    quality = _quality_report(pil_src, composite)
+
+    manifest = {
+        "source": {"width": orig_w, "height": orig_h, "sha256": source_hash},
+        "canvas": {"width": canvas_w, "height": canvas_h},
+        "assets": assets,
+        "debugComposite": f"layers/{run_id}/debug-composite.png",
+        "quality": quality,
+        "backgroundFill": background_fill,
+        "maskGeneration": mask_generation,
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+    }
+    with open(layers_dir / "manifest.json", "w", encoding="utf-8") as f:
+        json.dump(manifest, f, ensure_ascii=False, indent=2)
+
+    return (
+        assets,
+        f"/generated/layers/{run_id}/manifest.json",
+        f"/generated/layers/{run_id}/debug-composite.png",
+        quality,
+        background_fill,
+        mask_generation,
+    )
+
+
 async def _build_reference_source_poster(pil_src, src_np, canvas_w, canvas_h, run_id, source_hash):
     import numpy as np
     from PIL import Image
@@ -1469,16 +1829,17 @@ async def build_assets(req: BuildAssetsRequest):
         canvas_w = canvas_w or orig_w
         canvas_h = canvas_h or orig_h
 
-        if source_hash != SOURCE_POSTER_SHA256:
-            return BuildAssetsResponse(
-                ok=False,
-                error="Only the source-poster reference asset package is enabled in this build. Dynamic mask decomposition will use the same manifest API next.",
+        if source_hash == SOURCE_POSTER_SHA256:
+            assets, manifest_url, debug_composite_url, quality, background_fill = await _build_reference_source_poster(
+                pil_src, src_np, canvas_w, canvas_h, run_id, source_hash
             )
-
-        assets, manifest_url, debug_composite_url, quality, background_fill = await _build_reference_source_poster(
-            pil_src, src_np, canvas_w, canvas_h, run_id, source_hash
-        )
-        print(f"[BuildAssets] reference source-poster -> layers/{run_id}/manifest.json")
+            mask_generation = None
+            print(f"[BuildAssets] reference source-poster -> layers/{run_id}/manifest.json")
+        else:
+            assets, manifest_url, debug_composite_url, quality, background_fill, mask_generation = await _build_dynamic_mask_assets(
+                pil_src, src_np, canvas_w, canvas_h, run_id, source_hash
+            )
+            print(f"[BuildAssets] dynamic mask -> layers/{run_id}/manifest.json")
         return BuildAssetsResponse(
             ok=True,
             source={"width": orig_w, "height": orig_h, "sha256": source_hash},
@@ -1487,6 +1848,7 @@ async def build_assets(req: BuildAssetsRequest):
             debug_composite_url=debug_composite_url,
             quality=quality,
             background_fill=background_fill,
+            mask_generation=mask_generation,
         )
 
     except Exception as e:
