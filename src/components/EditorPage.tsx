@@ -623,7 +623,15 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         </div>
 
         {/* 画布 */}
-        <div className="editor-canvas">
+        <div
+          className="editor-canvas"
+          onDoubleClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target === e.currentTarget || target.classList.contains("fabric-canvas-wrapper")) {
+              setSelectedId(null);
+            }
+          }}
+        >
           <FabricCanvas
             ref={canvasRef}
             document={doc}

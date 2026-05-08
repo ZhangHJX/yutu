@@ -1353,6 +1353,43 @@ def _expanded_bounds(bounds, image_size, padding):
     return {"x": x, "y": y, "width": x2 - x, "height": y2 - y}
 
 
+def _relative_bounds(source_img, box):
+    return {
+        "x": round(source_img.width * box[0]),
+        "y": round(source_img.height * box[1]),
+        "width": round(source_img.width * (box[2] - box[0])),
+        "height": round(source_img.height * (box[3] - box[1])),
+    }
+
+
+def _fill_alpha_holes(alpha_img):
+    import numpy as np
+    from PIL import Image
+
+    alpha = np.asarray(alpha_img, dtype=np.uint8) > 16
+    h, w = alpha.shape
+    outside = np.zeros((h, w), dtype=bool)
+    stack = []
+    for x in range(w):
+        if not alpha[0, x]:
+            stack.append((x, 0))
+        if not alpha[h - 1, x]:
+            stack.append((x, h - 1))
+    for y in range(h):
+        if not alpha[y, 0]:
+            stack.append((0, y))
+        if not alpha[y, w - 1]:
+            stack.append((w - 1, y))
+    while stack:
+        x, y = stack.pop()
+        if x < 0 or y < 0 or x >= w or y >= h or outside[y, x] or alpha[y, x]:
+            continue
+        outside[y, x] = True
+        stack.extend(((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)))
+    filled = alpha | (~alpha & ~outside)
+    return Image.fromarray(filled.astype(np.uint8) * 255, mode="L")
+
+
 async def _generate_component_mask(source_img, spec, crop_bounds=None):
     from PIL import Image
 
@@ -1414,8 +1451,10 @@ async def _generate_component_mask(source_img, spec, crop_bounds=None):
     if mask_img.size != model_img.size:
         mask_img = mask_img.resize(model_img.size, Image.Resampling.NEAREST)
     rgb = np.asarray(mask_img, dtype=np.uint8)
-    alpha = ((rgb[:, :, 0] > 190) & (rgb[:, :, 1] > 190) & (rgb[:, :, 2] > 190)).astype(np.uint8) * 255
+    alpha = ((rgb[:, :, 0] > 160) & (rgb[:, :, 1] > 160) & (rgb[:, :, 2] > 160)).astype(np.uint8) * 255
     alpha_img = Image.fromarray(alpha, mode="L")
+    if spec.get("fillHoles"):
+        alpha_img = _fill_alpha_holes(alpha_img)
     if crop_bounds:
         full_alpha = Image.new("L", source_img.size, 0)
         full_alpha.paste(alpha_img, (crop_bounds["x"], crop_bounds["y"]))
@@ -1430,15 +1469,24 @@ async def _generate_component_mask(source_img, spec, crop_bounds=None):
     return alpha_img, report
 
 
-async def _generate_component_masks(source_img):
+async def _generate_component_masks(source_img, layers_dir=None, run_id=""):
     specs = [
-        {"type": "subject", "label": "subject", "zIndex": 12, "target": "the main person, product, or foreground subject", "guidance": "Include the complete visible subject silhouette only.", "maxAreaRatio": 0.20, "minFillRatio": 0.08},
-        {"type": "panel", "label": "panel", "zIndex": 20, "target": "large card, panel, UI block, media player, or information box", "guidance": "Include the complete filled rectangular or rounded panel surface as one solid white region, including content inside that panel.", "maxAreaRatio": 0.25, "minFillRatio": 0.12},
-        {"type": "typography-art", "label": "typography", "zIndex": 30, "target": "large title typography or artistic headline text", "guidance": "Include only the visible letter shapes and decorative title strokes.", "maxAreaRatio": 0.20, "minFillRatio": 0.06},
+        {"type": "subject", "label": "subject", "zIndex": 12, "target": "the main person, product, or foreground subject", "guidance": "Include the complete visible subject silhouette only. Exclude playlist panels, player cards, title text, and nearby cards.", "maxAreaRatio": 0.22, "minFillRatio": 0.08, "fillHoles": True},
+        {"type": "player", "label": "player", "zIndex": 20, "target": "the music player card or control widget", "guidance": "Include the complete player card surface, border, album art, buttons, progress bar, and text inside the player. Exclude the playlist table and the person.", "maxAreaRatio": 0.28, "minFillRatio": 0.16, "fillHoles": True},
+        {"type": "playlist-panel", "label": "playlist panel", "zIndex": 25, "target": "the large playlist or song list table", "guidance": "Include the complete playlist panel as one component, including its rounded surface, border, rows, columns, song numbers, text, and icons. Exclude the player card, person, and bottom decorations.", "maxAreaRatio": 0.36, "minFillRatio": 0.18, "fillHoles": True},
+        {"type": "typography-art", "label": "typography", "zIndex": 30, "target": "the top header title typography only", "guidance": "Include only the top title text near the top edge. Do not include any text inside the player card or playlist table.", "maxAreaRatio": 0.16, "minFillRatio": 0.05, "crop": [0, 0, 1, 0.36]},
     ]
     total_area = source_img.width * source_img.height
     masks = []
     attempts = []
+
+    def save_debug_mask(spec, layer_alpha, attempt):
+        if not layers_dir:
+            return
+        index = len(attempts)
+        name = f"debug-mask-{index:02d}-{spec['type']}.png"
+        layer_alpha.save(layers_dir / name, "PNG")
+        attempt["debugMask"] = f"layers/{run_id}/{name}"
 
     def evaluate(spec, layer_alpha, attempt):
         source_bounds = _alpha_bounds(layer_alpha)
@@ -1476,7 +1524,8 @@ async def _generate_component_masks(source_img):
         rejected_for_crop = None
         for generation_index in range(2):
             try:
-                layer_alpha, attempt = await _generate_component_mask(source_img, spec)
+                crop_bounds = _relative_bounds(source_img, spec["crop"]) if spec.get("crop") else None
+                layer_alpha, attempt = await _generate_component_mask(source_img, spec, crop_bounds)
                 if generation_index:
                     attempt["retryOf"] = spec["label"]
             except Exception as e:
@@ -1492,6 +1541,7 @@ async def _generate_component_masks(source_img):
                 continue
 
             reject_reason = evaluate(spec, layer_alpha, attempt)
+            save_debug_mask(spec, layer_alpha, attempt)
             attempts.append(attempt)
             if not reject_reason:
                 attempt["accepted"] = True
@@ -1514,6 +1564,7 @@ async def _generate_component_masks(source_img):
                 layer_alpha, crop_attempt = await _generate_component_mask(source_img, spec, crop_bounds)
                 crop_attempt["retryOf"] = spec["label"]
                 reject_reason = evaluate(spec, layer_alpha, crop_attempt)
+                save_debug_mask(spec, layer_alpha, crop_attempt)
                 attempts.append(crop_attempt)
                 if not reject_reason:
                     crop_attempt["accepted"] = True
@@ -1561,7 +1612,7 @@ async def _build_dynamic_mask_assets(pil_src, src_np, canvas_w, canvas_h, run_id
         scale = canvas_h / orig_h
         offset_x, offset_y = (canvas_w - orig_w * scale) / 2, 0
 
-    masks, mask_generation = await _generate_component_masks(pil_src)
+    masks, mask_generation = await _generate_component_masks(pil_src, layers_dir, run_id)
     if not masks:
         raise RuntimeError("dynamic mask generation produced no usable component masks")
 
@@ -1819,7 +1870,8 @@ async def build_assets(req: BuildAssetsRequest):
                 tmp.write(resp.content)
             tmp.close()
 
-        pil_src = Image.open(tmp_path).convert("RGBA")
+        with Image.open(tmp_path) as img:
+            pil_src = img.convert("RGBA").copy()
         src_np = np.array(pil_src, dtype=np.uint8)
         orig_w, orig_h = pil_src.size
         source_hash = hashlib.sha256(Path(tmp_path).read_bytes()).hexdigest()
@@ -1856,8 +1908,12 @@ async def build_assets(req: BuildAssetsRequest):
         traceback.print_exc()
         return BuildAssetsResponse(ok=False, error=str(e))
     finally:
+        tmp.close()
         if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
+            try:
+                os.unlink(tmp_path)
+            except PermissionError:
+                pass
 
 
 class EraseTextRequest(BaseModel):
