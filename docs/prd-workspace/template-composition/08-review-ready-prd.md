@@ -1,196 +1,235 @@
-# PRD: 模板组合式海报生成
+# PRD: 分类驱动的组件化素材生成
 
 ## 0. Review Conclusion
 | Item | Conclusion |
 |---|---|
-| Version goal | 用固定模板组合替代“AI 生成整图再拆分”，先完成 111 歌单海报模板的可用闭环。 |
-| This version does | 用户输入标题、歌单、风格；系统按固定槽位生成组件素材，叠加可编辑文本层，生成预览并进入编辑器。 |
-| This version does not do | 不做全图自由生成、不做动态 mask 拆分、不做 OCR 回收、不做多模板市场、不保证 AI 组件完全无文字。 |
-| Biggest decision needed | player / playlist 的背板是否允许 image2 生成；若实测仍有随机文字，是否直接改为 Fabric 矢量背板。 |
-| Biggest risk | 独立生成组件的风格一致性和 image2 在 UI 组件中自动生成随机文字。 |
+| Version goal | 先完成“歌单”分类 demo：用户输入素材分类、文字内容和风格，系统追问补全信息后生成 layout map，再按 map 生成组件并组装成可编辑设计。 |
+| This version does | 支持歌单分类；最多 3 轮追问；AI 生成 layout map；image gen 生成视觉组件；真实文本层按 map 渲染；输出 DesignDocument。 |
+| This version does not do | 不固定 111 模板；不让 image2 生成完整海报；不做 Fabric 图形 fallback；不把用户文字发给 image gen；不做多分类正式上线。 |
+| Biggest decision needed | demo 的追问策略是否由前端多轮交互实现，还是后端一次性返回缺失问题后再提交。 |
+| Biggest risk | layout map 是 AI 生成的文本规则，不是硬约束；需要严格校验 map 字段完整性和组件生成结果。 |
 
 ## 1. Background and Problem
-旧方案是 image2 先生成完整海报，再通过动态 mask 拆出人物、标题、播放器、歌单和背景。实测后发现组件拆分质量不稳定：文字混入错误组件、人物边缘不准、播放器/歌单边框残留，进一步影响背景补全。新方案改为固定模板组合：模板先定义槽位和文字区域，AI 只生成视觉素材，文字由 Fabric 文本层渲染，从源头减少拆分和文字不可编辑问题。
+旧路径“整图生成 -> 动态 mask 拆分 -> 背景补全”无法稳定满足设计软件要求：拆分边界、文字归属和背景填充会相互放大错误。固定 111 模板方案又过窄，做出来不是实际要上线的产品。新的目标是分类驱动：用户先说明要生成的素材分类，例如歌单、头像、资料卡，并提供风格和文字信息；系统在信息不足时追问；随后参考分类知识库生成布局 map，按 map 分别生成视觉组件和文本层，最后组装成可编辑设计。
+
+当前 demo 只做“歌单”分类，知识库路径为：
+`docs/prd-workspace/template-composition/playlist-category-context.md`
 
 ## 2. Goals and Non-goals
 
 ### Goals
 | Goal | Success meaning |
 |---|---|
-| 版式可控 | 111 模板的背景、女孩、标题、播放器、歌单位置固定，不由 image2 决定布局。 |
-| 文字可编辑 | 用户输入的标题、歌单、播放器歌名不进入 image2 prompt，只作为 Fabric 文本层。 |
-| 预览和编辑一致 | 创作页预览和编辑器使用同一个 DesignDocument，不维护两套拼接逻辑。 |
-| 可重复生成 | 用户可重新生成整体结果；后续支持按 slot 增量重生成。 |
-| 分支隔离 | 保留旧动态 mask 分支/主线，不继续在旧方案上追加改动；新方案在 `template-composition` 分支维护。 |
+| 分类驱动 | 用户先选择或输入素材分类；demo 中只保留“歌单”。 |
+| 信息补全 | 用户描述不足时，系统最多追问 3 轮，直到能生成 layout map。 |
+| 动态布局 | AI 根据分类知识库、用户风格和内容生成 layout map，而不是使用固定模板坐标。 |
+| 组件化生成 | image gen 只生成 map 中的视觉组件，并为文字区域留白。 |
+| 真实文本层 | 用户文字只进入文本层，文本层包含颜色、字号、字体、间距、行距、旋转等属性。 |
+| 可编辑输出 | 最终输出 DesignDocument，编辑器可调整组件和文本。 |
 
 ### Non-goals
 | Non-goal | Reason |
 |---|---|
-| 任意模板自动生成 | 当前只验证 111 歌单海报模板，避免模板系统过早泛化。 |
-| AI 生成完整海报 | 这是旧方案的核心不稳定来源。 |
-| 动态 mask / 背景补全主路径 | 新方案不依赖拆分后补洞。 |
-| 文字 OCR | 当前文字由用户输入，不需要从生成图中识别。 |
-| 透明人物抠图 | MVP 先使用矩形女孩插画 slot；透明人物可作为后续版本。 |
+| 固定 111 模板 | 与真实上线方向不一致。 |
+| Fabric fallback | 设计软件不能用矢量占位或假背板伪装生成结果。 |
+| image2 生成用户文字 | 会导致文字不可编辑、失真和混入图片。 |
+| 任意分类完整上线 | demo 先只验证歌单分类。 |
+| 专业分割 / 动态 mask | 新路径不从整图拆分。 |
 
 ## 3. Scope
 | Scope item | Included? | Notes |
 |---|---:|---|
-| 111 歌单海报模板 JSON | Yes | 包含 canvas 和所有固定 slot。 |
-| 模板缩略图 | Yes | 创作页展示矩形布局，帮助用户理解模板。 |
-| 用户输入标题 | Yes | 不传给 image2，只渲染为文本层。 |
-| 用户输入歌单 | Yes | 不传给 image2，只渲染为文本层。 |
-| 用户输入风格 | Yes | 传给 image2，作为所有视觉组件共享 style brief。 |
-| 生成背景素材 | Yes | image2 生成，prompt 明确 no text / no labels。 |
-| 生成女孩素材 | Yes | image2 生成矩形插画，prompt 明确 portrait / no text。 |
-| 生成播放器背板 | Conditional | 先用 image2 生成 skin；若随机文字不可控，改 Fabric 矢量。 |
-| 生成歌单背板 | Conditional | 先用 image2 生成 skin；若随机文字不可控，改 Fabric 矢量。 |
-| 文本层进入编辑器 | Yes | 标题、歌名、歌单文字必须可编辑。 |
-| 按 slot 增量重生成 | Partial | 后端接口需支持资产复用和指定 slot 重生；前端按钮可后续补。 |
+| 分类输入 | Yes | demo 只保留歌单一种分类，其他分类先不展示。 |
+| 歌单分类知识库 | Yes | 用 MD 描述歌单常见元素、布局、风格、文本规律。 |
+| 追问机制 | Yes | 信息不足时最多追问 3 轮。 |
+| layout map 生成 | Yes | AI 生成每个组件的位置、尺寸、层级、生成说明和文本区域样式。 |
+| map 校验 | Yes | 后端必须校验字段完整、尺寸合法、组件不越界。 |
+| 视觉组件生成 | Yes | image gen 按 map 的 component prompt 逐个生成。 |
+| 文本层渲染 | Yes | 用户标题、歌曲列表、描述等作为真实文本层。 |
+| 组装预览 | Yes | 按 map 合成预览，并返回同一份 DesignDocument。 |
+| slot 级重生成 | Later | 当前先做全量生成闭环。 |
+| 多分类 | Later | 头像、资料卡后续再加。 |
 
 ## 4. Roles and Permissions
 | Role | View | Operate | Restrictions |
 |---|---|---|---|
-| 普通用户 | 创作页、预览页、编辑页 | 输入标题/歌单/风格，生成、重生成、确认进入编辑 | 不能修改模板结构和 slot 坐标。 |
-| 设计师用户 | 同普通用户，后续可扩展模板管理 | 当前版本不额外开放 | 模板管理不在本版本。 |
-| 开发/运营 | 查看生成结果、日志和失败信息 | 可调整固定模板代码和 prompt | 没有后台配置页。 |
+| 普通用户 | 创作页、追问页、预览页、编辑页 | 输入分类、风格、标题、歌单、描述；回答追问；生成/重生成/确认 | 不能手动编辑 layout map JSON。 |
+| 设计师用户 | 同普通用户 | 当前不开放额外模板管理 | 多分类和模板管理不在 demo。 |
+| 系统 | 分类匹配、追问、map 生成、组件生成、组装 | 校验 map 并输出 DesignDocument | 不得把用户文字传给 image gen。 |
 
 ## 5. Core Rules
 | Rule ID | Trigger | Condition | Result | User-facing behavior |
 |---|---|---|---|---|
-| R1 | 用户进入 AI 创作页 | 当前为模板组合版本 | 显示 111 模板缩略图和输入表单 | 用户看到固定布局，而不是自由 prompt 页面。 |
-| R2 | 用户提交生成 | 标题、歌单、风格已填写或使用默认值 | 创建 template run | 页面显示生成中状态。 |
-| R3 | 调用 image2 生成组件 | 生成背景/女孩/player skin/playlist skin | prompt 只包含风格和组件视觉描述 | 用户文字不进入 image2。 |
-| R4 | 生成文字层 | 用户输入标题/歌单/播放器歌名 | 创建 Fabric text components | 编辑器中可选择和修改文字。 |
-| R5 | 生成预览 | 组件素材和文本层已生成 | 用同一个 DesignDocument 合成预览 | 预览和进入编辑后的布局一致。 |
-| R6 | 用户不满意 | 点击重新生成 | MVP 可全量重跑；后续可指定 slot | 用户获得新预览。 |
-| R7 | 用户确认 | 预览可接受 | 进入编辑器并加载同一 DesignDocument | 图层可选中、拖动、隐藏、编辑文字。 |
-| R8 | player/playlist skin 含随机文字 | 实测发现 image2 无法遵守 no text | 改用 Fabric 矢量背板 | 不再让 AI 生成 UI 背板文字区域。 |
-| R9 | API 失败 | 任一视觉组件生成失败 | 使用占位背板或返回错误，需明确标识 provider/fallback | 用户不应误以为是最终 AI 成品。 |
+| R1 | 用户进入创作 | demo 阶段 | 只展示“歌单”分类 | 用户不需要在多个未完成分类中选择。 |
+| R2 | 用户提交初始描述 | 分类=歌单 | 系统检查标题、歌曲列表、风格、用途等是否足够 | 不足则进入追问。 |
+| R3 | 信息不足 | 未达到生成 map 的最低信息 | 最多追问 3 轮 | 每轮只问影响布局或风格的关键问题。 |
+| R4 | 3 轮后仍不足 | 用户未补全信息 | 使用歌单知识库中的保守默认：标题 + 歌曲列表 + 背景/装饰 | 不继续无限追问。 |
+| R5 | 生成 layout map | 信息足够 | AI 参考歌单知识库输出 map | map 包含组件和文本层完整属性。 |
+| R6 | 校验 layout map | map 返回后 | 后端检查 canvas、组件、文本层字段 | 不合格则要求重生 map 或返回错误。 |
+| R7 | 生成视觉组件 | map 通过校验 | image gen 只接收风格、组件描述、留白要求 | 不包含用户标题、歌名、文案。 |
+| R8 | 渲染文本层 | map 中存在 text area | 使用用户文字和 map 样式创建文本层 | 字体、字号、颜色、字距、行距、旋转等可编辑。 |
+| R9 | 组装输出 | 组件和文本层生成完成 | 按 map 合成预览和 DesignDocument | 用户可预览并进入编辑器。 |
+| R10 | 生成失败 | image gen 或 map 失败 | 返回失败原因，不使用 Fabric fallback 假装成功 | 用户看到明确错误或重新生成入口。 |
 
 ## 6. Flow Summary
 
 ### User Flow
 ```mermaid
 flowchart TD
-  A[Open creation page] --> B[Select 111 template]
-  B --> C[Input title, playlist, style]
-  C --> D[Generate components]
-  D --> E[Preview composed poster]
-  E -->|Not satisfied| D
-  E -->|Satisfied| F[Enter editor]
-  F --> G[Edit text/layers]
+  A[Open create page] --> B[Choose playlist category]
+  B --> C[Input songs, title, style, optional description]
+  C --> D{Enough information?}
+  D -->|No, less than 3 rounds| E[Answer focused question]
+  E --> D
+  D -->|No, after 3 rounds| F[Use conservative playlist defaults]
+  D -->|Yes| G[Generate layout map]
+  F --> G
+  G --> H[Generate visual components]
+  H --> I[Render text layers]
+  I --> J[Preview composed result]
+  J -->|Satisfied| K[Enter editor]
+  J -->|Not satisfied| G
 ```
 
 ### System Judgment Flow
 ```mermaid
 flowchart TD
-  A[Receive template request] --> B[Load template JSON]
-  B --> C[Build image prompts from style only]
-  C --> D[Generate visual assets]
-  D --> E[Create Fabric text layers from user text]
-  E --> F[Build DesignDocument]
-  F --> G[Compose preview from same document]
-  G --> H[Return document and preview]
+  A[Receive request] --> B[Match category]
+  B --> C[Load playlist knowledge base]
+  C --> D[Extract missing fields]
+  D --> E{Need follow-up?}
+  E -->|Yes| F[Return questions]
+  E -->|No| G[Ask AI for layout map]
+  G --> H{Map valid?}
+  H -->|No| X[Retry map or return error]
+  H -->|Yes| I[Generate image components]
+  I --> J{All required images succeeded?}
+  J -->|No| Y[Return generation error]
+  J -->|Yes| K[Create text layers]
+  K --> L[Compose DesignDocument and preview]
 ```
 
-### UI Layout Sketch
-```text
-Creation Page
-┌────────────────────────────┐
-│ Template: 111 playlist     │
-│ ┌──── preview rectangles ─┐ │
-│ │ title                   │ │
-│ │ girl | player           │ │
-│ │      | playlist         │ │
-│ └─────────────────────────┘ │
-│ Title input                 │
-│ Playlist textarea           │
-│ Style textarea              │
-│ [Generate]                  │
-└────────────────────────────┘
-
-Poster Template 390x600
-┌────────────────────────────┐
-│            title           │
-│ girl area     player card  │
-│ girl area     playlist box │
-│ girl area                  │
-│ bottom decor in background │
-└────────────────────────────┘
+### Layout Map Required Shape
+```json
+{
+  "category": "playlist",
+  "canvas": {"width": 390, "height": 600, "background": "#..."},
+  "layoutPattern": "title-visual-list | split | floating-card | collage",
+  "components": [
+    {
+      "id": "background",
+      "type": "image",
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 600,
+      "zIndex": 0,
+      "prompt": "visual description, no text, leave readable areas"
+    }
+  ],
+  "textLayers": [
+    {
+      "id": "playlist-title",
+      "role": "title",
+      "contentSource": "user.title",
+      "x": 24,
+      "y": 32,
+      "width": 342,
+      "height": 48,
+      "zIndex": 50,
+      "style": {
+        "fontFamily": "system",
+        "fontSize": 30,
+        "fontWeight": "bold",
+        "color": "#ffffff",
+        "textAlign": "center",
+        "letterSpacing": 0,
+        "lineHeight": 1.1,
+        "rotation": 0,
+        "opacity": 1,
+        "stroke": "#ff7ab8",
+        "strokeWidth": 2,
+        "shadow": "0 2px 8px rgba(0,0,0,0.25)"
+      }
+    }
+  ]
+}
 ```
 
 ### Key Exceptions
 | Exception | Handling |
 |---|---|
-| image2 在 player/playlist 背板生成文字 | 降级为 Fabric 矢量背板，AI 只生成背景和女孩。 |
-| 中文预览乱码 | 预览合成必须使用 CJK 字体 fallback；否则不允许进入部署验收。 |
-| 歌单过长 | 当前最多显示模板可容纳的条目；后续支持分页或自动缩字号。 |
-| 组件风格不一致 | 所有组件共享同一 style brief；若仍明显割裂，需减少 AI 组件数量。 |
-| API 慢或失败 | 给出 loading 和错误，不静默降级成看似成功的结果。 |
+| 用户只说“做个好看的歌单” | 追问歌曲数量/主题风格/用途；最多 3 轮。 |
+| 用户没有给歌名 | 不能生成最终成品；返回必须输入歌单内容，除非用户明确只要占位演示。 |
+| layout map 越界或字段缺失 | 拒绝进入组件生成，要求 map 重生或返回错误。 |
+| image gen 生成组件失败 | 返回错误，不使用 Fabric fallback。 |
+| image gen 在空白区域生成文字 | 该组件判定失败，需重生；不能接受为合格结果。 |
+| 歌曲列表太长 | map 需选择多列、缩字号或截断规则；必须明确显示规则。 |
 
 ## 7. Page and Interaction Requirements
 | Page / component | Required content | Actions | States |
 |---|---|---|---|
-| 创作页 header | 返回、标题“模板创作” | 返回上一页 | 默认 |
-| 模板缩略图 | 111 模板矩形示意 | 选择模板 | selected |
-| 标题输入 | 默认标题，可编辑 | 输入/清空 | normal/focus |
-| 歌单输入 | 默认歌曲，多行输入 | 输入/粘贴 | normal/focus |
-| 风格输入 | 默认 pastel pink style | 输入/修改 | normal/focus |
-| 生成按钮 | 生成模板海报 | 调用 generate-template | idle/loading/disabled |
-| 预览区 | 展示合成图 | 重新生成、确认进入编辑 | success/loading/error |
-| 编辑器 | 背景、女孩、player、playlist、文本层 | 移动/缩放/隐藏/编辑文字 | selected/unselected/hidden |
+| 分类选择 | demo 只展示歌单 | 选择歌单 | selected |
+| 初始输入页 | 标题、歌单、风格、补充描述 | 输入、提交 | normal/loading/error |
+| 追问页 | 最多 3 轮问题 | 回答、跳过（使用默认） | round 1/2/3 |
+| 生成进度 | 当前阶段：map / components / compose | 等待、取消 | loading/error |
+| 预览页 | 按 map 组装后的成品 | 重生成、确认进入编辑 | success/error |
+| 编辑页 | 视觉组件和真实文本层 | 移动、缩放、编辑文本、隐藏 | selected/unselected/hidden |
 
 ## 8. Admin and Operations Requirements
 | Requirement | Must-have? | Notes |
 |---|---:|---|
-| 后台模板管理 | No | 当前模板 JSON 写死在代码，先不做后台。 |
-| provider key 配置 | Yes | 继续使用现有环境变量，不在 PRD 中扩展后台。 |
-| 模板版本记录 | Yes | DesignDocument meta 需记录 template id / run id / assets。 |
-| 生成失败日志 | Yes | 需要定位 image2 是否乱写文字、失败或 fallback。 |
-| 成本控制面板 | No | MVP 不做，但需要记录每次生成的组件数和耗时。 |
+| 分类知识库文件 | Yes | demo 必须读取歌单分类 MD。 |
+| provider key 配置 | Yes | 沿用现有环境变量。 |
+| map 生成日志 | Yes | 记录 prompt、知识库版本、map、校验结果。 |
+| 组件生成日志 | Yes | 记录每个组件 prompt、耗时、成功/失败原因。 |
+| 后台管理页面 | No | demo 不做。 |
+| 成本控制 | Later | 先记录调用次数和耗时，不做后台控制。 |
 
 ## 9. Data and Acceptance
 
 ### Metrics
 | Metric | Definition | Why needed |
 |---|---|---|
-| template_generate_success_rate | generate-template 成功返回 DesignDocument 的比例 | 判断模板链路是否可用。 |
-| average_generate_seconds | 从点击生成到返回预览的平均时长 | 判断用户是否能接受等待。 |
-| ai_asset_text_violation_rate | player/playlist/background/girl 生成图中出现随机文字的比例 | 决定是否降级为 Fabric 背板。 |
-| editor_entry_rate | 预览后点击确认进入编辑器的比例 | 判断预览是否满足用户。 |
-| regeneration_rate | 用户点击重新生成的次数 / 生成次数 | 判断组件质量和风格一致性。 |
+| followup_round_count | 每次生成前实际追问轮数 | 判断输入门槛是否合理。 |
+| map_valid_rate | layout map 首次通过校验比例 | 判断 map prompt 和知识库质量。 |
+| component_success_rate | image gen 组件成功数 / 必需组件数 | 判断组件生成可用性。 |
+| text_violation_rate | 视觉组件中出现可读用户文字或随机文字的比例 | 判断 no text 约束是否稳定。 |
+| preview_accept_rate | 用户确认进入编辑 / 预览次数 | 判断成品是否接近预期。 |
+| average_generation_time | 从提交到预览成功的平均时长 | 判断等待是否可接受。 |
 
 ### Acceptance Criteria
 | Case | Precondition | Action | Expected result |
 |---|---|---|---|
-| A1 模板入口 | 用户进入 AI 创作 | 打开页面 | 只展示 111 模板缩略图和输入表单。 |
-| A2 用户文字不进 image2 | 用户输入自定义标题和歌曲 | 点击生成 | 后端 image2 prompt 中不包含用户标题、歌名、介绍文字。 |
-| A3 DesignDocument 可编辑 | 生成成功 | 点击确认进入编辑 | 标题、歌单、播放器歌名是 text component，可在编辑器中修改。 |
-| A4 预览一致 | 生成成功 | 对比预览和编辑器初始画面 | 布局和主要内容一致，不出现两套拼接差异。 |
-| A5 模板坐标唯一源 | 修改模板 JSON slot 坐标 | 重新生成 | 前端缩略图和后端组件布局使用同一套 slot 定义。 |
-| A6 中文预览 | 标题和歌单含中文 | 生成预览 | 中文可读，不显示方块或乱码。 |
-| A7 no text 约束 | 生成 player/playlist skin | 检查图片组件 | 不应出现随机英文/中文/数字；如出现，记录为 text violation。 |
-| A8 fallback | image2 失败 | 生成模板 | 返回明确错误或标识 fallback，占位图不能伪装成最终成品。 |
-| A9 重生成 | 用户不满意 | 点击重新生成 | 至少能全量重跑；后续 slot 级重生成不影响未选 slot。 |
+| A1 分类 demo | 用户进入创作页 | 查看分类 | 只出现歌单分类，或歌单为唯一可用分类。 |
+| A2 追问 | 用户只输入“做一个甜酷歌单” | 提交 | 系统提出关键问题，不直接生成。 |
+| A3 追问上限 | 用户连续 3 轮仍不完整 | 继续 | 系统停止追问，使用保守默认或明确报缺失。 |
+| A4 map 生成 | 用户信息足够 | 生成 | 返回 layout map，包含 components 和 textLayers。 |
+| A5 map 校验 | map 缺 text style 或坐标越界 | 系统处理 | 不进入组件生成。 |
+| A6 用户文字隔离 | 用户输入具体歌名和标题 | 生成组件 | image gen prompt 不包含这些文字。 |
+| A7 文本层样式 | map 包含文本层属性 | 进入编辑器 | 文本层包含颜色、字号、字体、字距、行距、旋转等属性。 |
+| A8 视觉组件 | image gen 成功 | 组装预览 | 视觉组件按 map 位置摆放，不用 Fabric fallback。 |
+| A9 文字违规 | 组件图出现随机文字 | 校验 | 该组件失败或重生，不作为合格成品。 |
+| A10 编辑器 | 用户确认预览 | 进入编辑 | 可编辑文本层和视觉组件均存在。 |
 
 ## 10. Risks and Decisions
 | Type | Item | Owner | Status |
 |---|---|---|---|
-| Decision needed | player/playlist 是否继续由 image2 生成背板，还是直接 Fabric 矢量化 | @ColaK1ller | 待审核 |
-| Decision needed | 女孩 MVP 是否接受矩形插画，不做透明抠图 | @ColaK1ller | 待审核 |
-| Risk | image2 自动生成随机文字 | @Codex | 需实测并准备 Fabric fallback |
-| Risk | 独立组件视觉不统一 | @Codex | 用统一 style brief 缓解 |
-| Risk | 预览中文字体缺失 | @Codex | 必须修复后再部署 |
-| Risk | 390x600 固定模板无法容纳长歌单 | @Mimo / @ColaK1ller | 需确认截断/缩字规则 |
-| Risk | 当前分支已有实现先于 PRD | @Codex | PRD 审核后再决定保留或回滚实现细节 |
+| Decision needed | demo 是否允许“用户跳过追问后使用默认布局” | @baobao | 待确认 |
+| Decision needed | 如果 image gen 组件反复出现文字，是重试几次还是直接失败 | @baobao | 待确认 |
+| Risk | AI 生成 map 不稳定 | @Codex | 需 map schema 校验和错误回退 |
+| Risk | 文本区域可读性不足 | @Codex | map 校验需检查对比度/尺寸下限 |
+| Risk | 多组件风格不一致 | @Codex | style brief 必须全局共享 |
+| Risk | 追问体验变长 | @Mimo / @baobao | 问题必须聚焦且最多 3 轮 |
+| Risk | 当前已提交的固定模板代码与新 PRD 不一致 | @Codex | PRD 通过后应重做实现，不沿用旧代码 |
 
 ## Appendix: Deferred Items
 | Item | Reason deferred | Revisit trigger |
 |---|---|---|
-| 多模板 | 先验证 111 模板闭环 | 111 模板验收稳定后 |
-| 模板后台配置 | 当前硬编码成本低 | 模板数量超过 3 个或运营需要编辑 |
-| 透明人物图层 | 需要抠图/透明输出能力 | 矩形人物影响视觉效果时 |
-| OCR 文字回收 | 新流程文字来自用户输入 | 需要导入已有海报时 |
-| 专业分割模型 | 新流程不再依赖拆整图 | 需要从非模板图片拆组件时 |
-| slot 级前端重生成按钮 | 后端先支持参数即可 | 用户需要只换女孩/背景时 |
+| 头像分类 | demo 先做歌单 | 歌单闭环稳定后 |
+| 资料卡分类 | demo 先做歌单 | 歌单闭环稳定后 |
+| 分类管理后台 | 当前分类少 | 分类超过 3 个 |
+| slot 级重生成 | 先跑通全量闭环 | 用户需要只替换某个组件 |
+| 组件质量自动视觉检测 | 成本高 | 人工验收发现违规率高 |
+| 专业分割模型 | 新路径不拆整图 | 需要导入已有图片再编辑时 |
 
