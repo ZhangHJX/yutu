@@ -84,6 +84,7 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
         throw new Error(data.error || "生成失败");
       }
       setQuestions([]);
+      setFollowupRound(0);
       setResult({ document: data.document, imageUrl: data.image_url });
     } catch (e) {
       setError(e instanceof Error ? e.message : "生成失败，请重试");
