@@ -641,7 +641,6 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
             zoom={zoom}
             hiddenIds={hiddenLayers}
             selectedId={selectedId}
-            selectedHitBounds={selectedId ? assetInfoMap.get(selectedId)?.hitBounds ?? null : null}
             onComponentSelect={(id) => setSelectedId(id)}
             onComponentModify={handleComponentModify}
             onZoomChange={(z) => setZoom(z)}

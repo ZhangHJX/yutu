@@ -10,7 +10,6 @@ interface FabricCanvasProps {
   zoom?: number;
   hiddenIds?: Set<string>;
   selectedId?: string | null;
-  selectedHitBounds?: { x: number; y: number; width: number; height: number } | null;
   onComponentSelect?: (id: string | null) => void;
   onComponentModify?: (id: string, changes: Partial<DesignComponent>) => void;
   onZoomChange?: (zoom: number) => void;
@@ -28,17 +27,60 @@ export interface FabricCanvasHandle {
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 10;
 
+function isBackgroundComponent(component?: DesignComponent) {
+  return component?.style?.assetType === "background";
+}
+
 const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function FabricCanvas(
-  { document, editable = false, zoom: controlledZoom, hiddenIds, selectedId, selectedHitBounds, onComponentSelect, onComponentModify, onZoomChange },
+  { document, editable = false, zoom: controlledZoom, hiddenIds, selectedId, onComponentSelect, onComponentModify, onZoomChange },
   ref
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const fabricRef = useRef<Canvas | null>(null);
   const idMapRef = useRef<Map<string, FabricObject>>(new Map());
+  const hiddenIdsRef = useRef(hiddenIds);
   const [ready, setReady] = useState(false);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const lastPos = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    hiddenIdsRef.current = hiddenIds;
+  }, [hiddenIds]);
+
+  const applyCanvasOrder = useCallback(() => {
+    const canvas = fabricRef.current;
+    if (!canvas || !ready) return;
+
+    const orderedComponents = [...document.components].sort(
+      (a, b) => Number(a.style?.zIndex ?? 0) - Number(b.style?.zIndex ?? 0)
+    );
+    orderedComponents.forEach((component, index) => {
+      const obj = idMapRef.current.get(component.id);
+      if (obj?.canvas === canvas) {
+        canvas.moveObjectTo(obj, index + 1);
+      }
+    });
+  }, [document.components, ready]);
+
+  const applyVisibility = useCallback((ids?: Set<string>) => {
+    const canvas = fabricRef.current;
+    if (!canvas || !ready) return;
+
+    for (const [id, obj] of idMapRef.current) {
+      const component = document.components.find((c) => c.id === id);
+      const shouldHide = ids?.has(id) ?? false;
+      const targetVisible = !shouldHide;
+      const canEdit = editable && targetVisible && !isBackgroundComponent(component);
+      obj.set({
+        visible: targetVisible,
+        selectable: canEdit,
+        evented: canEdit,
+      });
+    }
+
+    canvas.requestRenderAll();
+  }, [document.components, editable, ready]);
 
   /** 初始化 Canvas */
   useEffect(() => {
@@ -98,56 +140,22 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
     });
     canvas.add(bgRect);
 
-    // 调试边框：画布外框（白色 2px + 蓝色 1px 内侧）
-    const cx = document.canvas.width;
-    const cy = document.canvas.height;
-    const outerBorder = new Rect({
-      left: 0, top: 0, originX: 'left', originY: 'top', width: cx, height: cy,
-      fill: "transparent", stroke: "#FFFFFF", strokeWidth: 2,
-      selectable: false, evented: false, excludeFromExport: true,
-    });
-    canvas.add(outerBorder);
-    const innerBorder = new Rect({
-      left: 1, top: 1, originX: 'left', originY: 'top', width: cx - 2, height: cy - 2,
-      fill: "transparent", stroke: "#3498DB", strokeWidth: 1,
-      selectable: false, evented: false, excludeFromExport: true,
-    });
-    canvas.add(innerBorder);
-
     // 所有组件均渲染为 Fabric 对象（不再跳过全画幅图片）
     document.components.forEach((comp) => {
-      const obj = componentToFabric(comp, canvas, idMapRef.current);
+      const obj = componentToFabric(comp, canvas, idMapRef.current, () => {
+        applyCanvasOrder();
+        applyVisibility(hiddenIdsRef.current);
+      });
       if (obj) {
         idMapRef.current.set(comp.id, obj);
         canvas.add(obj);
       }
     });
 
+    applyCanvasOrder();
+    applyVisibility(hiddenIdsRef.current);
     canvas.requestRenderAll();
-
-    // 首次渲染后应用可见性
-    applyVisibility(hiddenIds);
-  }, [document, ready]);
-
-  /** 可见性切换：不重建 canvas，直接修改现有对象的 visible 属性 */
-  const applyVisibility = useCallback((ids?: Set<string>) => {
-    const canvas = fabricRef.current;
-    if (!canvas || !ready) return;
-
-    for (const [id, obj] of idMapRef.current) {
-      const shouldHide = ids?.has(id) ?? false;
-      const targetVisible = !shouldHide;
-      if (obj.visible !== targetVisible) {
-        obj.set({
-          visible: targetVisible,
-          selectable: targetVisible,
-          evented: targetVisible,
-        });
-      }
-    }
-
-    canvas.requestRenderAll();
-  }, [ready, document]);
+  }, [document, ready, applyCanvasOrder, applyVisibility]);
 
   /** 可见性变更时直接切换，不触发主渲染循环 */
   useEffect(() => {
@@ -158,22 +166,19 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
     const canvas = fabricRef.current;
     if (!canvas || !editable || !ready) return;
 
-    for (const [id, obj] of idMapRef.current) {
-      const component = document.components.find((c) => c.id === id);
-      const isBackgroundAsset = component?.style?.assetType === "background";
-      if (isBackgroundAsset) continue;
-      const enabled = !(hiddenIds?.has(id) ?? false) && (selectedId ? id === selectedId : true);
-      obj.set({ selectable: enabled, evented: enabled });
-    }
+    applyCanvasOrder();
+    applyVisibility(hiddenIds);
 
     if (selectedId && !(hiddenIds?.has(selectedId) ?? false)) {
       const obj = idMapRef.current.get(selectedId);
-      if (obj) canvas.setActiveObject(obj);
+      const component = document.components.find((c) => c.id === selectedId);
+      if (obj && !isBackgroundComponent(component)) canvas.setActiveObject(obj);
+      else canvas.discardActiveObject();
     } else {
       canvas.discardActiveObject();
     }
     canvas.requestRenderAll();
-  }, [document.components, editable, hiddenIds, ready, selectedId]);
+  }, [document.components, editable, hiddenIds, ready, selectedId, applyCanvasOrder, applyVisibility]);
 
   /** 鼠标滚轮缩放（CSS transform 模式 — 只调 onZoomChange，不碰 Fabric zoom） */
   useEffect(() => {
@@ -379,6 +384,8 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
             rotation: obj.angle,
             opacity: obj.opacity,
           });
+          applyCanvasOrder();
+          applyVisibility(hiddenIdsRef.current);
           return;
         }
       }
@@ -386,7 +393,7 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
 
     canvas.on("object:modified", onModified);
     return () => { canvas.off("object:modified", onModified); };
-  }, [editable, onComponentModify]);
+  }, [editable, onComponentModify, applyCanvasOrder, applyVisibility]);
 
   /** 暴露方法 */
   useImperativeHandle(ref, () => ({
@@ -439,23 +446,6 @@ const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function 
     <div className="fabric-canvas-wrapper" ref={wrapperRef}>
       <div className="fabric-stage" style={{ position: 'relative', width: document.canvas.width, height: document.canvas.height, transform: `translate(${pan.x}px, ${pan.y}px) scale(${controlledZoom ?? 1})`, transformOrigin: 'center center' }}>
         <canvas ref={canvasRef} style={{ display: 'block' }} />
-        {selectedHitBounds && (
-          <div
-            className="fabric-hitbox"
-            style={{
-              position: "absolute",
-              left: selectedHitBounds.x,
-              top: selectedHitBounds.y,
-              width: selectedHitBounds.width,
-              height: selectedHitBounds.height,
-              border: "2px dashed #00CEC9",
-              background: "rgba(0, 206, 201, 0.12)",
-              pointerEvents: "none",
-              zIndex: 10,
-              boxShadow: "0 0 0 1px rgba(0,0,0,0.35)",
-            }}
-          />
-        )}
       </div>
       {!ready && <div className="fabric-loading">加载画布...</div>}
     </div>
@@ -466,7 +456,12 @@ export default FabricCanvas;
 
 /* ===== DesignComponent → Fabric Object ===== */
 
-function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<string, FabricObject>): FabricObject | null {
+function componentToFabric(
+  comp: DesignComponent,
+  canvas: Canvas,
+  idMap?: Map<string, FabricObject>,
+  onAsyncReady?: () => void
+): FabricObject | null {
   const base = {
     left: comp.x,
     top: comp.y,
@@ -496,14 +491,25 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
     }
 
     case "image": {
-      const imgPlaceholder = new Rect({ ...base, fill: "#DFE6E9", rx: 4, ry: 4 });
+      const isBackgroundAsset = isBackgroundComponent(comp);
+      const imgPlaceholder = new Rect({
+        ...base,
+        fill: "#DFE6E9",
+        rx: 4,
+        ry: 4,
+        selectable: !isBackgroundAsset,
+        evented: !isBackgroundAsset,
+        hasControls: !isBackgroundAsset,
+        lockMovementX: isBackgroundAsset,
+        lockMovementY: isBackgroundAsset,
+        lockScalingX: isBackgroundAsset,
+        lockScalingY: isBackgroundAsset,
+        lockRotation: isBackgroundAsset,
+      });
       if (comp.content) {
         // 所有图片组件都走 FabricImage 渲染
         // 全画幅图片（background 组件）→ 锁定不可编辑
         // 非全画幅图片（资产层）→ 可选/可拖/可缩放
-        const canvasW = canvas.getWidth();
-        const canvasH = canvas.getHeight();
-        const isBackgroundAsset = comp.style?.assetType === "background";
         const absoluteUrl = new URL(comp.content, window.location.origin).toString();
         console.log(`[FabricCanvas] 手动加载图片: ${absoluteUrl}`);
 
@@ -560,6 +566,7 @@ function componentToFabric(comp: DesignComponent, canvas: Canvas, idMap?: Map<st
             idMap.set(comp.id, fabricImg);
           }
 
+          onAsyncReady?.();
           canvas.requestRenderAll();
           console.log("[FabricCanvas] 图片已添加到画布，idMap 已更新");
         };
