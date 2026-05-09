@@ -52,7 +52,21 @@ async function generateCategory(params: {
       followup_round: params.followupRound,
     }),
   });
-  return res.json();
+  const text = await res.text();
+  let data: Partial<GenerateResponse> & { detail?: unknown };
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { error: text };
+  }
+  if (!res.ok) {
+    const message =
+      typeof data.detail === "string"
+        ? data.detail
+        : data.error || text || res.statusText;
+    throw new Error(`HTTP ${res.status}: ${message}`);
+  }
+  return data as GenerateResponse;
 }
 
 export default function AIPage({ onGenerate, onBack }: AIPageProps) {

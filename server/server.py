@@ -1147,6 +1147,7 @@ async def assemble_layout(req: AssembleLayoutRequest):
 
 @app.post("/api/ai/generate-category", response_model=GenerateResponse)
 async def generate_category(req: CategoryGenerateRequest):
+    stage = "init"
     map_req = LayoutMapRequest(
         category=req.category,
         style=req.style,
@@ -1165,6 +1166,7 @@ async def generate_category(req: CategoryGenerateRequest):
         if questions and not map_req.use_default_layout and map_req.followup_round < 3:
             return GenerateResponse(ok=True, questions=questions, provider="layout-followup")
 
+        stage = "layout"
         context = _read_playlist_context()
         layout_text = await _responses_text(_layout_prompt(map_req, context))
         layout_map = _extract_json_object(layout_text)
@@ -1172,14 +1174,16 @@ async def generate_category(req: CategoryGenerateRequest):
         if errors:
             return GenerateResponse(ok=False, error="Layout map invalid: " + "; ".join(errors))
 
+        stage = "components"
         assets = await _generate_layout_components(layout_map, req.style)
+        stage = "assemble"
         user_inputs = {"title": req.title, "songs": req.songs, "description": req.description}
         document = _assemble_design_document(layout_map, assets, user_inputs)
         preview_url = _compose_layout_preview(document)
         document["meta"]["thumbnail"] = preview_url
         return GenerateResponse(ok=True, document=document, image_url=preview_url, provider="category-composition")
     except Exception as e:
-        return GenerateResponse(ok=False, error=str(e), provider="category-composition")
+        return GenerateResponse(ok=False, error=f"{stage}: {e}", provider="category-composition")
 
 
 # ── OCR 文字拆分 ──────────────────────────────────────
