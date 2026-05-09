@@ -180,7 +180,7 @@ GPT_IMAGE_EDIT_MAX_SIDE = int(os.environ.get("GPT_IMAGE_EDIT_MAX_SIDE", "768"))
 ENABLE_MODEL_BACKGROUND_FILL = os.environ.get("ENABLE_MODEL_BACKGROUND_FILL", "1") != "0"
 
 
-async def try_gpt_image_generate(prompt: str, w: int, h: int) -> Optional[bytes]:
+async def try_gpt_image_generate(prompt: str, w: int, h: int, raise_on_error: bool = False) -> Optional[bytes]:
     """Generate image through Responses API image_generation tool."""
     if not GPT_IMAGE_API_KEY:
         print("[GPT-Image] Missing GPT_IMAGE_API_KEY")
@@ -206,12 +206,17 @@ async def try_gpt_image_generate(prompt: str, w: int, h: int) -> Optional[bytes]
             },
         )
         if not b64:
-            print(f"[GPT-Image] Missing final image_generation_call: {stream_report}")
+            message = f"Missing final image_generation_call: {stream_report}"
+            print(f"[GPT-Image] {message}")
+            if raise_on_error:
+                raise RuntimeError(message)
             return None
         print(f"[GPT-Image] Success ({len(b64)} chars base64, events={stream_report.get('eventCount')})")
         return base64.b64decode(b64)
     except Exception as e:
         print(f"[GPT-Image] Exception: {e}")
+        if raise_on_error:
+            raise
         return None
 
 
@@ -598,9 +603,10 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "") -
         w = int(component["width"])
         h = int(component["height"])
         print(f"[LayoutComponents] generating component {index}/{len(image_components)}: {component_id}", flush=True)
-        image_bytes = await try_gpt_image_generate(_layout_component_prompt(component, style_brief), w, h)
-        if image_bytes is None:
-            raise RuntimeError(f"Component generation failed: {component_id}")
+        try:
+            image_bytes = await try_gpt_image_generate(_layout_component_prompt(component, style_brief), w, h, raise_on_error=True)
+        except Exception as e:
+            raise RuntimeError(f"Component generation failed: {component_id} ({e})") from e
 
         safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in component_id).strip("-") or "component"
         path = GEN_DIR / f"layout-{safe_id}-{uuid.uuid4().hex[:8]}.png"
@@ -2007,6 +2013,9 @@ async def _responses_image_stream(url, payload, headers):
                     elif event_type == "response.failed":
                         error = event.get("response", {}).get("error") or event.get("error")
                         raise RuntimeError(str(error)[:300])
+                    elif event_type == "error":
+                        error = event.get("error") or event
+                        raise RuntimeError(str(error)[:500])
 
     return final_image, {
         "firstEventMs": first_event_ms,
