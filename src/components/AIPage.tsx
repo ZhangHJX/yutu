@@ -19,6 +19,17 @@ interface GenerateResponse {
   image_url?: string;
   questions?: string[];
   error?: string;
+  debug?: unknown;
+}
+
+class GenerateCategoryError extends Error {
+  payload: unknown;
+
+  constructor(message: string, payload: unknown) {
+    super(message);
+    this.name = "GenerateCategoryError";
+    this.payload = payload;
+  }
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_AI_API_BASE || "";
@@ -64,7 +75,7 @@ async function generateCategory(params: {
       typeof data.detail === "string"
         ? data.detail
         : data.error || text || res.statusText;
-    throw new Error(`HTTP ${res.status}: ${message}`);
+    throw new GenerateCategoryError(`HTTP ${res.status}: ${message}`, data);
   }
   return data as GenerateResponse;
 }
@@ -95,13 +106,19 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
         return;
       }
       if (!data.ok || !data.document || !data.image_url) {
-        throw new Error(data.error || "生成失败");
+        throw new GenerateCategoryError(data.error || "生成失败", data);
       }
       setQuestions([]);
       setFollowupRound(0);
       setResult({ document: data.document, imageUrl: data.image_url });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "生成失败，请重试");
+      if (e instanceof GenerateCategoryError) {
+        console.error("[GenerateCategory] failed", e.payload);
+        setError(e.message);
+      } else {
+        console.error("[GenerateCategory] failed", e);
+        setError(e instanceof Error ? e.message : "生成失败，请重试");
+      }
     } finally {
       setLoading(false);
     }

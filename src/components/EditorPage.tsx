@@ -178,6 +178,8 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
 
   /** 进入编辑器时自动调用 build-assets 拆分透明 PNG 资产层 */
   useEffect(() => {
+    if (doc.meta.skipAutoSplit) return;
+
     const imgComp = doc.components.find(
       (c) => c.type === "image" && c.x === 0 && c.y === 0 &&
       c.width === doc.canvas.width && c.height === doc.canvas.height

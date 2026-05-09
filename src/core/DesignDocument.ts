@@ -36,4 +36,5 @@ export interface DesignMeta {
   tags: string[];
   createdAt: string;
   thumbnail?: string;
+  skipAutoSplit?: boolean;
 }

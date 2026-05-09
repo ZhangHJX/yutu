@@ -55,6 +55,7 @@ class GenerateResponse(BaseModel):
     error: Optional[str] = None
     questions: Optional[list[str]] = None
     provider: Optional[str] = None  # "responses-api" | "huggingface"
+    debug: Optional[dict] = None
 
 
 class TemplateGenerateRequest(BaseModel):
@@ -94,6 +95,7 @@ class GenerateComponentsResponse(BaseModel):
     assets: Optional[dict[str, str]] = None
     error: Optional[str] = None
     provider: Optional[str] = None
+    debug: Optional[dict] = None
 
 
 class AssembleLayoutRequest(BaseModel):
@@ -182,9 +184,27 @@ ENABLE_MODEL_BACKGROUND_FILL = os.environ.get("ENABLE_MODEL_BACKGROUND_FILL", "1
 
 async def try_gpt_image_generate(prompt: str, w: int, h: int, raise_on_error: bool = False) -> Optional[bytes]:
     """Generate image through Responses API image_generation tool."""
+    image_bytes, report = await _try_gpt_image_generate_report(prompt, w, h)
+    if image_bytes is not None:
+        return image_bytes
+    if raise_on_error:
+        raise RuntimeError(report.get("errorMessage") or "Image generation failed")
+    return None
+
+
+async def _try_gpt_image_generate_report(prompt: str, w: int, h: int) -> tuple[Optional[bytes], dict]:
+    started = time.time()
+    report = {
+        "status": "failed",
+        "model": GPT_MAIN_MODEL,
+        "width": w,
+        "height": h,
+        "promptPreview": prompt[:160],
+    }
     if not GPT_IMAGE_API_KEY:
+        report.update({"errorType": "MissingKey", "errorMessage": "GPT_IMAGE_API_KEY is not set"})
         print("[GPT-Image] Missing GPT_IMAGE_API_KEY")
-        return None
+        return None, report
 
     url = f"{OPENAI_BASE_URL.rstrip('/')}/responses"
     payload = {
@@ -205,19 +225,24 @@ async def try_gpt_image_generate(prompt: str, w: int, h: int, raise_on_error: bo
                 "Content-Type": "application/json",
             },
         )
+        report.update(stream_report)
+        report["elapsedMs"] = int((time.time() - started) * 1000)
         if not b64:
             message = f"Missing final image_generation_call: {stream_report}"
+            report.update({"errorType": "MissingImageResult", "errorMessage": message})
             print(f"[GPT-Image] {message}")
-            if raise_on_error:
-                raise RuntimeError(message)
-            return None
+            return None, report
         print(f"[GPT-Image] Success ({len(b64)} chars base64, events={stream_report.get('eventCount')})")
-        return base64.b64decode(b64)
+        report.update({"status": "success"})
+        return base64.b64decode(b64), report
     except Exception as e:
+        report.update({
+            "errorType": type(e).__name__,
+            "errorMessage": str(e),
+            "elapsedMs": int((time.time() - started) * 1000),
+        })
         print(f"[GPT-Image] Exception: {e}")
-        if raise_on_error:
-            raise
-        return None
+        return None, report
 
 
 async def _generate_template_image(slot: str, prompt: str, fallback_color: str, w: int, h: int) -> str:
@@ -591,6 +616,82 @@ def _layout_component_prompt(component: dict, style_brief: str) -> str:
     )
 
 
+class ComponentGenerationError(RuntimeError):
+    def __init__(self, component_id: str, attempts: list[dict]):
+        self.component_id = component_id
+        self.attempts = attempts
+        last = attempts[-1] if attempts else {}
+        reason = last.get("errorMessage") or last.get("errorType") or "unknown error"
+        super().__init__(f"{component_id} generation failed: {reason}")
+
+
+def _validate_generated_image(path: Path) -> dict:
+    from PIL import Image
+
+    if not path.is_file():
+        return {"ok": False, "errorType": "MissingFile", "errorMessage": f"Generated file does not exist: {path.name}"}
+    try:
+        with Image.open(path) as img:
+            img.verify()
+            width, height = img.size
+        if width <= 0 or height <= 0:
+            return {"ok": False, "errorType": "InvalidSize", "errorMessage": f"Invalid image size: {width}x{height}"}
+        return {"ok": True, "width": width, "height": height}
+    except Exception as e:
+        return {"ok": False, "errorType": type(e).__name__, "errorMessage": str(e)}
+
+
+def _category_attempt_log(component_id: str, attempt: dict):
+    print(
+        "[CategoryGenerate] "
+        f"component={component_id} "
+        f"attempt={attempt.get('attempt')} "
+        f"status={attempt.get('status')} "
+        f"model={attempt.get('model')} "
+        f"elapsedMs={attempt.get('elapsedMs')} "
+        f"errorType={attempt.get('errorType')} "
+        f"error={str(attempt.get('errorMessage') or '')[:500]}",
+        flush=True,
+    )
+
+
+async def _generate_layout_component_with_retry(component: dict, style_brief: str) -> tuple[str, list[dict]]:
+    component_id = str(component["id"])
+    w = int(component["width"])
+    h = int(component["height"])
+    prompt = _layout_component_prompt(component, style_brief)
+    attempts = []
+
+    for attempt_no in (1, 2):
+        image_bytes, report = await _try_gpt_image_generate_report(prompt, w, h)
+        attempt = {"componentId": component_id, "attempt": attempt_no, **report}
+
+        if image_bytes is not None:
+            safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in component_id).strip("-") or "component"
+            path = GEN_DIR / f"layout-{safe_id}-{uuid.uuid4().hex[:8]}.png"
+            path.write_bytes(image_bytes)
+            validation = _validate_generated_image(path)
+            attempt["fileValidation"] = validation
+            if validation.get("ok"):
+                attempt.update({"status": "success", "outputPath": f"/generated/{path.name}"})
+                attempts.append(attempt)
+                _category_attempt_log(component_id, attempt)
+                return f"/generated/{path.name}", attempts
+            attempt.update({
+                "status": "failed",
+                "errorType": validation.get("errorType"),
+                "errorMessage": validation.get("errorMessage"),
+                "outputPath": f"/generated/{path.name}",
+            })
+
+        attempts.append(attempt)
+        _category_attempt_log(component_id, attempt)
+        if attempt_no == 1:
+            await asyncio.sleep(1)
+
+    raise ComponentGenerationError(component_id, attempts)
+
+
 async def _generate_layout_components(layout_map: dict, style_brief: str = "") -> dict[str, str]:
     errors = _validate_layout_map(layout_map)
     if errors:
@@ -600,19 +701,9 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "") -
     assets = {}
     for index, component in enumerate(image_components, start=1):
         component_id = str(component["id"])
-        w = int(component["width"])
-        h = int(component["height"])
         print(f"[LayoutComponents] generating component {index}/{len(image_components)}: {component_id}", flush=True)
-        try:
-            image_bytes = await try_gpt_image_generate(_layout_component_prompt(component, style_brief), w, h, raise_on_error=True)
-        except Exception as e:
-            raise RuntimeError(f"Component generation failed: {component_id} ({e})") from e
-
-        safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in component_id).strip("-") or "component"
-        path = GEN_DIR / f"layout-{safe_id}-{uuid.uuid4().hex[:8]}.png"
-        path.write_bytes(image_bytes)
-        assets[component_id] = f"/generated/{path.name}"
-
+        asset_url, _attempts = await _generate_layout_component_with_retry(component, style_brief)
+        assets[component_id] = asset_url
         if index < len(image_components):
             await asyncio.sleep(2)
     return assets
@@ -699,8 +790,14 @@ def _assemble_design_document(layout_map: dict, assets: dict[str, str], user_inp
             raise RuntimeError(f"Missing generated asset for component: {component_id}")
         components.append(_layout_image_component(run_id, item, assets[component_id]))
 
+    max_image_z = max((int(comp.get("style", {}).get("zIndex", 0)) for comp in components), default=0)
+    text_z = max_image_z + 100
     for layer in layout_map["textLayers"]:
-        components.extend(_text_components_from_layer(run_id, layer, user_inputs))
+        text_components = _text_components_from_layer(run_id, layer, user_inputs)
+        for comp in text_components:
+            comp["style"]["zIndex"] = text_z
+            text_z += 1
+        components.extend(text_components)
 
     components.sort(key=lambda comp: int(comp.get("style", {}).get("zIndex", 0)))
     return {
@@ -712,6 +809,7 @@ def _assemble_design_document(layout_map: dict, assets: dict[str, str], user_inp
             "scene": "custom",
             "tags": ["ai", "layout-map", str(layout_map.get("category", "custom"))],
             "createdAt": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()),
+            "skipAutoSplit": True,
         },
     }
 
@@ -1135,6 +1233,13 @@ async def generate_components(req: GenerateComponentsRequest):
     try:
         assets = await _generate_layout_components(req.layout_map, req.style_brief)
         return GenerateComponentsResponse(ok=True, assets=assets, provider="responses-image-generation")
+    except ComponentGenerationError as e:
+        return GenerateComponentsResponse(
+            ok=False,
+            error=f"Component generation failed: {e.component_id}",
+            provider="responses-image-generation",
+            debug={"failedComponent": e.component_id, "attempts": e.attempts},
+        )
     except Exception as e:
         return GenerateComponentsResponse(ok=False, error=str(e), provider="responses-image-generation")
 
@@ -1188,6 +1293,13 @@ async def generate_category(req: CategoryGenerateRequest):
         preview_url = _compose_layout_preview(document)
         document["meta"]["thumbnail"] = preview_url
         return GenerateResponse(ok=True, document=document, image_url=preview_url, provider="category-composition")
+    except ComponentGenerationError as e:
+        return GenerateResponse(
+            ok=False,
+            error=f"{stage}: Component generation failed: {e.component_id}",
+            provider="category-composition",
+            debug={"stage": stage, "failedComponent": e.component_id, "attempts": e.attempts},
+        )
     except Exception as e:
         return GenerateResponse(ok=False, error=f"{stage}: {e}", provider="category-composition")
 
@@ -2012,10 +2124,22 @@ async def _responses_image_stream(url, payload, headers):
                             final_image = item["result"]
                     elif event_type == "response.failed":
                         error = event.get("response", {}).get("error") or event.get("error")
-                        raise RuntimeError(str(error)[:300])
+                        return None, {
+                            "firstEventMs": first_event_ms,
+                            "eventCount": len(event_types),
+                            "events": event_types[-8:],
+                            "errorType": "ResponseFailed",
+                            "errorMessage": str(error)[:1000],
+                        }
                     elif event_type == "error":
                         error = event.get("error") or event
-                        raise RuntimeError(str(error)[:500])
+                        return None, {
+                            "firstEventMs": first_event_ms,
+                            "eventCount": len(event_types),
+                            "events": event_types[-8:],
+                            "errorType": "ProviderError",
+                            "errorMessage": str(error)[:1000],
+                        }
 
     return final_image, {
         "firstEventMs": first_event_ms,
