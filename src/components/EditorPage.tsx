@@ -179,7 +179,11 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
   /** 进入编辑器时自动调用 build-assets 拆分透明 PNG 资产层 */
   useEffect(() => {
     if (doc.meta.skipAutoSplit) {
-      console.log("[EditorPage] skip auto split for category document");
+      console.log("[EditorPage] skip auto split for category document", doc.components.map((component) => ({
+        id: component.id,
+        name: component.name,
+        type: component.type,
+      })));
       splitTriggeredRef.current = null;
       setSplitStatus("idle");
       return;
@@ -671,7 +675,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
               {[...doc.components].reverse().map((comp, i) => {
                 const assetInfo = comp.id.startsWith("asset-") ? assetInfoMap.get(comp.id) : null;
                 const isHidden = hiddenLayers.has(comp.id);
-                const layerName = comp.name ?? (assetInfo ? assetInfo.label : `${comp.type} ${doc.components.length - i}`);
+                const layerName = comp.name ?? componentDisplayName(comp, assetInfo, doc.components.length - i);
                 return (
                   <div
                     key={comp.id}
@@ -1184,4 +1188,14 @@ function ToggleBtn({ active, label, onClick }: { active: boolean; label: string;
       {label}
     </button>
   );
+}
+
+function componentDisplayName(comp: DesignComponent, assetInfo: { label: string } | null | undefined, fallbackIndex: number) {
+  const assetType = String(comp.style?.assetType ?? "");
+  if (assetType === "background" || comp.id.includes("background")) return "背景";
+  if (assetType === "title-card" || comp.id.includes("title-card")) return "标题卡片";
+  if (assetType === "playlist-card" || comp.id.includes("playlist-card")) return "歌单卡片";
+  if (comp.type === "text" && (comp.id.includes("title") || comp.slot === "title")) return "标题";
+  if (comp.type === "text" && (comp.id.includes("song") || comp.id.includes("playlist"))) return "歌单";
+  return assetInfo?.label ?? `${comp.type} ${fallbackIndex}`;
 }

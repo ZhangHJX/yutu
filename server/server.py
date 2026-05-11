@@ -663,6 +663,11 @@ def _validate_layout_map(layout_map: dict) -> list[str]:
         errors.append("playlist.title_text_layer_missing")
     if "user.songs" not in text_sources:
         errors.append("playlist.songs_text_layer_missing")
+    text_source_counts = [item.get("contentSource") for item in layout_map.get("textLayers", []) if isinstance(item, dict)]
+    if text_source_counts.count("user.title") != 1:
+        errors.append("playlist.title_text_layer_count_invalid")
+    if text_source_counts.count("user.songs") != 1:
+        errors.append("playlist.songs_text_layer_count_invalid")
     image_ids = {item.get("id") for item in layout_map.get("components", []) if isinstance(item, dict) and item.get("type") == "image"}
     for image_id in sorted(MINIMAL_PLAYLIST_IMAGE_IDS - image_ids):
         errors.append(f"playlist.image_component.{image_id}_missing")
@@ -676,11 +681,6 @@ def _validate_default_playlist_layout(layout_map: dict, allow_extra: bool) -> li
     image_ids = {item.get("id") for item in layout_map.get("components", []) if isinstance(item, dict) and item.get("type") == "image"}
     extra = sorted(image_ids - MINIMAL_PLAYLIST_IMAGE_IDS)
     errors.extend(f"playlist.default_extra_image_component.{item}" for item in extra)
-    text_sources = [item.get("contentSource") for item in layout_map.get("textLayers", []) if isinstance(item, dict)]
-    if text_sources.count("user.title") != 1:
-        errors.append("playlist.default_title_text_layer_count_invalid")
-    if text_sources.count("user.songs") != 1:
-        errors.append("playlist.default_songs_text_layer_count_invalid")
     return errors
 
 
@@ -787,12 +787,38 @@ def _edge_palette(img, limit: int = 12) -> list[tuple[int, int, int]]:
     return [(r * 16 + 8, g * 16 + 8, b * 16 + 8) for (r, g, b), _count in colors.most_common(limit)]
 
 
+def _checkerboard_palette(img) -> list[tuple[int, int, int]]:
+    from collections import Counter
+
+    w, h = img.size
+    px = img.load()
+    colors = Counter()
+    step = max(1, min(w, h) // 48)
+    for y in range(0, h, step):
+        for x in range(0, w, step):
+            r, g, b, a = px[x, y]
+            if a > 240 and max(r, g, b) - min(r, g, b) <= 24:
+                colors[(r // 24, g // 24, b // 24)] += 1
+    if len(colors) < 2:
+        return []
+    common = colors.most_common(4)
+    total = sum(colors.values())
+    dominant = sum(count for _color, count in common[:2]) / total
+    if dominant < 0.45:
+        return []
+    return [(r * 24 + 12, g * 24 + 12, b * 24 + 12) for (r, g, b), _count in common]
+
+
 def _remove_edge_background(img):
     from collections import deque
     from PIL import Image
 
     w, h = img.size
     palette = _edge_palette(img)
+    checker_palette = _checkerboard_palette(img)
+    for color in checker_palette:
+        if color not in palette:
+            palette.append(color)
     if not palette:
         return None, {"ok": False, "errorType": "NoEdgePalette", "errorMessage": "No opaque edge colors found."}
 
