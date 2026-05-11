@@ -220,11 +220,15 @@ function DraftsPage({ onBack, onOpenDraft }: { onBack: () => void; onOpenDraft?:
           {drafts.map((d) => (
             <div key={d.id} className="draft-item" onClick={() => onOpenDraft?.(d.id)}>
               <div className="draft-thumb">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#999" strokeWidth="1.5">
-                  <rect x="3" y="3" width="18" height="18" rx="3" />
-                  <line x1="12" y1="8" x2="12" y2="16" />
-                  <line x1="8" y1="12" x2="16" y2="12" />
-                </svg>
+                {d.thumbnail ? (
+                  <img src={d.thumbnail} alt="" />
+                ) : (
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#999" strokeWidth="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="3" />
+                    <line x1="12" y1="8" x2="12" y2="16" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                  </svg>
+                )}
               </div>
               <div className="draft-info">
                 <div className="draft-name">{d.name}</div>
@@ -243,6 +247,7 @@ function DraftsPage({ onBack, onOpenDraft }: { onBack: () => void; onOpenDraft?:
         .draft-item { display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); cursor: pointer; }
         .draft-item:active { background: var(--bg); }
         .draft-thumb { width: 40px; height: 40px; background: var(--bg); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .draft-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
         .draft-info { flex: 1; min-width: 0; }
         .draft-name { font-size: 14px; font-weight: 500; }
         .draft-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }

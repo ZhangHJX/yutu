@@ -108,11 +108,15 @@ export default function HomeScreen({ onCreate, onOpenDraft, refreshTick }: HomeS
             {drafts.slice(0, 3).map((d) => (
               <button key={d.id} className="recent-card" onClick={() => onOpenDraft(d.id)}>
                 <div className="recent-thumb">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#999" strokeWidth="1.5">
-                    <rect x="3" y="3" width="18" height="18" rx="3" />
-                    <line x1="12" y1="8" x2="12" y2="16" />
-                    <line x1="8" y1="12" x2="16" y2="12" />
-                  </svg>
+                  {d.thumbnail ? (
+                    <img src={d.thumbnail} alt="" />
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#999" strokeWidth="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="3" />
+                      <line x1="12" y1="8" x2="12" y2="16" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
+                  )}
                 </div>
                 <div className="recent-info">
                   <div className="recent-name">{d.name}</div>
@@ -195,6 +199,7 @@ export default function HomeScreen({ onCreate, onOpenDraft, refreshTick }: HomeS
         }
         .recent-card:active { background: var(--bg); }
         .recent-thumb { width: 36px; height: 36px; background: var(--bg); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .recent-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
         .recent-info { flex: 1; min-width: 0; }
         .recent-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .recent-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }

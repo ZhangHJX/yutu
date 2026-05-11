@@ -6,12 +6,21 @@ export interface DraftMeta {
   id: string;
   name: string;
   canvas: { width: number; height: number };
+  thumbnail?: string;
   updatedAt: string;
   createdAt: string;
 }
 
 const DRAFT_INDEX_KEY = "yutu_draft_index";
 const DRAFT_DATA_PREFIX = "yutu_draft_";
+
+function isLegacyCategoryDraft(id: string): boolean {
+  const doc = loadDraft(id);
+  if (!doc || doc.meta.skipAutoSplit) return false;
+  return doc.components.some(
+    (component) => component.type === "image" && component.content.startsWith("/generated/layout-")
+  );
+}
 
 /** 获取所有草稿元数据列表 */
 export function listDrafts(): DraftMeta[] {
@@ -25,11 +34,9 @@ export function listDrafts(): DraftMeta[] {
 }
 
 /** 保存草稿 */
-export function saveDraft(doc: DesignDocument): string {
+export function saveDraft(doc: DesignDocument, draftId?: string): string {
   const drafts = listDrafts();
-  const existing = drafts.find(
-    (d) => d.name === doc.meta.name && d.canvas.width === doc.canvas.width
-  );
+  const existing = draftId ? drafts.find((d) => d.id === draftId) : undefined;
   const id = existing?.id ?? `draft_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
   // 保存完整文档数据
@@ -41,6 +48,7 @@ export function saveDraft(doc: DesignDocument): string {
     id,
     name: doc.meta.name || "未命名设计",
     canvas: { width: doc.canvas.width, height: doc.canvas.height },
+    thumbnail: doc.meta.thumbnail,
     updatedAt: now,
     createdAt: existing?.createdAt ?? now,
   };
@@ -74,6 +82,7 @@ export function deleteDraft(id: string): void {
 /** 获取最近使用的草稿（按 updatedAt 排序） */
 export function recentDrafts(limit = 10): DraftMeta[] {
   return listDrafts()
+    .filter((draft) => !isLegacyCategoryDraft(draft.id))
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, limit);
 }

@@ -88,6 +88,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     if (draftId) { const s = loadDraft(draftId); if (s) return s; }
     return createBlankDoc(canvasConfig);
   });
+  const currentDraftIdRef = useRef<string | undefined>(draftId);
   const [undoStack, setUndoStack] = useState<EditorSnapshot[]>([]);
   const [redoStack, setRedoStack] = useState<EditorSnapshot[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -285,14 +286,19 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
   const isTextSelected = selectedComp?.type === "text" && selectedComp.editable;
 
   /* ---- 操作函数 ---- */
-  const handleSave = useCallback(() => {
-    saveDraft({ ...doc, meta: { ...doc.meta, name: draftName } });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+  const saveCurrentDraft = useCallback(() => {
+    const id = saveDraft({ ...doc, meta: { ...doc.meta, name: draftName } }, currentDraftIdRef.current);
+    currentDraftIdRef.current = id;
   }, [doc, draftName]);
 
+  const handleSave = useCallback(() => {
+    saveCurrentDraft();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  }, [saveCurrentDraft]);
+
   const handleBack = () => {
-    saveDraft({ ...doc, meta: { ...doc.meta, name: draftName } });
+    saveCurrentDraft();
     onBack();
   };
 
