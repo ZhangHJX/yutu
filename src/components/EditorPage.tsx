@@ -178,7 +178,12 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
 
   /** 进入编辑器时自动调用 build-assets 拆分透明 PNG 资产层 */
   useEffect(() => {
-    if (doc.meta.skipAutoSplit) return;
+    if (doc.meta.skipAutoSplit) {
+      console.log("[EditorPage] skip auto split for category document");
+      splitTriggeredRef.current = null;
+      setSplitStatus("idle");
+      return;
+    }
 
     const imgComp = doc.components.find(
       (c) => c.type === "image" && c.x === 0 && c.y === 0 &&
@@ -666,6 +671,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
               {[...doc.components].reverse().map((comp, i) => {
                 const assetInfo = comp.id.startsWith("asset-") ? assetInfoMap.get(comp.id) : null;
                 const isHidden = hiddenLayers.has(comp.id);
+                const layerName = comp.name ?? (assetInfo ? assetInfo.label : `${comp.type} ${doc.components.length - i}`);
                 return (
                   <div
                     key={comp.id}
@@ -695,10 +701,10 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
                     {assetInfo ? (
                       <span className="layer-name">
                         <span className="layer-type-label">{assetInfo.type}</span>
-                        <span className="layer-asset-label">{assetInfo.label}</span>
+                        <span className="layer-asset-label">{layerName}</span>
                       </span>
                     ) : (
-                      <span className="layer-name">{comp.name ?? `${comp.type} ${doc.components.length - i}`}</span>
+                      <span className="layer-name">{layerName}</span>
                     )}
                   </div>
                 );

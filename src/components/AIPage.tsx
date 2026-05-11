@@ -110,6 +110,17 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
       }
       setQuestions([]);
       setFollowupRound(0);
+      console.log("[GenerateCategory] text layers", data.document.components
+        .filter((component) => component.type === "text")
+        .map((component) => ({
+          id: component.id,
+          name: component.name,
+          contentLength: component.content.length,
+          bounds: { x: component.x, y: component.y, width: component.width, height: component.height },
+          zIndex: component.style?.zIndex,
+          color: component.style?.color,
+          fontSize: component.style?.fontSize,
+        })));
       setResult({ document: data.document, imageUrl: data.image_url });
     } catch (e) {
       if (e instanceof GenerateCategoryError) {

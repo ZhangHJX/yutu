@@ -597,7 +597,7 @@ Required JSON shape:
         "fontFamily": "system",
         "fontSize": 11,
         "fontWeight": "normal",
-        "color": "#ffffff",
+        "color": "#e35f9f",
         "textAlign": "left",
         "lineHeight": 1.35,
         "letterSpacing": 0,
@@ -657,6 +657,8 @@ def _validate_layout_map(layout_map: dict) -> list[str]:
                 if not item.get("contentSource"):
                     errors.append(f"{prefix}.contentSource_missing")
     text_sources = {item.get("contentSource") for item in layout_map.get("textLayers", []) if isinstance(item, dict)}
+    extra_sources = sorted(source for source in text_sources if source not in {"user.title", "user.songs"})
+    errors.extend(f"playlist.unsupported_text_source.{item}" for item in extra_sources)
     if "user.title" not in text_sources:
         errors.append("playlist.title_text_layer_missing")
     if "user.songs" not in text_sources:
@@ -675,8 +677,6 @@ def _validate_default_playlist_layout(layout_map: dict, allow_extra: bool) -> li
     extra = sorted(image_ids - MINIMAL_PLAYLIST_IMAGE_IDS)
     errors.extend(f"playlist.default_extra_image_component.{item}" for item in extra)
     text_sources = [item.get("contentSource") for item in layout_map.get("textLayers", []) if isinstance(item, dict)]
-    extra_sources = sorted(source for source in set(text_sources) if source not in {"user.title", "user.songs"})
-    errors.extend(f"playlist.default_extra_text_layer.{item}" for item in extra_sources)
     if text_sources.count("user.title") != 1:
         errors.append("playlist.default_title_text_layer_count_invalid")
     if text_sources.count("user.songs") != 1:
@@ -767,6 +767,94 @@ def _fit_contain(content, size: tuple[int, int]):
     return result
 
 
+def _edge_palette(img, limit: int = 12) -> list[tuple[int, int, int]]:
+    from collections import Counter
+
+    w, h = img.size
+    px = img.load()
+    colors = Counter()
+    step = max(1, min(w, h) // 128)
+    for x in range(0, w, step):
+        for y in (0, h - 1):
+            r, g, b, a = px[x, y]
+            if a > 240:
+                colors[(r // 16, g // 16, b // 16)] += 1
+    for y in range(0, h, step):
+        for x in (0, w - 1):
+            r, g, b, a = px[x, y]
+            if a > 240:
+                colors[(r // 16, g // 16, b // 16)] += 1
+    return [(r * 16 + 8, g * 16 + 8, b * 16 + 8) for (r, g, b), _count in colors.most_common(limit)]
+
+
+def _remove_edge_background(img):
+    from collections import deque
+    from PIL import Image
+
+    w, h = img.size
+    palette = _edge_palette(img)
+    if not palette:
+        return None, {"ok": False, "errorType": "NoEdgePalette", "errorMessage": "No opaque edge colors found."}
+
+    px = img.load()
+    tolerance_sq = 38 * 38
+
+    def is_background(x: int, y: int) -> bool:
+        r, g, b, a = px[x, y]
+        if a < 10:
+            return True
+        return any((r - pr) ** 2 + (g - pg) ** 2 + (b - pb) ** 2 <= tolerance_sq for pr, pg, pb in palette)
+
+    visited = bytearray(w * h)
+    queue = deque()
+
+    def push(x: int, y: int):
+        index = y * w + x
+        if not visited[index] and is_background(x, y):
+            visited[index] = 1
+            queue.append((x, y))
+
+    for x in range(w):
+        push(x, 0)
+        push(x, h - 1)
+    for y in range(h):
+        push(0, y)
+        push(w - 1, y)
+
+    while queue:
+        x, y = queue.popleft()
+        if x > 0:
+            push(x - 1, y)
+        if x + 1 < w:
+            push(x + 1, y)
+        if y > 0:
+            push(x, y - 1)
+        if y + 1 < h:
+            push(x, y + 1)
+
+    removed = sum(visited)
+    if removed < w * h * 0.05:
+        return None, {
+            "ok": False,
+            "errorType": "EdgeBackgroundNotDetected",
+            "errorMessage": "Edge background area is too small to remove safely.",
+            "removedRatio": removed / (w * h),
+        }
+
+    output = img.copy()
+    alpha = output.getchannel("A")
+    alpha_data = bytearray(alpha.tobytes())
+    for index, value in enumerate(visited):
+        if value:
+            alpha_data[index] = 0
+    output.putalpha(Image.frombytes("L", (w, h), bytes(alpha_data)))
+    return output, {
+        "ok": True,
+        "removedRatio": removed / (w * h),
+        "edgePalette": palette,
+    }
+
+
 def _normalize_generated_component_image(component: dict, image_bytes: bytes) -> tuple[Optional[bytes], dict]:
     from PIL import Image
 
@@ -787,6 +875,7 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                     "alphaRequired": False,
                 }
 
+            cleanup_report = None
             alpha = img.getchannel("A")
             corner_alpha = [
                 alpha.getpixel((0, 0)),
@@ -795,13 +884,17 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                 alpha.getpixel((img.width - 1, img.height - 1)),
             ]
             if all(value > 240 for value in corner_alpha):
-                return None, {
-                    "ok": False,
-                    "errorType": "NonTransparentBackground",
-                    "errorMessage": "Non-background asset has opaque corners; expected transparent background outside the card/object.",
-                    "rawSize": raw_size,
-                    "cornerAlpha": corner_alpha,
-                }
+                cleaned, cleanup = _remove_edge_background(img)
+                if cleaned is None:
+                    cleanup.update({
+                        "rawSize": raw_size,
+                        "cornerAlpha": corner_alpha,
+                        "errorType": "NonTransparentBackground",
+                        "errorMessage": cleanup.get("errorMessage") or "Non-background asset has opaque corners; expected transparent background outside the card/object.",
+                    })
+                    return None, cleanup
+                img = cleaned
+                cleanup_report = cleanup
 
             bbox = _alpha_bbox(img)
             if not bbox:
@@ -829,6 +922,7 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                 "assetKind": "transparent-asset",
                 "alphaBounds": {"x": bbox[0], "y": bbox[1], "width": bbox[2] - bbox[0], "height": bbox[3] - bbox[1]},
                 "alphaRequired": True,
+                "backgroundCleanup": cleanup_report,
             }
     except Exception as e:
         return None, {"ok": False, "errorType": type(e).__name__, "errorMessage": str(e)}
@@ -918,6 +1012,8 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
 def _text_style_with_z(layer: dict) -> dict:
     style = dict(layer["style"])
     style["zIndex"] = layer["zIndex"]
+    if layer.get("contentSource") == "user.songs" and str(style.get("color", "")).lower() in {"#fff", "#ffffff", "white"}:
+        style["color"] = "#e35f9f"
     return style
 
 
@@ -1031,6 +1127,16 @@ def _assemble_design_document(layout_map: dict, assets: dict[str, str], user_inp
         components.extend(text_components)
 
     components.sort(key=lambda comp: int(comp.get("style", {}).get("zIndex", 0)))
+    for comp in components:
+        if comp.get("type") == "text":
+            style = comp.get("style", {})
+            print(
+                "[CategoryGenerate] text layer "
+                f"id={comp.get('id')} name={comp.get('name')} contentLength={len(comp.get('content', ''))} "
+                f"bounds=({comp.get('x')},{comp.get('y')},{comp.get('width')},{comp.get('height')}) "
+                f"zIndex={style.get('zIndex')} color={style.get('color')} fontSize={style.get('fontSize')}",
+                flush=True,
+            )
     return {
         "version": 1,
         "canvas": layout_map["canvas"],
