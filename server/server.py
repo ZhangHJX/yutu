@@ -37,6 +37,8 @@ OUT_DIR = ROOT / "out"
 GEN_DIR = OUT_DIR / "generated"
 GEN_DIR.mkdir(parents=True, exist_ok=True)
 MINIMAL_PLAYLIST_IMAGE_IDS = {"background", "title-card", "playlist-card"}
+CARD_COMPONENT_IDS = {"title-card", "playlist-card"}
+CARD_KEY_COLOR = (255, 0, 255)
 
 # ── FastAPI ────────────────────────────────────────────
 app = FastAPI(title="语图 AI 生图服务")
@@ -520,10 +522,11 @@ Rules:
 7. Image component prompts must ask for clean blank/readable areas where text layers will be placed.
 8. Non-background image components must request transparent background outside the visible card/object.
 9. Title-card and playlist-card are only visual containers. They must not contain readable text, song names, or user words.
-10. Text layer bounds must match their content area. The title text layer must not cover the whole canvas; keep it inside the title-card area.
-11. Text layers must include full editable style: fontFamily, fontSize, fontWeight, color, textAlign, lineHeight, letterSpacing, rotation, opacity.
-12. Use no Fabric fallback; image components are real generated assets.
-13. If the input is underspecified and use_default_layout is true, choose a conservative playlist layout yourself.
+10. The background prompt must describe only the background itself: environment, texture, lighting, mood, and color palette. It must not mention title, playlist, card, panel, text area, player, buttons, list box, frame, border, or any other component.
+11. Text layer bounds must match their content area. The title text layer must not cover the whole canvas; keep it inside the title-card area.
+12. Text layers must include full editable style: fontFamily, fontSize, fontWeight, color, textAlign, lineHeight, letterSpacing, rotation, opacity.
+13. Use no Fabric fallback; image components are real generated assets.
+14. If the input is underspecified and use_default_layout is true, choose a conservative playlist layout yourself.
 
 Required JSON shape:
 {{
@@ -688,18 +691,48 @@ def _layout_map_errors(layout_map: dict, allow_extra: bool) -> list[str]:
     return _validate_layout_map(layout_map) + _validate_default_playlist_layout(layout_map, allow_extra)
 
 
-def _layout_component_prompt(component: dict, style_brief: str) -> str:
+def _card_forbidden_zones(layout_map: dict) -> list[dict]:
+    zones = []
+    for item in layout_map.get("components", []):
+        if item.get("id") in CARD_COMPONENT_IDS:
+            zones.append({
+                "x": int(item["x"]),
+                "y": int(item["y"]),
+                "width": int(item["width"]),
+                "height": int(item["height"]),
+            })
+    return zones
+
+
+def _layout_component_prompt(component: dict, style_brief: str, forbidden_zones: Optional[list[dict]] = None) -> str:
     base_prompt = str(component["prompt"]).strip()
     style = style_brief.strip() or "Use the visual style implied by the component prompt."
-    is_background = component["id"] == "background"
-    background_rule = (
-        "This is the full opaque poster background. Fill the entire image area; do not use transparency."
-        if is_background
-        else "Use real transparent alpha outside the visible card/object. No black, white, checkerboard, or matte background outside the asset."
-    )
+    component_id = str(component["id"])
+    is_background = component_id == "background"
+    if is_background:
+        zone_text = ""
+        if forbidden_zones:
+            zone_text = " Keep these rectangular regions as continuous natural background with no UI objects: " + "; ".join(
+                f"x={zone['x']}, y={zone['y']}, w={zone['width']}, h={zone['height']}" for zone in forbidden_zones
+            ) + "."
+        background_rule = (
+            "This is the full opaque poster background. Fill the entire image area; do not use transparency. "
+            "Generate only background environment, texture, lighting, atmosphere, and color palette. "
+            "Do not include cards, panels, frames, borders, title areas, list areas, buttons, UI widgets, fake text, or text placeholders."
+            f"{zone_text}"
+        )
+    elif component_id in CARD_COMPONENT_IDS:
+        r, g, b = CARD_KEY_COLOR
+        background_rule = (
+            f"Generate the card/backplate on a flat chroma key background rgb({r},{g},{b}). "
+            "Do not use this chroma key color inside the card design. The card/backplate itself must remain fully visible. "
+            "No black, white, checkerboard, or matte background."
+        )
+    else:
+        background_rule = "Use real transparent alpha outside the visible card/object. No black, white, checkerboard, or matte background outside the asset."
     return (
         f"{style}\n"
-        f"Generate only one image asset for component `{component['id']}`.\n"
+        f"Generate only one image asset for component `{component_id}`.\n"
         f"Slot size: {int(component['width'])}x{int(component['height'])} pixels.\n"
         f"Component prompt: {base_prompt}\n"
         f"{background_rule}\n"
@@ -881,6 +914,58 @@ def _remove_edge_background(img):
     }
 
 
+def _remove_chroma_key_background(img, color: tuple[int, int, int] = CARD_KEY_COLOR):
+    from PIL import Image
+
+    w, h = img.size
+    r0, g0, b0 = color
+    px = img.load()
+    tolerance_sq = 46 * 46
+    alpha = bytearray(img.getchannel("A").tobytes())
+    removed = 0
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a > 10 and (r - r0) ** 2 + (g - g0) ** 2 + (b - b0) ** 2 <= tolerance_sq:
+                alpha[y * w + x] = 0
+                removed += 1
+    if removed < w * h * 0.05:
+        return None, {
+            "ok": False,
+            "errorType": "ChromaKeyNotDetected",
+            "errorMessage": "Chroma key background was not detected.",
+            "removedRatio": removed / (w * h),
+            "keyColor": color,
+        }
+    output = img.copy()
+    output.putalpha(Image.frombytes("L", (w, h), bytes(alpha)))
+    bbox = _alpha_bbox(output)
+    if not bbox:
+        return None, {
+            "ok": False,
+            "errorType": "ChromaKeyRemovedAll",
+            "errorMessage": "Chroma key cleanup removed the whole card.",
+            "removedRatio": removed / (w * h),
+            "keyColor": color,
+        }
+    content_ratio = ((bbox[2] - bbox[0]) * (bbox[3] - bbox[1])) / (w * h)
+    if content_ratio < 0.02:
+        return None, {
+            "ok": False,
+            "errorType": "ChromaKeyContentTooSmall",
+            "errorMessage": "Card content is too small after chroma key cleanup.",
+            "removedRatio": removed / (w * h),
+            "contentRatio": content_ratio,
+            "keyColor": color,
+        }
+    return output, {
+        "ok": True,
+        "removedRatio": removed / (w * h),
+        "contentRatio": content_ratio,
+        "keyColor": color,
+    }
+
+
 def _normalize_generated_component_image(component: dict, image_bytes: bytes) -> tuple[Optional[bytes], dict]:
     from PIL import Image
 
@@ -902,25 +987,35 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                 }
 
             cleanup_report = None
-            alpha = img.getchannel("A")
-            corner_alpha = [
-                alpha.getpixel((0, 0)),
-                alpha.getpixel((img.width - 1, 0)),
-                alpha.getpixel((0, img.height - 1)),
-                alpha.getpixel((img.width - 1, img.height - 1)),
-            ]
-            if all(value > 240 for value in corner_alpha):
-                cleaned, cleanup = _remove_edge_background(img)
+            if component_id in CARD_COMPONENT_IDS:
+                cleaned, cleanup = _remove_chroma_key_background(img)
                 if cleaned is None:
                     cleanup.update({
                         "rawSize": raw_size,
-                        "cornerAlpha": corner_alpha,
-                        "errorType": "NonTransparentBackground",
-                        "errorMessage": cleanup.get("errorMessage") or "Non-background asset has opaque corners; expected transparent background outside the card/object.",
                     })
                     return None, cleanup
                 img = cleaned
                 cleanup_report = cleanup
+            else:
+                alpha = img.getchannel("A")
+                corner_alpha = [
+                    alpha.getpixel((0, 0)),
+                    alpha.getpixel((img.width - 1, 0)),
+                    alpha.getpixel((0, img.height - 1)),
+                    alpha.getpixel((img.width - 1, img.height - 1)),
+                ]
+                if all(value > 240 for value in corner_alpha):
+                    cleaned, cleanup = _remove_edge_background(img)
+                    if cleaned is None:
+                        cleanup.update({
+                            "rawSize": raw_size,
+                            "cornerAlpha": corner_alpha,
+                            "errorType": "NonTransparentBackground",
+                            "errorMessage": cleanup.get("errorMessage") or "Non-background asset has opaque corners; expected transparent background outside the card/object.",
+                        })
+                        return None, cleanup
+                    img = cleaned
+                    cleanup_report = cleanup
 
             bbox = _alpha_bbox(img)
             if not bbox:
@@ -941,12 +1036,22 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
 
             content = img.crop(bbox)
             normalized = _fit_contain(content, target_size)
+            normalized_bbox = _alpha_bbox(normalized)
+            normalized_alpha_bounds = None
+            if normalized_bbox:
+                normalized_alpha_bounds = {
+                    "x": normalized_bbox[0],
+                    "y": normalized_bbox[1],
+                    "width": normalized_bbox[2] - normalized_bbox[0],
+                    "height": normalized_bbox[3] - normalized_bbox[1],
+                }
             return _pil_to_png_bytes(normalized), {
                 "ok": True,
                 "rawSize": raw_size,
                 "normalizedSize": {"width": target_size[0], "height": target_size[1]},
                 "assetKind": "transparent-asset",
                 "alphaBounds": {"x": bbox[0], "y": bbox[1], "width": bbox[2] - bbox[0], "height": bbox[3] - bbox[1]},
+                "normalizedAlphaBounds": normalized_alpha_bounds,
                 "alphaRequired": True,
                 "backgroundCleanup": cleanup_report,
             }
@@ -968,11 +1073,11 @@ def _category_attempt_log(component_id: str, attempt: dict):
     )
 
 
-async def _generate_layout_component_with_retry(component: dict, style_brief: str) -> tuple[str, list[dict]]:
+async def _generate_layout_component_with_retry(component: dict, style_brief: str, forbidden_zones: Optional[list[dict]] = None) -> tuple[str, list[dict]]:
     component_id = str(component["id"])
     w = int(component["width"])
     h = int(component["height"])
-    prompt = _layout_component_prompt(component, style_brief)
+    prompt = _layout_component_prompt(component, style_brief, forbidden_zones)
     attempts = []
 
     for attempt_no in (1, 2):
@@ -1000,7 +1105,11 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
                     if attempt_no == 1:
                         await asyncio.sleep(1)
                     continue
-                attempt.update({"status": "success", "outputPath": f"/generated/{path.name}"})
+                attempt.update({
+                    "status": "success",
+                    "outputPath": f"/generated/{path.name}",
+                    "normalizedAlphaBounds": asset_validation.get("normalizedAlphaBounds"),
+                })
                 attempts.append(attempt)
                 _category_attempt_log(component_id, attempt)
                 return f"/generated/{path.name}", attempts
@@ -1018,18 +1127,23 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
     raise ComponentGenerationError(component_id, attempts)
 
 
-async def _generate_layout_components(layout_map: dict, style_brief: str = "", allow_extra: bool = True) -> dict[str, str]:
+async def _generate_layout_components(layout_map: dict, style_brief: str = "", allow_extra: bool = True) -> dict[str, dict]:
     errors = _layout_map_errors(layout_map, allow_extra)
     if errors:
         raise RuntimeError("Invalid layout map: " + "; ".join(errors))
 
     image_components = [item for item in layout_map["components"] if item.get("type") == "image"]
+    forbidden_zones = _card_forbidden_zones(layout_map)
     assets = {}
     for index, component in enumerate(image_components, start=1):
         component_id = str(component["id"])
         print(f"[LayoutComponents] generating component {index}/{len(image_components)}: {component_id}", flush=True)
-        asset_url, _attempts = await _generate_layout_component_with_retry(component, style_brief)
-        assets[component_id] = asset_url
+        asset_url, attempts = await _generate_layout_component_with_retry(component, style_brief, forbidden_zones)
+        success = attempts[-1]
+        assets[component_id] = {
+            "url": asset_url,
+            "normalizedAlphaBounds": success.get("normalizedAlphaBounds"),
+        }
         if index < len(image_components):
             await asyncio.sleep(2)
     return assets
@@ -1062,6 +1176,20 @@ def _layout_image_component(run_id: str, item: dict, content: str) -> dict:
     }
 
 
+def _asset_url(asset) -> Optional[str]:
+    if isinstance(asset, str):
+        return asset
+    if isinstance(asset, dict):
+        return asset.get("url")
+    return None
+
+
+def _asset_alpha_bounds(asset) -> Optional[dict]:
+    if isinstance(asset, dict):
+        return asset.get("normalizedAlphaBounds")
+    return None
+
+
 def _layout_text_component(run_id: str, item: dict, content: str, suffix: str = "") -> dict:
     style = _text_style_with_z(item)
     name = _component_name(item["id"], suffix)
@@ -1082,6 +1210,33 @@ def _layout_text_component(run_id: str, item: dict, content: str, suffix: str = 
         "style": style,
     }
     return component
+
+
+def _adjust_playlist_text_layers(layout_map: dict, assets: dict) -> list[dict]:
+    text_layers = []
+    card_by_source = {
+        "user.title": "title-card",
+        "user.songs": "playlist-card",
+    }
+    padding_by_source = {
+        "user.title": (14, 8),
+        "user.songs": (18, 16),
+    }
+    component_by_id = {item.get("id"): item for item in layout_map.get("components", []) if isinstance(item, dict)}
+    for layer in layout_map["textLayers"]:
+        adjusted = dict(layer)
+        source = adjusted.get("contentSource")
+        card_id = card_by_source.get(source)
+        bounds = _asset_alpha_bounds(assets.get(card_id)) if card_id else None
+        card = component_by_id.get(card_id)
+        if bounds and card:
+            pad_x, pad_y = padding_by_source[source]
+            adjusted["x"] = int(card["x"]) + int(bounds["x"]) + pad_x
+            adjusted["y"] = int(card["y"]) + int(bounds["y"]) + pad_y
+            adjusted["width"] = max(1, int(bounds["width"]) - pad_x * 2)
+            adjusted["height"] = max(1, int(bounds["height"]) - pad_y * 2)
+        text_layers.append(adjusted)
+    return text_layers
 
 
 def _component_name(component_id: str, suffix: str = "") -> str:
@@ -1116,10 +1271,9 @@ def _text_components_from_layer(run_id: str, layer: dict, user_inputs: dict) -> 
         components = []
         for index, content in enumerate(columns):
             col_layer = dict(layer)
-            col_layer["id"] = f"{layer['id']}-col-{index + 1}"
             col_layer["x"] = layer["x"] + index * (col_w + gap)
             col_layer["width"] = col_w
-            components.append(_layout_text_component(run_id, col_layer, content))
+            components.append(_layout_text_component(run_id, col_layer, content, f"-col-{index + 1}"))
         return components
     return [_layout_text_component(run_id, layer, "")]
 
@@ -1139,13 +1293,14 @@ def _assemble_design_document(layout_map: dict, assets: dict[str, str], user_inp
         if item.get("type") != "image":
             continue
         component_id = str(item["id"])
-        if not assets.get(component_id):
+        asset_url = _asset_url(assets.get(component_id))
+        if not asset_url:
             raise RuntimeError(f"Missing generated asset for component: {component_id}")
-        components.append(_layout_image_component(run_id, item, assets[component_id]))
+        components.append(_layout_image_component(run_id, item, asset_url))
 
     max_image_z = max((int(comp.get("style", {}).get("zIndex", 0)) for comp in components), default=0)
     text_z = max_image_z + 100
-    for layer in layout_map["textLayers"]:
+    for layer in _adjust_playlist_text_layers(layout_map, assets):
         text_components = _text_components_from_layer(run_id, layer, user_inputs)
         for comp in text_components:
             comp["style"]["zIndex"] = text_z
@@ -1599,7 +1754,12 @@ async def generate_components(req: GenerateComponentsRequest):
             _component_style_brief(req.style_brief, req.description),
             _allow_extra_playlist_components(req.description),
         )
-        return GenerateComponentsResponse(ok=True, assets=assets, provider="responses-image-generation")
+        return GenerateComponentsResponse(
+            ok=True,
+            assets={component_id: asset["url"] for component_id, asset in assets.items()},
+            provider="responses-image-generation",
+            debug={"assets": assets},
+        )
     except ComponentGenerationError as e:
         return GenerateComponentsResponse(
             ok=False,
