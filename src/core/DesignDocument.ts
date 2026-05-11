@@ -16,6 +16,7 @@ export type ComponentType = "text" | "image" | "shape" | "group";
 
 export interface DesignComponent {
   id: string;
+  name?: string;
   type: ComponentType;
   editable: boolean;
   editableProperties: string[];

@@ -698,7 +698,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
                         <span className="layer-asset-label">{assetInfo.label}</span>
                       </span>
                     ) : (
-                      <span className="layer-name">{comp.type} {doc.components.length - i}</span>
+                      <span className="layer-name">{comp.name ?? `${comp.type} ${doc.components.length - i}`}</span>
                     )}
                   </div>
                 );

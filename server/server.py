@@ -20,6 +20,7 @@ import random
 import asyncio
 import base64
 import tempfile
+import io
 from pathlib import Path
 from typing import Optional
 
@@ -35,6 +36,7 @@ ROOT = Path(__file__).resolve().parent.parent  # project root
 OUT_DIR = ROOT / "out"
 GEN_DIR = OUT_DIR / "generated"
 GEN_DIR.mkdir(parents=True, exist_ok=True)
+MINIMAL_PLAYLIST_IMAGE_IDS = {"background", "title-card", "playlist-card"}
 
 # ── FastAPI ────────────────────────────────────────────
 app = FastAPI(title="语图 AI 生图服务")
@@ -88,6 +90,7 @@ class LayoutMapResponse(BaseModel):
 class GenerateComponentsRequest(BaseModel):
     layout_map: dict
     style_brief: str = ""
+    description: str = ""
 
 
 class GenerateComponentsResponse(BaseModel):
@@ -509,10 +512,18 @@ Rules:
 2. Generate a dynamic layout map, not a fixed template.
 3. Use a 390x600 canvas unless the category strongly requires another size.
 4. User text must not be placed in image prompts. Text layers use contentSource such as user.title, user.songs, user.description.
-5. Image component prompts must ask for clean blank/readable areas where text layers will be placed.
-6. Text layers must include full editable style: fontFamily, fontSize, fontWeight, color, textAlign, lineHeight, letterSpacing, rotation, opacity.
-7. Use no Fabric fallback; image components are real generated assets.
-8. If the input is underspecified and use_default_layout is true, choose a conservative playlist layout yourself.
+5. User title and song list must be editable text layers, never image components.
+6. If has_description is false, generate exactly this minimal component set:
+   - image components: background, title-card, playlist-card
+   - text layers: one user.title layer and one user.songs layer
+   Do not add main visuals, players, stickers, decorations, or extra components unless the user description explicitly asks for them.
+7. Image component prompts must ask for clean blank/readable areas where text layers will be placed.
+8. Non-background image components must request transparent background outside the visible card/object.
+9. Title-card and playlist-card are only visual containers. They must not contain readable text, song names, or user words.
+10. Text layer bounds must match their content area. The title text layer must not cover the whole canvas; keep it inside the title-card area.
+11. Text layers must include full editable style: fontFamily, fontSize, fontWeight, color, textAlign, lineHeight, letterSpacing, rotation, opacity.
+12. Use no Fabric fallback; image components are real generated assets.
+13. If the input is underspecified and use_default_layout is true, choose a conservative playlist layout yourself.
 
 Required JSON shape:
 {{
@@ -529,6 +540,26 @@ Required JSON shape:
       "height": 600,
       "zIndex": 0,
       "prompt": "component visual prompt without user text"
+    }},
+    {{
+      "id": "title-card",
+      "type": "image",
+      "x": 24,
+      "y": 28,
+      "width": 342,
+      "height": 56,
+      "zIndex": 10,
+      "prompt": "transparent title card/backplate only, no text"
+    }},
+    {{
+      "id": "playlist-card",
+      "type": "image",
+      "x": 24,
+      "y": 340,
+      "width": 342,
+      "height": 220,
+      "zIndex": 20,
+      "prompt": "transparent playlist card/backplate only, no song names"
     }}
   ],
   "textLayers": [
@@ -548,6 +579,27 @@ Required JSON shape:
         "color": "#ffffff",
         "textAlign": "center",
         "lineHeight": 1.1,
+        "letterSpacing": 0,
+        "rotation": 0,
+        "opacity": 1
+      }}
+    }},
+    {{
+      "id": "song-list",
+      "role": "songs",
+      "contentSource": "user.songs",
+      "x": 42,
+      "y": 360,
+      "width": 306,
+      "height": 180,
+      "zIndex": 60,
+      "style": {{
+        "fontFamily": "system",
+        "fontSize": 11,
+        "fontWeight": "normal",
+        "color": "#ffffff",
+        "textAlign": "left",
+        "lineHeight": 1.35,
         "letterSpacing": 0,
         "rotation": 0,
         "opacity": 1
@@ -586,6 +638,12 @@ def _validate_layout_map(layout_map: dict) -> list[str]:
                     errors.append(f"{prefix}.bounds_invalid")
                 elif x < 0 or y < 0 or x + w > canvas_w or y + h > canvas_h:
                     errors.append(f"{prefix}.bounds_out_of_canvas")
+                elif collection_name == "textLayers":
+                    source = item.get("contentSource")
+                    if source == "user.title" and (h > canvas_h * 0.25 or w * h > canvas_w * canvas_h * 0.35):
+                        errors.append(f"{prefix}.title_bounds_too_large")
+                    elif source == "user.songs" and (h > canvas_h * 0.8 or w * h > canvas_w * canvas_h * 0.75):
+                        errors.append(f"{prefix}.songs_bounds_too_large")
             if collection_name == "components" and not item.get("prompt"):
                 errors.append(f"{prefix}.prompt_missing")
             if collection_name == "textLayers":
@@ -598,22 +656,66 @@ def _validate_layout_map(layout_map: dict) -> list[str]:
                         errors.append(f"{prefix}.style.{field}_missing")
                 if not item.get("contentSource"):
                     errors.append(f"{prefix}.contentSource_missing")
+    text_sources = {item.get("contentSource") for item in layout_map.get("textLayers", []) if isinstance(item, dict)}
+    if "user.title" not in text_sources:
+        errors.append("playlist.title_text_layer_missing")
+    if "user.songs" not in text_sources:
+        errors.append("playlist.songs_text_layer_missing")
+    image_ids = {item.get("id") for item in layout_map.get("components", []) if isinstance(item, dict) and item.get("type") == "image"}
+    for image_id in sorted(MINIMAL_PLAYLIST_IMAGE_IDS - image_ids):
+        errors.append(f"playlist.image_component.{image_id}_missing")
     return errors
+
+
+def _validate_default_playlist_layout(layout_map: dict, allow_extra: bool) -> list[str]:
+    if allow_extra:
+        return []
+    errors = []
+    image_ids = {item.get("id") for item in layout_map.get("components", []) if isinstance(item, dict) and item.get("type") == "image"}
+    extra = sorted(image_ids - MINIMAL_PLAYLIST_IMAGE_IDS)
+    errors.extend(f"playlist.default_extra_image_component.{item}" for item in extra)
+    text_sources = [item.get("contentSource") for item in layout_map.get("textLayers", []) if isinstance(item, dict)]
+    extra_sources = sorted(source for source in set(text_sources) if source not in {"user.title", "user.songs"})
+    errors.extend(f"playlist.default_extra_text_layer.{item}" for item in extra_sources)
+    if text_sources.count("user.title") != 1:
+        errors.append("playlist.default_title_text_layer_count_invalid")
+    if text_sources.count("user.songs") != 1:
+        errors.append("playlist.default_songs_text_layer_count_invalid")
+    return errors
+
+
+def _layout_map_errors(layout_map: dict, allow_extra: bool) -> list[str]:
+    return _validate_layout_map(layout_map) + _validate_default_playlist_layout(layout_map, allow_extra)
 
 
 def _layout_component_prompt(component: dict, style_brief: str) -> str:
     base_prompt = str(component["prompt"]).strip()
     style = style_brief.strip() or "Use the visual style implied by the component prompt."
+    is_background = component["id"] == "background"
+    background_rule = (
+        "This is the full opaque poster background. Fill the entire image area; do not use transparency."
+        if is_background
+        else "Use real transparent alpha outside the visible card/object. No black, white, checkerboard, or matte background outside the asset."
+    )
     return (
         f"{style}\n"
         f"Generate only one image asset for component `{component['id']}`.\n"
         f"Slot size: {int(component['width'])}x{int(component['height'])} pixels.\n"
         f"Component prompt: {base_prompt}\n"
+        f"{background_rule}\n"
         "Hard constraints: do not generate a complete poster, do not add readable text, "
         "letters, numbers, labels, logos, watermarks, captions, or user-provided words. "
         "Leave clean blank areas for later editable text layers when the prompt mentions text space. "
         "The asset must fit inside its slot and should not include extra borders outside the requested design."
     )
+
+
+def _component_style_brief(style: str, description: str) -> str:
+    brief = style.strip()
+    extra = description.strip()
+    if brief and extra:
+        return f"{brief}\nAdditional visual requirements: {extra}"
+    return brief or extra
 
 
 class ComponentGenerationError(RuntimeError):
@@ -639,6 +741,97 @@ def _validate_generated_image(path: Path) -> dict:
         return {"ok": True, "width": width, "height": height}
     except Exception as e:
         return {"ok": False, "errorType": type(e).__name__, "errorMessage": str(e)}
+
+
+def _alpha_bbox(img):
+    alpha = img.getchannel("A").point(lambda p: 255 if p > 10 else 0)
+    return alpha.getbbox()
+
+
+def _fit_cover(img, size: tuple[int, int]):
+    from PIL import Image, ImageOps
+
+    return ImageOps.fit(img.convert("RGB"), size, method=Image.Resampling.LANCZOS).convert("RGBA")
+
+
+def _fit_contain(content, size: tuple[int, int]):
+    from PIL import Image
+
+    target_w, target_h = size
+    content = content.copy()
+    content.thumbnail((target_w, target_h), Image.Resampling.LANCZOS)
+    result = Image.new("RGBA", (target_w, target_h), (255, 255, 255, 0))
+    x = (target_w - content.width) // 2
+    y = (target_h - content.height) // 2
+    result.paste(content, (x, y), content)
+    return result
+
+
+def _normalize_generated_component_image(component: dict, image_bytes: bytes) -> tuple[Optional[bytes], dict]:
+    from PIL import Image
+
+    target_size = (int(component["width"]), int(component["height"]))
+    component_id = str(component["id"])
+    try:
+        with Image.open(io.BytesIO(image_bytes)) as raw:
+            img = raw.convert("RGBA")
+            raw_size = {"width": img.width, "height": img.height}
+            if component_id == "background":
+                normalized = _fit_cover(img, target_size)
+                normalized.putalpha(Image.new("L", normalized.size, 255))
+                return _pil_to_png_bytes(normalized), {
+                    "ok": True,
+                    "rawSize": raw_size,
+                    "normalizedSize": {"width": target_size[0], "height": target_size[1]},
+                    "assetKind": "background",
+                    "alphaRequired": False,
+                }
+
+            alpha = img.getchannel("A")
+            corner_alpha = [
+                alpha.getpixel((0, 0)),
+                alpha.getpixel((img.width - 1, 0)),
+                alpha.getpixel((0, img.height - 1)),
+                alpha.getpixel((img.width - 1, img.height - 1)),
+            ]
+            if all(value > 240 for value in corner_alpha):
+                return None, {
+                    "ok": False,
+                    "errorType": "NonTransparentBackground",
+                    "errorMessage": "Non-background asset has opaque corners; expected transparent background outside the card/object.",
+                    "rawSize": raw_size,
+                    "cornerAlpha": corner_alpha,
+                }
+
+            bbox = _alpha_bbox(img)
+            if not bbox:
+                return None, {
+                    "ok": False,
+                    "errorType": "EmptyAlpha",
+                    "errorMessage": "Generated asset is fully transparent.",
+                    "rawSize": raw_size,
+                }
+            if bbox[0] <= 1 and bbox[1] <= 1 and bbox[2] >= img.width - 1 and bbox[3] >= img.height - 1:
+                return None, {
+                    "ok": False,
+                    "errorType": "FullCanvasAsset",
+                    "errorMessage": "Non-background asset fills the whole generated canvas; expected isolated transparent asset.",
+                    "rawSize": raw_size,
+                    "alphaBounds": {"x": bbox[0], "y": bbox[1], "width": bbox[2] - bbox[0], "height": bbox[3] - bbox[1]},
+                }
+
+            content = img.crop(bbox)
+            normalized = _fit_contain(content, target_size)
+            return _pil_to_png_bytes(normalized), {
+                "ok": True,
+                "rawSize": raw_size,
+                "normalizedSize": {"width": target_size[0], "height": target_size[1]},
+                "assetKind": "transparent-asset",
+                "alphaBounds": {"x": bbox[0], "y": bbox[1], "width": bbox[2] - bbox[0], "height": bbox[3] - bbox[1]},
+                "alphaRequired": True,
+            }
+    except Exception as e:
+        return None, {"ok": False, "errorType": type(e).__name__, "errorMessage": str(e)}
 
 
 def _category_attempt_log(component_id: str, attempt: dict):
@@ -667,21 +860,34 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
         attempt = {"componentId": component_id, "attempt": attempt_no, **report}
 
         if image_bytes is not None:
-            safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in component_id).strip("-") or "component"
-            path = GEN_DIR / f"layout-{safe_id}-{uuid.uuid4().hex[:8]}.png"
-            path.write_bytes(image_bytes)
-            validation = _validate_generated_image(path)
-            attempt["fileValidation"] = validation
-            if validation.get("ok"):
+            normalized_bytes, asset_validation = _normalize_generated_component_image(component, image_bytes)
+            attempt["assetValidation"] = asset_validation
+            if normalized_bytes is not None and asset_validation.get("ok"):
+                safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in component_id).strip("-") or "component"
+                path = GEN_DIR / f"layout-{safe_id}-{uuid.uuid4().hex[:8]}.png"
+                path.write_bytes(normalized_bytes)
+                file_validation = _validate_generated_image(path)
+                attempt["fileValidation"] = file_validation
+                if not file_validation.get("ok"):
+                    attempt.update({
+                        "status": "failed",
+                        "errorType": file_validation.get("errorType"),
+                        "errorMessage": file_validation.get("errorMessage"),
+                        "outputPath": f"/generated/{path.name}",
+                    })
+                    attempts.append(attempt)
+                    _category_attempt_log(component_id, attempt)
+                    if attempt_no == 1:
+                        await asyncio.sleep(1)
+                    continue
                 attempt.update({"status": "success", "outputPath": f"/generated/{path.name}"})
                 attempts.append(attempt)
                 _category_attempt_log(component_id, attempt)
                 return f"/generated/{path.name}", attempts
             attempt.update({
                 "status": "failed",
-                "errorType": validation.get("errorType"),
-                "errorMessage": validation.get("errorMessage"),
-                "outputPath": f"/generated/{path.name}",
+                "errorType": asset_validation.get("errorType"),
+                "errorMessage": asset_validation.get("errorMessage"),
             })
 
         attempts.append(attempt)
@@ -692,8 +898,8 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
     raise ComponentGenerationError(component_id, attempts)
 
 
-async def _generate_layout_components(layout_map: dict, style_brief: str = "") -> dict[str, str]:
-    errors = _validate_layout_map(layout_map)
+async def _generate_layout_components(layout_map: dict, style_brief: str = "", allow_extra: bool = True) -> dict[str, str]:
+    errors = _layout_map_errors(layout_map, allow_extra)
     if errors:
         raise RuntimeError("Invalid layout map: " + "; ".join(errors))
 
@@ -717,8 +923,10 @@ def _text_style_with_z(layer: dict) -> dict:
 
 def _layout_image_component(run_id: str, item: dict, content: str) -> dict:
     style = {"assetType": "background" if item["id"] == "background" else item["id"], "zIndex": item["zIndex"]}
+    name = _component_name(item["id"])
     return {
         "id": f"layout-{item['id']}-{run_id}",
+        "name": name,
         "type": "image",
         "x": item["x"],
         "y": item["y"],
@@ -734,8 +942,10 @@ def _layout_image_component(run_id: str, item: dict, content: str) -> dict:
 
 def _layout_text_component(run_id: str, item: dict, content: str, suffix: str = "") -> dict:
     style = _text_style_with_z(item)
+    name = _component_name(item["id"], suffix)
     component = {
         "id": f"layout-{item['id']}{suffix}-{run_id}",
+        "name": name,
         "type": "text",
         "x": item["x"],
         "y": item["y"],
@@ -750,6 +960,23 @@ def _layout_text_component(run_id: str, item: dict, content: str, suffix: str = 
         "style": style,
     }
     return component
+
+
+def _component_name(component_id: str, suffix: str = "") -> str:
+    normalized = component_id.replace("_", "-")
+    if normalized == "background":
+        return "背景"
+    if normalized == "title-card":
+        return "标题卡片"
+    if normalized == "playlist-card":
+        return "歌单卡片"
+    if "title" in normalized:
+        return "标题"
+    if "song" in normalized or "playlist" in normalized:
+        if suffix.startswith("-col-"):
+            return f"歌单 {suffix.removeprefix('-col-')}"
+        return "歌单"
+    return normalized
 
 
 def _text_components_from_layer(run_id: str, layer: dict, user_inputs: dict) -> list[dict]:
@@ -775,8 +1002,12 @@ def _text_components_from_layer(run_id: str, layer: dict, user_inputs: dict) -> 
     return [_layout_text_component(run_id, layer, "")]
 
 
-def _assemble_design_document(layout_map: dict, assets: dict[str, str], user_inputs: dict) -> dict:
-    errors = _validate_layout_map(layout_map)
+def _allow_extra_playlist_components(description: str) -> bool:
+    return bool(description.strip())
+
+
+def _assemble_design_document(layout_map: dict, assets: dict[str, str], user_inputs: dict, allow_extra: bool = True) -> dict:
+    errors = _layout_map_errors(layout_map, allow_extra)
     if errors:
         raise RuntimeError("Invalid layout map: " + "; ".join(errors))
 
@@ -1220,7 +1451,7 @@ async def generate_layout_map(req: LayoutMapRequest):
         prompt = _layout_prompt(req, context)
         text = await _responses_text(prompt)
         layout_map = _extract_json_object(text)
-        errors = _validate_layout_map(layout_map)
+        errors = _layout_map_errors(layout_map, _allow_extra_playlist_components(req.description))
         if errors:
             return LayoutMapResponse(ok=False, error="Invalid layout map: " + "; ".join(errors), provider="responses-api")
         return LayoutMapResponse(ok=True, layout_map=layout_map, provider="responses-api")
@@ -1231,7 +1462,11 @@ async def generate_layout_map(req: LayoutMapRequest):
 @app.post("/api/ai/generate-components", response_model=GenerateComponentsResponse)
 async def generate_components(req: GenerateComponentsRequest):
     try:
-        assets = await _generate_layout_components(req.layout_map, req.style_brief)
+        assets = await _generate_layout_components(
+            req.layout_map,
+            _component_style_brief(req.style_brief, req.description),
+            _allow_extra_playlist_components(req.description),
+        )
         return GenerateComponentsResponse(ok=True, assets=assets, provider="responses-image-generation")
     except ComponentGenerationError as e:
         return GenerateComponentsResponse(
@@ -1248,7 +1483,12 @@ async def generate_components(req: GenerateComponentsRequest):
 async def assemble_layout(req: AssembleLayoutRequest):
     try:
         user_inputs = {"title": req.title, "songs": req.songs, "description": req.description}
-        document = _assemble_design_document(req.layout_map, req.assets, user_inputs)
+        document = _assemble_design_document(
+            req.layout_map,
+            req.assets,
+            user_inputs,
+            _allow_extra_playlist_components(req.description),
+        )
         preview_url = _compose_layout_preview(document)
         document["meta"]["thumbnail"] = preview_url
         return AssembleLayoutResponse(ok=True, document=document, preview_url=preview_url, provider="layout-assembler")
@@ -1281,15 +1521,20 @@ async def generate_category(req: CategoryGenerateRequest):
         context = _read_playlist_context()
         layout_text = await _responses_text(_layout_prompt(map_req, context))
         layout_map = _extract_json_object(layout_text)
-        errors = _validate_layout_map(layout_map)
+        errors = _layout_map_errors(layout_map, _allow_extra_playlist_components(req.description))
         if errors:
             return GenerateResponse(ok=False, error="Layout map invalid: " + "; ".join(errors))
 
         stage = "components"
-        assets = await _generate_layout_components(layout_map, req.style)
+        allow_extra = _allow_extra_playlist_components(req.description)
+        assets = await _generate_layout_components(
+            layout_map,
+            _component_style_brief(req.style, req.description),
+            allow_extra,
+        )
         stage = "assemble"
         user_inputs = {"title": req.title, "songs": req.songs, "description": req.description}
-        document = _assemble_design_document(layout_map, assets, user_inputs)
+        document = _assemble_design_document(layout_map, assets, user_inputs, allow_extra)
         preview_url = _compose_layout_preview(document)
         document["meta"]["thumbnail"] = preview_url
         return GenerateResponse(ok=True, document=document, image_url=preview_url, provider="category-composition")
