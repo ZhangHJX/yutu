@@ -16,6 +16,7 @@ import json
 import uuid
 import time
 import hashlib
+import math
 import random
 import asyncio
 import base64
@@ -39,15 +40,27 @@ GEN_DIR.mkdir(parents=True, exist_ok=True)
 MINIMAL_PLAYLIST_IMAGE_IDS = {"background", "title-card", "playlist-card"}
 CARD_COMPONENT_IDS = {"title-card", "playlist-card"}
 CARD_KEY_COLOR = (255, 0, 255)
-AVAILABLE_TEXT_FONTS = {"sans-serif", "Arial", "Helvetica", "Georgia", "Times New Roman", "PingFang SC", "Microsoft YaHei"}
+AVAILABLE_TEXT_FONTS = {
+    "sans-serif",
+    "Arial",
+    "Helvetica",
+    "Georgia",
+    "Times New Roman",
+    "PingFang SC",
+    "Microsoft YaHei",
+    "Source Han Sans",
+    "Noto Sans SC",
+    "Roboto",
+    "Open Sans",
+    "Playfair Display",
+    "Dancing Script",
+}
 FONT_ALIASES = {
     "system": "sans-serif",
-    "Roboto": "Arial",
-    "Noto Sans": "sans-serif",
-    "Noto Sans SC": "PingFang SC",
-    "Playfair Display": "Georgia",
+    "Noto Sans": "Noto Sans SC",
 }
 SONG_PREFIX_PATTERNS = {"♡{index}", "{index}.", "•", ""}
+MIN_SONG_COLUMN_WIDTH = 72
 
 # ── FastAPI ────────────────────────────────────────────
 app = FastAPI(title="语图 AI 生图服务")
@@ -381,13 +394,19 @@ def _format_song_prefix(pattern: str, index: int) -> str:
     return f"{pattern}{index:02d} "
 
 
-def _user_song_columns_with_prefix(songs: list[str], pattern: str) -> list[str]:
+def _user_song_columns_with_prefix(songs: list[str], pattern: str, column_count: int) -> list[str]:
     items = [song.strip() for song in songs if song.strip()][:32]
-    columns = [items[i::3] for i in range(3)]
-    return [
-        "\n".join(f"{_format_song_prefix(pattern, i * 3 + idx + 1)}{song}" for idx, song in enumerate(column))
-        for i, column in enumerate(columns)
-    ]
+    if not items:
+        return []
+    column_count = min(max(1, column_count), len(items))
+    column_size = math.ceil(len(items) / column_count)
+    columns = []
+    for start in range(0, len(items), column_size):
+        column = items[start : start + column_size]
+        columns.append(
+            "\n".join(f"{_format_song_prefix(pattern, start + idx + 1)}{song}" for idx, song in enumerate(column))
+        )
+    return columns
 
 
 def _template_prompts(style: str) -> dict[str, str]:
@@ -558,10 +577,12 @@ Rules:
    - Card components should be sized to contain their paired text layer plus padding.
    - Text layers must not overlap outside their paired cards and must never use full-canvas bounds.
 12. Text styles must match the user's style and poster mood. The title should feel like poster headline typography; the songs should feel like playlist/list typography.
-13. Available fonts for text layers: sans-serif, Arial, Helvetica, Georgia, Times New Roman, PingFang SC, Microsoft YaHei. Choose only from this list.
-14. Text layers must include full editable style: fontFamily, fontSize, fontWeight, color, textAlign, lineHeight, letterSpacing, rotation, opacity. Song style may also include prefixPattern, one of: "♡{{index}}", "{{index}}.", "•", "".
+13. Available fonts for text layers: sans-serif, Arial, Helvetica, Georgia, Times New Roman, PingFang SC, Microsoft YaHei, Source Han Sans, Noto Sans SC, Roboto, Open Sans, Playfair Display, Dancing Script. Choose only from this list.
+14. Text layers must include full editable style: fontFamily, fontSize, fontWeight, fontStyle, color, textAlign, lineHeight, letterSpacing, rotation, opacity, stroke, strokeWidth, shadow.
+15. Song text layers must include columnCount (1, 2, or 3), columnGap, flow="vertical-then-horizontal", and prefixPattern, one of: "♡{{index}}", "{{index}}.", "•", "".
+16. Decide song columnCount from playlist-card width/height, song_count, and visual style. Do not default to 3 columns when 1 or 2 columns read better.
 15. Use no Fabric fallback; image components are real generated assets.
-16. If the input is underspecified and use_default_layout is true, choose a conservative playlist layout yourself.
+17. If the input is underspecified and use_default_layout is true, choose a conservative playlist layout yourself.
 
 Required JSON shape:
 {{
@@ -614,10 +635,14 @@ Required JSON shape:
         "fontFamily": "system",
         "fontSize": 30,
         "fontWeight": "bold",
+        "fontStyle": "normal",
         "color": "#ffffff",
         "textAlign": "center",
         "lineHeight": 1.1,
-        "letterSpacing": 0,
+        "letterSpacing": 1,
+        "stroke": "#e35f9f",
+        "strokeWidth": 2,
+        "shadow": {{"color": "rgba(0,0,0,0.25)", "blur": 6, "offsetX": 0, "offsetY": 3}},
         "rotation": 0,
         "opacity": 1
       }}
@@ -631,14 +656,21 @@ Required JSON shape:
       "width": 306,
       "height": 180,
       "zIndex": 60,
+      "columnCount": 2,
+      "columnGap": 12,
+      "flow": "vertical-then-horizontal",
       "style": {{
         "fontFamily": "system",
         "fontSize": 11,
         "fontWeight": "normal",
+        "fontStyle": "normal",
         "color": "#e35f9f",
         "textAlign": "left",
         "lineHeight": 1.35,
         "letterSpacing": 0,
+        "stroke": "#ffffff",
+        "strokeWidth": 1,
+        "shadow": {{"color": "rgba(120,40,90,0.25)", "blur": 4, "offsetX": 0, "offsetY": 2}},
         "rotation": 0,
         "opacity": 1,
         "prefixPattern": "♡{{index}}"
@@ -690,11 +722,15 @@ def _validate_layout_map(layout_map: dict) -> list[str]:
                 if not isinstance(style, dict):
                     errors.append(f"{prefix}.style_missing")
                     continue
-                for field in ("fontFamily", "fontSize", "fontWeight", "color", "textAlign", "lineHeight", "letterSpacing", "rotation", "opacity"):
+                for field in ("fontFamily", "fontSize", "fontWeight", "fontStyle", "color", "textAlign", "lineHeight", "letterSpacing", "rotation", "opacity", "stroke", "strokeWidth", "shadow"):
                     if field not in style:
                         errors.append(f"{prefix}.style.{field}_missing")
                 if not item.get("contentSource"):
                     errors.append(f"{prefix}.contentSource_missing")
+                if item.get("contentSource") == "user.songs":
+                    for field in ("columnCount", "columnGap", "flow"):
+                        if field not in item:
+                            errors.append(f"{prefix}.{field}_missing")
     text_sources = {item.get("contentSource") for item in layout_map.get("textLayers", []) if isinstance(item, dict)}
     extra_sources = sorted(source for source in text_sources if source not in {"user.title", "user.songs"})
     errors.extend(f"playlist.unsupported_text_source.{item}" for item in extra_sources)
@@ -1267,14 +1303,33 @@ def _number(value, fallback: float) -> float:
         return fallback
 
 
+def _clamp_number(value, fallback: float, minimum: float, maximum: float) -> float:
+    return min(max(_number(value, fallback), minimum), maximum)
+
+
+def _normalize_shadow(value) -> dict:
+    shadow = value if isinstance(value, dict) else {}
+    color = str(shadow.get("color") or "rgba(0,0,0,0.25)")
+    return {
+        "color": color,
+        "blur": _clamp_number(shadow.get("blur"), 0, 0, 12),
+        "offsetX": _clamp_number(shadow.get("offsetX"), 0, -8, 8),
+        "offsetY": _clamp_number(shadow.get("offsetY"), 0, -8, 8),
+    }
+
+
 def _normalize_text_style(style: dict, source: str) -> dict:
     normalized = dict(style)
     normalized["fontFamily"] = _normalize_font_family(normalized.get("fontFamily"))
     normalized["fontSize"] = int(_number(normalized.get("fontSize"), 28 if source == "user.title" else 11))
     normalized["lineHeight"] = _number(normalized.get("lineHeight"), 1.05 if source == "user.title" else 1.35)
     normalized["opacity"] = _number(normalized.get("opacity"), 1)
-    normalized["letterSpacing"] = _number(normalized.get("letterSpacing"), 0)
+    normalized["letterSpacing"] = _clamp_number(normalized.get("letterSpacing"), 0, -2, 8)
     normalized["rotation"] = _number(normalized.get("rotation"), 0)
+    normalized["fontStyle"] = normalized.get("fontStyle") if normalized.get("fontStyle") in {"normal", "italic", "oblique"} else "normal"
+    normalized["stroke"] = normalized.get("stroke") or ""
+    normalized["strokeWidth"] = _clamp_number(normalized.get("strokeWidth"), 0, 0, 4)
+    normalized["shadow"] = _normalize_shadow(normalized.get("shadow"))
     if source == "user.title":
         if str(normalized.get("fontWeight", "")).lower() in {"", "normal", "400"}:
             normalized["fontWeight"] = "bold"
@@ -1285,6 +1340,24 @@ def _normalize_text_style(style: dict, source: str) -> dict:
         normalized["prefixPattern"] = _normalize_prefix_pattern(normalized.get("prefixPattern"))
     normalized["color"] = normalized.get("color") or ("#ffffff" if source == "user.title" else "#e35f9f")
     return normalized
+
+
+def _normalize_song_column_count(layer: dict, song_count: int) -> int:
+    count = int(_clamp_number(layer.get("columnCount"), 2, 1, 3))
+    if song_count <= 8:
+        count = min(count, 1)
+    elif song_count <= 16:
+        count = min(count, 2)
+    gap = int(_clamp_number(layer.get("columnGap"), 6, 0, 40))
+    while count > 1 and (float(layer["width"]) - gap * (count - 1)) / count < MIN_SONG_COLUMN_WIDTH:
+        count -= 1
+    return count
+
+
+def _normalize_song_column_gap(layer: dict, column_count: int) -> int:
+    if column_count <= 1:
+        return 0
+    return int(_clamp_number(layer.get("columnGap"), 6, 0, 40))
 
 
 def _layout_text_component(run_id: str, item: dict, content: str, suffix: str = "") -> dict:
@@ -1383,11 +1456,13 @@ def _text_components_from_layer(run_id: str, layer: dict, user_inputs: dict) -> 
         return [_layout_text_component(run_id, layer, user_inputs.get("description", ""))]
     if source == "user.songs":
         prefix_pattern = _normalize_prefix_pattern(layer.get("style", {}).get("prefixPattern"))
-        columns = _user_song_columns_with_prefix(user_inputs.get("songs", []), prefix_pattern)
+        song_count = len([song for song in user_inputs.get("songs", []) if str(song).strip()])
+        column_count = _normalize_song_column_count(layer, song_count)
+        columns = _user_song_columns_with_prefix(user_inputs.get("songs", []), prefix_pattern, column_count)
         if not columns:
             return [_layout_text_component(run_id, layer, "")]
-        gap = 6
-        col_w = (layer["width"] - gap * 2) / 3
+        gap = _normalize_song_column_gap(layer, len(columns))
+        col_w = (layer["width"] - gap * (len(columns) - 1)) / len(columns)
         components = []
         for index, content in enumerate(columns):
             col_layer = dict(layer)

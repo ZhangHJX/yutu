@@ -47,7 +47,7 @@ interface EditorPageProps {
 }
 
 /* ===== 文字属性预设 ===== */
-const FONTS = ["sans-serif", "Arial", "Helvetica", "Georgia", "Times New Roman", "Courier New", "PingFang SC", "Microsoft YaHei"];
+const FONTS = ["sans-serif", "Arial", "Helvetica", "Georgia", "Times New Roman", "Courier New", "PingFang SC", "Microsoft YaHei", "Source Han Sans", "Noto Sans SC", "Roboto", "Open Sans", "Playfair Display", "Dancing Script"];
 const FONT_SIZES = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 42, 48, 56, 64, 72];
 const SHAPES = [
   { key: "rect", label: "矩形", icon: "▬" },
@@ -489,6 +489,16 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
   const renderTextProps = () => {
     if (!isTextSelected || !selectedComp) return null;
     const s = selectedComp.style as Record<string, unknown>;
+    const shadow = (s.shadow as Record<string, unknown>) ?? {};
+    const updateShadow = (changes: Record<string, unknown>) => updateSelectedStyle({
+      shadow: {
+        color: (shadow.color as string) ?? "rgba(0,0,0,0.25)",
+        blur: (shadow.blur as number) ?? 0,
+        offsetX: (shadow.offsetX as number) ?? 0,
+        offsetY: (shadow.offsetY as number) ?? 0,
+        ...changes,
+      },
+    });
 
     return (
       <div className="text-props-panel">
@@ -536,6 +546,54 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
             style={{ width: 48 }}
           />
           <span className="tp-hint">行距</span>
+        </div>
+        <div className="text-props-row">
+          <input
+            type="number"
+            className="tp-number"
+            value={(s.letterSpacing as number) ?? 0}
+            min={-2} max={8} step={0.5}
+            onChange={(e) => updateSelectedStyle({ letterSpacing: Number(e.target.value) })}
+            style={{ width: 48 }}
+          />
+          <span className="tp-hint">字距</span>
+          <div className="tp-color-wrap">
+            <input
+              type="color"
+              className="tp-color"
+              value={(s.stroke as string) || "#000000"}
+              onChange={(e) => updateSelectedStyle({ stroke: e.target.value })}
+            />
+            <span className="tp-color-label">描边</span>
+          </div>
+          <input
+            type="number"
+            className="tp-number"
+            value={(s.strokeWidth as number) ?? 0}
+            min={0} max={4} step={0.5}
+            onChange={(e) => updateSelectedStyle({ strokeWidth: Number(e.target.value) })}
+            style={{ width: 48 }}
+          />
+        </div>
+        <div className="text-props-row">
+          <div className="tp-color-wrap">
+            <input
+              type="color"
+              className="tp-color"
+              value={(shadow.color as string)?.startsWith("#") ? (shadow.color as string) : "#000000"}
+              onChange={(e) => updateShadow({ color: e.target.value })}
+            />
+            <span className="tp-color-label">阴影</span>
+          </div>
+          <input
+            type="number"
+            className="tp-number"
+            value={(shadow.blur as number) ?? 0}
+            min={0} max={12} step={1}
+            onChange={(e) => updateShadow({ blur: Number(e.target.value) })}
+            style={{ width: 48 }}
+          />
+          <span className="tp-hint">模糊</span>
         </div>
         <div className="text-props-row tp-content-row">
           <textarea

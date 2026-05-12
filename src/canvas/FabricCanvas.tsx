@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Canvas, Rect, Textbox, Ellipse, Triangle, FabricImage, FabricObject } from "fabric";
+import { Canvas, Rect, Textbox, Ellipse, Triangle, FabricImage, FabricObject, Shadow } from "fabric";
 import type { DesignDocument, DesignComponent } from "@/core/DesignDocument";
 
 interface FabricCanvasProps {
@@ -37,6 +37,26 @@ function fontFamilyWithFallback(fontFamily: string) {
   if (font.includes(",")) return font;
   if (["serif", "sans-serif", "monospace"].includes(font)) return `${font}, ${fallback}`;
   return `"${font}", ${fallback}`;
+}
+
+function fabricCharSpacing(value: unknown, fontSize: number) {
+  const spacing = typeof value === "number" ? value : Number(value ?? 0);
+  return Number.isFinite(spacing) ? Math.round((spacing * 1000) / fontSize) : 0;
+}
+
+function fabricShadow(value: unknown) {
+  if (!value || typeof value !== "object") return undefined;
+  const shadow = value as Record<string, unknown>;
+  const blur = Number(shadow.blur ?? 0);
+  const offsetX = Number(shadow.offsetX ?? 0);
+  const offsetY = Number(shadow.offsetY ?? 0);
+  if (!blur && !offsetX && !offsetY) return undefined;
+  return new Shadow({
+    color: (shadow.color as string) ?? "rgba(0,0,0,0.25)",
+    blur,
+    offsetX,
+    offsetY,
+  });
 }
 
 const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function FabricCanvas(
@@ -495,6 +515,10 @@ function componentToFabric(
         linethrough: (s.linethrough as boolean) ?? false,
         textAlign: (s.textAlign as "left" | "center" | "right" | "justify") ?? "left",
         lineHeight: (s.lineHeight as number) ?? 1.2,
+        charSpacing: fabricCharSpacing(s.letterSpacing, (s.fontSize as number) ?? 24),
+        stroke: (s.stroke as string) || undefined,
+        strokeWidth: (s.strokeWidth as number) ?? 0,
+        shadow: fabricShadow(s.shadow),
       });
     }
 
