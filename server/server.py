@@ -39,6 +39,15 @@ GEN_DIR.mkdir(parents=True, exist_ok=True)
 MINIMAL_PLAYLIST_IMAGE_IDS = {"background", "title-card", "playlist-card"}
 CARD_COMPONENT_IDS = {"title-card", "playlist-card"}
 CARD_KEY_COLOR = (255, 0, 255)
+AVAILABLE_TEXT_FONTS = {"sans-serif", "Arial", "Helvetica", "Georgia", "Times New Roman", "PingFang SC", "Microsoft YaHei"}
+FONT_ALIASES = {
+    "system": "sans-serif",
+    "Roboto": "Arial",
+    "Noto Sans": "sans-serif",
+    "Noto Sans SC": "PingFang SC",
+    "Playfair Display": "Georgia",
+}
+SONG_PREFIX_PATTERNS = {"♡{index}", "{index}.", "•", ""}
 
 # ── FastAPI ────────────────────────────────────────────
 app = FastAPI(title="语图 AI 生图服务")
@@ -362,6 +371,25 @@ def _user_song_columns(songs: list[str]) -> list[str]:
     ]
 
 
+def _format_song_prefix(pattern: str, index: int) -> str:
+    if not pattern:
+        return ""
+    if pattern == "•":
+        return "• "
+    if "{index}" in pattern:
+        return pattern.replace("{index}", f"{index:02d}") + " "
+    return f"{pattern}{index:02d} "
+
+
+def _user_song_columns_with_prefix(songs: list[str], pattern: str) -> list[str]:
+    items = [song.strip() for song in songs if song.strip()][:32]
+    columns = [items[i::3] for i in range(3)]
+    return [
+        "\n".join(f"{_format_song_prefix(pattern, i * 3 + idx + 1)}{song}" for idx, song in enumerate(column))
+        for i, column in enumerate(columns)
+    ]
+
+
 def _template_prompts(style: str) -> dict[str, str]:
     style_brief = (
         f"{style}. Dreamy pastel pink, warm cozy light, soft-focus creamy texture, "
@@ -523,10 +551,17 @@ Rules:
 8. Non-background image components must request transparent background outside the visible card/object.
 9. Title-card and playlist-card are only visual containers. They must not contain readable text, song names, or user words.
 10. The background prompt must describe only the background itself: environment, texture, lighting, mood, and color palette. It must not mention title, playlist, card, panel, text area, player, buttons, list box, frame, border, or any other component.
-11. Text layer bounds must match their content area. The title text layer must not cover the whole canvas; keep it inside the title-card area.
-12. Text layers must include full editable style: fontFamily, fontSize, fontWeight, color, textAlign, lineHeight, letterSpacing, rotation, opacity.
-13. Use no Fabric fallback; image components are real generated assets.
-14. If the input is underspecified and use_default_layout is true, choose a conservative playlist layout yourself.
+11. Layout binding rules:
+   - title-card and the user.title text layer are a bound pair.
+   - playlist-card and the user.songs text layer are a bound pair.
+   - Text layers must be fully inside the visible area of their paired card, with safe padding.
+   - Card components should be sized to contain their paired text layer plus padding.
+   - Text layers must not overlap outside their paired cards and must never use full-canvas bounds.
+12. Text styles must match the user's style and poster mood. The title should feel like poster headline typography; the songs should feel like playlist/list typography.
+13. Available fonts for text layers: sans-serif, Arial, Helvetica, Georgia, Times New Roman, PingFang SC, Microsoft YaHei. Choose only from this list.
+14. Text layers must include full editable style: fontFamily, fontSize, fontWeight, color, textAlign, lineHeight, letterSpacing, rotation, opacity. Song style may also include prefixPattern, one of: "♡{{index}}", "{{index}}.", "•", "".
+15. Use no Fabric fallback; image components are real generated assets.
+16. If the input is underspecified and use_default_layout is true, choose a conservative playlist layout yourself.
 
 Required JSON shape:
 {{
@@ -605,7 +640,8 @@ Required JSON shape:
         "lineHeight": 1.35,
         "letterSpacing": 0,
         "rotation": 0,
-        "opacity": 1
+        "opacity": 1,
+        "prefixPattern": "♡{{index}}"
       }}
     }}
   ]
@@ -1035,20 +1071,28 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                 }
 
             content = img.crop(bbox)
-            normalized = _fit_contain(content, target_size)
-            normalized_bbox = _alpha_bbox(normalized)
-            normalized_alpha_bounds = None
-            if normalized_bbox:
-                normalized_alpha_bounds = {
-                    "x": normalized_bbox[0],
-                    "y": normalized_bbox[1],
-                    "width": normalized_bbox[2] - normalized_bbox[0],
-                    "height": normalized_bbox[3] - normalized_bbox[1],
+            contained = _fit_contain(content, target_size)
+            normalized_bbox = _alpha_bbox(contained)
+            if not normalized_bbox:
+                return None, {
+                    "ok": False,
+                    "errorType": "EmptyNormalizedAlpha",
+                    "errorMessage": "Normalized asset is fully transparent.",
+                    "rawSize": raw_size,
                 }
+            normalized = contained.crop(normalized_bbox)
+            normalized_alpha_bounds = {
+                "x": 0,
+                "y": 0,
+                "width": normalized.width,
+                "height": normalized.height,
+            }
             return _pil_to_png_bytes(normalized), {
                 "ok": True,
                 "rawSize": raw_size,
-                "normalizedSize": {"width": target_size[0], "height": target_size[1]},
+                "slotSize": {"width": target_size[0], "height": target_size[1]},
+                "normalizedSize": {"width": normalized.width, "height": normalized.height},
+                "contentOffset": {"x": normalized_bbox[0], "y": normalized_bbox[1]},
                 "assetKind": "transparent-asset",
                 "alphaBounds": {"x": bbox[0], "y": bbox[1], "width": bbox[2] - bbox[0], "height": bbox[3] - bbox[1]},
                 "normalizedAlphaBounds": normalized_alpha_bounds,
@@ -1143,6 +1187,8 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
         assets[component_id] = {
             "url": asset_url,
             "normalizedAlphaBounds": success.get("normalizedAlphaBounds"),
+            "contentOffset": success.get("contentOffset"),
+            "normalizedSize": success.get("normalizedSize"),
         }
         if index < len(image_components):
             await asyncio.sleep(2)
@@ -1150,24 +1196,37 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
 
 
 def _text_style_with_z(layer: dict) -> dict:
-    style = dict(layer["style"])
+    style = _normalize_text_style(layer["style"], str(layer.get("contentSource", "")))
     style["zIndex"] = layer["zIndex"]
-    if layer.get("contentSource") == "user.songs" and str(style.get("color", "")).lower() in {"#fff", "#ffffff", "white"}:
-        style["color"] = "#e35f9f"
     return style
 
 
-def _layout_image_component(run_id: str, item: dict, content: str) -> dict:
+def _asset_content_offset(asset) -> dict:
+    if isinstance(asset, dict) and isinstance(asset.get("contentOffset"), dict):
+        return asset["contentOffset"]
+    return {"x": 0, "y": 0}
+
+
+def _asset_normalized_size(asset, fallback: dict) -> dict:
+    if isinstance(asset, dict) and isinstance(asset.get("normalizedSize"), dict):
+        return asset["normalizedSize"]
+    return {"width": int(fallback["width"]), "height": int(fallback["height"])}
+
+
+def _layout_image_component(run_id: str, item: dict, asset) -> dict:
+    content = _asset_url(asset)
+    offset = _asset_content_offset(asset) if item["id"] != "background" else {"x": 0, "y": 0}
+    size = _asset_normalized_size(asset, item) if item["id"] != "background" else {"width": int(item["width"]), "height": int(item["height"])}
     style = {"assetType": "background" if item["id"] == "background" else item["id"], "zIndex": item["zIndex"]}
     name = _component_name(item["id"])
     return {
         "id": f"layout-{item['id']}-{run_id}",
         "name": name,
         "type": "image",
-        "x": item["x"],
-        "y": item["y"],
-        "width": item["width"],
-        "height": item["height"],
+        "x": int(item["x"]) + int(offset.get("x", 0)),
+        "y": int(item["y"]) + int(offset.get("y", 0)),
+        "width": int(size["width"]),
+        "height": int(size["height"]),
         "content": content,
         "editable": True,
         "editableProperties": [],
@@ -1188,6 +1247,44 @@ def _asset_alpha_bounds(asset) -> Optional[dict]:
     if isinstance(asset, dict):
         return asset.get("normalizedAlphaBounds")
     return None
+
+
+def _normalize_font_family(value) -> str:
+    font = str(value or "sans-serif").strip().strip("\"'")
+    font = FONT_ALIASES.get(font, font)
+    return font if font in AVAILABLE_TEXT_FONTS else "sans-serif"
+
+
+def _normalize_prefix_pattern(value) -> str:
+    pattern = str(value or "♡{index}").strip()
+    return pattern if pattern in SONG_PREFIX_PATTERNS else "♡{index}"
+
+
+def _number(value, fallback: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _normalize_text_style(style: dict, source: str) -> dict:
+    normalized = dict(style)
+    normalized["fontFamily"] = _normalize_font_family(normalized.get("fontFamily"))
+    normalized["fontSize"] = int(_number(normalized.get("fontSize"), 28 if source == "user.title" else 11))
+    normalized["lineHeight"] = _number(normalized.get("lineHeight"), 1.05 if source == "user.title" else 1.35)
+    normalized["opacity"] = _number(normalized.get("opacity"), 1)
+    normalized["letterSpacing"] = _number(normalized.get("letterSpacing"), 0)
+    normalized["rotation"] = _number(normalized.get("rotation"), 0)
+    if source == "user.title":
+        if str(normalized.get("fontWeight", "")).lower() in {"", "normal", "400"}:
+            normalized["fontWeight"] = "bold"
+        normalized["textAlign"] = normalized.get("textAlign") or "center"
+    elif source == "user.songs":
+        normalized["fontWeight"] = normalized.get("fontWeight") or "normal"
+        normalized["textAlign"] = normalized.get("textAlign") or "left"
+        normalized["prefixPattern"] = _normalize_prefix_pattern(normalized.get("prefixPattern"))
+    normalized["color"] = normalized.get("color") or ("#ffffff" if source == "user.title" else "#e35f9f")
+    return normalized
 
 
 def _layout_text_component(run_id: str, item: dict, content: str, suffix: str = "") -> dict:
@@ -1212,29 +1309,51 @@ def _layout_text_component(run_id: str, item: dict, content: str, suffix: str = 
     return component
 
 
-def _adjust_playlist_text_layers(layout_map: dict, assets: dict) -> list[dict]:
+def _card_text_rect(card: dict, bounds: dict, source: str) -> tuple[int, int, int, int]:
+    bounds_w = int(bounds["width"])
+    bounds_h = int(bounds["height"])
+    if source == "user.title":
+        pad_x = min(max(12, int(bounds_w * 0.08)), max(0, bounds_w // 4))
+        pad_y = min(max(8, int(bounds_h * 0.18)), max(0, bounds_h // 3))
+    else:
+        pad_x = min(max(18, int(bounds_w * 0.06)), max(0, bounds_w // 5))
+        pad_y = min(max(14, int(bounds_h * 0.08)), max(0, bounds_h // 5))
+    x = int(card["x"]) + int(bounds["x"]) + pad_x
+    y = int(card["y"]) + int(bounds["y"]) + pad_y
+    width = max(1, bounds_w - pad_x * 2)
+    height = max(1, bounds_h - pad_y * 2)
+    return x, y, width, height
+
+
+def _fit_title_style_to_rect(style: dict, height: int):
+    line_height = max(0.8, float(style.get("lineHeight") or 1.05))
+    max_font = max(8, int(height / line_height * 0.86))
+    style["fontSize"] = min(int(style.get("fontSize") or max_font), max_font)
+
+
+def _adjust_playlist_text_layers(layout_map: dict, assets: dict, image_components: list[dict]) -> list[dict]:
     text_layers = []
     card_by_source = {
         "user.title": "title-card",
         "user.songs": "playlist-card",
     }
-    padding_by_source = {
-        "user.title": (14, 8),
-        "user.songs": (18, 16),
-    }
-    component_by_id = {item.get("id"): item for item in layout_map.get("components", []) if isinstance(item, dict)}
+    component_by_slot = {item.get("slot"): item for item in image_components}
     for layer in layout_map["textLayers"]:
         adjusted = dict(layer)
+        adjusted["style"] = dict(layer.get("style", {}))
         source = adjusted.get("contentSource")
         card_id = card_by_source.get(source)
         bounds = _asset_alpha_bounds(assets.get(card_id)) if card_id else None
-        card = component_by_id.get(card_id)
+        card = component_by_slot.get(card_id)
         if bounds and card:
-            pad_x, pad_y = padding_by_source[source]
-            adjusted["x"] = int(card["x"]) + int(bounds["x"]) + pad_x
-            adjusted["y"] = int(card["y"]) + int(bounds["y"]) + pad_y
-            adjusted["width"] = max(1, int(bounds["width"]) - pad_x * 2)
-            adjusted["height"] = max(1, int(bounds["height"]) - pad_y * 2)
+            x, y, width, height = _card_text_rect(card, bounds, source)
+            adjusted["x"] = x
+            adjusted["y"] = y
+            adjusted["width"] = width
+            adjusted["height"] = height
+            if source == "user.title":
+                adjusted["style"]["textAlign"] = "center"
+                _fit_title_style_to_rect(adjusted["style"], height)
         text_layers.append(adjusted)
     return text_layers
 
@@ -1263,7 +1382,8 @@ def _text_components_from_layer(run_id: str, layer: dict, user_inputs: dict) -> 
     if source == "user.description":
         return [_layout_text_component(run_id, layer, user_inputs.get("description", ""))]
     if source == "user.songs":
-        columns = _user_song_columns(user_inputs.get("songs", []))
+        prefix_pattern = _normalize_prefix_pattern(layer.get("style", {}).get("prefixPattern"))
+        columns = _user_song_columns_with_prefix(user_inputs.get("songs", []), prefix_pattern)
         if not columns:
             return [_layout_text_component(run_id, layer, "")]
         gap = 6
@@ -1296,11 +1416,11 @@ def _assemble_design_document(layout_map: dict, assets: dict[str, str], user_inp
         asset_url = _asset_url(assets.get(component_id))
         if not asset_url:
             raise RuntimeError(f"Missing generated asset for component: {component_id}")
-        components.append(_layout_image_component(run_id, item, asset_url))
+        components.append(_layout_image_component(run_id, item, assets.get(component_id)))
 
     max_image_z = max((int(comp.get("style", {}).get("zIndex", 0)) for comp in components), default=0)
     text_z = max_image_z + 100
-    for layer in _adjust_playlist_text_layers(layout_map, assets):
+    for layer in _adjust_playlist_text_layers(layout_map, assets, components):
         text_components = _text_components_from_layer(run_id, layer, user_inputs)
         for comp in text_components:
             comp["style"]["zIndex"] = text_z

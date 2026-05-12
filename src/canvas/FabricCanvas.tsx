@@ -31,6 +31,14 @@ function isBackgroundComponent(component?: DesignComponent) {
   return component?.style?.assetType === "background";
 }
 
+function fontFamilyWithFallback(fontFamily: string) {
+  const font = fontFamily.trim() || "sans-serif";
+  const fallback = '"PingFang SC", "Microsoft YaHei", sans-serif';
+  if (font.includes(",")) return font;
+  if (["serif", "sans-serif", "monospace"].includes(font)) return `${font}, ${fallback}`;
+  return `"${font}", ${fallback}`;
+}
+
 const FabricCanvas = forwardRef<FabricCanvasHandle, FabricCanvasProps>(function FabricCanvas(
   { document, editable = false, zoom: controlledZoom, hiddenIds, selectedId, onComponentSelect, onComponentModify, onZoomChange },
   ref
@@ -479,7 +487,7 @@ function componentToFabric(
       return new Textbox(comp.content, {
         ...base,
         fontSize: (s.fontSize as number) ?? 24,
-        fontFamily: (s.fontFamily as string) ?? "sans-serif",
+        fontFamily: fontFamilyWithFallback((s.fontFamily as string) ?? "sans-serif"),
         fill: (s.color as string) ?? "#000000",
         fontWeight: (s.fontWeight as string) ?? "normal",
         fontStyle: (s.fontStyle as "normal" | "italic" | "oblique") ?? "normal",

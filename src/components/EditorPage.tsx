@@ -120,6 +120,8 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
   const [hiddenLayers, setHiddenLayers] = useState<Set<string>>(new Set());
   const [assetInfoMap, setAssetInfoMap] = useState<Map<string, AssetInfo>>(new Map());
   const [dragLayerId, setDragLayerId] = useState<string | null>(null);
+  const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
+  const [editingLayerName, setEditingLayerName] = useState("");
 
   /* ---- 调试信息 ────────────────────── */
   const BUILD_VER = "2026-05-06-15:03";
@@ -465,6 +467,23 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
       return next;
     });
   };
+  const startLayerRename = (id: string, name: string) => {
+    setEditingLayerId(id);
+    setEditingLayerName(name);
+  };
+  const commitLayerRename = () => {
+    const name = editingLayerName.trim();
+    if (!editingLayerId || !name) {
+      setEditingLayerId(null);
+      return;
+    }
+    updateDoc((prev) => ({
+      ...prev,
+      components: prev.components.map((c) => (c.id === editingLayerId ? { ...c, name } : c)),
+    }));
+    setEditingLayerId(null);
+  };
+  const cancelLayerRename = () => setEditingLayerId(null);
 
   /* ---- 选中组件渲染 ---- */
   const renderTextProps = () => {
@@ -686,7 +705,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
                   <div
                     key={comp.id}
                     className={`layer-item ${selectedId === comp.id ? "active" : ""} ${isHidden ? "layer-hidden" : ""} ${dragLayerId === comp.id ? "dragging" : ""}`}
-                    draggable
+                    draggable={editingLayerId !== comp.id}
                     onClick={() => handleLayerSelect(comp.id)}
                     onDragStart={() => { setDragLayerId(comp.id); setSelectedId(comp.id); }}
                     onDragOver={(e) => e.preventDefault()}
@@ -708,13 +727,25 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
                         "🖼"
                       ) : "▣"}
                     </span>
-                    {assetInfo ? (
-                      <span className="layer-name">
-                        <span className="layer-type-label">{assetInfo.type}</span>
-                        <span className="layer-asset-label">{layerName}</span>
-                      </span>
+                    {editingLayerId === comp.id ? (
+                      <input
+                        className="layer-name-input"
+                        value={editingLayerName}
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                        onDoubleClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setEditingLayerName(e.target.value)}
+                        onBlur={commitLayerRename}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") commitLayerRename();
+                          if (e.key === "Escape") cancelLayerRename();
+                        }}
+                      />
                     ) : (
-                      <span className="layer-name">{layerName}</span>
+                      <span className="layer-name" onDoubleClick={(e) => { e.stopPropagation(); startLayerRename(comp.id, layerName); }}>
+                        {assetInfo && <span className="layer-type-label">{assetInfo.type}</span>}
+                        <span className={assetInfo ? "layer-asset-label" : undefined}>{layerName}</span>
+                      </span>
                     )}
                   </div>
                 );
@@ -1062,6 +1093,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         .layer-item.dragging { opacity: 0.55; outline: 1px dashed #A29BFE; }
         .layer-icon { width: 18px; text-align: center; font-size: 12px; flex-shrink: 0; }
         .layer-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; flex-direction: column; gap: 1px; }
+        .layer-name-input { flex: 1; min-width: 0; background: #1f1f1f; color: #fff; border: 1px solid #6C5CE7; border-radius: 4px; font-size: 12px; padding: 3px 5px; outline: none; }
         .layer-btn { background: none; border: none; color: #666; font-size: 10px; cursor: pointer; padding: 2px 4px; }
         .layer-btn:hover { color: #e74c3c; }
         .layer-vis-btn { background: none; border: none; color: #888; font-size: 10px; cursor: pointer; padding: 2px; flex-shrink: 0; width: 16px; text-align: center; }
