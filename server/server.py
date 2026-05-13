@@ -973,6 +973,7 @@ def _layout_component_prompt(component: dict, style_brief: str, forbidden_zones:
     base_prompt = str(component["prompt"]).strip()
     style = style_brief.strip() or "Use the visual style implied by the component prompt."
     component_id = str(component["id"])
+    cutout_mode = str(component.get("cutoutMode") or "")
     is_background = component_id == "background"
     if is_background:
         zone_text = ""
@@ -994,12 +995,20 @@ def _layout_component_prompt(component: dict, style_brief: str, forbidden_zones:
             "No black, white, checkerboard, or matte background."
         )
     elif component_id in IRREGULAR_KEY_COMPONENT_IDS:
-        key_name, (r, g, b) = _component_irregular_key(component)
-        background_rule = (
-            f"Generate the asset on a flat pure chroma {key_name} background rgb({r},{g},{b}). "
-            f"Do not use {key_name} or any similar hue inside the asset. Do not cast shadows onto the chroma background. "
-            "The visible asset must remain fully inside the slot with a complete natural silhouette."
-        )
+        if cutout_mode == "transparent-alpha":
+            background_rule = (
+                "Generate the asset as a PNG with real transparent alpha outside the visible object/card. "
+                "The background outside the asset must be fully transparent pixels, not white, black, checkerboard, matte, or chroma color. "
+                "Preserve soft hair, feathered edges, and natural semi-transparent edge pixels in the alpha channel. "
+                "The visible asset must remain fully inside the slot with a complete natural silhouette."
+            )
+        else:
+            key_name, (r, g, b) = _component_irregular_key(component)
+            background_rule = (
+                f"Generate the asset on a flat pure chroma {key_name} background rgb({r},{g},{b}). "
+                f"Do not use {key_name} or any similar hue inside the asset. Do not cast shadows onto the chroma background. "
+                "The visible asset must remain fully inside the slot with a complete natural silhouette."
+            )
     else:
         background_rule = "Use real transparent alpha outside the visible card/object. No black, white, checkerboard, or matte background outside the asset."
     return (
@@ -1021,6 +1030,99 @@ def _component_style_brief(style: str, description: str) -> str:
     if brief and extra:
         return f"{brief}\nAdditional visual requirements: {extra}"
     return brief or extra
+
+
+def _fallback_style_guide(style_brief: str) -> dict:
+    text = style_brief.lower()
+    if any(word in text for word in ("green", "nature", "forest", "plant", "leaf", "grass", "绿色", "自然", "森林", "植物", "草地")):
+        palette = {
+            "backgroundBase": "#CFE8D1",
+            "cardBase": "#F2F8EE",
+            "accent": "#6FA66F",
+            "shadow": "#739173",
+            "highlight": "#FFFFFF",
+        }
+    elif any(word in text for word in ("blue", "ocean", "sea", "cyber", "night", "蓝色", "海洋", "赛博", "夜晚")):
+        palette = {
+            "backgroundBase": "#BFD8F8",
+            "cardBase": "#ECF4FF",
+            "accent": "#5F82D8",
+            "shadow": "#66789F",
+            "highlight": "#FFFFFF",
+        }
+    else:
+        palette = {
+            "backgroundBase": "#F8BFD0",
+            "cardBase": "#FFEAF1",
+            "accent": "#E85C86",
+            "shadow": "#C66A8A",
+            "highlight": "#FFFFFF",
+        }
+    return {
+        "palette": palette,
+        "lighting": "soft warm window light, low contrast, same ambient rim light across all assets",
+        "material": "creamy glass cards, soft plush foreground props, gentle matte pastel surfaces",
+        "source": "fallback",
+    }
+
+
+def _style_guide_prompt(style_brief: str) -> str:
+    style = style_brief.strip() or "No explicit user style. Infer a cohesive playlist poster style."
+    return f"""
+You create a shared visual style guide for all separately generated image components in one playlist poster.
+
+User/category/style input:
+{style}
+
+Rules:
+1. Infer one cohesive palette even if the user did not explicitly name colors.
+2. Keep background, cards, character, player, and foreground props in the same lighting and color temperature.
+3. Use concrete HEX colors so separate image generations do not drift into different pinks or unrelated tones.
+4. Do not include any user text, song names, letters, or numbers for image content.
+
+Return only JSON:
+{{
+  "palette": {{
+    "backgroundBase": "#RRGGBB",
+    "cardBase": "#RRGGBB",
+    "accent": "#RRGGBB",
+    "shadow": "#RRGGBB",
+    "highlight": "#RRGGBB"
+  }},
+  "lighting": "short lighting direction",
+  "material": "short material direction"
+}}
+""".strip()
+
+
+async def _select_shared_style_guide(style_brief: str) -> dict:
+    fallback = _fallback_style_guide(style_brief)
+    try:
+        data = _parse_layout_json(await _responses_text(_style_guide_prompt(style_brief)))
+        palette = data.get("palette") if isinstance(data.get("palette"), dict) else {}
+        return {
+            "palette": {**fallback["palette"], **{key: str(value) for key, value in palette.items()}},
+            "lighting": str(data.get("lighting") or fallback["lighting"]),
+            "material": str(data.get("material") or fallback["material"]),
+            "source": "responses-text",
+        }
+    except Exception as e:
+        result = dict(fallback)
+        result["error"] = str(e)[:300]
+        return result
+
+
+def _style_brief_with_guide(style_brief: str, style_guide: dict) -> str:
+    palette = style_guide.get("palette") if isinstance(style_guide.get("palette"), dict) else {}
+    palette_text = ", ".join(f"{key}={value}" for key, value in palette.items())
+    return (
+        f"{style_brief.strip() or 'Use the playlist category mood.'}\n"
+        "Shared style guide for every generated component:\n"
+        f"- palette: {palette_text}\n"
+        f"- lighting: {style_guide.get('lighting')}\n"
+        f"- material: {style_guide.get('material')}\n"
+        "All components must look like they belong to the same poster: same color temperature, same ambient light, same saturation family."
+    )
 
 
 def _normalize_irregular_key_name(value) -> str:
@@ -1132,6 +1234,38 @@ def _validate_generated_image(path: Path) -> dict:
 def _alpha_bbox(img):
     alpha = img.getchannel("A").point(lambda p: 255 if p > 10 else 0)
     return alpha.getbbox()
+
+
+def _transparent_alpha_report(img) -> dict:
+    alpha = img.getchannel("A")
+    w, h = img.size
+    data = alpha.tobytes()
+    transparent = sum(1 for value in data if value < 16)
+    transparent_ratio = transparent / max(1, w * h)
+
+    edge_values = []
+    for x in range(w):
+        edge_values.append(alpha.getpixel((x, 0)))
+        edge_values.append(alpha.getpixel((x, h - 1)))
+    for y in range(h):
+        edge_values.append(alpha.getpixel((0, y)))
+        edge_values.append(alpha.getpixel((w - 1, y)))
+    edge_transparent_ratio = sum(1 for value in edge_values if value < 32) / max(1, len(edge_values))
+    corner_alpha = [
+        alpha.getpixel((0, 0)),
+        alpha.getpixel((w - 1, 0)),
+        alpha.getpixel((0, h - 1)),
+        alpha.getpixel((w - 1, h - 1)),
+    ]
+    bbox = _alpha_bbox(img)
+    ok = bool(bbox) and (transparent_ratio >= 0.03 or edge_transparent_ratio >= 0.45) and min(corner_alpha) < 32
+    return {
+        "ok": ok,
+        "transparentRatio": transparent_ratio,
+        "edgeTransparentRatio": edge_transparent_ratio,
+        "cornerAlpha": corner_alpha,
+        "alphaBounds": {"x": bbox[0], "y": bbox[1], "width": bbox[2] - bbox[0], "height": bbox[3] - bbox[1]} if bbox else None,
+    }
 
 
 def _fit_cover(img, size: tuple[int, int]):
@@ -1391,19 +1525,30 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                 img = cleaned
                 cleanup_report = cleanup
             elif component_id in IRREGULAR_KEY_COMPONENT_IDS:
-                key_name, key_color = _component_irregular_key(component)
-                cleaned, cleanup = _remove_chroma_key_background(img, key_color, tolerance=IRREGULAR_KEY_TOLERANCE)
-                if cleaned is None:
-                    cleanup.update({
-                        "rawSize": raw_size,
-                        "keyName": key_name,
-                        "errorMessage": cleanup.get("errorMessage") or f"Chroma {key_name} background was not detected; retry generation instead of edge flood-fill.",
-                    })
-                    return None, cleanup
-                img, despill = _despill_primary_chroma_key(cleaned, key_color)
-                cleanup["keyName"] = key_name
-                cleanup["despill"] = despill
-                cleanup_report = cleanup
+                if component.get("cutoutMode") == "transparent-alpha":
+                    alpha_report = _transparent_alpha_report(img)
+                    if not alpha_report.get("ok"):
+                        alpha_report.update({
+                            "rawSize": raw_size,
+                            "errorType": "TransparentAlphaNotDetected",
+                            "errorMessage": "Generated asset does not contain usable transparent alpha; retry with chroma key fallback.",
+                        })
+                        return None, alpha_report
+                    cleanup_report = {"ok": True, "mode": "transparent-alpha", **alpha_report}
+                else:
+                    key_name, key_color = _component_irregular_key(component)
+                    cleaned, cleanup = _remove_chroma_key_background(img, key_color, tolerance=IRREGULAR_KEY_TOLERANCE)
+                    if cleaned is None:
+                        cleanup.update({
+                            "rawSize": raw_size,
+                            "keyName": key_name,
+                            "errorMessage": cleanup.get("errorMessage") or f"Chroma {key_name} background was not detected; retry generation instead of edge flood-fill.",
+                        })
+                        return None, cleanup
+                    img, despill = _despill_primary_chroma_key(cleaned, key_color)
+                    cleanup["keyName"] = key_name
+                    cleanup["despill"] = despill
+                    cleanup_report = cleanup
             else:
                 alpha = img.getchannel("A")
                 corner_alpha = [
@@ -1509,18 +1654,23 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
     component_id = str(component["id"])
     w = int(component["width"])
     h = int(component["height"])
-    prompt = _layout_component_prompt(component, style_brief, forbidden_zones)
     attempts = []
+    cutout_modes = ["transparent-alpha", "chroma-key"] if component_id in IRREGULAR_KEY_COMPONENT_IDS else ["default", "default"]
 
-    for attempt_no in (1, 2):
+    for attempt_no, cutout_mode in enumerate(cutout_modes, start=1):
+        attempt_component = dict(component)
+        if component_id in IRREGULAR_KEY_COMPONENT_IDS:
+            attempt_component["cutoutMode"] = cutout_mode
+        prompt = _layout_component_prompt(attempt_component, style_brief, forbidden_zones)
         image_bytes, report = await _try_gpt_image_generate_report(prompt, w, h)
         attempt = {"componentId": component_id, "attempt": attempt_no, **report}
         if component_id in IRREGULAR_KEY_COMPONENT_IDS:
             key_name, key_color = _component_irregular_key(component)
             attempt["chromaKey"] = {"keyName": key_name, "rgb": list(key_color)}
+            attempt["cutoutMode"] = cutout_mode
 
         if image_bytes is not None:
-            normalized_bytes, asset_validation = _normalize_generated_component_image(component, image_bytes)
+            normalized_bytes, asset_validation = _normalize_generated_component_image(attempt_component, image_bytes)
             attempt["assetValidation"] = asset_validation
             if normalized_bytes is not None and asset_validation.get("ok"):
                 safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in component_id).strip("-") or "component"
@@ -1567,9 +1717,18 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
     if errors:
         raise RuntimeError("Invalid layout map: " + "; ".join(errors))
 
+    style_guide = await _select_shared_style_guide(style_brief)
+    guided_style_brief = _style_brief_with_guide(style_brief, style_guide)
+    print(
+        "[LayoutComponents] shared style guide "
+        f"source={style_guide.get('source')} "
+        f"palette={style_guide.get('palette')}",
+        flush=True,
+    )
+
     image_components = [item for item in layout_map["components"] if item.get("type") == "image"]
     if any(str(item.get("id")) in IRREGULAR_KEY_COMPONENT_IDS for item in image_components):
-        key_report = await _select_irregular_key_name(style_brief)
+        key_report = await _select_irregular_key_name(guided_style_brief)
         print(
             "[LayoutComponents] irregular chroma key "
             f"name={key_report.get('keyName')} "
@@ -1583,7 +1742,7 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
     for index, component in enumerate(image_components, start=1):
         component_id = str(component["id"])
         print(f"[LayoutComponents] generating component {index}/{len(image_components)}: {component_id}", flush=True)
-        asset_url, attempts = await _generate_layout_component_with_retry(component, style_brief, forbidden_zones)
+        asset_url, attempts = await _generate_layout_component_with_retry(component, guided_style_brief, forbidden_zones)
         success = attempts[-1]
         assets[component_id] = {
             "url": asset_url,
