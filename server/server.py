@@ -38,6 +38,14 @@ OUT_DIR = ROOT / "out"
 GEN_DIR = OUT_DIR / "generated"
 GEN_DIR.mkdir(parents=True, exist_ok=True)
 MINIMAL_PLAYLIST_IMAGE_IDS = {"background", "title-card", "playlist-card"}
+FIXED_PLAYLIST_IMAGE_IDS = {
+    "background",
+    "main-visual",
+    "player-card",
+    "title-card",
+    "playlist-card",
+    "foreground-decor",
+}
 CARD_COMPONENT_IDS = {"title-card", "playlist-card"}
 CARD_KEY_COLOR = (255, 0, 255)
 AVAILABLE_TEXT_FONTS = {
@@ -681,6 +689,178 @@ Required JSON shape:
 """.strip()
 
 
+def _fixed_playlist_layout_map() -> dict:
+    return {
+        "category": "playlist",
+        "canvas": {"width": 390, "height": 585, "background": "#f8bfd0"},
+        "layoutPattern": "fixed-dreamy-player-poster",
+        "components": [
+            {
+                "id": "background",
+                "type": "image",
+                "x": 0,
+                "y": 0,
+                "width": 390,
+                "height": 585,
+                "zIndex": 0,
+                "prompt": (
+                    "Dreamy pastel pink bedroom background with soft window light, shelves, flowers, "
+                    "sparkles, bokeh, and a gentle romantic atmosphere. No cards, no player UI, no foreground objects, no text."
+                ),
+            },
+            {
+                "id": "main-visual",
+                "type": "image",
+                "x": 0,
+                "y": 70,
+                "width": 170,
+                "height": 280,
+                "zIndex": 20,
+                "prompt": (
+                    "Cute dreamy girl wearing pink headphones, soft anime-realistic illustration, upper body leaning forward, "
+                    "pink bow and heart accessories, transparent cutout. No text, no numbers, no logos."
+                ),
+            },
+            {
+                "id": "player-card",
+                "type": "image",
+                "x": 155,
+                "y": 80,
+                "width": 220,
+                "height": 185,
+                "zIndex": 30,
+                "prompt": (
+                    "Large rounded pastel music-player glass card with album-art area, heart artwork, play button shapes, "
+                    "previous and next icons as simple shapes, progress bar, equalizer bars, tiny hearts and music-note icons. "
+                    "Leave the right title area blank for editable text. No readable text, no letters, no numbers, no time labels."
+                ),
+            },
+            {
+                "id": "title-card",
+                "type": "image",
+                "x": 260,
+                "y": 120,
+                "width": 100,
+                "height": 58,
+                "zIndex": 36,
+                "prompt": (
+                    "Transparent soft highlight backing area inside the player card for a large editable title, "
+                    "subtle pink glow and tiny heart decorations near corners. No text, no letters, no numbers."
+                ),
+            },
+            {
+                "id": "playlist-card",
+                "type": "image",
+                "x": 95,
+                "y": 286,
+                "width": 278,
+                "height": 225,
+                "zIndex": 45,
+                "prompt": (
+                    "Creamy white and blush-pink rounded playlist card with soft border, inner padding, "
+                    "three clean vertical column guides, tiny bow or heart stickers on corners. "
+                    "Keep the central list area blank. No song names, no fake text, no numbers."
+                ),
+            },
+            {
+                "id": "foreground-decor",
+                "type": "image",
+                "x": 0,
+                "y": 360,
+                "width": 390,
+                "height": 225,
+                "zIndex": 70,
+                "prompt": (
+                    "Bottom foreground tabletop decorations: plush bunny, strawberries, pink radio, mug, ribbons, "
+                    "soft petals and heart props, arranged along the bottom and corners. "
+                    "Keep the upper center clear so it does not cover playlist text. No text, no numbers, no logos."
+                ),
+            },
+        ],
+        "textLayers": [
+            {
+                "id": "headline",
+                "role": "headline",
+                "contentSource": "preset.headline",
+                "x": 38,
+                "y": 26,
+                "width": 315,
+                "height": 46,
+                "zIndex": 100,
+                "style": {
+                    "fontFamily": "Microsoft YaHei",
+                    "fontSize": 23,
+                    "fontWeight": "bold",
+                    "fontStyle": "normal",
+                    "color": "#ffffff",
+                    "textAlign": "center",
+                    "lineHeight": 1.05,
+                    "letterSpacing": 0,
+                    "stroke": "#e85c86",
+                    "strokeWidth": 2,
+                    "shadow": {"color": "rgba(255,255,255,0.7)", "blur": 5, "offsetX": 0, "offsetY": 1},
+                    "rotation": 0,
+                    "opacity": 1,
+                },
+            },
+            {
+                "id": "playlist-title",
+                "role": "title",
+                "contentSource": "user.title",
+                "x": 265,
+                "y": 125,
+                "width": 92,
+                "height": 48,
+                "zIndex": 110,
+                "style": {
+                    "fontFamily": "Microsoft YaHei",
+                    "fontSize": 28,
+                    "fontWeight": "bold",
+                    "fontStyle": "normal",
+                    "color": "#e24f78",
+                    "textAlign": "center",
+                    "lineHeight": 1.05,
+                    "letterSpacing": 1,
+                    "stroke": "#ffffff",
+                    "strokeWidth": 2,
+                    "shadow": {"color": "rgba(210,80,120,0.35)", "blur": 5, "offsetX": 0, "offsetY": 2},
+                    "rotation": 0,
+                    "opacity": 1,
+                },
+            },
+            {
+                "id": "song-list",
+                "role": "songs",
+                "contentSource": "user.songs",
+                "x": 112,
+                "y": 305,
+                "width": 245,
+                "height": 185,
+                "zIndex": 111,
+                "columnCount": 3,
+                "columnGap": 14,
+                "flow": "vertical-then-horizontal",
+                "style": {
+                    "fontFamily": "Microsoft YaHei",
+                    "fontSize": 10,
+                    "fontWeight": "bold",
+                    "fontStyle": "normal",
+                    "color": "#4b2b2c",
+                    "textAlign": "left",
+                    "lineHeight": 1.55,
+                    "letterSpacing": 0,
+                    "stroke": "",
+                    "strokeWidth": 0,
+                    "shadow": {"color": "rgba(255,255,255,0)", "blur": 0, "offsetX": 0, "offsetY": 0},
+                    "rotation": 0,
+                    "opacity": 1,
+                    "prefixPattern": "♡{index}",
+                },
+            },
+        ],
+    }
+
+
 def _validate_layout_map(layout_map: dict) -> list[str]:
     errors = []
     canvas = layout_map.get("canvas")
@@ -732,7 +912,7 @@ def _validate_layout_map(layout_map: dict) -> list[str]:
                         if field not in item:
                             errors.append(f"{prefix}.{field}_missing")
     text_sources = {item.get("contentSource") for item in layout_map.get("textLayers", []) if isinstance(item, dict)}
-    extra_sources = sorted(source for source in text_sources if source not in {"user.title", "user.songs"})
+    extra_sources = sorted(source for source in text_sources if source not in {"preset.headline", "user.title", "user.songs"})
     errors.extend(f"playlist.unsupported_text_source.{item}" for item in extra_sources)
     if "user.title" not in text_sources:
         errors.append("playlist.title_text_layer_missing")
@@ -754,7 +934,7 @@ def _validate_default_playlist_layout(layout_map: dict, allow_extra: bool) -> li
         return []
     errors = []
     image_ids = {item.get("id") for item in layout_map.get("components", []) if isinstance(item, dict) and item.get("type") == "image"}
-    extra = sorted(image_ids - MINIMAL_PLAYLIST_IMAGE_IDS)
+    extra = sorted(image_ids - FIXED_PLAYLIST_IMAGE_IDS)
     errors.extend(f"playlist.default_extra_image_component.{item}" for item in extra)
     return errors
 
@@ -1435,10 +1615,18 @@ def _component_name(component_id: str, suffix: str = "") -> str:
     normalized = component_id.replace("_", "-")
     if normalized == "background":
         return "背景"
+    if normalized == "main-visual":
+        return "主视觉"
+    if normalized == "player-card":
+        return "播放器卡片"
     if normalized == "title-card":
         return "标题卡片"
     if normalized == "playlist-card":
         return "歌单卡片"
+    if normalized == "foreground-decor":
+        return "前景装饰"
+    if normalized == "headline":
+        return "顶部口号"
     if "title" in normalized:
         return "标题"
     if "song" in normalized or "playlist" in normalized:
@@ -1450,6 +1638,8 @@ def _component_name(component_id: str, suffix: str = "") -> str:
 
 def _text_components_from_layer(run_id: str, layer: dict, user_inputs: dict) -> list[dict]:
     source = layer["contentSource"]
+    if source == "preset.headline":
+        return [_layout_text_component(run_id, layer, "支持点歌//学歌//歌单未完待续")]
     if source == "user.title":
         return [_layout_text_component(run_id, layer, user_inputs.get("title", ""))]
     if source == "user.description":
@@ -1929,16 +2119,13 @@ async def generate_layout_map(req: LayoutMapRequest):
         return LayoutMapResponse(ok=True, questions=questions, provider="layout-followup")
 
     try:
-        context = _read_playlist_context()
-        prompt = _layout_prompt(req, context)
-        text = await _responses_text(prompt)
-        layout_map = _extract_json_object(text)
-        errors = _layout_map_errors(layout_map, _allow_extra_playlist_components(req.description))
+        layout_map = _fixed_playlist_layout_map()
+        errors = _layout_map_errors(layout_map, False)
         if errors:
-            return LayoutMapResponse(ok=False, error="Invalid layout map: " + "; ".join(errors), provider="responses-api")
-        return LayoutMapResponse(ok=True, layout_map=layout_map, provider="responses-api")
+            return LayoutMapResponse(ok=False, error="Invalid fixed layout map: " + "; ".join(errors), provider="fixed-playlist-map")
+        return LayoutMapResponse(ok=True, layout_map=layout_map, provider="fixed-playlist-map")
     except Exception as e:
-        return LayoutMapResponse(ok=False, error=str(e), provider="responses-api")
+        return LayoutMapResponse(ok=False, error=str(e), provider="fixed-playlist-map")
 
 
 @app.post("/api/ai/generate-components", response_model=GenerateComponentsResponse)
@@ -2005,15 +2192,13 @@ async def generate_category(req: CategoryGenerateRequest):
             return GenerateResponse(ok=True, questions=questions, provider="layout-followup")
 
         stage = "layout"
-        context = _read_playlist_context()
-        layout_text = await _responses_text(_layout_prompt(map_req, context))
-        layout_map = _extract_json_object(layout_text)
-        errors = _layout_map_errors(layout_map, _allow_extra_playlist_components(req.description))
+        layout_map = _fixed_playlist_layout_map()
+        errors = _layout_map_errors(layout_map, False)
         if errors:
             return GenerateResponse(ok=False, error="Layout map invalid: " + "; ".join(errors))
 
         stage = "components"
-        allow_extra = _allow_extra_playlist_components(req.description)
+        allow_extra = True
         assets = await _generate_layout_components(
             layout_map,
             _component_style_brief(req.style, req.description),

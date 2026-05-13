@@ -33,7 +33,7 @@ class GenerateCategoryError extends Error {
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_AI_API_BASE || "";
-const DEFAULT_SONGS = "公主病\n半情歌\n他的猫\n不将就\n月牙湾\n记事本\n小美满\n眉间雪\n闹够了没有\n勇气大爆发\n回忆的沙漏\n别找我麻烦";
+const DEFAULT_SONGS = "公主病\n半情歌\n他的猫\n不将就\n月牙湾\n记事本\n小美满\n眉间雪\n闹够了没有\n勇气大爆发\n回忆的沙漏\n别找我麻烦\n彩虹的微笑\n但愿人长久\n离别开出花\n可惜没如果\n词不达意\n明天你好\n玫瑰窃贼\n天命风流\n漠河舞厅\n我好想你\n专属味道\n依然爱你\n词不达意\n明天你好\n玫瑰窃贼\n天命风流\n漠河舞厅\n我好想你\n专属味道\n依然爱你";
 
 function parseSongs(text: string): string[] {
   return text
@@ -81,7 +81,7 @@ async function generateCategory(params: {
 }
 
 export default function AIPage({ onGenerate, onBack }: AIPageProps) {
-  const [title, setTitle] = useState("支持点歌 // 学歌 // 歌单未完待续");
+  const [title, setTitle] = useState("公主病");
   const [style, setStyle] = useState("dreamy pastel pink aesthetic, hyper-cute girly style");
   const [songsText, setSongsText] = useState(DEFAULT_SONGS);
   const [description, setDescription] = useState("");
