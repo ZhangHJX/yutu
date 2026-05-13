@@ -50,7 +50,13 @@ CARD_COMPONENT_IDS = {"title-card", "playlist-card"}
 IRREGULAR_KEY_COMPONENT_IDS = {"main-visual", "player-card", "foreground-decor"}
 SLOT_SIZE_ASSET_IDS = {"main-visual", "player-card", "foreground-decor"}
 CARD_KEY_COLOR = (255, 0, 255)
-IRREGULAR_KEY_COLOR = (0, 255, 0)
+IRREGULAR_KEY_COLORS = {
+    "green": (0, 255, 0),
+    "red": (255, 0, 0),
+    "blue": (0, 0, 255),
+}
+DEFAULT_IRREGULAR_KEY_NAME = "green"
+IRREGULAR_KEY_TOLERANCE = 38
 AVAILABLE_TEXT_FONTS = {
     "sans-serif",
     "Arial",
@@ -582,7 +588,8 @@ Rules:
 9. Title-card and playlist-card are only visual containers. They must not contain readable text, song names, or user words.
 10. The background prompt must describe only the background itself: environment, texture, lighting, mood, and color palette. It must not mention title, playlist, card, panel, text area, player, buttons, list box, frame, border, or any other component.
 11. Layout binding rules:
-   - title-card and the user.title text layer are a bound pair.
+   - title-card belongs to the top headline/slogan area and must never be bound to user.title.
+   - user.title is the player track/title text and must be placed inside the player-card safe area when a player-card exists.
    - playlist-card and the user.songs text layer are a bound pair.
    - Text layers must be fully inside the visible area of their paired card, with safe padding.
    - Card components should be sized to contain their paired text layer plus padding.
@@ -743,14 +750,15 @@ def _fixed_playlist_layout_map() -> dict:
             {
                 "id": "title-card",
                 "type": "image",
-                "x": 260,
-                "y": 120,
-                "width": 100,
-                "height": 58,
+                "x": 34,
+                "y": 42,
+                "width": 322,
+                "height": 46,
                 "zIndex": 36,
                 "prompt": (
-                    "Transparent soft highlight backing area inside the player card for a large editable title, "
-                    "subtle pink glow and tiny heart decorations near corners. No text, no letters, no numbers."
+                    "Transparent soft ribbon-like title card backing for the top slogan, pastel pink and white glow, "
+                    "rounded decorative label with tiny hearts near corners. Keep the center blank for editable headline text. "
+                    "No text, no letters, no numbers."
                 ),
             },
             {
@@ -986,10 +994,10 @@ def _layout_component_prompt(component: dict, style_brief: str, forbidden_zones:
             "No black, white, checkerboard, or matte background."
         )
     elif component_id in IRREGULAR_KEY_COMPONENT_IDS:
-        r, g, b = IRREGULAR_KEY_COLOR
+        key_name, (r, g, b) = _component_irregular_key(component)
         background_rule = (
-            f"Generate the asset on a flat pure chroma green background rgb({r},{g},{b}). "
-            "Do not use green inside the asset. Do not cast shadows onto the green background. "
+            f"Generate the asset on a flat pure chroma {key_name} background rgb({r},{g},{b}). "
+            f"Do not use {key_name} or any similar hue inside the asset. Do not cast shadows onto the chroma background. "
             "The visible asset must remain fully inside the slot with a complete natural silhouette."
         )
     else:
@@ -1013,6 +1021,87 @@ def _component_style_brief(style: str, description: str) -> str:
     if brief and extra:
         return f"{brief}\nAdditional visual requirements: {extra}"
     return brief or extra
+
+
+def _normalize_irregular_key_name(value) -> str:
+    name = str(value or "").strip().lower()
+    return name if name in IRREGULAR_KEY_COLORS else DEFAULT_IRREGULAR_KEY_NAME
+
+
+def _fallback_irregular_key_name(style_brief: str) -> str:
+    text = style_brief.lower()
+    if any(word in text for word in ("green", "nature", "forest", "plant", "leaf", "grass", "绿色", "自然", "森林", "植物", "草地")):
+        return "red"
+    if any(word in text for word in ("red", "pink", "rose", "warm", "红色", "粉色", "玫瑰", "暖色")):
+        return "green"
+    if any(word in text for word in ("blue", "ocean", "sea", "cyber", "night", "蓝色", "海洋", "赛博", "夜晚")):
+        return "red"
+    return DEFAULT_IRREGULAR_KEY_NAME
+
+
+def _irregular_key_selection_prompt(style_brief: str) -> str:
+    style = style_brief.strip() or "No explicit user style. Infer a suitable playlist poster palette."
+    return f"""
+You choose the chroma-key background color for isolated irregular image assets in a playlist poster generator.
+
+User/category/style input:
+{style}
+
+Rules:
+1. First infer the poster's overall color palette from the input, even if the user did not explicitly name a color.
+2. Then choose the least related chroma key from exactly these three single-channel colors:
+   - green: rgb(0,255,0)
+   - red: rgb(255,0,0)
+   - blue: rgb(0,0,255)
+3. Do not invent any other RGB value.
+4. Prefer the key color least likely to appear in characters, props, cards, lighting, reflections, or the intended style.
+
+Return only JSON:
+{{"keyName":"green|red|blue","palette":"brief inferred palette","reason":"short reason"}}
+""".strip()
+
+
+async def _select_irregular_key_name(style_brief: str) -> dict:
+    fallback = _fallback_irregular_key_name(style_brief)
+    try:
+        data = _parse_layout_json(await _responses_text(_irregular_key_selection_prompt(style_brief)))
+        key_name = _normalize_irregular_key_name(data.get("keyName"))
+        return {
+            "keyName": key_name,
+            "rgb": list(IRREGULAR_KEY_COLORS[key_name]),
+            "source": "responses-text",
+            "palette": str(data.get("palette") or ""),
+            "reason": str(data.get("reason") or ""),
+        }
+    except Exception as e:
+        return {
+            "keyName": fallback,
+            "rgb": list(IRREGULAR_KEY_COLORS[fallback]),
+            "source": "fallback",
+            "error": str(e)[:300],
+        }
+
+
+def _component_irregular_key(component: dict) -> tuple[str, tuple[int, int, int]]:
+    key = component.get("chromaKey") if isinstance(component.get("chromaKey"), dict) else {}
+    name = _normalize_irregular_key_name(key.get("keyName"))
+    return name, IRREGULAR_KEY_COLORS[name]
+
+
+def _with_irregular_key(component: dict, key_report: dict) -> dict:
+    component_id = str(component.get("id", ""))
+    if component_id not in IRREGULAR_KEY_COMPONENT_IDS:
+        return component
+    item = dict(component)
+    key_name = _normalize_irregular_key_name(key_report.get("keyName"))
+    item["chromaKey"] = {
+        "keyName": key_name,
+        "rgb": list(IRREGULAR_KEY_COLORS[key_name]),
+        "source": key_report.get("source"),
+        "palette": key_report.get("palette"),
+        "reason": key_report.get("reason"),
+    }
+    return item
 
 
 class ComponentGenerationError(RuntimeError):
@@ -1231,6 +1320,46 @@ def _remove_chroma_key_background(img, color: tuple[int, int, int] = CARD_KEY_CO
     }
 
 
+def _despill_primary_chroma_key(img, color: tuple[int, int, int]):
+    from PIL import Image
+
+    if sorted(color) != [0, 0, 255]:
+        return img, {"ok": False, "reason": "unsupported-key-color", "keyColor": color}
+
+    key_index = color.index(255)
+    output = Image.new("RGBA", img.size)
+    pixels = []
+    changed = 0
+    faded = 0
+    for pixel in img.getdata():
+        values = [pixel[0], pixel[1], pixel[2]]
+        alpha = pixel[3]
+        if alpha <= 0:
+            pixels.append(pixel)
+            continue
+
+        key_value = values[key_index]
+        other_values = [value for index, value in enumerate(values) if index != key_index]
+        other_max = max(other_values)
+        if key_value > 150 and key_value > other_max + 36:
+            spill = min(1.0, (key_value - other_max - 24) / 160)
+            values[key_index] = min(key_value, other_max + 18)
+            changed += 1
+            if other_max < 128:
+                alpha = int(alpha * (1 - 0.75 * spill))
+                faded += 1
+        pixels.append((values[0], values[1], values[2], alpha))
+
+    output.putdata(pixels)
+    total = max(1, img.width * img.height)
+    return output, {
+        "ok": True,
+        "keyColor": color,
+        "changedRatio": changed / total,
+        "fadedRatio": faded / total,
+    }
+
+
 def _normalize_generated_component_image(component: dict, image_bytes: bytes) -> tuple[Optional[bytes], dict]:
     from PIL import Image
 
@@ -1262,14 +1391,18 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                 img = cleaned
                 cleanup_report = cleanup
             elif component_id in IRREGULAR_KEY_COMPONENT_IDS:
-                cleaned, cleanup = _remove_chroma_key_background(img, IRREGULAR_KEY_COLOR, tolerance=34)
+                key_name, key_color = _component_irregular_key(component)
+                cleaned, cleanup = _remove_chroma_key_background(img, key_color, tolerance=IRREGULAR_KEY_TOLERANCE)
                 if cleaned is None:
                     cleanup.update({
                         "rawSize": raw_size,
-                        "errorMessage": cleanup.get("errorMessage") or "Chroma green background was not detected; retry generation instead of edge flood-fill.",
+                        "keyName": key_name,
+                        "errorMessage": cleanup.get("errorMessage") or f"Chroma {key_name} background was not detected; retry generation instead of edge flood-fill.",
                     })
                     return None, cleanup
-                img = cleaned
+                img, despill = _despill_primary_chroma_key(cleaned, key_color)
+                cleanup["keyName"] = key_name
+                cleanup["despill"] = despill
                 cleanup_report = cleanup
             else:
                 alpha = img.getchannel("A")
@@ -1382,6 +1515,9 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
     for attempt_no in (1, 2):
         image_bytes, report = await _try_gpt_image_generate_report(prompt, w, h)
         attempt = {"componentId": component_id, "attempt": attempt_no, **report}
+        if component_id in IRREGULAR_KEY_COMPONENT_IDS:
+            key_name, key_color = _component_irregular_key(component)
+            attempt["chromaKey"] = {"keyName": key_name, "rgb": list(key_color)}
 
         if image_bytes is not None:
             normalized_bytes, asset_validation = _normalize_generated_component_image(component, image_bytes)
@@ -1432,6 +1568,16 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
         raise RuntimeError("Invalid layout map: " + "; ".join(errors))
 
     image_components = [item for item in layout_map["components"] if item.get("type") == "image"]
+    if any(str(item.get("id")) in IRREGULAR_KEY_COMPONENT_IDS for item in image_components):
+        key_report = await _select_irregular_key_name(style_brief)
+        print(
+            "[LayoutComponents] irregular chroma key "
+            f"name={key_report.get('keyName')} "
+            f"source={key_report.get('source')} "
+            f"palette={str(key_report.get('palette') or '')[:120]}",
+            flush=True,
+        )
+        image_components = [_with_irregular_key(item, key_report) for item in image_components]
     forbidden_zones = _card_forbidden_zones(layout_map)
     assets = {}
     for index, component in enumerate(image_components, start=1):
@@ -1445,6 +1591,8 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
             "contentOffset": success.get("contentOffset"),
             "normalizedSize": success.get("normalizedSize"),
         }
+        if isinstance(component.get("chromaKey"), dict):
+            assets[component_id]["chromaKey"] = component["chromaKey"]
         if index < len(image_components):
             await asyncio.sleep(2)
     return assets
@@ -1678,7 +1826,8 @@ def _adjust_playlist_text_layers(layout_map: dict, assets: dict, image_component
 
     text_layers = []
     card_by_source = {
-        "user.title": "title-card",
+        "preset.headline": "title-card",
+        "user.title": "player-card",
         "user.songs": "playlist-card",
     }
     component_by_slot = {item.get("slot"): item for item in image_components}
