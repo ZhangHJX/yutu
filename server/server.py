@@ -47,8 +47,10 @@ FIXED_PLAYLIST_IMAGE_IDS = {
     "foreground-decor",
 }
 CARD_COMPONENT_IDS = {"title-card", "playlist-card"}
-SLOT_SIZE_ASSET_IDS = {"main-visual"}
+IRREGULAR_KEY_COMPONENT_IDS = {"main-visual", "player-card", "foreground-decor"}
+SLOT_SIZE_ASSET_IDS = {"main-visual", "player-card", "foreground-decor"}
 CARD_KEY_COLOR = (255, 0, 255)
+IRREGULAR_KEY_COLOR = (0, 255, 0)
 AVAILABLE_TEXT_FONTS = {
     "sans-serif",
     "Arial",
@@ -835,10 +837,10 @@ def _fixed_playlist_layout_map() -> dict:
                 "id": "song-list",
                 "role": "songs",
                 "contentSource": "user.songs",
-                "x": 112,
-                "y": 305,
-                "width": 245,
-                "height": 185,
+                "x": 108,
+                "y": 302,
+                "width": 254,
+                "height": 190,
                 "zIndex": 111,
                 "columnCount": 3,
                 "columnGap": 14,
@@ -982,6 +984,13 @@ def _layout_component_prompt(component: dict, style_brief: str, forbidden_zones:
             f"Generate the card/backplate on a flat chroma key background rgb({r},{g},{b}). "
             "Do not use this chroma key color inside the card design. The card/backplate itself must remain fully visible. "
             "No black, white, checkerboard, or matte background."
+        )
+    elif component_id in IRREGULAR_KEY_COMPONENT_IDS:
+        r, g, b = IRREGULAR_KEY_COLOR
+        background_rule = (
+            f"Generate the asset on a flat pure chroma green background rgb({r},{g},{b}). "
+            "Do not use green inside the asset. Do not cast shadows onto the green background. "
+            "The visible asset must remain fully inside the slot with a complete natural silhouette."
         )
     else:
         background_rule = "Use real transparent alpha outside the visible card/object. No black, white, checkerboard, or matte background outside the asset."
@@ -1169,13 +1178,13 @@ def _remove_edge_background(img):
     }
 
 
-def _remove_chroma_key_background(img, color: tuple[int, int, int] = CARD_KEY_COLOR):
+def _remove_chroma_key_background(img, color: tuple[int, int, int] = CARD_KEY_COLOR, tolerance: int = 46):
     from PIL import Image
 
     w, h = img.size
     r0, g0, b0 = color
     px = img.load()
-    tolerance_sq = 46 * 46
+    tolerance_sq = tolerance * tolerance
     alpha = bytearray(img.getchannel("A").tobytes())
     removed = 0
     for y in range(h):
@@ -1218,6 +1227,7 @@ def _remove_chroma_key_background(img, color: tuple[int, int, int] = CARD_KEY_CO
         "removedRatio": removed / (w * h),
         "contentRatio": content_ratio,
         "keyColor": color,
+        "tolerance": tolerance,
     }
 
 
@@ -1251,6 +1261,16 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                     return None, cleanup
                 img = cleaned
                 cleanup_report = cleanup
+            elif component_id in IRREGULAR_KEY_COMPONENT_IDS:
+                cleaned, cleanup = _remove_chroma_key_background(img, IRREGULAR_KEY_COLOR, tolerance=34)
+                if cleaned is None:
+                    cleanup.update({
+                        "rawSize": raw_size,
+                        "errorMessage": cleanup.get("errorMessage") or "Chroma green background was not detected; retry generation instead of edge flood-fill.",
+                    })
+                    return None, cleanup
+                img = cleaned
+                cleanup_report = cleanup
             else:
                 alpha = img.getchannel("A")
                 corner_alpha = [
@@ -1280,7 +1300,7 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                     "errorMessage": "Generated asset is fully transparent.",
                     "rawSize": raw_size,
                 }
-            if bbox[0] <= 1 and bbox[1] <= 1 and bbox[2] >= img.width - 1 and bbox[3] >= img.height - 1:
+            if component_id not in SLOT_SIZE_ASSET_IDS and bbox[0] <= 1 and bbox[1] <= 1 and bbox[2] >= img.width - 1 and bbox[3] >= img.height - 1:
                 return None, {
                     "ok": False,
                     "errorType": "FullCanvasAsset",
@@ -1290,8 +1310,9 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                 }
 
             if component_id in SLOT_SIZE_ASSET_IDS:
-                contained = _fit_contain(img.crop(bbox), target_size)
-                return _pil_to_png_bytes(contained), {
+                if img.size != target_size:
+                    img = img.resize(target_size, Image.Resampling.LANCZOS)
+                return _pil_to_png_bytes(img), {
                     "ok": True,
                     "rawSize": raw_size,
                     "slotSize": {"width": target_size[0], "height": target_size[1]},
@@ -1558,6 +1579,51 @@ def _normalize_song_column_gap(layer: dict, column_count: int) -> int:
     return int(_clamp_number(layer.get("columnGap"), 6, 0, 40))
 
 
+def _fit_song_layer_to_rect(layer: dict, song_count: int) -> dict:
+    fitted = dict(layer)
+    style = dict(layer.get("style", {}))
+    fitted["style"] = style
+    if song_count <= 0:
+        return fitted
+
+    preferred = 3 if song_count > 16 else _normalize_song_column_count(layer, song_count)
+    column_counts = [preferred] + [count for count in (3, 2, 1) if count != preferred]
+    base_gap = int(_clamp_number(layer.get("columnGap"), 10, 0, 40))
+    gap_options = [gap for gap in (base_gap, 12, 10, 8, 6, 4, 0) if gap <= base_gap or gap <= 12]
+    font_options = []
+    base_font = int(_number(style.get("fontSize"), 10))
+    for font_size in (base_font, 9, 8):
+        if font_size not in font_options:
+            font_options.append(font_size)
+    line_options = []
+    base_line = _number(style.get("lineHeight"), 1.4)
+    for line_height in (base_line, 1.4, 1.3, 1.25, 1.15):
+        if line_height not in line_options:
+            line_options.append(line_height)
+
+    for column_count in column_counts:
+        if column_count > song_count:
+            continue
+        for gap in gap_options:
+            if column_count > 1 and (float(layer["width"]) - gap * (column_count - 1)) / column_count < 64:
+                continue
+            rows = math.ceil(song_count / column_count)
+            for font_size in font_options:
+                for line_height in line_options:
+                    if rows * font_size * line_height <= float(layer["height"]):
+                        fitted["columnCount"] = column_count
+                        fitted["columnGap"] = gap if column_count > 1 else 0
+                        style["fontSize"] = font_size
+                        style["lineHeight"] = line_height
+                        return fitted
+
+    fitted["columnCount"] = max(1, min(preferred, song_count))
+    fitted["columnGap"] = 4 if fitted["columnCount"] > 1 else 0
+    style["fontSize"] = 8
+    style["lineHeight"] = 1.15
+    return fitted
+
+
 def _layout_text_component(run_id: str, item: dict, content: str, suffix: str = "") -> dict:
     style = _text_style_with_z(item)
     name = _component_name(item["id"], suffix)
@@ -1602,7 +1668,14 @@ def _fit_title_style_to_rect(style: dict, height: int):
     style["fontSize"] = min(int(style.get("fontSize") or max_font), max_font)
 
 
+def _uses_fixed_text_rects(layout_map: dict) -> bool:
+    return layout_map.get("layoutPattern") == "fixed-dreamy-player-poster"
+
+
 def _adjust_playlist_text_layers(layout_map: dict, assets: dict, image_components: list[dict]) -> list[dict]:
+    if _uses_fixed_text_rects(layout_map):
+        return [{**layer, "style": dict(layer.get("style", {}))} for layer in layout_map["textLayers"]]
+
     text_layers = []
     card_by_source = {
         "user.title": "title-card",
@@ -1663,9 +1736,10 @@ def _text_components_from_layer(run_id: str, layer: dict, user_inputs: dict) -> 
     if source == "user.description":
         return [_layout_text_component(run_id, layer, user_inputs.get("description", ""))]
     if source == "user.songs":
+        song_count = min(32, len([song for song in user_inputs.get("songs", []) if str(song).strip()]))
+        layer = _fit_song_layer_to_rect(layer, song_count)
         prefix_pattern = _normalize_prefix_pattern(layer.get("style", {}).get("prefixPattern"))
-        song_count = len([song for song in user_inputs.get("songs", []) if str(song).strip()])
-        column_count = _normalize_song_column_count(layer, song_count)
+        column_count = int(layer.get("columnCount") or _normalize_song_column_count(layer, song_count))
         columns = _user_song_columns_with_prefix(user_inputs.get("songs", []), prefix_pattern, column_count)
         if not columns:
             return [_layout_text_component(run_id, layer, "")]
