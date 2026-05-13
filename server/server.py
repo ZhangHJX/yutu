@@ -47,6 +47,7 @@ FIXED_PLAYLIST_IMAGE_IDS = {
     "foreground-decor",
 }
 CARD_COMPONENT_IDS = {"title-card", "playlist-card"}
+SLOT_SIZE_ASSET_IDS = {"main-visual"}
 CARD_KEY_COLOR = (255, 0, 255)
 AVAILABLE_TEXT_FONTS = {
     "sans-serif",
@@ -712,13 +713,15 @@ def _fixed_playlist_layout_map() -> dict:
                 "id": "main-visual",
                 "type": "image",
                 "x": 0,
-                "y": 70,
-                "width": 170,
-                "height": 280,
+                "y": 62,
+                "width": 190,
+                "height": 390,
                 "zIndex": 20,
                 "prompt": (
-                    "Cute dreamy girl wearing pink headphones, soft anime-realistic illustration, upper body leaning forward, "
-                    "pink bow and heart accessories, transparent cutout. No text, no numbers, no logos."
+                    "Cute dreamy girl wearing pink headphones, soft anime-realistic illustration, complete natural upper body "
+                    "with full hair, shoulders, arms, sleeves, and soft silhouette fully contained inside the asset slot. "
+                    "The pose can lean on an unseen table, but no body part should be cut off by the image boundary. "
+                    "Use soft transparent feathered edges, pink ambient light, and no hard sticker border. No text, no numbers, no logos."
                 ),
             },
             {
@@ -1284,6 +1287,21 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                     "errorMessage": "Non-background asset fills the whole generated canvas; expected isolated transparent asset.",
                     "rawSize": raw_size,
                     "alphaBounds": {"x": bbox[0], "y": bbox[1], "width": bbox[2] - bbox[0], "height": bbox[3] - bbox[1]},
+                }
+
+            if component_id in SLOT_SIZE_ASSET_IDS:
+                contained = _fit_contain(img.crop(bbox), target_size)
+                return _pil_to_png_bytes(contained), {
+                    "ok": True,
+                    "rawSize": raw_size,
+                    "slotSize": {"width": target_size[0], "height": target_size[1]},
+                    "normalizedSize": {"width": target_size[0], "height": target_size[1]},
+                    "contentOffset": {"x": 0, "y": 0},
+                    "assetKind": "slot-size-transparent-asset",
+                    "alphaBounds": {"x": bbox[0], "y": bbox[1], "width": bbox[2] - bbox[0], "height": bbox[3] - bbox[1]},
+                    "normalizedAlphaBounds": {"x": 0, "y": 0, "width": target_size[0], "height": target_size[1]},
+                    "alphaRequired": True,
+                    "backgroundCleanup": cleanup_report,
                 }
 
             content = img.crop(bbox)
