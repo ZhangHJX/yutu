@@ -48,6 +48,7 @@ FIXED_PLAYLIST_IMAGE_IDS = {
 }
 CARD_COMPONENT_IDS = {"title-card", "playlist-card"}
 IRREGULAR_KEY_COMPONENT_IDS = {"main-visual", "player-card", "foreground-decor"}
+TRANSPARENT_ALPHA_COMPONENT_IDS = {"main-visual"}
 SLOT_SIZE_ASSET_IDS = {"main-visual", "player-card", "foreground-decor"}
 CARD_KEY_COLOR = (255, 0, 255)
 IRREGULAR_KEY_COLORS = {
@@ -1722,8 +1723,10 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
     w = int(component["width"])
     h = int(component["height"])
     attempts = []
-    if component_id in IRREGULAR_KEY_COMPONENT_IDS:
-        cutout_attempts = [("transparent-alpha", False), ("transparent-alpha", True), ("chroma-key", False)]
+    if component_id in TRANSPARENT_ALPHA_COMPONENT_IDS:
+        cutout_attempts = [("transparent-alpha", False), ("chroma-key", False)]
+    elif component_id in IRREGULAR_KEY_COMPONENT_IDS:
+        cutout_attempts = [("chroma-key", False)]
     else:
         cutout_attempts = [("default", False), ("default", False)]
 
