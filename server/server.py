@@ -750,10 +750,10 @@ def _fixed_playlist_layout_map() -> dict:
             {
                 "id": "title-card",
                 "type": "image",
-                "x": 34,
-                "y": 42,
-                "width": 322,
-                "height": 46,
+                "x": 30,
+                "y": 18,
+                "width": 330,
+                "height": 62,
                 "zIndex": 36,
                 "prompt": (
                     "Transparent soft ribbon-like title card backing for the top slogan, pastel pink and white glow, "
@@ -1002,6 +1002,8 @@ def _layout_component_prompt(component: dict, style_brief: str, forbidden_zones:
                 "Preserve soft hair, feathered edges, and natural semi-transparent edge pixels in the alpha channel. "
                 "The visible asset must remain fully inside the slot with a complete natural silhouette."
             )
+            if component.get("transparentRetry"):
+                background_rule += " This is a retry because the previous result did not contain usable alpha transparency; prioritize a real transparent alpha channel over any painted background."
         else:
             key_name, (r, g, b) = _component_irregular_key(component)
             background_rule = (
@@ -1125,6 +1127,46 @@ def _style_brief_with_guide(style_brief: str, style_guide: dict) -> str:
     )
 
 
+def _hex_from_rgb(color: tuple[int, int, int]) -> str:
+    return f"#{color[0]:02X}{color[1]:02X}{color[2]:02X}"
+
+
+def _sample_image_palette(path: Path) -> dict:
+    from collections import Counter
+    from PIL import Image
+
+    with Image.open(path) as raw:
+        img = raw.convert("RGB")
+        img.thumbnail((80, 80))
+        pixels = list(img.getdata())
+    if not pixels:
+        return {}
+
+    avg = tuple(int(sum(pixel[index] for pixel in pixels) / len(pixels)) for index in range(3))
+    buckets = Counter((r // 24, g // 24, b // 24) for r, g, b in pixels)
+    dominant_bucket, _count = buckets.most_common(1)[0]
+    dominant = tuple(min(255, value * 24 + 12) for value in dominant_bucket)
+    return {
+        "backgroundBase": _hex_from_rgb(dominant),
+        "backgroundAverage": _hex_from_rgb(avg),
+    }
+
+
+def _style_guide_with_background_palette(style_guide: dict, sampled_palette: dict) -> dict:
+    if not sampled_palette:
+        return style_guide
+    guide = dict(style_guide)
+    palette = dict(guide.get("palette") if isinstance(guide.get("palette"), dict) else {})
+    palette.update(sampled_palette)
+    guide["palette"] = palette
+    guide["source"] = f"{guide.get('source') or 'unknown'}+background-sampled"
+    guide["lighting"] = (
+        f"{guide.get('lighting')}; match later assets to the actual generated background colors "
+        f"{sampled_palette.get('backgroundBase')} and {sampled_palette.get('backgroundAverage')}"
+    )
+    return guide
+
+
 def _normalize_irregular_key_name(value) -> str:
     name = str(value or "").strip().lower()
     return name if name in IRREGULAR_KEY_COLORS else DEFAULT_IRREGULAR_KEY_NAME
@@ -1188,6 +1230,24 @@ def _component_irregular_key(component: dict) -> tuple[str, tuple[int, int, int]
     key = component.get("chromaKey") if isinstance(component.get("chromaKey"), dict) else {}
     name = _normalize_irregular_key_name(key.get("keyName"))
     return name, IRREGULAR_KEY_COLORS[name]
+
+
+def _asset_generation_debug(attempt: dict) -> dict:
+    validation = attempt.get("assetValidation") if isinstance(attempt.get("assetValidation"), dict) else {}
+    cleanup = validation.get("backgroundCleanup") if isinstance(validation.get("backgroundCleanup"), dict) else {}
+    return {
+        "cutoutMode": cleanup.get("mode") or attempt.get("cutoutMode"),
+        "transparentRetry": attempt.get("transparentRetry"),
+        "transparentRatio": cleanup.get("transparentRatio"),
+        "edgeTransparentRatio": cleanup.get("edgeTransparentRatio"),
+        "cornerAlpha": cleanup.get("cornerAlpha"),
+        "keyName": cleanup.get("keyName"),
+        "keyColor": cleanup.get("keyColor"),
+        "despill": cleanup.get("despill"),
+        "assetKind": validation.get("assetKind"),
+        "rawSize": validation.get("rawSize"),
+        "backgroundCleanup": cleanup,
+    }
 
 
 def _with_irregular_key(component: dict, key_report: dict) -> dict:
@@ -1546,6 +1606,7 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                         })
                         return None, cleanup
                     img, despill = _despill_primary_chroma_key(cleaned, key_color)
+                    cleanup["mode"] = "chroma-key"
                     cleanup["keyName"] = key_name
                     cleanup["despill"] = despill
                     cleanup_report = cleanup
@@ -1637,11 +1698,17 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
 
 
 def _category_attempt_log(component_id: str, attempt: dict):
+    validation = attempt.get("assetValidation") if isinstance(attempt.get("assetValidation"), dict) else {}
+    cleanup = validation.get("backgroundCleanup") if isinstance(validation.get("backgroundCleanup"), dict) else {}
     print(
         "[CategoryGenerate] "
         f"component={component_id} "
         f"attempt={attempt.get('attempt')} "
         f"status={attempt.get('status')} "
+        f"cutoutMode={attempt.get('cutoutMode') or cleanup.get('mode')} "
+        f"transparentRatio={cleanup.get('transparentRatio')} "
+        f"edgeTransparentRatio={cleanup.get('edgeTransparentRatio')} "
+        f"keyName={cleanup.get('keyName')} "
         f"model={attempt.get('model')} "
         f"elapsedMs={attempt.get('elapsedMs')} "
         f"errorType={attempt.get('errorType')} "
@@ -1655,12 +1722,16 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
     w = int(component["width"])
     h = int(component["height"])
     attempts = []
-    cutout_modes = ["transparent-alpha", "chroma-key"] if component_id in IRREGULAR_KEY_COMPONENT_IDS else ["default", "default"]
+    if component_id in IRREGULAR_KEY_COMPONENT_IDS:
+        cutout_attempts = [("transparent-alpha", False), ("transparent-alpha", True), ("chroma-key", False)]
+    else:
+        cutout_attempts = [("default", False), ("default", False)]
 
-    for attempt_no, cutout_mode in enumerate(cutout_modes, start=1):
+    for attempt_no, (cutout_mode, transparent_retry) in enumerate(cutout_attempts, start=1):
         attempt_component = dict(component)
         if component_id in IRREGULAR_KEY_COMPONENT_IDS:
             attempt_component["cutoutMode"] = cutout_mode
+            attempt_component["transparentRetry"] = transparent_retry
         prompt = _layout_component_prompt(attempt_component, style_brief, forbidden_zones)
         image_bytes, report = await _try_gpt_image_generate_report(prompt, w, h)
         attempt = {"componentId": component_id, "attempt": attempt_no, **report}
@@ -1668,6 +1739,7 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
             key_name, key_color = _component_irregular_key(component)
             attempt["chromaKey"] = {"keyName": key_name, "rgb": list(key_color)}
             attempt["cutoutMode"] = cutout_mode
+            attempt["transparentRetry"] = transparent_retry
 
         if image_bytes is not None:
             normalized_bytes, asset_validation = _normalize_generated_component_image(attempt_component, image_bytes)
@@ -1727,32 +1799,53 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
     )
 
     image_components = [item for item in layout_map["components"] if item.get("type") == "image"]
-    if any(str(item.get("id")) in IRREGULAR_KEY_COMPONENT_IDS for item in image_components):
-        key_report = await _select_irregular_key_name(guided_style_brief)
-        print(
-            "[LayoutComponents] irregular chroma key "
-            f"name={key_report.get('keyName')} "
-            f"source={key_report.get('source')} "
-            f"palette={str(key_report.get('palette') or '')[:120]}",
-            flush=True,
-        )
-        image_components = [_with_irregular_key(item, key_report) for item in image_components]
+    background_components = [item for item in image_components if str(item.get("id")) == "background"]
+    remaining_components = [item for item in image_components if str(item.get("id")) != "background"]
+    ordered_components = background_components + remaining_components
     forbidden_zones = _card_forbidden_zones(layout_map)
     assets = {}
-    for index, component in enumerate(image_components, start=1):
+    key_report = None
+    key_applied = False
+    for index, component in enumerate(ordered_components, start=1):
+        if not key_applied and str(component.get("id")) != "background" and any(str(item.get("id")) in IRREGULAR_KEY_COMPONENT_IDS for item in ordered_components):
+            key_report = await _select_irregular_key_name(guided_style_brief)
+            print(
+                "[LayoutComponents] irregular chroma key "
+                f"name={key_report.get('keyName')} "
+                f"source={key_report.get('source')} "
+                f"palette={str(key_report.get('palette') or '')[:120]}",
+                flush=True,
+            )
+            component = _with_irregular_key(component, key_report)
+            key_applied = True
+        elif key_applied:
+            component = _with_irregular_key(component, key_report or {})
         component_id = str(component["id"])
-        print(f"[LayoutComponents] generating component {index}/{len(image_components)}: {component_id}", flush=True)
+        print(f"[LayoutComponents] generating component {index}/{len(ordered_components)}: {component_id}", flush=True)
         asset_url, attempts = await _generate_layout_component_with_retry(component, guided_style_brief, forbidden_zones)
         success = attempts[-1]
+        generation_debug = _asset_generation_debug(success)
         assets[component_id] = {
             "url": asset_url,
             "normalizedAlphaBounds": success.get("normalizedAlphaBounds"),
             "contentOffset": success.get("contentOffset"),
             "normalizedSize": success.get("normalizedSize"),
+            "generationDebug": generation_debug,
         }
         if isinstance(component.get("chromaKey"), dict):
             assets[component_id]["chromaKey"] = component["chromaKey"]
-        if index < len(image_components):
+        if component_id == "background":
+            sampled_palette = _sample_image_palette(GEN_DIR / Path(asset_url).name)
+            if sampled_palette:
+                assets[component_id]["sampledPalette"] = sampled_palette
+                style_guide = _style_guide_with_background_palette(style_guide, sampled_palette)
+                guided_style_brief = _style_brief_with_guide(style_brief, style_guide)
+                print(
+                    "[LayoutComponents] sampled background palette "
+                    f"{sampled_palette}",
+                    flush=True,
+                )
+        if index < len(ordered_components):
             await asyncio.sleep(2)
     return assets
 
@@ -2609,7 +2702,13 @@ async def generate_category(req: CategoryGenerateRequest):
         document = _assemble_design_document(layout_map, assets, user_inputs, allow_extra)
         preview_url = _compose_layout_preview(document)
         document["meta"]["thumbnail"] = preview_url
-        return GenerateResponse(ok=True, document=document, image_url=preview_url, provider="category-composition")
+        return GenerateResponse(
+            ok=True,
+            document=document,
+            image_url=preview_url,
+            provider="category-composition",
+            debug={"assets": assets},
+        )
     except ComponentGenerationError as e:
         return GenerateResponse(
             ok=False,
