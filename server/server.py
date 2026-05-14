@@ -552,6 +552,19 @@ async def _responses_text(prompt: str) -> str:
     return text
 
 
+def _parse_layout_json(text: str) -> dict:
+    return _extract_json_object(text)
+
+
+def _elapsed_ms(started: float) -> int:
+    return int((time.perf_counter() - started) * 1000)
+
+
+def _timing_log(event: str, started: float, **fields):
+    extra = " ".join(f"{key}={value}" for key, value in fields.items() if value is not None)
+    print(f"[CategoryGenerateTiming] event={event} elapsedMs={_elapsed_ms(started)} {extra}".rstrip(), flush=True)
+
+
 def _layout_prompt(req: LayoutMapRequest, context: str) -> str:
     title_len = len(req.title.strip())
     song_count = len([song for song in req.songs if song.strip()])
@@ -873,6 +886,110 @@ def _fixed_playlist_layout_map() -> dict:
             },
         ],
     }
+
+
+COMPOSITION_MODES = {
+    "left-character-right-player-bottom-playlist",
+    "right-character-left-player-bottom-playlist",
+    "center-character-top-player-bottom-playlist",
+}
+
+
+def _playlist_layout_plan_prompt(req: LayoutMapRequest) -> str:
+    song_count = len([song for song in req.songs if song.strip()])
+    style = req.style.strip() or "Infer a cohesive playlist poster style from the category."
+    description = req.description.strip() or "No extra description."
+    return f"""
+You choose a composition plan for one editable playlist poster. Do not write final pixel coordinates.
+
+User request summary:
+- style: {style}
+- title_length: {len(req.title.strip())}
+- song_count: {song_count}
+- description: {description}
+
+Choose exactly one compositionMode:
+- left-character-right-player-bottom-playlist
+- right-character-left-player-bottom-playlist
+- center-character-top-player-bottom-playlist
+
+Rules:
+1. Pick the mode that best fits the style and requested mood.
+2. Keep these required visual components: background, main-visual, player-card, title-card, playlist-card, foreground-decor.
+3. Keep these editable text roles: preset.headline, user.title, user.songs.
+4. The headline/title-card stay near the top. user.title is the player track text. user.songs stays inside playlist-card.
+5. The plan must not contain user text, song names, letters, or numbers for image generation.
+
+Return only JSON:
+{{"compositionMode":"one mode from the list","reason":"short reason","visualFocus":"short visual direction"}}
+""".strip()
+
+
+def _normalize_composition_mode(value) -> str:
+    mode = str(value or "").strip()
+    if mode in COMPOSITION_MODES:
+        return mode
+    lowered = mode.lower()
+    if "right" in lowered and "character" in lowered:
+        return "right-character-left-player-bottom-playlist"
+    if "center" in lowered:
+        return "center-character-top-player-bottom-playlist"
+    return "left-character-right-player-bottom-playlist"
+
+
+def _update_bounds(layout_map: dict, collection: str, item_id: str, **bounds):
+    for item in layout_map.get(collection, []):
+        if item.get("id") == item_id:
+            item.update(bounds)
+            return
+
+
+def _playlist_layout_from_plan(plan: dict) -> dict:
+    mode = _normalize_composition_mode(plan.get("compositionMode"))
+    layout_map = _fixed_playlist_layout_map()
+    layout_map["layoutPattern"] = "ai-plan-player-poster"
+    layout_map["layoutPlan"] = {
+        "compositionMode": mode,
+        "reason": str(plan.get("reason") or "")[:240],
+        "visualFocus": str(plan.get("visualFocus") or "")[:240],
+    }
+
+    if mode == "right-character-left-player-bottom-playlist":
+        _update_bounds(layout_map, "components", "main-visual", x=200, y=62, width=190, height=390)
+        _update_bounds(layout_map, "components", "player-card", x=15, y=80, width=220, height=185)
+        _update_bounds(layout_map, "components", "playlist-card", x=18, y=286, width=278, height=225)
+        _update_bounds(layout_map, "textLayers", "playlist-title", x=125, y=125, width=92, height=48)
+        _update_bounds(layout_map, "textLayers", "song-list", x=35, y=302, width=254, height=190)
+    elif mode == "center-character-top-player-bottom-playlist":
+        _update_bounds(layout_map, "components", "main-visual", x=95, y=70, width=200, height=330)
+        _update_bounds(layout_map, "components", "player-card", x=40, y=92, width=310, height=150)
+        _update_bounds(layout_map, "components", "playlist-card", x=56, y=325, width=278, height=205)
+        _update_bounds(layout_map, "components", "foreground-decor", x=0, y=385, width=390, height=200)
+        _update_bounds(layout_map, "textLayers", "playlist-title", x=210, y=128, width=112, height=42)
+        _update_bounds(layout_map, "textLayers", "song-list", x=73, y=340, width=244, height=172)
+
+    return layout_map
+
+
+async def _playlist_layout_map_for_request(req: LayoutMapRequest) -> tuple[dict, str, dict]:
+    started = time.perf_counter()
+    try:
+        plan = _parse_layout_json(await _responses_text(_playlist_layout_plan_prompt(req)))
+        layout_map = _playlist_layout_from_plan(plan)
+        errors = _layout_map_errors(layout_map, False)
+        if errors:
+            raise RuntimeError("; ".join(errors))
+        _timing_log(
+            "layout-plan",
+            started,
+            provider="responses-text",
+            mode=layout_map.get("layoutPlan", {}).get("compositionMode"),
+        )
+        return layout_map, "ai-layout-plan", {"layoutPlan": layout_map.get("layoutPlan")}
+    except Exception as e:
+        layout_map = _fixed_playlist_layout_map()
+        _timing_log("layout-plan", started, provider="fallback", error=str(e)[:300])
+        return layout_map, "fixed-playlist-map-fallback", {"layoutPlanError": str(e)[:300]}
 
 
 def _validate_layout_map(layout_map: dict) -> list[str]:
@@ -1711,7 +1828,9 @@ def _category_attempt_log(component_id: str, attempt: dict):
         f"edgeTransparentRatio={cleanup.get('edgeTransparentRatio')} "
         f"keyName={cleanup.get('keyName')} "
         f"model={attempt.get('model')} "
-        f"elapsedMs={attempt.get('elapsedMs')} "
+        f"imageMs={attempt.get('elapsedMs')} "
+        f"normalizeMs={attempt.get('normalizeMs')} "
+        f"totalMs={attempt.get('totalElapsedMs')} "
         f"errorType={attempt.get('errorType')} "
         f"error={str(attempt.get('errorMessage') or '')[:500]}",
         flush=True,
@@ -1731,6 +1850,7 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
         cutout_attempts = [("default", False), ("default", False)]
 
     for attempt_no, (cutout_mode, transparent_retry) in enumerate(cutout_attempts, start=1):
+        attempt_started = time.perf_counter()
         attempt_component = dict(component)
         if component_id in IRREGULAR_KEY_COMPONENT_IDS:
             attempt_component["cutoutMode"] = cutout_mode
@@ -1745,7 +1865,9 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
             attempt["transparentRetry"] = transparent_retry
 
         if image_bytes is not None:
+            normalize_started = time.perf_counter()
             normalized_bytes, asset_validation = _normalize_generated_component_image(attempt_component, image_bytes)
+            attempt["normalizeMs"] = _elapsed_ms(normalize_started)
             attempt["assetValidation"] = asset_validation
             if normalized_bytes is not None and asset_validation.get("ok"):
                 safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in component_id).strip("-") or "component"
@@ -1760,6 +1882,7 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
                         "errorMessage": file_validation.get("errorMessage"),
                         "outputPath": f"/generated/{path.name}",
                     })
+                    attempt["totalElapsedMs"] = _elapsed_ms(attempt_started)
                     attempts.append(attempt)
                     _category_attempt_log(component_id, attempt)
                     if attempt_no == 1:
@@ -1770,6 +1893,7 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
                     "outputPath": f"/generated/{path.name}",
                     "normalizedAlphaBounds": asset_validation.get("normalizedAlphaBounds"),
                 })
+                attempt["totalElapsedMs"] = _elapsed_ms(attempt_started)
                 attempts.append(attempt)
                 _category_attempt_log(component_id, attempt)
                 return f"/generated/{path.name}", attempts
@@ -1779,6 +1903,7 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
                 "errorMessage": asset_validation.get("errorMessage"),
             })
 
+        attempt["totalElapsedMs"] = _elapsed_ms(attempt_started)
         attempts.append(attempt)
         _category_attempt_log(component_id, attempt)
         if attempt_no == 1:
@@ -1788,11 +1913,14 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
 
 
 async def _generate_layout_components(layout_map: dict, style_brief: str = "", allow_extra: bool = True) -> dict[str, dict]:
+    total_started = time.perf_counter()
     errors = _layout_map_errors(layout_map, allow_extra)
     if errors:
         raise RuntimeError("Invalid layout map: " + "; ".join(errors))
 
+    stage_started = time.perf_counter()
     style_guide = await _select_shared_style_guide(style_brief)
+    _timing_log("style-guide", stage_started, source=style_guide.get("source"))
     guided_style_brief = _style_brief_with_guide(style_brief, style_guide)
     print(
         "[LayoutComponents] shared style guide "
@@ -1811,7 +1939,9 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
     key_applied = False
     for index, component in enumerate(ordered_components, start=1):
         if not key_applied and str(component.get("id")) != "background" and any(str(item.get("id")) in IRREGULAR_KEY_COMPONENT_IDS for item in ordered_components):
+            stage_started = time.perf_counter()
             key_report = await _select_irregular_key_name(guided_style_brief)
+            _timing_log("irregular-key-selection", stage_started, source=key_report.get("source"), keyName=key_report.get("keyName"))
             print(
                 "[LayoutComponents] irregular chroma key "
                 f"name={key_report.get('keyName')} "
@@ -1825,7 +1955,16 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
             component = _with_irregular_key(component, key_report or {})
         component_id = str(component["id"])
         print(f"[LayoutComponents] generating component {index}/{len(ordered_components)}: {component_id}", flush=True)
+        component_started = time.perf_counter()
         asset_url, attempts = await _generate_layout_component_with_retry(component, guided_style_brief, forbidden_zones)
+        _timing_log(
+            "component",
+            component_started,
+            component=component_id,
+            attempts=len(attempts),
+            imageMs=sum(attempt.get("elapsedMs", 0) for attempt in attempts),
+            normalizeMs=sum(attempt.get("normalizeMs", 0) for attempt in attempts),
+        )
         success = attempts[-1]
         generation_debug = _asset_generation_debug(success)
         assets[component_id] = {
@@ -1838,7 +1977,9 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
         if isinstance(component.get("chromaKey"), dict):
             assets[component_id]["chromaKey"] = component["chromaKey"]
         if component_id == "background":
+            stage_started = time.perf_counter()
             sampled_palette = _sample_image_palette(GEN_DIR / Path(asset_url).name)
+            _timing_log("background-palette-sample", stage_started, component=component_id)
             if sampled_palette:
                 assets[component_id]["sampledPalette"] = sampled_palette
                 style_guide = _style_guide_with_background_palette(style_guide, sampled_palette)
@@ -1850,6 +1991,7 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
                 )
         if index < len(ordered_components):
             await asyncio.sleep(2)
+    _timing_log("components-total", total_started, count=len(ordered_components))
     return assets
 
 
@@ -2072,7 +2214,7 @@ def _fit_title_style_to_rect(style: dict, height: int):
 
 
 def _uses_fixed_text_rects(layout_map: dict) -> bool:
-    return layout_map.get("layoutPattern") == "fixed-dreamy-player-poster"
+    return layout_map.get("layoutPattern") in {"fixed-dreamy-player-poster", "ai-plan-player-poster"}
 
 
 def _adjust_playlist_text_layers(layout_map: dict, assets: dict, image_components: list[dict]) -> list[dict]:
@@ -2615,13 +2757,10 @@ async def generate_layout_map(req: LayoutMapRequest):
         return LayoutMapResponse(ok=True, questions=questions, provider="layout-followup")
 
     try:
-        layout_map = _fixed_playlist_layout_map()
-        errors = _layout_map_errors(layout_map, False)
-        if errors:
-            return LayoutMapResponse(ok=False, error="Invalid fixed layout map: " + "; ".join(errors), provider="fixed-playlist-map")
-        return LayoutMapResponse(ok=True, layout_map=layout_map, provider="fixed-playlist-map")
+        layout_map, provider, _debug = await _playlist_layout_map_for_request(req)
+        return LayoutMapResponse(ok=True, layout_map=layout_map, provider=provider)
     except Exception as e:
-        return LayoutMapResponse(ok=False, error=str(e), provider="fixed-playlist-map")
+        return LayoutMapResponse(ok=False, error=str(e), provider="ai-layout-plan")
 
 
 @app.post("/api/ai/generate-components", response_model=GenerateComponentsResponse)
@@ -2669,6 +2808,7 @@ async def assemble_layout(req: AssembleLayoutRequest):
 @app.post("/api/ai/generate-category", response_model=GenerateResponse)
 async def generate_category(req: CategoryGenerateRequest):
     stage = "init"
+    total_started = time.perf_counter()
     map_req = LayoutMapRequest(
         category=req.category,
         style=req.style,
@@ -2688,31 +2828,39 @@ async def generate_category(req: CategoryGenerateRequest):
             return GenerateResponse(ok=True, questions=questions, provider="layout-followup")
 
         stage = "layout"
-        layout_map = _fixed_playlist_layout_map()
-        errors = _layout_map_errors(layout_map, False)
-        if errors:
-            return GenerateResponse(ok=False, error="Layout map invalid: " + "; ".join(errors))
+        stage_started = time.perf_counter()
+        layout_map, layout_provider, layout_debug = await _playlist_layout_map_for_request(map_req)
+        _timing_log("generate-category-layout", stage_started, provider=layout_provider)
 
         stage = "components"
         allow_extra = True
+        stage_started = time.perf_counter()
         assets = await _generate_layout_components(
             layout_map,
             _component_style_brief(req.style, req.description),
             allow_extra,
         )
+        _timing_log("generate-category-components", stage_started, provider="responses-image-generation")
         stage = "assemble"
+        stage_started = time.perf_counter()
         user_inputs = {"title": req.title, "songs": req.songs, "description": req.description}
         document = _assemble_design_document(layout_map, assets, user_inputs, allow_extra)
+        _timing_log("generate-category-assemble", stage_started)
+        stage = "preview"
+        stage_started = time.perf_counter()
         preview_url = _compose_layout_preview(document)
+        _timing_log("generate-category-preview", stage_started)
         document["meta"]["thumbnail"] = preview_url
+        _timing_log("generate-category-total", total_started, provider="category-composition", layoutProvider=layout_provider)
         return GenerateResponse(
             ok=True,
             document=document,
             image_url=preview_url,
             provider="category-composition",
-            debug={"assets": assets},
+            debug={"assets": assets, "layout": layout_debug, "layoutProvider": layout_provider},
         )
     except ComponentGenerationError as e:
+        _timing_log("generate-category-total", total_started, status="failed", stage=stage)
         return GenerateResponse(
             ok=False,
             error=f"{stage}: Component generation failed: {e.component_id}",
@@ -2720,6 +2868,7 @@ async def generate_category(req: CategoryGenerateRequest):
             debug={"stage": stage, "failedComponent": e.component_id, "attempts": e.attempts},
         )
     except Exception as e:
+        _timing_log("generate-category-total", total_started, status="failed", stage=stage)
         return GenerateResponse(ok=False, error=f"{stage}: {e}", provider="category-composition")
 
 
