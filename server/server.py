@@ -37,7 +37,12 @@ ROOT = Path(__file__).resolve().parent.parent  # project root
 OUT_DIR = ROOT / "out"
 GEN_DIR = OUT_DIR / "generated"
 GEN_DIR.mkdir(parents=True, exist_ok=True)
-MINIMAL_PLAYLIST_IMAGE_IDS = {"background", "title-card", "playlist-card"}
+REQUIRED_PLAYLIST_IMAGE_IDS = {"background", "playlist-card"}
+REQUIRED_PLAYLIST_TEXT_SOURCES = {"user.title", "user.songs"}
+MIN_OPTIONAL_PLAYLIST_COMPONENTS = 3
+MAX_OPTIONAL_PLAYLIST_COMPONENTS = 6
+MAX_COMPONENT_GENERATION_CONCURRENCY = 4
+MINIMAL_PLAYLIST_IMAGE_IDS = REQUIRED_PLAYLIST_IMAGE_IDS
 FIXED_PLAYLIST_IMAGE_IDS = {
     "background",
     "main-visual",
@@ -888,108 +893,278 @@ def _fixed_playlist_layout_map() -> dict:
     }
 
 
-COMPOSITION_MODES = {
-    "left-character-right-player-bottom-playlist",
-    "right-character-left-player-bottom-playlist",
-    "center-character-top-player-bottom-playlist",
+OPTIONAL_DECORATION_ROLES = {
+    "character",
+    "player",
+    "sticker",
+    "foreground",
+    "frame",
+    "title-backplate",
+    "abstract",
+    "prop",
+    "other",
 }
 
 
-def _playlist_layout_plan_prompt(req: LayoutMapRequest) -> str:
+def _playlist_free_layout_prompt(req: LayoutMapRequest, previous_errors: Optional[list[str]] = None) -> str:
     song_count = len([song for song in req.songs if song.strip()])
     style = req.style.strip() or "Infer a cohesive playlist poster style from the category."
     description = req.description.strip() or "No extra description."
+    retry_text = ""
+    if previous_errors:
+        retry_text = "\nPrevious invalid output errors to fix:\n- " + "\n- ".join(previous_errors[:10])
     return f"""
-You choose a composition plan for one editable playlist poster. Do not write final pixel coordinates.
+You design a complete editable playlist poster layout map. Return final pixel coordinates.
 
 User request summary:
 - style: {style}
 - title_length: {len(req.title.strip())}
 - song_count: {song_count}
 - description: {description}
-
-Choose exactly one compositionMode:
-- left-character-right-player-bottom-playlist
-- right-character-left-player-bottom-playlist
-- center-character-top-player-bottom-playlist
+{retry_text}
 
 Rules:
-1. Pick the mode that best fits the style and requested mood.
-2. Keep these required visual components: background, main-visual, player-card, title-card, playlist-card, foreground-decor.
-3. Keep these editable text roles: preset.headline, user.title, user.songs.
-4. The headline/title-card stay near the top. user.title is the player track text. user.songs stays inside playlist-card.
-5. The plan must not contain user text, song names, letters, or numbers for image generation.
+1. Canvas is fixed at 390x585.
+2. Required image components: background, playlist-card.
+3. Required editable text layers: user.title and user.songs.
+4. Generate 3 to 6 optional image components. They are decorations, not required information.
+5. Optional components may be character, player, sticker, foreground, frame, title-backplate, abstract, prop, or other.
+6. Optional components can lightly overlap the outer edge of playlist-card for depth, but must not cover the title text, song text, or the main readable area of playlist-card.
+7. background must be full canvas, opaque, zIndex 0.
+8. playlist-card must be a blank visual container for songs. It must not contain readable text, song names, numbers, or fake labels.
+9. All user text must be text layers only. Never place user title or song names in image prompts.
+10. Image prompts must not request readable text, letters, numbers, logos, watermarks, labels, captions, or user-provided words.
+11. Every optional image component must include role and occlusionIntent.
+12. Use cutoutMode:
+    - opaque for background only
+    - card-chroma-key for playlist-card and card/backplate-like components
+    - chroma-key for isolated decorations
+13. Text layers must include full editable style: fontFamily, fontSize, fontWeight, fontStyle, color, textAlign, lineHeight, letterSpacing, rotation, opacity, stroke, strokeWidth, shadow.
+14. user.songs must include columnCount (1, 2, or 3), columnGap, flow="vertical-then-horizontal", and prefixPattern, one of: "♡{{index}}", "{{index}}.", "•", "".
 
 Return only JSON:
-{{"compositionMode":"one mode from the list","reason":"short reason","visualFocus":"short visual direction"}}
+{{
+  "category": "playlist",
+  "canvas": {{"width": 390, "height": 585, "background": "#hex"}},
+  "layoutPattern": "ai-free-playlist-poster",
+  "components": [
+    {{
+      "id": "background",
+      "type": "image",
+      "role": "background",
+      "cutoutMode": "opaque",
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 585,
+      "zIndex": 0,
+      "prompt": "full poster background only, no cards, no readable text"
+    }},
+    {{
+      "id": "playlist-card",
+      "type": "image",
+      "role": "playlist-card",
+      "cutoutMode": "card-chroma-key",
+      "x": 40,
+      "y": 320,
+      "width": 310,
+      "height": 220,
+      "zIndex": 40,
+      "prompt": "blank playlist card container only, no song names, no text"
+    }},
+    {{
+      "id": "decoration-1",
+      "type": "image",
+      "role": "character",
+      "cutoutMode": "chroma-key",
+      "occlusionIntent": "none | edge-only | bottom-partial",
+      "x": 0,
+      "y": 80,
+      "width": 190,
+      "height": 360,
+      "zIndex": 20,
+      "prompt": "isolated decorative visual asset, no readable text"
+    }}
+  ],
+  "textLayers": [
+    {{
+      "id": "playlist-title",
+      "role": "title",
+      "contentSource": "user.title",
+      "x": 32,
+      "y": 24,
+      "width": 326,
+      "height": 72,
+      "zIndex": 100,
+      "style": {{"fontFamily":"Microsoft YaHei","fontSize":32,"fontWeight":"bold","fontStyle":"normal","color":"#ffffff","textAlign":"center","lineHeight":1.05,"letterSpacing":1,"stroke":"#e85c86","strokeWidth":2,"shadow":{{"color":"rgba(0,0,0,0.25)","blur":6,"offsetX":0,"offsetY":2}},"rotation":0,"opacity":1}}
+    }},
+    {{
+      "id": "song-list",
+      "role": "songs",
+      "contentSource": "user.songs",
+      "x": 60,
+      "y": 342,
+      "width": 270,
+      "height": 170,
+      "zIndex": 110,
+      "columnCount": 2,
+      "columnGap": 12,
+      "flow": "vertical-then-horizontal",
+      "style": {{"fontFamily":"Microsoft YaHei","fontSize":10,"fontWeight":"bold","fontStyle":"normal","color":"#4b2b2c","textAlign":"left","lineHeight":1.35,"letterSpacing":0,"stroke":"","strokeWidth":0,"shadow":{{"color":"rgba(255,255,255,0)","blur":0,"offsetX":0,"offsetY":0}},"rotation":0,"opacity":1,"prefixPattern":"♡{{index}}"}}
+    }}
+  ]
+}}
 """.strip()
 
 
-def _normalize_composition_mode(value) -> str:
-    mode = str(value or "").strip()
-    if mode in COMPOSITION_MODES:
-        return mode
-    lowered = mode.lower()
-    if "right" in lowered and "character" in lowered:
-        return "right-character-left-player-bottom-playlist"
-    if "center" in lowered:
-        return "center-character-top-player-bottom-playlist"
-    return "left-character-right-player-bottom-playlist"
+def _role(value) -> str:
+    return str(value or "").strip().lower().replace("_", "-")
 
 
-def _update_bounds(layout_map: dict, collection: str, item_id: str, **bounds):
-    for item in layout_map.get(collection, []):
-        if item.get("id") == item_id:
-            item.update(bounds)
-            return
+def _optional_playlist_components(layout_map: dict) -> list[dict]:
+    return [
+        item for item in layout_map.get("components", [])
+        if isinstance(item, dict) and item.get("type") == "image" and item.get("id") not in REQUIRED_PLAYLIST_IMAGE_IDS
+    ]
 
 
-def _playlist_layout_from_plan(plan: dict) -> dict:
-    mode = _normalize_composition_mode(plan.get("compositionMode"))
-    layout_map = _fixed_playlist_layout_map()
-    layout_map["layoutPattern"] = "ai-plan-player-poster"
-    layout_map["layoutPlan"] = {
-        "compositionMode": mode,
-        "reason": str(plan.get("reason") or "")[:240],
-        "visualFocus": str(plan.get("visualFocus") or "")[:240],
+def _complete_text_layer(layer: dict) -> dict:
+    item = dict(layer)
+    source = str(item.get("contentSource") or "")
+    style = dict(item.get("style") if isinstance(item.get("style"), dict) else {})
+    defaults = {
+        "fontFamily": "Microsoft YaHei",
+        "fontSize": 30 if source == "user.title" else 10,
+        "fontWeight": "bold",
+        "fontStyle": "normal",
+        "color": "#ffffff" if source == "user.title" else "#4b2b2c",
+        "textAlign": "center" if source == "user.title" else "left",
+        "lineHeight": 1.05 if source == "user.title" else 1.35,
+        "letterSpacing": 0,
+        "stroke": "#e85c86" if source == "user.title" else "",
+        "strokeWidth": 2 if source == "user.title" else 0,
+        "shadow": {"color": "rgba(0,0,0,0.25)", "blur": 4, "offsetX": 0, "offsetY": 2},
+        "rotation": 0,
+        "opacity": 1,
     }
+    if source == "user.songs":
+        defaults["prefixPattern"] = "♡{index}"
+    item["style"] = {**defaults, **style}
+    if source == "user.songs":
+        item["columnCount"] = int(_clamp_number(item.get("columnCount"), 2, 1, 3))
+        item["columnGap"] = int(_clamp_number(item.get("columnGap"), 12, 0, 40))
+        item["flow"] = item.get("flow") or "vertical-then-horizontal"
+    return item
 
-    if mode == "right-character-left-player-bottom-playlist":
-        _update_bounds(layout_map, "components", "main-visual", x=200, y=62, width=190, height=390)
-        _update_bounds(layout_map, "components", "player-card", x=15, y=80, width=220, height=185)
-        _update_bounds(layout_map, "components", "playlist-card", x=18, y=286, width=278, height=225)
-        _update_bounds(layout_map, "textLayers", "playlist-title", x=125, y=125, width=92, height=48)
-        _update_bounds(layout_map, "textLayers", "song-list", x=35, y=302, width=254, height=190)
-    elif mode == "center-character-top-player-bottom-playlist":
-        _update_bounds(layout_map, "components", "main-visual", x=95, y=70, width=200, height=330)
-        _update_bounds(layout_map, "components", "player-card", x=40, y=92, width=310, height=150)
-        _update_bounds(layout_map, "components", "playlist-card", x=56, y=325, width=278, height=205)
-        _update_bounds(layout_map, "components", "foreground-decor", x=0, y=385, width=390, height=200)
-        _update_bounds(layout_map, "textLayers", "playlist-title", x=210, y=128, width=112, height=42)
-        _update_bounds(layout_map, "textLayers", "song-list", x=73, y=340, width=244, height=172)
 
-    return layout_map
+def _normalize_free_playlist_layout_map(layout_map: dict) -> dict:
+    normalized = dict(layout_map)
+    normalized["category"] = "playlist"
+    normalized["canvas"] = {"width": 390, "height": 585, "background": str(layout_map.get("canvas", {}).get("background") or "#f8bfd0")}
+    normalized["layoutPattern"] = "ai-free-playlist-poster"
+
+    components = []
+    seen_ids = set()
+    for raw in layout_map.get("components", []):
+        if not isinstance(raw, dict):
+            continue
+        item = dict(raw)
+        item["type"] = "image"
+        item["id"] = str(item.get("id") or f"decoration-{len(components) + 1}")
+        if item["id"] in seen_ids:
+            item["id"] = f"{item['id']}-{len(seen_ids) + 1}"
+        seen_ids.add(item["id"])
+        item["role"] = _role(item.get("role") or item["id"])
+        if item["id"] not in REQUIRED_PLAYLIST_IMAGE_IDS and item["role"] not in OPTIONAL_DECORATION_ROLES:
+            item["role"] = "other"
+        item["prompt"] = str(item.get("prompt") or "Decorative poster asset, no readable text, no labels, no numbers.")
+        components.append(item)
+
+    by_id = {item.get("id"): item for item in components}
+    if "background" in by_id:
+        by_id["background"].update({"x": 0, "y": 0, "width": 390, "height": 585, "zIndex": 0, "role": "background", "cutoutMode": "opaque"})
+    if "playlist-card" in by_id:
+        by_id["playlist-card"].update({"role": "playlist-card", "cutoutMode": "card-chroma-key"})
+    optional = [item for item in components if item.get("id") not in REQUIRED_PLAYLIST_IMAGE_IDS]
+    if len(optional) > MAX_OPTIONAL_PLAYLIST_COMPONENTS:
+        keep_ids = REQUIRED_PLAYLIST_IMAGE_IDS | {item.get("id") for item in sorted(optional, key=lambda x: int(_number(x.get("zIndex"), 0)))[:MAX_OPTIONAL_PLAYLIST_COMPONENTS]}
+        components = [item for item in components if item.get("id") in keep_ids]
+    normalized["components"] = components
+    normalized["textLayers"] = [_complete_text_layer(item) for item in layout_map.get("textLayers", []) if isinstance(item, dict)]
+    return normalized
+
+
+def _rect(item: dict) -> tuple[float, float, float, float]:
+    return (
+        float(item.get("x") or 0),
+        float(item.get("y") or 0),
+        float(item.get("width") or 0),
+        float(item.get("height") or 0),
+    )
+
+
+def _overlap_area(a: dict, b: dict) -> float:
+    ax, ay, aw, ah = _rect(a)
+    bx, by, bw, bh = _rect(b)
+    x1 = max(ax, bx)
+    y1 = max(ay, by)
+    x2 = min(ax + aw, bx + bw)
+    y2 = min(ay + ah, by + bh)
+    return max(0, x2 - x1) * max(0, y2 - y1)
+
+
+def _overlap_ratio(a: dict, b: dict) -> float:
+    _x, _y, w, h = _rect(b)
+    return _overlap_area(a, b) / max(1, w * h)
+
+
+def _playlist_occlusion_errors(layout_map: dict) -> list[str]:
+    errors = []
+    components = [item for item in layout_map.get("components", []) if isinstance(item, dict) and item.get("type") == "image"]
+    text_layers = [item for item in layout_map.get("textLayers", []) if isinstance(item, dict)]
+    playlist_card = next((item for item in components if item.get("id") == "playlist-card"), None)
+    title_layer = next((item for item in text_layers if item.get("contentSource") == "user.title"), None)
+    songs_layer = next((item for item in text_layers if item.get("contentSource") == "user.songs"), None)
+    protected_layers = [item for item in (title_layer, songs_layer) if item]
+    playlist_z = int(_number(playlist_card.get("zIndex"), 0)) if playlist_card else 0
+
+    for item in _optional_playlist_components(layout_map):
+        role = _role(item.get("role"))
+        item_z = int(_number(item.get("zIndex"), 0))
+        for layer in protected_layers:
+            if item_z > int(_number(layer.get("zIndex"), 0)) and _overlap_ratio(item, layer) > 0.02:
+                errors.append(f"playlist.optional_component.{item.get('id')}_covers_required_text")
+        if songs_layer and item_z > playlist_z and _overlap_ratio(item, songs_layer) > 0.05:
+            errors.append(f"playlist.optional_component.{item.get('id')}_covers_playlist_safe_rect")
+        if role not in OPTIONAL_DECORATION_ROLES:
+            errors.append(f"playlist.optional_component.{item.get('id')}_role_invalid")
+    return errors
 
 
 async def _playlist_layout_map_for_request(req: LayoutMapRequest) -> tuple[dict, str, dict]:
     started = time.perf_counter()
-    try:
-        plan = _parse_layout_json(await _responses_text(_playlist_layout_plan_prompt(req)))
-        layout_map = _playlist_layout_from_plan(plan)
-        errors = _layout_map_errors(layout_map, False)
-        if errors:
-            raise RuntimeError("; ".join(errors))
-        _timing_log(
-            "layout-plan",
-            started,
-            provider="responses-text",
-            mode=layout_map.get("layoutPlan", {}).get("compositionMode"),
-        )
-        return layout_map, "ai-layout-plan", {"layoutPlan": layout_map.get("layoutPlan")}
-    except Exception as e:
-        layout_map = _fixed_playlist_layout_map()
-        _timing_log("layout-plan", started, provider="fallback", error=str(e)[:300])
-        return layout_map, "fixed-playlist-map-fallback", {"layoutPlanError": str(e)[:300]}
+    errors = None
+    for attempt in range(1, 3):
+        try:
+            raw_map = _parse_layout_json(await _responses_text(_playlist_free_layout_prompt(req, errors)))
+            layout_map = _normalize_free_playlist_layout_map(raw_map)
+            errors = _layout_map_errors(layout_map, True)
+            if errors:
+                raise RuntimeError("; ".join(errors))
+            _timing_log(
+                "layout-map",
+                started,
+                provider="responses-text",
+                attempt=attempt,
+                optionalCount=len(_optional_playlist_components(layout_map)),
+            )
+            return layout_map, "ai-free-layout-map", {"layoutMap": {"attempt": attempt, "optionalCount": len(_optional_playlist_components(layout_map))}}
+        except Exception as e:
+            errors = [str(e)[:300]]
+
+    layout_map = _fixed_playlist_layout_map()
+    _timing_log("layout-map", started, provider="fallback", error=(errors or ["unknown"])[0])
+    return layout_map, "fixed-playlist-map-fallback", {"layoutMapError": (errors or ["unknown"])[0]}
 
 
 def _validate_layout_map(layout_map: dict) -> list[str]:
@@ -1045,23 +1220,28 @@ def _validate_layout_map(layout_map: dict) -> list[str]:
     text_sources = {item.get("contentSource") for item in layout_map.get("textLayers", []) if isinstance(item, dict)}
     extra_sources = sorted(source for source in text_sources if source not in {"preset.headline", "user.title", "user.songs"})
     errors.extend(f"playlist.unsupported_text_source.{item}" for item in extra_sources)
-    if "user.title" not in text_sources:
-        errors.append("playlist.title_text_layer_missing")
-    if "user.songs" not in text_sources:
-        errors.append("playlist.songs_text_layer_missing")
+    for source in sorted(REQUIRED_PLAYLIST_TEXT_SOURCES - text_sources):
+        errors.append(f"playlist.{source}_text_layer_missing")
     text_source_counts = [item.get("contentSource") for item in layout_map.get("textLayers", []) if isinstance(item, dict)]
     if text_source_counts.count("user.title") != 1:
         errors.append("playlist.title_text_layer_count_invalid")
     if text_source_counts.count("user.songs") != 1:
         errors.append("playlist.songs_text_layer_count_invalid")
     image_ids = {item.get("id") for item in layout_map.get("components", []) if isinstance(item, dict) and item.get("type") == "image"}
-    for image_id in sorted(MINIMAL_PLAYLIST_IMAGE_IDS - image_ids):
+    for image_id in sorted(REQUIRED_PLAYLIST_IMAGE_IDS - image_ids):
         errors.append(f"playlist.image_component.{image_id}_missing")
+    optional_count = len([image_id for image_id in image_ids if image_id not in REQUIRED_PLAYLIST_IMAGE_IDS])
+    if layout_map.get("layoutPattern") == "ai-free-playlist-poster":
+        if optional_count < MIN_OPTIONAL_PLAYLIST_COMPONENTS:
+            errors.append("playlist.optional_component_count_too_small")
+        if optional_count > MAX_OPTIONAL_PLAYLIST_COMPONENTS:
+            errors.append("playlist.optional_component_count_too_large")
+        errors.extend(_playlist_occlusion_errors(layout_map))
     return errors
 
 
 def _validate_default_playlist_layout(layout_map: dict, allow_extra: bool) -> list[str]:
-    if allow_extra:
+    if allow_extra or layout_map.get("layoutPattern") == "ai-free-playlist-poster":
         return []
     errors = []
     image_ids = {item.get("id") for item in layout_map.get("components", []) if isinstance(item, dict) and item.get("type") == "image"}
@@ -1074,10 +1254,27 @@ def _layout_map_errors(layout_map: dict, allow_extra: bool) -> list[str]:
     return _validate_layout_map(layout_map) + _validate_default_playlist_layout(layout_map, allow_extra)
 
 
+def _is_background_component(component: dict) -> bool:
+    return str(component.get("id")) == "background"
+
+
+def _is_card_component(component: dict) -> bool:
+    role = _role(component.get("role") or component.get("id"))
+    return str(component.get("id")) in CARD_COMPONENT_IDS or role in {"playlist-card", "title-backplate", "card", "panel", "player"}
+
+
+def _is_irregular_component(component: dict) -> bool:
+    return not _is_background_component(component) and not _is_card_component(component)
+
+
+def _is_slot_size_component(component: dict) -> bool:
+    return str(component.get("id")) in SLOT_SIZE_ASSET_IDS or _is_irregular_component(component)
+
+
 def _card_forbidden_zones(layout_map: dict) -> list[dict]:
     zones = []
     for item in layout_map.get("components", []):
-        if item.get("id") in CARD_COMPONENT_IDS:
+        if _is_card_component(item):
             zones.append({
                 "x": int(item["x"]),
                 "y": int(item["y"]),
@@ -1092,8 +1289,7 @@ def _layout_component_prompt(component: dict, style_brief: str, forbidden_zones:
     style = style_brief.strip() or "Use the visual style implied by the component prompt."
     component_id = str(component["id"])
     cutout_mode = str(component.get("cutoutMode") or "")
-    is_background = component_id == "background"
-    if is_background:
+    if _is_background_component(component):
         zone_text = ""
         if forbidden_zones:
             zone_text = " Keep these rectangular regions as continuous natural background with no UI objects: " + "; ".join(
@@ -1105,14 +1301,14 @@ def _layout_component_prompt(component: dict, style_brief: str, forbidden_zones:
             "Do not include cards, panels, frames, borders, title areas, list areas, buttons, UI widgets, fake text, or text placeholders."
             f"{zone_text}"
         )
-    elif component_id in CARD_COMPONENT_IDS:
+    elif _is_card_component(component):
         r, g, b = CARD_KEY_COLOR
         background_rule = (
             f"Generate the card/backplate on a flat chroma key background rgb({r},{g},{b}). "
             "Do not use this chroma key color inside the card design. The card/backplate itself must remain fully visible. "
             "No black, white, checkerboard, or matte background."
         )
-    elif component_id in IRREGULAR_KEY_COMPONENT_IDS:
+    elif _is_irregular_component(component):
         if cutout_mode == "transparent-alpha":
             background_rule = (
                 "Generate the asset as a PNG with real transparent alpha outside the visible object/card. "
@@ -1369,8 +1565,7 @@ def _asset_generation_debug(attempt: dict) -> dict:
 
 
 def _with_irregular_key(component: dict, key_report: dict) -> dict:
-    component_id = str(component.get("id", ""))
-    if component_id not in IRREGULAR_KEY_COMPONENT_IDS:
+    if not _is_irregular_component(component):
         return component
     item = dict(component)
     key_name = _normalize_irregular_key_name(key_report.get("keyName"))
@@ -1681,7 +1876,7 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
         with Image.open(io.BytesIO(image_bytes)) as raw:
             img = raw.convert("RGBA")
             raw_size = {"width": img.width, "height": img.height}
-            if component_id == "background":
+            if _is_background_component(component):
                 normalized = _fit_cover(img, target_size)
                 normalized.putalpha(Image.new("L", normalized.size, 255))
                 return _pil_to_png_bytes(normalized), {
@@ -1693,7 +1888,7 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                 }
 
             cleanup_report = None
-            if component_id in CARD_COMPONENT_IDS:
+            if _is_card_component(component):
                 cleaned, cleanup = _remove_chroma_key_background(img)
                 if cleaned is None:
                     cleanup.update({
@@ -1702,7 +1897,7 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                     return None, cleanup
                 img = cleaned
                 cleanup_report = cleanup
-            elif component_id in IRREGULAR_KEY_COMPONENT_IDS:
+            elif _is_irregular_component(component):
                 if component.get("cutoutMode") == "transparent-alpha":
                     alpha_report = _transparent_alpha_report(img)
                     if not alpha_report.get("ok"):
@@ -1757,7 +1952,7 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                     "errorMessage": "Generated asset is fully transparent.",
                     "rawSize": raw_size,
                 }
-            if component_id not in SLOT_SIZE_ASSET_IDS and bbox[0] <= 1 and bbox[1] <= 1 and bbox[2] >= img.width - 1 and bbox[3] >= img.height - 1:
+            if not _is_slot_size_component(component) and bbox[0] <= 1 and bbox[1] <= 1 and bbox[2] >= img.width - 1 and bbox[3] >= img.height - 1:
                 return None, {
                     "ok": False,
                     "errorType": "FullCanvasAsset",
@@ -1766,7 +1961,7 @@ def _normalize_generated_component_image(component: dict, image_bytes: bytes) ->
                     "alphaBounds": {"x": bbox[0], "y": bbox[1], "width": bbox[2] - bbox[0], "height": bbox[3] - bbox[1]},
                 }
 
-            if component_id in SLOT_SIZE_ASSET_IDS:
+            if _is_slot_size_component(component):
                 if img.size != target_size:
                     img = img.resize(target_size, Image.Resampling.LANCZOS)
                 return _pil_to_png_bytes(img), {
@@ -1842,9 +2037,10 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
     w = int(component["width"])
     h = int(component["height"])
     attempts = []
-    if component_id in TRANSPARENT_ALPHA_COMPONENT_IDS:
+    requested_cutout = str(component.get("cutoutMode") or "")
+    if _is_irregular_component(component) and (requested_cutout == "transparent-alpha" or component_id in TRANSPARENT_ALPHA_COMPONENT_IDS):
         cutout_attempts = [("transparent-alpha", False), ("chroma-key", False)]
-    elif component_id in IRREGULAR_KEY_COMPONENT_IDS:
+    elif _is_irregular_component(component):
         cutout_attempts = [("chroma-key", False)]
     else:
         cutout_attempts = [("default", False), ("default", False)]
@@ -1852,13 +2048,13 @@ async def _generate_layout_component_with_retry(component: dict, style_brief: st
     for attempt_no, (cutout_mode, transparent_retry) in enumerate(cutout_attempts, start=1):
         attempt_started = time.perf_counter()
         attempt_component = dict(component)
-        if component_id in IRREGULAR_KEY_COMPONENT_IDS:
+        if _is_irregular_component(component):
             attempt_component["cutoutMode"] = cutout_mode
             attempt_component["transparentRetry"] = transparent_retry
         prompt = _layout_component_prompt(attempt_component, style_brief, forbidden_zones)
         image_bytes, report = await _try_gpt_image_generate_report(prompt, w, h)
         attempt = {"componentId": component_id, "attempt": attempt_no, **report}
-        if component_id in IRREGULAR_KEY_COMPONENT_IDS:
+        if _is_irregular_component(component):
             key_name, key_color = _component_irregular_key(component)
             attempt["chromaKey"] = {"keyName": key_name, "rgb": list(key_color)}
             attempt["cutoutMode"] = cutout_mode
@@ -1936,23 +2132,9 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
     forbidden_zones = _card_forbidden_zones(layout_map)
     assets = {}
     key_report = None
-    key_applied = False
-    for index, component in enumerate(ordered_components, start=1):
-        if not key_applied and str(component.get("id")) != "background" and any(str(item.get("id")) in IRREGULAR_KEY_COMPONENT_IDS for item in ordered_components):
-            stage_started = time.perf_counter()
-            key_report = await _select_irregular_key_name(guided_style_brief)
-            _timing_log("irregular-key-selection", stage_started, source=key_report.get("source"), keyName=key_report.get("keyName"))
-            print(
-                "[LayoutComponents] irregular chroma key "
-                f"name={key_report.get('keyName')} "
-                f"source={key_report.get('source')} "
-                f"palette={str(key_report.get('palette') or '')[:120]}",
-                flush=True,
-            )
-            component = _with_irregular_key(component, key_report)
-            key_applied = True
-        elif key_applied:
-            component = _with_irregular_key(component, key_report or {})
+    remaining_after_background = []
+
+    async def generate_one(index: int, component: dict) -> tuple[str, dict, list[dict]]:
         component_id = str(component["id"])
         print(f"[LayoutComponents] generating component {index}/{len(ordered_components)}: {component_id}", flush=True)
         component_started = time.perf_counter()
@@ -1965,32 +2147,69 @@ async def _generate_layout_components(layout_map: dict, style_brief: str = "", a
             imageMs=sum(attempt.get("elapsedMs", 0) for attempt in attempts),
             normalizeMs=sum(attempt.get("normalizeMs", 0) for attempt in attempts),
         )
+        return component_id, {"url": asset_url}, attempts
+
+    for index, component in enumerate(ordered_components, start=1):
+        if not _is_background_component(component):
+            remaining_after_background.append((index, component))
+            continue
+
+        component_id, asset, attempts = await generate_one(index, component)
         success = attempts[-1]
         generation_debug = _asset_generation_debug(success)
-        assets[component_id] = {
-            "url": asset_url,
+        asset.update({
             "normalizedAlphaBounds": success.get("normalizedAlphaBounds"),
             "contentOffset": success.get("contentOffset"),
             "normalizedSize": success.get("normalizedSize"),
             "generationDebug": generation_debug,
-        }
-        if isinstance(component.get("chromaKey"), dict):
-            assets[component_id]["chromaKey"] = component["chromaKey"]
-        if component_id == "background":
-            stage_started = time.perf_counter()
-            sampled_palette = _sample_image_palette(GEN_DIR / Path(asset_url).name)
-            _timing_log("background-palette-sample", stage_started, component=component_id)
-            if sampled_palette:
-                assets[component_id]["sampledPalette"] = sampled_palette
-                style_guide = _style_guide_with_background_palette(style_guide, sampled_palette)
-                guided_style_brief = _style_brief_with_guide(style_brief, style_guide)
-                print(
-                    "[LayoutComponents] sampled background palette "
-                    f"{sampled_palette}",
-                    flush=True,
-                )
-        if index < len(ordered_components):
-            await asyncio.sleep(2)
+        })
+        assets[component_id] = asset
+        stage_started = time.perf_counter()
+        sampled_palette = _sample_image_palette(GEN_DIR / Path(asset["url"]).name)
+        _timing_log("background-palette-sample", stage_started, component=component_id)
+        if sampled_palette:
+            assets[component_id]["sampledPalette"] = sampled_palette
+            style_guide = _style_guide_with_background_palette(style_guide, sampled_palette)
+            guided_style_brief = _style_brief_with_guide(style_brief, style_guide)
+            print(
+                "[LayoutComponents] sampled background palette "
+                f"{sampled_palette}",
+                flush=True,
+            )
+
+    if any(_is_irregular_component(component) for _index, component in remaining_after_background):
+        stage_started = time.perf_counter()
+        key_report = await _select_irregular_key_name(guided_style_brief)
+        _timing_log("irregular-key-selection", stage_started, source=key_report.get("source"), keyName=key_report.get("keyName"))
+        print(
+            "[LayoutComponents] irregular chroma key "
+            f"name={key_report.get('keyName')} "
+            f"source={key_report.get('source')} "
+            f"palette={str(key_report.get('palette') or '')[:120]}",
+            flush=True,
+        )
+
+    sem = asyncio.Semaphore(MAX_COMPONENT_GENERATION_CONCURRENCY)
+
+    async def generate_limited(index: int, component: dict):
+        item = _with_irregular_key(component, key_report or {})
+        async with sem:
+            return await generate_one(index, item)
+
+    for component_id, asset, attempts in await asyncio.gather(
+        *(generate_limited(index, component) for index, component in remaining_after_background)
+    ):
+        success = attempts[-1]
+        generation_debug = _asset_generation_debug(success)
+        asset.update({
+            "normalizedAlphaBounds": success.get("normalizedAlphaBounds"),
+            "contentOffset": success.get("contentOffset"),
+            "normalizedSize": success.get("normalizedSize"),
+            "generationDebug": generation_debug,
+        })
+        if isinstance(success.get("chromaKey"), dict):
+            asset["chromaKey"] = success["chromaKey"]
+        assets[component_id] = asset
     _timing_log("components-total", total_started, count=len(ordered_components))
     return assets
 
@@ -2214,7 +2433,7 @@ def _fit_title_style_to_rect(style: dict, height: int):
 
 
 def _uses_fixed_text_rects(layout_map: dict) -> bool:
-    return layout_map.get("layoutPattern") in {"fixed-dreamy-player-poster", "ai-plan-player-poster"}
+    return layout_map.get("layoutPattern") in {"fixed-dreamy-player-poster", "ai-plan-player-poster", "ai-free-playlist-poster"}
 
 
 def _adjust_playlist_text_layers(layout_map: dict, assets: dict, image_components: list[dict]) -> list[dict]:
@@ -2278,6 +2497,9 @@ def _text_components_from_layer(run_id: str, layer: dict, user_inputs: dict) -> 
     if source == "preset.headline":
         return [_layout_text_component(run_id, layer, "支持点歌//学歌//歌单未完待续")]
     if source == "user.title":
+        layer = dict(layer)
+        layer["style"] = dict(layer.get("style", {}))
+        _fit_title_style_to_rect(layer["style"], int(layer.get("height") or 48))
         return [_layout_text_component(run_id, layer, user_inputs.get("title", ""))]
     if source == "user.description":
         return [_layout_text_component(run_id, layer, user_inputs.get("description", ""))]
