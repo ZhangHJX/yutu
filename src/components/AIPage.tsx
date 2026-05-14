@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { DesignDocument } from "@/core/DesignDocument";
 
 interface AIPageProps {
@@ -21,6 +21,11 @@ interface GenerateResponse {
   error?: string;
   debug?: unknown;
 }
+
+type GenerationTiming = {
+  status: "success" | "error";
+  seconds: number;
+};
 
 class GenerateCategoryError extends Error {
   payload: unknown;
@@ -89,14 +94,31 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
   const [followupRound, setFollowupRound] = useState(0);
   const [questions, setQuestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [lastTiming, setLastTiming] = useState<GenerationTiming | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<GenerateResult | null>(null);
+  const generationStartRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!loading || generationStartRef.current === null) return;
+    const timer = window.setInterval(() => {
+      if (generationStartRef.current !== null) {
+        setElapsedSeconds(Math.floor((Date.now() - generationStartRef.current) / 1000));
+      }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [loading]);
 
   const handleGenerate = useCallback(async () => {
     if (loading) return;
     setError(null);
     setResult(null);
+    setLastTiming(null);
+    setElapsedSeconds(0);
+    generationStartRef.current = Date.now();
     setLoading(true);
+    let timingStatus: GenerationTiming["status"] | null = null;
 
     try {
       const data = await generateCategory({ title, songsText, style, description, useDefaultLayout, followupRound });
@@ -122,7 +144,9 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
           fontSize: component.style?.fontSize,
         })));
       setResult({ document: data.document, imageUrl: data.image_url });
+      timingStatus = "success";
     } catch (e) {
+      timingStatus = "error";
       if (e instanceof GenerateCategoryError) {
         console.error("[GenerateCategory] failed", e.payload);
         setError(e.message);
@@ -131,9 +155,17 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
         setError(e instanceof Error ? e.message : "生成失败，请重试");
       }
     } finally {
+      const seconds = generationStartRef.current === null
+        ? elapsedSeconds
+        : Math.floor((Date.now() - generationStartRef.current) / 1000);
+      generationStartRef.current = null;
+      setElapsedSeconds(seconds);
+      if (timingStatus) {
+        setLastTiming({ status: timingStatus, seconds });
+      }
       setLoading(false);
     }
-  }, [title, songsText, style, description, useDefaultLayout, followupRound, loading]);
+  }, [title, songsText, style, description, useDefaultLayout, followupRound, loading, elapsedSeconds]);
 
   const handleConfirm = useCallback(() => {
     if (result) onGenerate(result.document);
@@ -228,7 +260,7 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
               {loading ? (
                 <span className="ai-loading">
                   <span className="ai-spinner" />
-                  正在生成布局和组件...
+                  生成中... {elapsedSeconds}s
                 </span>
               ) : questions.length ? (
                 "提交补充并继续生成"
@@ -257,10 +289,17 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
           </div>
         )}
 
+        {lastTiming && !loading && (
+          <div className={`ai-timing ${lastTiming.status}`}>
+            {lastTiming.status === "success" ? "生成完成" : "生成失败"}，耗时 {lastTiming.seconds}s
+          </div>
+        )}
+
         {loading && (
           <div className="ai-loading-full">
             <span className="ai-spinner-lg" />
-            <span className="ai-loading-text">完整生成通常需要 1-2 分钟</span>
+            <span className="ai-loading-text">生成中... {elapsedSeconds}s</span>
+            <span className="ai-loading-subtext">完整生成通常需要 1-2 分钟</span>
           </div>
         )}
 
@@ -351,6 +390,15 @@ export default function AIPage({ onGenerate, onBack }: AIPageProps) {
           gap: 12px; padding: 28px 20px;
         }
         .ai-loading-text { font-size: 14px; color: var(--text-secondary); }
+        .ai-loading-subtext { font-size: 12px; color: var(--text-secondary); opacity: 0.75; }
+        .ai-timing {
+          padding: 10px 12px; border-radius: 10px; font-size: 13px;
+          background: rgba(108,92,231,0.08); color: var(--text-secondary);
+          border: 1px solid rgba(108,92,231,0.18);
+        }
+        .ai-timing.error {
+          background: rgba(231,76,60,0.08); border-color: rgba(231,76,60,0.22); color: #e74c3c;
+        }
         .ai-error {
           display: flex; align-items: center; gap: 8px; padding: 12px;
           background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.3);
