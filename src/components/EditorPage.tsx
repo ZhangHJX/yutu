@@ -6,6 +6,7 @@ import type { FabricCanvasHandle } from "@/canvas/FabricCanvas";
 import type { DesignDocument, DesignComponent } from "@/core/DesignDocument";
 import { saveDraft, loadDraft } from "@/data/storage";
 import { mockAIGen } from "@/data/mockAI";
+import { downloadOriginalCanvasModel } from "@/utils/exportOriginalCanvas";
 
 const AI_API_BASE = process.env.NEXT_PUBLIC_AI_API_BASE || "";
 
@@ -303,6 +304,11 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     saveCurrentDraft();
     onBack();
   };
+
+  const handleExportOriginalCanvas = useCallback(() => {
+    downloadOriginalCanvasModel({ ...doc, meta: { ...doc.meta, name: draftName } }, [...hiddenLayers]);
+    setShowExport(false);
+  }, [doc, draftName, hiddenLayers]);
 
   const snapshot = (): EditorSnapshot => ({ doc, hiddenLayers: [...hiddenLayers] });
 
@@ -936,6 +942,9 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
               <button className="export-app-btn" onClick={() => { setShowExport(false); alert("导出到双鱼 App"); }}>
                 📱 导出到双鱼 App
               </button>
+              <button className="export-app-btn" onClick={handleExportOriginalCanvas}>
+                导出语图工程 JSON
+              </button>
             </div>
           </div>
         </div>
@@ -1226,6 +1235,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
         .export-format-btn { padding: 12px 16px; background: #3d3d3d; border: 1px solid #555; border-radius: 8px; color: white; font-size: 14px; text-align: left; cursor: pointer; }
         .export-format-btn:active { border-color: #A29BFE; }
         .export-app-btn { width: 100%; padding: 14px; background: #6C5CE7; border: none; border-radius: 10px; color: white; font-size: 15px; cursor: pointer; text-align: center; }
+        .export-app-btn + .export-app-btn { margin-top: 8px; }
         .export-app-btn:active { opacity: 0.8; }
 
         .fabric-canvas-wrapper { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; overflow: hidden; touch-action: none; transform-origin: center center; }
