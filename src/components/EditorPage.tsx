@@ -305,9 +305,14 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
     onBack();
   };
 
-  const handleExportOriginalCanvas = useCallback(() => {
-    downloadOriginalCanvasModel({ ...doc, meta: { ...doc.meta, name: draftName } }, [...hiddenLayers]);
-    setShowExport(false);
+  const handleExportOriginalCanvas = useCallback(async () => {
+    try {
+      await downloadOriginalCanvasModel({ ...doc, meta: { ...doc.meta, name: draftName } }, [...hiddenLayers]);
+      setShowExport(false);
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "导出语图工程包失败");
+    }
   }, [doc, draftName, hiddenLayers]);
 
   const snapshot = (): EditorSnapshot => ({ doc, hiddenLayers: [...hiddenLayers] });
@@ -943,7 +948,7 @@ export default function EditorPage({ canvasConfig, initialDoc, draftId, onBack }
                 📱 导出到双鱼 App
               </button>
               <button className="export-app-btn" onClick={handleExportOriginalCanvas}>
-                导出语图工程 JSON
+                导出语图工程包 ZIP
               </button>
             </div>
           </div>
